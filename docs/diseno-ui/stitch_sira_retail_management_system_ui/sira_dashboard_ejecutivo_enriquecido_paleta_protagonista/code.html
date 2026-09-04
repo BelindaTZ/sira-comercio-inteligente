@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA Retail Enterprise Suite - Dashboard Ejecutivo &amp; Estratégico</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              950: "#031413",
+              900: "#062220",
+              850: "#082c29",
+              800: "#0a3632", // Verde Petróleo Profundo / Abisal
+              750: "#0d423e",
+              700: "#0e4b45",
+              600: "#16645d",
+              500: "#1f837a",
+              400: "#2ea398",
+              300: "#5baea4",
+              200: "#a5cfc9",
+              100: "#d2e8e4",
+              50: "#eaf4f2",
+            },
+            sage: {
+              50: "#f4f8f7",
+              100: "#e5ece9",
+              200: "#d3dfdb",
+              300: "#b8cbc6",
+              400: "#8fa9a2",
+              500: "#688880",
+            },
+            amethyst: {
+              950: "#240443",
+              900: "#3b0764",
+              800: "#581c87",
+              700: "#6b21a8",
+              600: "#7c3aed",
+              500: "#8b5cf6", // Lila Amatista Luminoso
+              400: "#a78bfa",
+              300: "#c4b5fd",
+              200: "#ddd6fe",
+              100: "#ede9fe",
+              50: "#f5f3ff",
+            },
+            surface: {
+              canvas: "#e9f0ee",
+              card: "#f4f8f6",
+              cardHover: "#ffffff",
+              border: "#ccdcd7",
+              subtle: "#dfe9e5"
+            }
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            display: ["Plus Jakarta Sans", "Inter", "sans-serif"]
+          },
+          boxShadow: {
+            'card-subtle': '0 2px 5px rgba(10, 54, 50, 0.05), 0 8px 24px -4px rgba(10, 54, 50, 0.06)',
+            'card-hover': '0 6px 16px -2px rgba(10, 54, 50, 0.08), 0 16px 32px -6px rgba(10, 54, 50, 0.12)',
+            'glow-amethyst': '0 0 24px -4px rgba(124, 58, 237, 0.28)',
+            'glow-teal': '0 0 24px -4px rgba(10, 54, 50, 0.28)',
+            'hero-teal': '0 12px 30px -6px rgba(10, 54, 50, 0.35), 0 4px 10px -2px rgba(10, 54, 50, 0.2)'
+          }
+        }
+      }
+    }
+</script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    .ambient-canvas-bg {
+      background-color: #eaf0ee;
+      background-image: 
+        radial-gradient(at 10% 10%, rgba(139, 92, 246, 0.08) 0px, transparent 40%),
+        radial-gradient(at 90% 15%, rgba(10, 54, 50, 0.12) 0px, transparent 45%),
+        radial-gradient(at 50% 50%, rgba(244, 248, 246, 0.6) 0px, transparent 60%),
+        radial-gradient(at 85% 85%, rgba(124, 58, 237, 0.07) 0px, transparent 40%),
+        radial-gradient(at 15% 90%, rgba(31, 131, 122, 0.12) 0px, transparent 45%);
+    }
+    .satin-card {
+      background: linear-gradient(175deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 246, 243, 0.92) 100%);
+      border: 1px solid #cbded8;
+      box-shadow: 0 1px 3px rgba(10, 54, 50, 0.04), 0 8px 22px -4px rgba(10, 54, 50, 0.06);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .satin-card:hover {
+      background: linear-gradient(175deg, #ffffff 0%, #f4f9f7 100%);
+      box-shadow: 0 8px 26px -4px rgba(10, 54, 50, 0.10), 0 2px 8px -1px rgba(10, 54, 50, 0.04);
+      border-color: #b3cdc5;
+    }
+    .kpi-tinted {
+      background: linear-gradient(175deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 244, 241, 0.9) 100%);
+      border: 1px solid #cbded8;
+      box-shadow: 0 1px 3px rgba(10, 54, 50, 0.04), 0 6px 18px -3px rgba(10, 54, 50, 0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .kpi-tinted:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 24px -4px rgba(10, 54, 50, 0.11);
+      border-color: #9fbfb6;
+    }
+    .live-indicator {
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: pulse-ring 2s infinite;
+    }
+    @keyframes pulse-ring {
+      0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 7px rgba(52, 211, 153, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+      }
+    }
+</style>
+</head>
+<body class="ambient-canvas-bg text-slate-800 font-sans antialiased min-h-screen flex flex-col selection:bg-brand-100 selection:text-brand-900">
+<!-- Header con Cuerpo Real: Verde Abisal Profundo (#0a3632) con Acentos Amatista -->
+<header class="sticky top-0 z-50 w-full bg-gradient-to-r from-brand-950 via-brand-800 to-brand-850 text-white border-b border-brand-700/80 shadow-md">
+<div class="max-w-[1720px] mx-auto px-6 h-16 flex items-center justify-between gap-6">
+<!-- Brand & Stylized Geometric Logo -->
+<div class="flex items-center gap-7">
+<a class="flex items-center gap-3 group" href="#">
+<!-- Modern Multi-facet Geometric Isotype -->
+<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-400 via-amethyst-400 to-amethyst-300 p-[1.5px] shadow-glow-teal group-hover:scale-105 transition-all">
+<div class="w-full h-full bg-brand-950 rounded-[10px] flex items-center justify-center relative overflow-hidden">
+<div class="absolute -right-1 -top-1 w-4 h-4 bg-amethyst-400/50 rounded-full blur-xs"></div>
+<svg class="w-5 h-5 text-brand-200" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.3" viewbox="0 0 24 24">
+<path d="M12 2L3 7l9 5 9-5-9-5z"></path>
+<path d="M3 12l9 5 9-5"></path>
+<path d="M3 17l9 5 9-5"></path>
+</svg>
+</div>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-display font-extrabold text-[21px] tracking-tight text-white">SIRA</span>
+<span class="text-[9px] uppercase font-bold tracking-widest text-brand-200 bg-brand-700/70 border border-brand-500/40 px-1.5 py-0.5 rounded-md shadow-2xs">Enterprise</span>
+</div>
+<span class="text-[10px] text-brand-200/80 font-medium tracking-tight -mt-0.5">Intelligence &amp; POS Matrix</span>
+</div>
+</a>
+<!-- Horizontal Navigation Tabs with Abyssal Elegance -->
+<nav class="hidden lg:flex items-center gap-1.5 ml-2">
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-semibold text-white bg-brand-700/90 border border-brand-500/40 flex items-center gap-1.5 shadow-sm" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          Dashboard
+        </a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-brand-100/85 hover:text-white hover:bg-brand-700/50 transition-colors" href="#">Punto de Venta</a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-brand-100/85 hover:text-white hover:bg-brand-700/50 transition-colors" href="#">Inventario &amp; FIFO</a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-brand-100/85 hover:text-white hover:bg-brand-700/50 transition-colors" href="#">Catálogo</a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-brand-100/85 hover:text-white hover:bg-brand-700/50 transition-colors flex items-center gap-1.5" href="#">
+          Clientes CRM
+          <span class="text-[9px] font-bold text-amethyst-200 bg-amethyst-700/60 border border-amethyst-400/40 px-1.5 py-0.2 rounded-full">VIP 360°</span>
+</a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-brand-100/85 hover:text-white hover:bg-brand-700/50 transition-colors" href="#">Finanzas &amp; BI</a>
+</nav>
+</div>
+<!-- Reactive Search & Store Controls -->
+<div class="flex items-center gap-3">
+<!-- Instant Search Filter -->
+<div class="relative hidden sm:block w-64 xl:w-72">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-brand-300 text-[17px]">search</span>
+<input class="w-full pl-9 pr-8 py-1.5 bg-brand-900/80 border border-brand-700 text-[13px] text-white placeholder-brand-300/70 rounded-full focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-400/20 transition-all" placeholder="Filtrar KPIs, alertas o SKUs..." type="text"/>
+<kbd class="absolute right-2.5 top-2 text-[9px] font-semibold text-brand-300 bg-brand-800 border border-brand-700 px-1.5 py-0.5 rounded shadow-2xs">⌘K</kbd>
+</div>
+<!-- Store Selector Pill -->
+<div class="hidden md:flex items-center gap-2 pl-2 border-l border-brand-700/80">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-900/90 border border-brand-700 hover:border-brand-500 shadow-2xs transition-all text-left group">
+<div class="relative">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 block live-indicator"></span>
+</div>
+<div class="flex flex-col">
+<span class="text-[12px] font-bold text-white leading-tight">Providencia Express (04)</span>
+<span class="text-[10px] text-brand-200/80 font-medium">ERP SAP Hana • Sync 0ms</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-brand-300 group-hover:text-white ml-1">unfold_more</span>
+</button>
+</div>
+<!-- Notification Bell with Amethyst Badge -->
+<div class="relative">
+<button class="w-9 h-9 rounded-full flex items-center justify-center text-brand-200 hover:text-white hover:bg-brand-700/60 transition-colors relative" title="Notificaciones operativas">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-amethyst-400 rounded-full ring-2 ring-brand-800"></span>
+</button>
+</div>
+<!-- User Profile Avatar & Role Tag -->
+<div class="flex items-center gap-2.5 pl-2 border-l border-brand-700/80">
+<div class="relative w-8 h-8 rounded-full overflow-hidden border border-brand-500 ring-2 ring-amethyst-400/30 shadow-xs">
+<img alt="Rodrigo Marzú" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3oVjPDf0VZwYbrQznYTMzb9EWyA2VPg9CcP2rn5O18xp5TvIeEzWEBjbMjgtS51INGGfefqxYvjsuTnTXRVspd8dtPeyMHMwboXTCDWQgS2h2sOn0bqdVasFCyEwoSlNYNg1gaCtCGk6Zq4_kKN1-k__PQA4NdWp_Y7vfcYj0LStDCUdZ7dkVAY5yb-SFgL22eovU3fqybQVqtz3qZTjHUDCpz2gMapWaFWGBKVzaJlc8mMgEkDTG8A"/>
+</div>
+<div class="hidden xl:block text-left">
+<div class="text-[12px] font-bold text-white leading-tight">Rodrigo Marzú</div>
+<div class="text-[10px] text-amethyst-300 font-semibold tracking-wide mt-0.5">Gerente General • Admin</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Secondary Strategic Ribbon / Multi-store Telemetry with Soft Sage & Amethyst Tint -->
+<div class="w-full bg-gradient-to-r from-sage-100 via-brand-50/80 to-amethyst-50/70 border-b border-brand-200/70 shadow-2xs backdrop-blur-sm">
+<div class="max-w-[1720px] mx-auto px-6 py-2 flex flex-wrap items-center justify-between gap-3 text-[12px]">
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 font-bold text-brand-900 bg-white border border-brand-800/25 px-3 py-0.5 rounded-full shadow-2xs">
+<span class="material-symbols-outlined text-[15px] text-brand-700">hub</span>
+        Consolidado Red (12 Sucursales Activas)
+      </span>
+<span class="text-brand-400 hidden sm:inline">•</span>
+<span class="text-slate-700 hidden sm:inline font-semibold">Marzú Retail Group SpA — Región Metropolitana</span>
+<span class="hidden xl:inline text-[11px] bg-brand-100 text-brand-900 px-2 py-0.5 rounded-md font-bold border border-brand-200">Región 13 - Chile</span>
+</div>
+<div class="flex items-center gap-4 text-slate-700">
+<span class="flex items-center gap-1.5 font-medium">
+<span class="material-symbols-outlined text-[15px] text-emerald-700 font-semibold">bolt</span>
+        Latencia POS: <strong class="text-brand-950 font-bold">14ms</strong>
+</span>
+<span class="text-brand-300">|</span>
+<span class="flex items-center gap-1.5 font-medium">
+<span class="material-symbols-outlined text-[16px] text-amethyst-700">auto_awesome</span>
+        Motor Predictivo: <strong class="text-amethyst-900 font-bold">SIRA Brain v4.2 Pro</strong>
+<span class="w-1.5 h-1.5 rounded-full bg-amethyst-600 animate-pulse"></span>
+</span>
+<span class="text-brand-300">|</span>
+<span class="text-slate-600 text-[11px]">Cierre contable: <span class="font-bold text-slate-800">23:59 hrs</span></span>
+</div>
+</div>
+</div>
+<!-- Main Strategic Canvas -->
+<main class="flex-1 w-full max-w-[1720px] mx-auto px-6 py-6 flex flex-col gap-6">
+<!-- Executive Title & Standardized Action Toolbar -->
+<section class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="font-display font-extrabold text-2xl lg:text-[27px] text-brand-950 tracking-tight">Dashboard Ejecutivo &amp; Estratégico</h1>
+<span class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-2xs">
+<span class="w-2 h-2 rounded-full bg-emerald-600 live-indicator"></span>
+          En Vivo • Multi-Store
+        </span>
+</div>
+<p class="text-[13px] text-slate-600 mt-1 font-medium">Visión omnicanal consolidada de rendimiento operacional, márgenes netos y proyección algorítmica.</p>
+</div>
+<!-- Action Buttons with Palette Integration -->
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-brand-200 text-slate-700 font-semibold text-[13px] hover:bg-brand-50/70 hover:border-brand-400 transition-all shadow-2xs hover:shadow-xs">
+<span class="material-symbols-outlined text-[17px] text-brand-700">tune</span>
+        Editar Métricas
+      </button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white border border-brand-200 text-slate-700 font-semibold text-[13px] hover:bg-brand-50/70 hover:border-brand-400 transition-all shadow-2xs hover:shadow-xs">
+<span class="material-symbols-outlined text-[17px] text-brand-700">download</span>
+        Exportar BI
+      </button>
+<!-- Proyección IA with Solid Amethyst Accent -->
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amethyst-100 to-amethyst-50 border border-amethyst-300 text-amethyst-900 font-bold text-[13px] hover:from-amethyst-200 hover:to-amethyst-100 hover:border-amethyst-400 transition-all shadow-2xs hover:shadow-glow-amethyst">
+<span class="material-symbols-outlined text-[17px] text-amethyst-700">auto_awesome</span>
+        Proyección IA
+      </button>
+<!-- Primary Action in Deep Abyssal Forest -->
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-800 hover:bg-brand-700 text-white font-bold text-[13px] transition-all shadow-md hover:shadow-glow-teal active:scale-[0.99] border border-brand-600">
+<span class="material-symbols-outlined text-[18px]">add</span>
+        Nuevo Reporte / Meta
+      </button>
+</div>
+</section>
+<!-- Segmented Control Bar with Tinted Surface -->
+<section class="satin-card rounded-2xl p-2.5 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-brand-200">
+<!-- Period Segmented Control -->
+<div class="flex items-center gap-1 bg-brand-100/60 p-1 rounded-xl border border-brand-200/80 shadow-inner">
+<button class="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-brand-900 hover:bg-white/60 transition-all">Hoy</button>
+<button class="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-brand-900 hover:bg-white/60 transition-all">Esta Semana</button>
+<button class="px-3 py-1.5 rounded-lg text-[12px] font-bold text-white bg-brand-800 shadow-xs border border-brand-900 transition-all">Este Mes</button>
+<button class="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-brand-900 hover:bg-white/60 transition-all">Q3 2025</button>
+<button class="px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-600 hover:text-brand-900 hover:bg-white/60 transition-all">YTD</button>
+</div>
+<!-- Format Filter Pills -->
+<div class="flex flex-wrap items-center gap-2">
+<span class="text-[11px] font-bold uppercase tracking-wider text-brand-900 mr-1">Formato:</span>
+<button class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-brand-800 text-white text-[12px] font-bold transition-all shadow-xs hover:bg-brand-700">
+        Todos los Formatos (12)
+        <span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+<button class="px-3 py-1 rounded-full bg-white/90 border border-brand-200 text-slate-700 hover:text-brand-900 hover:border-brand-400 text-[12px] font-semibold transition-all">
+        Express (6)
+      </button>
+<button class="px-3 py-1 rounded-full bg-white/90 border border-brand-200 text-slate-700 hover:text-brand-900 hover:border-brand-400 text-[12px] font-semibold transition-all">
+        Supermercado (4)
+      </button>
+<button class="px-3 py-1 rounded-full bg-white/90 border border-brand-200 text-slate-700 hover:text-brand-900 hover:border-brand-400 text-[12px] font-semibold transition-all">
+        Gourmet VIP (2)
+      </button>
+<div class="h-4 w-px bg-brand-200 mx-1"></div>
+<button class="inline-flex items-center gap-1 px-2.5 py-1 text-[12px] font-bold text-amethyst-800 hover:text-amethyst-950 transition-colors rounded-lg bg-amethyst-100/70 hover:bg-amethyst-200/80 border border-amethyst-200">
+<span class="material-symbols-outlined text-[16px]">tune</span>
+        Filtros Avanzados
+      </button>
+</div>
+</section>
+<!-- High Impact KPIs: 6 Advanced Cards with Rich Brand Anchor -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+<!-- KPI 0: HERO VISUAL EN VERDE ABISAL PROFUNDO (#0a3632) -->
+<div class="rounded-2xl p-4 flex flex-col justify-between bg-gradient-to-br from-brand-900 via-brand-800 to-brand-750 text-white border border-brand-600 shadow-hero-teal transform hover:-translate-y-1 transition-all">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-extrabold uppercase tracking-wider text-brand-200">Venta Neta Hoy</span>
+<span class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-950 bg-emerald-300 border border-emerald-200 px-2 py-0.5 rounded-full shadow-xs">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-700 live-indicator"></span>
+          En Vivo
+        </span>
+</div>
+<div class="my-2.5">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[24px] text-white tracking-tight">$31.84M</span>
+<span class="text-[11px] font-extrabold text-emerald-900 bg-emerald-200 px-1.5 py-0.5 rounded shadow-2xs">+12.8%</span>
+</div>
+<p class="text-[10px] text-brand-200 mt-0.5 font-medium">Meta día: $35.0M CLP (91%)</p>
+</div>
+<!-- Segmented Velocity Bar with Bright Mint Accents -->
+<div>
+<div class="flex items-center justify-between text-[10px] text-brand-200 mb-1">
+<span class="font-medium">Ritmo POS</span>
+<span class="font-bold text-white">142 tkts/h</span>
+</div>
+<div class="grid grid-cols-6 gap-1 h-1.5">
+<div class="bg-emerald-400 rounded-xs"></div>
+<div class="bg-emerald-400 rounded-xs"></div>
+<div class="bg-emerald-400 rounded-xs"></div>
+<div class="bg-emerald-400 rounded-xs"></div>
+<div class="bg-emerald-300 rounded-xs"></div>
+<div class="bg-brand-700 rounded-xs"></div>
+</div>
+</div>
+</div>
+<!-- KPI 1: Margen Bruto Consolidado (Tinted Sage Card) -->
+<div class="kpi-tinted rounded-2xl p-4 flex flex-col justify-between border-t-2 border-t-brand-600">
+<div class="flex items-center justify-between text-slate-600">
+<span class="text-[11px] font-bold uppercase tracking-wider text-brand-900">Margen Bruto</span>
+<div class="w-7 h-7 rounded-lg bg-brand-100 border border-brand-300 flex items-center justify-center text-brand-800">
+<span class="material-symbols-outlined text-[17px]">donut_small</span>
+</div>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[22px] text-brand-950 tracking-tight">32.8%</span>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded">
+            +2.4% vs mes ant.
+          </span>
+</div>
+<p class="text-[10px] text-slate-500 mt-0.5 font-medium">Meta target: 30.0% • Spread +280 bps</p>
+</div>
+<div class="pt-2 border-t border-brand-200/80 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">14 Días</span>
+<span class="text-[11px] font-bold text-brand-900">Consistente</span>
+</div>
+<!-- Sparkline with Emerald Stroke -->
+<svg class="w-20 h-6 overflow-visible" fill="none" viewbox="0 0 100 24">
+<defs>
+<lineargradient id="sparkMargen" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#10b981" stop-opacity="0.35"></stop>
+<stop offset="100%" stop-color="#10b981" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+<path d="M0 20 L16 16 L32 18 L48 12 L64 14 L80 6 L94 4 L100 3 L100 24 L0 24 Z" fill="url(#sparkMargen)"></path>
+<path d="M0 20 L16 16 L32 18 L48 12 L64 14 L80 6 L94 4 L100 3" stroke="#059669" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+</div>
+<!-- KPI 2: CLV Promedio (Customer Lifetime Value) -->
+<div class="kpi-tinted rounded-2xl p-4 flex flex-col justify-between border-t-2 border-t-amethyst-500">
+<div class="flex items-center justify-between text-slate-600">
+<span class="text-[11px] font-bold uppercase tracking-wider text-amethyst-950">CLV Promedio</span>
+<div class="w-7 h-7 rounded-lg bg-amethyst-100 border border-amethyst-300 flex items-center justify-center text-amethyst-700">
+<span class="material-symbols-outlined text-[17px]">loyalty</span>
+</div>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[22px] text-brand-950 tracking-tight">$184.500</span>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded">
+            +8.1%
+          </span>
+</div>
+<p class="text-[10px] text-slate-500 mt-0.5 font-medium">Segmento VIP: +$420k CLP / ticket</p>
+</div>
+<div class="pt-2 border-t border-brand-200/80 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Cohort 2025</span>
+<span class="text-[11px] font-extrabold text-amethyst-800">38.4k clientes</span>
+</div>
+<div class="flex items-center -space-x-1">
+<span class="w-5 h-5 rounded-full bg-amethyst-200 border border-white text-[9px] font-bold text-amethyst-900 flex items-center justify-center">V</span>
+<span class="w-5 h-5 rounded-full bg-brand-200 border border-white text-[9px] font-bold text-brand-900 flex items-center justify-center">P</span>
+<span class="w-5 h-5 rounded-full bg-amber-200 border border-white text-[9px] font-bold text-amber-900 flex items-center justify-center">+</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Tasa de Churn -->
+<div class="kpi-tinted rounded-2xl p-4 flex flex-col justify-between border-t-2 border-t-brand-600">
+<div class="flex items-center justify-between text-slate-600">
+<span class="text-[11px] font-bold uppercase tracking-wider text-brand-900">Tasa de Churn</span>
+<div class="w-7 h-7 rounded-lg bg-brand-100 border border-brand-300 flex items-center justify-center text-brand-800">
+<span class="material-symbols-outlined text-[17px]">person_remove</span>
+</div>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[22px] text-brand-950 tracking-tight">3.4%</span>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded">
+            -0.9% óptimo
+          </span>
+</div>
+<p class="text-[10px] text-slate-500 mt-0.5 font-medium">Retención omnicanal: 96.6%</p>
+</div>
+<div class="pt-2 border-t border-brand-200/80 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Bench Retail</span>
+<span class="text-[11px] font-semibold text-slate-700">Sector: 4.8%</span>
+</div>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+          En Meta
+        </span>
+</div>
+</div>
+<!-- KPI 4: Forecast Semanal IA (Tinted Amethyst Rich Card) -->
+<div class="rounded-2xl p-4 flex flex-col justify-between border-2 border-amethyst-300 bg-gradient-to-br from-amethyst-50 via-purple-50/60 to-amethyst-100/50 shadow-card-subtle">
+<div class="flex items-center justify-between">
+<span class="text-[11px] font-bold uppercase tracking-wider text-amethyst-950">Forecast Semanal</span>
+<span class="text-[9px] font-extrabold uppercase px-2 py-0.5 bg-amethyst-600 text-white border border-amethyst-700 rounded-md shadow-2xs">
+          IA Brain
+        </span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[22px] text-amethyst-950 tracking-tight">$48.2M</span>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded">
+            +14.2%
+          </span>
+</div>
+<p class="text-[10px] text-amethyst-800 mt-0.5 font-medium">Pico proyectado: Viernes &amp; Sábado</p>
+</div>
+<div class="pt-2 border-t border-amethyst-200 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-wider text-amethyst-700 font-bold">Confianza Alg.</span>
+<span class="text-[11px] font-extrabold text-amethyst-900">96.8% (Alta)</span>
+</div>
+<!-- Mini Amethyst Progress Bar -->
+<div class="w-16 bg-amethyst-200 h-2 rounded-full overflow-hidden border border-amethyst-300">
+<div class="bg-gradient-to-r from-amethyst-500 to-amethyst-700 h-full rounded-full" style="width: 96.8%"></div>
+</div>
+</div>
+</div>
+<!-- KPI 5: Market Share Regional -->
+<div class="kpi-tinted rounded-2xl p-4 flex flex-col justify-between border-t-2 border-t-brand-600">
+<div class="flex items-center justify-between text-slate-600">
+<span class="text-[11px] font-bold uppercase tracking-wider text-brand-900">Market Share</span>
+<div class="w-7 h-7 rounded-lg bg-brand-100 border border-brand-300 flex items-center justify-center text-brand-800">
+<span class="material-symbols-outlined text-[17px]">pie_chart</span>
+</div>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-display font-extrabold text-[22px] text-brand-950 tracking-tight">21.4%</span>
+<span class="inline-flex items-center text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-300 px-1.5 py-0.5 rounded">
+            +1.2 pt
+          </span>
+</div>
+<p class="text-[10px] text-slate-500 mt-0.5 font-medium">Posición #2 RM (Formato Minimarket)</p>
+</div>
+<div class="pt-2 border-t border-brand-200/80 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[9px] uppercase tracking-wider text-slate-500 font-bold">Líder Zona</span>
+<span class="text-[11px] font-semibold text-slate-700">Líder: 24.8%</span>
+</div>
+<span class="text-[10px] font-bold text-brand-900 bg-brand-100 px-1.5 py-0.5 rounded border border-brand-300">Delta: -3.4%</span>
+</div>
+</div>
+</section>
+<!-- Priority Alerts Section: Rich Semantic Cards with Tinted Bases -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Alerta 1: Quiebre Inminente -->
+<div class="satin-card rounded-2xl p-4 border-l-[6px] border-l-rose-500 flex items-start gap-3.5 group hover:border-rose-300 bg-gradient-to-r from-rose-50/40 via-white to-white">
+<div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 border border-rose-300 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[21px]">inventory_2</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-rose-800 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-md">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            Crítico • Quiebre Inminente
+          </span>
+<span class="text-[10px] text-slate-500 font-medium">Hace 4 min</span>
+</div>
+<h3 class="text-[13px] font-bold text-slate-900 truncate mt-1">Bebida Cola Zero 1.5L • Providencia Express (04)</h3>
+<p class="text-[12px] text-slate-600 leading-snug mt-0.5">Stock en góndola: <strong class="text-rose-700">4 uds</strong> (Rotación diaria: 38 uds). Sugerir reabastecimiento urgente de bodega central.</p>
+<div class="mt-2.5 flex items-center gap-2">
+<button class="text-[11px] font-bold text-rose-800 hover:text-white hover:bg-rose-600 bg-rose-100 border border-rose-300 px-2.5 py-1 rounded-lg transition-colors">
+            Disparar Picking Automático
+          </button>
+</div>
+</div>
+<button class="text-slate-400 hover:text-rose-600 p-1 rounded transition-colors self-center" title="Gestionar">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- Alerta 2: Desviación en Caja -->
+<div class="satin-card rounded-2xl p-4 border-l-[6px] border-l-amber-500 flex items-start gap-3.5 group hover:border-amber-300 bg-gradient-to-r from-amber-50/40 via-white to-white">
+<div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 border border-amber-300 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[21px]">point_of_sale</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-md">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+            Auditoría de Caja
+          </span>
+<span class="text-[10px] text-slate-500 font-medium">Hace 18 min</span>
+</div>
+<h3 class="text-[13px] font-bold text-slate-900 truncate mt-1">Caja #3 • Tienda 07 Ñuñoa Plaza</h3>
+<p class="text-[12px] text-slate-600 leading-snug mt-0.5">Diferencial acumulado <strong class="text-amber-900">-$24.500 CLP</strong> detectado en arqueo ciego parcial de turno tarde.</p>
+<div class="mt-2.5 flex items-center gap-2">
+<button class="text-[11px] font-bold text-amber-900 hover:text-white hover:bg-amber-600 bg-amber-100 border border-amber-300 px-2.5 py-1 rounded-lg transition-colors">
+            Solicitar Arqueo Supervisor
+          </button>
+</div>
+</div>
+<button class="text-slate-400 hover:text-amber-700 p-1 rounded transition-colors self-center" title="Auditar">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+<!-- Alerta 3: Pricing Dinámico IA con Presencia Amatista Enriquecida -->
+<div class="satin-card rounded-2xl p-4 border-l-[6px] border-l-amethyst-600 flex items-start gap-3.5 group hover:border-amethyst-300 bg-gradient-to-r from-amethyst-100/40 via-white to-white">
+<div class="w-10 h-10 rounded-xl bg-amethyst-100 text-amethyst-700 border border-amethyst-300 flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[21px]">auto_graph</span>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center justify-between gap-1 mb-0.5">
+<span class="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-amethyst-900 bg-amethyst-100 border border-amethyst-300 px-2 py-0.5 rounded-md">
+<span class="w-1.5 h-1.5 rounded-full bg-amethyst-600"></span>
+            Pricing Dinámico IA
+          </span>
+<span class="text-[10px] text-slate-500 font-medium">Hace 32 min</span>
+</div>
+<h3 class="text-[13px] font-bold text-slate-900 truncate mt-1">Lácteos Premium &amp; Quesos Madurados</h3>
+<p class="text-[12px] text-slate-600 leading-snug mt-0.5">Elasticidad favorable estimada: margen neto incrementable <strong class="text-amethyst-900">+4.2%</strong> sin merma de volumen de compra.</p>
+<div class="mt-2.5 flex items-center gap-2">
+<button class="text-[11px] font-bold text-white hover:bg-amethyst-700 bg-amethyst-600 border border-amethyst-700 px-3 py-1 rounded-lg transition-colors flex items-center gap-1 shadow-xs">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+            Aplicar Regla a 12 Tiendas
+          </button>
+</div>
+</div>
+<button class="text-slate-400 hover:text-amethyst-600 p-1 rounded transition-colors self-center" title="Aplicar">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Analytics Bento Grid: Proyección Multivariable + Matriz de Afinidad & Cross-Selling -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Chart Column: High Fidelity Multivariable Forecast (8 cols) -->
+<div class="lg:col-span-8 satin-card rounded-2xl p-6 flex flex-col justify-between">
+<!-- Header with Filters & Interactive Legend -->
+<div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-brand-200/80">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-display font-bold text-lg text-brand-950">Proyección de Demanda vs Venta Real</h2>
+<span class="text-[10px] font-bold text-amethyst-900 bg-amethyst-100 border border-amethyst-300 px-2.5 py-0.5 rounded-full">Intervalo 95% Confianza</span>
+</div>
+<p class="text-[12px] text-slate-600 mt-0.5">Modelo predictivo estocástico multivariable con corrección de quiebres y clima.</p>
+</div>
+<div class="flex flex-wrap items-center gap-4 text-[12px]">
+<div class="flex items-center gap-1.5 cursor-pointer hover:opacity-80">
+<span class="w-3.5 h-3.5 rounded-full bg-brand-800 shadow-2xs"></span>
+<span class="text-brand-950 font-bold">Venta Real ($ CLP)</span>
+</div>
+<div class="flex items-center gap-1.5 cursor-pointer hover:opacity-80">
+<span class="w-3.5 h-1.5 rounded-sm bg-amethyst-600"></span>
+<span class="text-amethyst-900 font-bold">Proyección Algorítmica</span>
+</div>
+<div class="flex items-center gap-1.5 cursor-pointer hover:opacity-80">
+<span class="w-3.5 h-3 rounded bg-amethyst-200 border border-amethyst-300"></span>
+<span class="text-slate-600 font-medium">Banda de Confianza</span>
+</div>
+</div>
+</div>
+<!-- Sophisticated Interactive SVG Chart -->
+<div class="py-4 relative h-72 w-full flex flex-col justify-between">
+<!-- Horizontal Gridlines & Y-Axis Scale -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-60 pr-4">
+<div class="flex items-center gap-2 border-b border-brand-300/70 border-dashed w-full pb-0.5">
+<span class="text-[10px] font-mono text-brand-700 font-semibold">$60M</span>
+</div>
+<div class="flex items-center gap-2 border-b border-brand-300/70 border-dashed w-full pb-0.5">
+<span class="text-[10px] font-mono text-brand-700 font-semibold">$45M</span>
+</div>
+<div class="flex items-center gap-2 border-b border-brand-300/70 border-dashed w-full pb-0.5">
+<span class="text-[10px] font-mono text-brand-700 font-semibold">$30M</span>
+</div>
+<div class="flex items-center gap-2 border-b border-brand-300/70 border-dashed w-full pb-0.5">
+<span class="text-[10px] font-mono text-brand-700 font-semibold">$15M</span>
+</div>
+<div class="border-b border-brand-300 w-full"></div>
+</div>
+<!-- SVG Curves with Gradients & Tooltip -->
+<div class="relative z-10 w-full h-full flex items-end pl-8">
+<svg class="w-full h-56 overflow-visible" fill="none" viewbox="0 0 740 220">
+<defs>
+<!-- Confidence Band Gradient (Amethyst to Emerald Water) -->
+<lineargradient id="amethystBandGradient" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.18"></stop>
+<stop offset="60%" stop-color="#a78bfa" stop-opacity="0.28"></stop>
+<stop offset="100%" stop-color="#1f837a" stop-opacity="0.22"></stop>
+</lineargradient>
+<!-- Real Sales Stroke Gradient -->
+<lineargradient id="realStroke" x1="0" x2="1" y1="0" y2="0">
+<stop offset="0%" stop-color="#062220"></stop>
+<stop offset="100%" stop-color="#0a3632"></stop>
+</lineargradient>
+<!-- Glow Filter for Active Cursor Point -->
+<filter height="200%" id="glowMarker" width="200%" x="-50%" y="-50%">
+<fedropshadow dx="0" dy="2" flood-color="#0a3632" flood-opacity="0.3" stddeviation="3"></fedropshadow>
+</filter>
+</defs>
+<!-- Confidence Interval Ribbon -->
+<path d="M 0,160 
+                     C 70,140 140,165 210,130 
+                     C 280,95 350,115 420,80 
+                     C 490,45 560,65 630,35 
+                     C 680,20 710,25 740,15 
+                     L 740,75 
+                     C 710,85 680,80 630,95 
+                     C 560,120 490,105 420,135 
+                     C 350,165 280,145 210,175 
+                     C 140,200 70,185 0,195 Z" fill="url(#amethystBandGradient)"></path>
+<!-- Predictive Algorithm Curve -->
+<path d="M 0,178 
+                     C 70,160 140,180 210,150 
+                     C 280,118 350,138 420,105 
+                     C 490,75 560,92 630,62 
+                     C 680,48 710,50 740,42" stroke="#7c3aed" stroke-dasharray="5 5" stroke-linecap="round" stroke-width="2.8"></path>
+<!-- Real Actual Sales Curve (Rich Abyssal Forest) -->
+<path d="M 0,182 
+                     C 70,162 140,182 210,148 
+                     C 280,115 350,135 420,102" filter="url(#glowMarker)" stroke="url(#realStroke)" stroke-linecap="round" stroke-width="3.8"></path>
+<!-- Historical Data Points on Real Sales -->
+<circle cx="0" cy="182" fill="#ffffff" r="4" stroke="#0a3632" stroke-width="2.5"></circle>
+<circle cx="105" cy="172" fill="#ffffff" r="4" stroke="#0a3632" stroke-width="2.5"></circle>
+<circle cx="210" cy="148" fill="#ffffff" r="4" stroke="#0a3632" stroke-width="2.5"></circle>
+<circle cx="315" cy="125" fill="#ffffff" r="4" stroke="#0a3632" stroke-width="2.5"></circle>
+<!-- Today's Vertical Divider & Marker -->
+<line stroke="#0a3632" stroke-dasharray="3 3" stroke-width="1.5" x1="420" x2="420" y1="20" y2="210"></line>
+<!-- Real Value Point Today -->
+<circle cx="420" cy="102" fill="#0a3632" r="6" stroke="#ffffff" stroke-width="3"></circle>
+<!-- Floating Tooltip on Today's Marker -->
+<g transform="translate(345, 25)">
+<rect fill="#0a3632" height="52" rx="8" shadow="true" width="150"></rect>
+<polygon fill="#0a3632" points="75,52 70,58 80,58"></polygon>
+<text fill="#ffffff" font-family="Plus Jakarta Sans" font-size="11" font-weight="700" x="12" y="20">Hoy: $31.84M CLP</text>
+<text fill="#a5cfc9" font-family="Inter" font-size="9.5" font-weight="500" x="12" y="34">Predicho: $30.90M (+3%)</text>
+<text fill="#85f8c4" font-family="Inter" font-size="9" font-weight="600" x="12" y="46">Estado: Superando Meta</text>
+</g>
+<!-- Forecast Projected Points -->
+<circle cx="530" cy="85" fill="#ffffff" r="4.5" stroke="#7c3aed" stroke-width="2.5"></circle>
+<circle cx="640" cy="60" fill="#ffffff" r="4.5" stroke="#7c3aed" stroke-width="2.5"></circle>
+<circle cx="740" cy="42" fill="#ffffff" r="4.5" stroke="#7c3aed" stroke-width="2.5"></circle>
+</svg>
+</div>
+<!-- X-Axis Labels with Weather & Day Context -->
+<div class="flex justify-between text-[11px] font-medium text-slate-600 pt-2 z-10 pl-8 border-t border-brand-200/80">
+<div class="flex flex-col items-center">
+<span class="font-semibold text-slate-800">Lun 12</span>
+<span class="text-[10px] text-slate-500">22°C Soleado</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-semibold text-slate-800">Mar 13</span>
+<span class="text-[10px] text-slate-500">24°C Despejado</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-semibold text-slate-800">Mié 14</span>
+<span class="text-[10px] text-slate-500">21°C Nublado</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-semibold text-slate-800">Jue 15</span>
+<span class="text-[10px] text-slate-500">23°C Templado</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-bold text-white bg-brand-800 border border-brand-900 px-2.5 py-0.5 rounded-full shadow-xs">Hoy (Vie 16)</span>
+<span class="text-[10px] font-semibold text-brand-800 mt-0.5">26°C Caluroso</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-bold text-amethyst-900">Sáb 17 (Est)</span>
+<span class="text-[10px] text-amethyst-700 font-semibold">27°C Clásico Fút.</span>
+</div>
+<div class="flex flex-col items-center">
+<span class="font-bold text-amethyst-900">Dom 18 (Est)</span>
+<span class="text-[10px] text-amethyst-700 font-semibold">25°C Domingo</span>
+</div>
+</div>
+</div>
+<!-- AI Strategic Context Box in Lavender Tint -->
+<div class="mt-2 p-3.5 rounded-xl bg-gradient-to-r from-amethyst-100/80 via-amethyst-50 to-sage-50 border border-amethyst-300 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-amethyst-200 text-amethyst-800 flex items-center justify-center shrink-0 border border-amethyst-300">
+<span class="material-symbols-outlined text-[19px]">psychology</span>
+</div>
+<p class="text-[12px] text-slate-800 leading-snug">
+<strong class="text-amethyst-950 font-bold">Insight Algorítmico Marzú:</strong> Se prevé un repunte del <strong class="text-amethyst-900 font-extrabold">+21%</strong> en Snacks, Aperitivos y Cervezas artesanales el Sábado por transmisión deportiva. Se recomienda turno doble de reposición en Providencia y Las Condes.
+          </p>
+</div>
+<button class="text-[12px] font-bold text-amethyst-950 hover:bg-white bg-amethyst-200/90 border border-amethyst-300 px-3 py-1.5 rounded-lg transition-all shadow-2xs flex items-center gap-1">
+<span>Ajustar Plan Stock</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Affinity & Cross-Selling Matrix (4 cols) -->
+<div class="lg:col-span-4 satin-card rounded-2xl p-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-3.5 border-b border-brand-200/80">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-display font-bold text-lg text-brand-950">Matriz de Afinidad</h2>
+<span class="text-[9px] font-extrabold uppercase bg-brand-100 text-brand-900 border border-brand-300 px-2 py-0.5 rounded">POS Cross</span>
+</div>
+<p class="text-[12px] text-slate-600 mt-0.5">Asociaciones de cesta con mayor lift en los 12 locales</p>
+</div>
+<div class="w-8 h-8 rounded-lg bg-amethyst-100 text-amethyst-800 border border-amethyst-300 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">dataset</span>
+</div>
+</div>
+<!-- Association Cards with Tinted Bases (No Pure White Boxes) -->
+<div class="space-y-3 my-4">
+<!-- Association 1: Pan + Queso + Café -->
+<div class="p-3 rounded-xl bg-sage-50/90 border border-brand-200 hover:border-brand-500 hover:bg-white shadow-2xs hover:shadow-card-subtle transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-900 border border-amber-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">breakfast_dining</span>
+</div>
+<div class="min-w-0">
+<h4 class="text-[12px] font-bold text-slate-900 truncate">Pan Artesanal + Queso Gauda + Café</h4>
+<div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-600">
+<span>Ticket prom: <strong class="text-slate-800">$7.850</strong></span>
+<span>•</span>
+<span>Mañanas 07:30 - 10:30</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] font-extrabold bg-brand-100 text-brand-900 border border-brand-300">78% conf.</span>
+<p class="text-[10px] text-emerald-800 font-bold mt-0.5">+18.4% Lift</p>
+</div>
+</div>
+<!-- Association 2: Bebida + Papas Fritas (Amethyst Tinted) -->
+<div class="p-3 rounded-xl bg-amethyst-50/80 border border-amethyst-200 hover:border-amethyst-400 hover:bg-white shadow-2xs hover:shadow-card-subtle transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-amethyst-100 text-amethyst-800 border border-amethyst-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">local_drink</span>
+</div>
+<div class="min-w-0">
+<h4 class="text-[12px] font-bold text-slate-900 truncate">Bebida Cola Zero + Papas Snack 180g</h4>
+<div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-600">
+<span>Ticket prom: <strong class="text-slate-800">$4.490</strong></span>
+<span>•</span>
+<span>Tarde / Snack</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] font-extrabold bg-amethyst-100 text-amethyst-900 border border-amethyst-300">64% conf.</span>
+<p class="text-[10px] text-emerald-800 font-bold mt-0.5">+12.1% Lift</p>
+</div>
+</div>
+<!-- Association 3: Vino Reserva + Mix Frutos Secos -->
+<div class="p-3 rounded-xl bg-sage-50/90 border border-brand-200 hover:border-brand-500 hover:bg-white shadow-2xs hover:shadow-card-subtle transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-900 border border-rose-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">wine_bar</span>
+</div>
+<div class="min-w-0">
+<h4 class="text-[12px] font-bold text-slate-900 truncate">Vino Reserva Carmenere + Mix Frutos 200g</h4>
+<div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-600">
+<span>Ticket prom: <strong class="text-slate-800">$13.200</strong></span>
+<span>•</span>
+<span>Jue - Sáb 19:00+</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] font-extrabold bg-brand-100 text-brand-900 border border-brand-300">52% conf.</span>
+<p class="text-[10px] text-emerald-800 font-bold mt-0.5">+9.7% Lift</p>
+</div>
+</div>
+<!-- Association 4: Sándwich Listo + Jugo -->
+<div class="p-3 rounded-xl bg-sage-50/90 border border-brand-200 hover:border-brand-500 hover:bg-white shadow-2xs hover:shadow-card-subtle transition-all flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">lunch_dining</span>
+</div>
+<div class="min-w-0">
+<h4 class="text-[12px] font-bold text-slate-900 truncate">Sándwich Listo Pollo Pesto + Jugo Natural</h4>
+<div class="flex items-center gap-2 mt-0.5 text-[11px] text-slate-600">
+<span>Ticket prom: <strong class="text-slate-800">$5.200</strong></span>
+<span>•</span>
+<span>Almuerzo Express</span>
+</div>
+</div>
+</div>
+<div class="text-right shrink-0">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] font-extrabold bg-brand-100 text-brand-900 border border-brand-300">49% conf.</span>
+<p class="text-[10px] text-emerald-800 font-bold mt-0.5">+6.5% Lift</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button to Deploy Promo Bundle -->
+<button class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-brand-800 to-brand-700 text-white text-[12px] font-bold hover:from-brand-700 hover:to-brand-600 transition-all shadow-sm flex items-center justify-center gap-2 active:scale-[0.99] border border-brand-600">
+<span class="material-symbols-outlined text-[17px]">add_shopping_cart</span>
+<span>Configurar Bundle Promocional en POS Automático</span>
+</button>
+</div>
+</section>
+<!-- Branch Performance Comparative Table with Micro Sparklines & Distinct Headers -->
+<section class="satin-card rounded-2xl overflow-hidden shadow-card-subtle border-brand-200">
+<!-- Table Header & Real-time Live Filter -->
+<div class="p-4 sm:px-6 border-b border-brand-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-brand-100/80 via-sage-100 to-brand-50">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-display font-bold text-base text-brand-950">Rendimiento Operacional por Sucursal</h2>
+<span class="text-[11px] font-bold bg-white border border-brand-300 text-brand-900 px-2.5 py-0.5 rounded-full shadow-2xs">12 Unidades</span>
+</div>
+<p class="text-[12px] text-slate-600 mt-0.5">Desglose comparativo en vivo de la red Marzú Retail Group con tendencias semanales.</p>
+</div>
+<div class="flex items-center gap-2.5">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-2.5 top-2.5 text-brand-600 text-[16px]">search</span>
+<input class="pl-8 pr-3 py-1.5 text-[12px] rounded-lg border border-brand-300 bg-white text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-brand-500/20 focus:border-brand-600 focus:outline-none transition-all w-52" placeholder="Filtrar por nombre o ID..." type="text"/>
+</div>
+<button class="p-1.5 border border-brand-300 bg-white rounded-lg hover:bg-brand-50 text-brand-800 shadow-2xs" title="Configurar columnas">
+<span class="material-symbols-outlined text-[18px]">view_column</span>
+</button>
+<button class="p-1.5 border border-brand-300 bg-white rounded-lg hover:bg-brand-50 text-brand-800 shadow-2xs" title="Filtro rápido">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Table Content with Distinct Header Bar -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-gradient-to-r from-brand-800 to-brand-750 border-b border-brand-700 text-[11px] font-bold uppercase tracking-wider text-brand-100">
+<th class="py-3.5 px-6">Sucursal / Unidad</th>
+<th class="py-3.5 px-6">Formato</th>
+<th class="py-3.5 px-6 text-right">Venta Diaria</th>
+<th class="py-3.5 px-6 text-center">Cumplimiento Meta</th>
+<th class="py-3.5 px-6 text-center">Tendencia 7d</th>
+<th class="py-3.5 px-6 text-right">Margen %</th>
+<th class="py-3.5 px-6 text-right">Tasa Merma</th>
+<th class="py-3.5 px-6 text-center">Estado Operativo</th>
+<th class="py-3.5 px-6 text-right">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-brand-100/90 text-[13px] bg-white/80">
+<!-- Row 1: Providencia Express -->
+<tr class="hover:bg-brand-50/70 transition-colors">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-brand-100 border border-brand-300 flex items-center justify-center text-brand-900 font-extrabold text-[12px] shadow-2xs">
+                  04
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-slate-900">Providencia Express</span>
+<span class="w-2 h-2 rounded-full bg-emerald-500" title="Online"></span>
+</div>
+<p class="text-[11px] text-slate-500">Av. Providencia 1920 • Turno Tarde (4 POS)</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-6">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-900 border border-brand-200">Express</span>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-900">
+              $4.820.400 CLP
+            </td>
+<td class="py-3.5 px-6">
+<div class="flex items-center justify-center gap-2">
+<div class="w-24 bg-brand-100 h-2 rounded-full overflow-hidden border border-brand-200">
+<div class="bg-gradient-to-r from-emerald-500 to-brand-800 h-full rounded-full" style="width: 100%"></div>
+</div>
+<span class="text-[11px] font-extrabold text-emerald-800">104%</span>
+</div>
+</td>
+<!-- Sparkline 7d -->
+<td class="py-3.5 px-6 text-center">
+<svg class="w-16 h-5 inline-block text-emerald-700" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 64 20">
+<path d="M0 15 L12 14 L24 10 L36 12 L48 5 L64 3" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-800">
+              34.2%
+            </td>
+<td class="py-3.5 px-6 text-right text-emerald-800 font-bold">
+              0.8%
+            </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Óptimo
+              </span>
+</td>
+<td class="py-3.5 px-6 text-right">
+<button class="text-brand-600 hover:text-brand-900 p-1 rounded-lg hover:bg-brand-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Las Condes Market -->
+<tr class="hover:bg-brand-50/70 transition-colors">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-brand-100 border border-brand-300 flex items-center justify-center text-brand-900 font-extrabold text-[12px] shadow-2xs">
+                  01
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-slate-900">Las Condes Market</span>
+<span class="w-2 h-2 rounded-full bg-emerald-500" title="Online"></span>
+</div>
+<p class="text-[11px] text-slate-500">Av. Apoquindo 4400 • Turno Tarde (8 POS)</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-6">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-100 text-brand-900 border border-brand-300">Supermercado</span>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-900">
+              $8.940.100 CLP
+            </td>
+<td class="py-3.5 px-6">
+<div class="flex items-center justify-center gap-2">
+<div class="w-24 bg-brand-100 h-2 rounded-full overflow-hidden border border-brand-200">
+<div class="bg-gradient-to-r from-brand-600 to-brand-800 h-full rounded-full" style="width: 98%"></div>
+</div>
+<span class="text-[11px] font-bold text-slate-800">98%</span>
+</div>
+</td>
+<!-- Sparkline 7d -->
+<td class="py-3.5 px-6 text-center">
+<svg class="w-16 h-5 inline-block text-brand-700" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 64 20">
+<path d="M0 12 L12 10 L24 13 L36 8 L48 7 L64 5" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-800">
+              33.1%
+            </td>
+<td class="py-3.5 px-6 text-right text-slate-700 font-semibold">
+              1.1%
+            </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-300">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                Normal
+              </span>
+</td>
+<td class="py-3.5 px-6 text-right">
+<button class="text-brand-600 hover:text-brand-900 p-1 rounded-lg hover:bg-brand-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Santiago Centro (Alerta Quiebre) -->
+<tr class="hover:bg-rose-50/50 transition-colors bg-rose-50/25">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-rose-100 border border-rose-300 flex items-center justify-center text-rose-800 font-extrabold text-[12px] shadow-2xs">
+                  02
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-slate-900">Santiago Centro</span>
+<span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse" title="Alerta Crítica"></span>
+</div>
+<p class="text-[11px] text-slate-500">Paseo Ahumada 280 • Turno Tarde (6 POS)</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-6">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-900 border border-brand-200">Express</span>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-900">
+              $3.150.000 CLP
+            </td>
+<td class="py-3.5 px-6">
+<div class="flex items-center justify-center gap-2">
+<div class="w-24 bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-300">
+<div class="bg-amber-500 h-full rounded-full" style="width: 82%"></div>
+</div>
+<span class="text-[11px] font-bold text-amber-800">82%</span>
+</div>
+</td>
+<!-- Sparkline 7d -->
+<td class="py-3.5 px-6 text-center">
+<svg class="w-16 h-5 inline-block text-rose-500" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 64 20">
+<path d="M0 6 L12 8 L24 7 L36 12 L48 14 L64 17" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-800">
+              29.4%
+            </td>
+<td class="py-3.5 px-6 text-right text-rose-700 font-bold">
+              2.6% ⚠️
+            </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                Quiebre Crítico
+              </span>
+</td>
+<td class="py-3.5 px-6 text-right">
+<button class="text-rose-600 hover:text-rose-800 p-1 rounded-lg hover:bg-rose-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Vitacura Gourmet VIP (Amatista Accent Row) -->
+<tr class="hover:bg-amethyst-100/40 transition-colors bg-amethyst-50/30">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-amethyst-100 border border-amethyst-300 flex items-center justify-center text-amethyst-800 font-extrabold text-[12px] shadow-2xs">
+                  09
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-slate-900">Vitacura Gourmet</span>
+<span class="w-2 h-2 rounded-full bg-amethyst-500" title="Online VIP"></span>
+</div>
+<p class="text-[11px] text-slate-500">Av. Vitacura 5600 • Turno Tarde (5 POS VIP)</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-6">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amethyst-100 text-amethyst-900 border border-amethyst-300">Gourmet VIP</span>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-900">
+              $6.780.900 CLP
+            </td>
+<td class="py-3.5 px-6">
+<div class="flex items-center justify-center gap-2">
+<div class="w-24 bg-amethyst-100 h-2 rounded-full overflow-hidden border border-amethyst-200">
+<div class="bg-gradient-to-r from-amethyst-500 to-amethyst-700 h-full rounded-full" style="width: 100%"></div>
+</div>
+<span class="text-[11px] font-extrabold text-amethyst-800">112%</span>
+</div>
+</td>
+<!-- Sparkline 7d -->
+<td class="py-3.5 px-6 text-center">
+<svg class="w-16 h-5 inline-block text-amethyst-700" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 64 20">
+<path d="M0 14 L12 11 L24 12 L36 6 L48 4 L64 2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-amethyst-900">
+              39.8%
+            </td>
+<td class="py-3.5 px-6 text-right text-emerald-800 font-bold">
+              0.4%
+            </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amethyst-100 text-amethyst-900 border border-amethyst-300">
+<span class="w-1.5 h-1.5 rounded-full bg-amethyst-600"></span>
+                Gold Top Performer
+              </span>
+</td>
+<td class="py-3.5 px-6 text-right">
+<button class="text-amethyst-700 hover:text-amethyst-900 p-1 rounded-lg hover:bg-amethyst-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+<!-- Row 5: Ñuñoa Plaza -->
+<tr class="hover:bg-brand-50/70 transition-colors">
+<td class="py-3.5 px-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-900 font-extrabold text-[12px] shadow-2xs">
+                  07
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-slate-900">Ñuñoa Plaza</span>
+<span class="w-2 h-2 rounded-full bg-amber-500" title="Atención requerida"></span>
+</div>
+<p class="text-[11px] text-slate-500">Plaza Ñuñoa 14 • Turno Tarde (4 POS)</p>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-6">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-50 text-brand-900 border border-brand-200">Express</span>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-900">
+              $4.210.000 CLP
+            </td>
+<td class="py-3.5 px-6">
+<div class="flex items-center justify-center gap-2">
+<div class="w-24 bg-brand-100 h-2 rounded-full overflow-hidden border border-brand-200">
+<div class="bg-brand-800 h-full rounded-full" style="width: 95%"></div>
+</div>
+<span class="text-[11px] font-bold text-slate-800">95%</span>
+</div>
+</td>
+<!-- Sparkline 7d -->
+<td class="py-3.5 px-6 text-center">
+<svg class="w-16 h-5 inline-block text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 64 20">
+<path d="M0 10 L12 11 L24 9 L36 10 L48 8 L64 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</td>
+<td class="py-3.5 px-6 text-right font-bold text-slate-800">
+              31.7%
+            </td>
+<td class="py-3.5 px-6 text-right text-amber-800 font-bold">
+              1.4%
+            </td>
+<td class="py-3.5 px-6 text-center">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+                Alerta FIFO
+              </span>
+</td>
+<td class="py-3.5 px-6 text-right">
+<button class="text-brand-600 hover:text-brand-900 p-1 rounded-lg hover:bg-brand-100 transition-colors">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer with High Precision BI Sync Stamp -->
+<div class="p-4 sm:px-6 border-t border-brand-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-slate-600 bg-sage-50/70">
+<div class="flex items-center gap-3">
+<span>Mostrando <strong class="text-brand-950">1-5</strong> de <strong class="text-brand-950">12</strong> sucursales activas</span>
+<span class="text-brand-300">•</span>
+<span class="flex items-center gap-1.5 text-brand-900 font-bold">
+<span class="material-symbols-outlined text-[15px] text-brand-700">sync</span>
+          Última sincronización BI: <strong>Hoy, 16:42:15 hrs (Automático)</strong>
+</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1 rounded-lg border border-brand-200 text-slate-500 hover:bg-white disabled:opacity-40" disabled="">
+          Anterior
+        </button>
+<button class="w-7 h-7 rounded-lg text-[12px] font-bold bg-brand-800 text-white shadow-2xs">1</button>
+<button class="w-7 h-7 rounded-lg text-[12px] font-semibold text-brand-900 hover:bg-white transition-colors">2</button>
+<button class="w-7 h-7 rounded-lg text-[12px] font-semibold text-brand-900 hover:bg-white transition-colors">3</button>
+<button class="px-3 py-1 rounded-lg border border-brand-200 bg-white text-brand-900 hover:bg-brand-100 transition-colors font-semibold">
+          Siguiente
+        </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Rich Enterprise Footer with Deep Abyssal Styling & Cohesion -->
+<footer class="w-full border-t border-brand-700/60 py-4 bg-gradient-to-r from-brand-950 via-brand-900 to-brand-850 text-[12px] text-brand-200">
+<div class="max-w-[1720px] mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="font-bold text-white">© 2025 SIRA Retail Enterprise Platform</span>
+<span class="text-brand-500">•</span>
+<span class="text-brand-100">Marzú Retail Group SpA</span>
+<span class="text-brand-500">•</span>
+<span class="text-brand-300">Versión 4.2.8-prod</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1.5 text-brand-200 font-medium">
+<span class="w-2 h-2 rounded-full bg-emerald-400 live-indicator"></span>
+        Conectado a Clúster Alta Disponibilidad (AWS sa-east-1 Santiago)
+      </span>
+<span class="text-brand-600">|</span>
+<span class="text-amethyst-300 font-semibold">Certificación PCI-DSS v4</span>
+</div>
+</div>
+</footer>
+</body></html>

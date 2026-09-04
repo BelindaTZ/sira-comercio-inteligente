@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Punto de Venta / Caja (POS) - Retail OS</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f6f4",
+            "surface-container": "#e6ede9",
+            "surface-container-high": "#dbe4e0",
+            "surface-container-highest": "#d0ddd8",
+            "surface": "#eaf1ee",
+            "primary": "#0a3632",
+            "primary-dark": "#05201d",
+            "primary-hover": "#0f4742",
+            "primary-light": "#155751",
+            "secondary": "#7c3aed",
+            "secondary-subtle": "#8b5cf6",
+            "secondary-container": "#f3e8ff",
+            "on-secondary-container": "#4c1d95",
+            "secondary-light": "#f6f0ff",
+            "outline-variant": "#c9d6d1",
+            "outline": "#647772",
+            "on-surface": "#0f1c1a",
+            "on-surface-variant": "#394a46"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            display: ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.375rem",
+            "lg": "0.625rem",
+            "xl": "0.875rem",
+            "2xl": "1.25rem",
+            "3xl": "1.75rem",
+            "full": "9999px"
+          },
+          boxShadow: {
+            "key": "0 2px 0 0 rgba(10,54,50,0.08), 0 1px 3px 0 rgba(10,54,50,0.06)",
+            "key-pressed": "0 0 0 0 rgba(0,0,0,0), inset 0 2px 4px rgba(0,0,0,0.1)",
+            "card-smooth": "0 10px 25px -8px rgba(10,54,50,0.08), 0 2px 6px -2px rgba(10,54,50,0.05)",
+            "panel-elevation": "0 14px 38px -12px rgba(10,54,50,0.12), 0 4px 12px -2px rgba(10,54,50,0.06)"
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .thin-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .thin-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .thin-scroll::-webkit-scrollbar-thumb {
+      background: #b5c7c1;
+      border-radius: 9999px;
+    }
+    .thin-scroll::-webkit-scrollbar-thumb:hover {
+      background: #89a39c;
+    }
+    .pos-keypad-btn {
+      box-shadow: 0 2px 0 #cad5d1, 0 1px 3px rgba(10,54,50,0.05);
+      transition: all 0.1s ease;
+    }
+    .pos-keypad-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 transparent, inset 0 1px 2px rgba(10,54,50,0.1);
+    }
+  </style>
+</head>
+<body class="bg-[#eaf1ee] bg-gradient-to-br from-[#eaf1ee] via-[#ecf3f0] to-[#e4ece8] text-on-surface font-sans h-screen flex flex-col overflow-hidden antialiased select-none">
+<!-- Unified Top Navigation Bar (Apple-aesthetic with Nordic Forest & Amethyst accents) -->
+<header class="sticky top-0 z-50 w-full bg-[#072623] text-white border-b border-[#154640] shadow-lg shadow-black/20 flex-shrink-0">
+<div class="flex items-center justify-between px-4 lg:px-6 w-full max-w-[1840px] mx-auto h-16 gap-3">
+<!-- Brand & POS Context -->
+<div class="flex items-center gap-3.5">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-2xl bg-gradient-to-br from-[#10534c] to-[#041a18] text-white flex items-center justify-center font-display font-extrabold text-base tracking-wider shadow-sm border border-emerald-400/30">
+          S
+        </div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="text-xl font-display font-extrabold tracking-tight text-white">SIRA</span>
+<span class="text-[10px] font-mono font-bold text-secondary-fixed bg-secondary/30 px-2 py-0.5 rounded-md border border-secondary/40 shadow-2xs">POS Pro v4.2</span>
+</div>
+<span class="text-[10px] font-medium text-emerald-200/70">Retail Omnichannel Engine</span>
+</div>
+</div>
+<div class="h-8 w-px bg-[#164c45] hidden sm:block"></div>
+<!-- Sucursal & Turno Selector Badge -->
+<div class="hidden sm:flex items-center gap-2 bg-[#0c3934] hover:bg-[#114943] py-1 px-2.5 rounded-xl border border-[#1b5c53] transition-colors cursor-pointer shadow-2xs">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-500/20 animate-pulse"></span>
+<div class="flex flex-col text-left leading-tight">
+<div class="flex items-center gap-1">
+<span class="text-xs font-bold text-emerald-100">Caja 02 • Providencia Express</span>
+<span class="material-symbols-outlined text-[14px] text-emerald-300/60">arrow_drop_down</span>
+</div>
+<span class="text-[10px] font-medium text-emerald-200/70">Turno Mañana #TM-401 • Fondo: <strong class="font-mono text-emerald-300 font-semibold">$100.000 CLP</strong></span>
+</div>
+</div>
+</div>
+<!-- Center Navigation Links -->
+<nav class="hidden xl:flex items-center gap-1 text-[13px] font-medium text-emerald-100/80 bg-[#092e2a] p-1 rounded-2xl border border-[#154640] shadow-inner">
+<a class="px-3 py-1.5 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-all" href="#">Dashboard</a>
+<a class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-secondary to-secondary-subtle text-white font-semibold flex items-center gap-1.5 shadow-md shadow-secondary/30" href="#">
+<span class="material-symbols-outlined text-[16px]">point_of_sale</span>
+<span>Punto de Venta</span>
+</a>
+<a class="px-3 py-1.5 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-all" href="#">Inventario</a>
+<a class="px-3 py-1.5 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-all" href="#">Catálogo</a>
+<a class="px-3 py-1.5 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-all" href="#">CRM Clientes</a>
+<a class="px-3 py-1.5 rounded-xl text-emerald-200/80 hover:text-white hover:bg-white/10 transition-all" href="#">Finanzas</a>
+</nav>
+<!-- Quick Actions, Hardware Micro-Indicators & Cashier Profile -->
+<div class="flex items-center gap-2.5">
+<div class="hidden lg:flex items-center gap-1.5">
+<button class="inline-flex items-center gap-1.5 bg-[#0e3f3a] text-amber-300 border border-amber-400/30 hover:bg-[#134f49] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px] text-amber-400">pause_circle</span>
+<span>Pausar [F6]</span>
+</button>
+<button class="inline-flex items-center gap-1.5 bg-[#0e3f3a] text-rose-300 border border-rose-400/30 hover:bg-rose-950/40 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px] text-rose-400">remove_shopping_cart</span>
+<span>Anular</span>
+</button>
+<button class="inline-flex items-center gap-1.5 bg-[#0e3f3a] text-emerald-100 border border-[#1d635a] hover:bg-[#14534c] px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px] text-emerald-300">account_balance_wallet</span>
+<span>Cuadre de Caja</span>
+</button>
+<button class="inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-[#072623] px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-sm shadow-emerald-500/30 active:scale-95">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Nueva Venta</span>
+</button>
+</div>
+<div class="h-7 w-px bg-[#164c45] mx-0.5 hidden sm:block"></div>
+<!-- Hardware Peripherals Status Cluster -->
+<div class="flex items-center gap-1.5 bg-[#092e2a] border border-[#154640] rounded-xl px-2 py-1 shadow-2xs">
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-950/70 text-emerald-300 border border-emerald-500/30" title="Balanza Digital Mettler Toledo: Conectada">
+<span class="material-symbols-outlined text-[15px] text-emerald-400">scale</span>
+<span class="text-[10px] font-mono font-bold">0.000 kg</span>
+</div>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-purple-950/70 text-purple-300 border border-purple-400/30" title="Lector Láser Honeywell USB/BT: En línea">
+<span class="material-symbols-outlined text-[15px]">barcode_scanner</span>
+<span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-ping"></span>
+</div>
+<div class="flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-emerald-950/70 text-emerald-300 border border-emerald-500/30" title="Datáfono Transbank POS Integrado: Listo">
+<span class="material-symbols-outlined text-[15px] text-emerald-400">contactless</span>
+<span class="text-[10px] font-bold">POS OK</span>
+</div>
+</div>
+<!-- Cashier User Capsule -->
+<div class="flex items-center gap-2 pl-2 border-l border-[#164c45]">
+<div class="relative">
+<img class="w-9 h-9 rounded-full ring-2 ring-emerald-400/40 object-cover shadow-2xs" data-alt="Carlos Morales Cashier portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhnBem_ftU2EeoKdrr51BOqX1r-lI9EK2Lxetc0b66yEkoxzf61CTXji5p16PTbpReCsX0FNzfLdlbkt1WMoByC7ruSaSsmdWUGYA6D_-MBdLPdcmDHtIIaKOES7B242w-zTYzs1cty35INYNXos-TSymPxoCTC0hyuQeJat9nPiym77DiyJXxYW56a3XS3lYe2sQOo3A4BVbhS05zqKwQFAv_oC8RpUY1GtwyAjYrVKJKOsRijurIiQ"/>
+<span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-[#072623] rounded-full"></span>
+</div>
+<div class="hidden lg:flex flex-col text-left">
+<div class="flex items-center gap-1.5">
+<span class="text-xs font-bold text-emerald-50 leading-tight">Carlos Morales</span>
+<span class="bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold px-1.5 py-0.2 rounded border border-emerald-400/20">Cajero L3</span>
+</div>
+<span class="text-[10px] text-emerald-200/60 leading-tight">Supervisor de Turno • ID #4491</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Hardware Context Micro-StatusBar -->
+<div class="bg-white/70 backdrop-blur-md border-b border-outline-variant/60 px-4 lg:px-6 py-1.5 flex items-center justify-between text-xs text-gray-600 flex-shrink-0">
+<div class="flex items-center gap-4">
+<span class="flex items-center gap-1.5 text-primary font-bold text-[11px]">
+<span class="material-symbols-outlined text-[15px] text-primary">storefront</span>
+<span>Sucursal 04: Providencia Express</span>
+</span>
+<span class="h-3 w-px bg-outline-variant"></span>
+<span class="hidden sm:inline-flex items-center gap-1.5 text-emerald-800 text-[11px] font-medium bg-emerald-50/80 px-2 py-0.5 rounded-full border border-emerald-200/60">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+      Sincronizado Central Cloud (3ms latencia)
+    </span>
+<span class="hidden md:inline-flex items-center gap-1.5 text-gray-500 text-[11px]">
+<span class="material-symbols-outlined text-[15px] text-secondary">receipt_long</span>
+      Último ticket emitido: <strong class="text-primary font-mono font-bold">#B-92014 ($8.490 CLP)</strong> hace 2m
+    </span>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 rounded-full text-[11px] font-semibold shadow-2xs">
+<span class="material-symbols-outlined text-[13px]">tune</span>
+<span>Tolerancia Balanza: ±1g</span>
+</div>
+<span class="text-primary font-mono text-[11px] bg-white px-2.5 py-0.5 rounded-lg border border-outline-variant/80 font-bold shadow-2xs">
+      11:42:08 CLT
+    </span>
+</div>
+</div>
+<!-- Main POS Ergonomic Workspace -->
+<main class="flex-1 w-full max-w-[1840px] mx-auto p-3 lg:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3.5 overflow-hidden">
+<!-- LEFT COLUMN: Instant Search, Reactive Categories & Product Speed-Grid (7 cols) -->
+<section class="lg:col-span-7 xl:col-span-7 flex flex-col h-full overflow-hidden gap-3">
+<!-- Search & Barcode Scan Input Bar -->
+<div class="bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-outline-variant/80 shadow-card-smooth flex flex-col gap-2.5 flex-shrink-0">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-primary text-[22px]">barcode_scanner</span>
+<input autofocus="" class="w-full h-11 pl-11 pr-28 bg-[#f5f8f6] hover:bg-[#edf3f0] focus:bg-white border border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl text-sm font-medium text-on-surface placeholder:text-gray-400 transition-all outline-none" id="productSearchInput" placeholder="Escanea código de barras o busca por nombre, SKU o tag..." type="text" value="Pan"/>
+<div class="absolute right-2 flex items-center gap-1.5">
+<kbd class="bg-white text-primary text-[10px] font-mono font-bold px-2 py-1 rounded-md border border-outline-variant shadow-key">F2 Buscar</kbd>
+<button class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors" title="Teclado numérico en pantalla">
+<span class="material-symbols-outlined text-[18px]">keyboard</span>
+</button>
+</div>
+</div>
+<!-- Apple-like Category Filter Pills -->
+<div class="flex items-center gap-2 overflow-x-auto pb-0.5 thin-scroll">
+<button class="bg-[#f5f8f6] hover:bg-[#eaf1ee] text-gray-700 border border-outline-variant/80 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-2xs active:scale-95">
+<span class="material-symbols-outlined text-[16px] text-amber-500">star</span>
+<span>Favoritos / Alta Rotación</span>
+</button>
+<!-- Active Pill: Abyssal Forest (#0a3632) -->
+<button class="bg-primary text-white px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1.5 shadow-sm shadow-primary/30 transition-all active:scale-95 ring-1 ring-primary-light">
+<span class="material-symbols-outlined text-[16px] text-emerald-300">bakery_dining</span>
+<span>Panadería &amp; Café</span>
+<span class="material-symbols-outlined text-[14px] ml-0.5 opacity-75 hover:opacity-100">close</span>
+</button>
+<button class="bg-[#f5f8f6] hover:bg-[#eaf1ee] text-gray-700 border border-outline-variant/80 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-2xs active:scale-95">
+<span class="material-symbols-outlined text-[16px] text-secondary">local_cafe</span>
+<span>Bebidas &amp; Aguas</span>
+</button>
+<button class="bg-[#f5f8f6] hover:bg-[#eaf1ee] text-gray-700 border border-outline-variant/80 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-2xs active:scale-95">
+<span class="material-symbols-outlined text-[16px] text-secondary-subtle">cookie</span>
+<span>Snacks &amp; Confites</span>
+</button>
+<button class="bg-[#f5f8f6] hover:bg-[#eaf1ee] text-gray-700 border border-outline-variant/80 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shadow-2xs active:scale-95">
+<span class="material-symbols-outlined text-[16px] text-emerald-600">nutrition</span>
+<span>Frutas &amp; Frescos</span>
+</button>
+<button class="bg-secondary-container/80 text-secondary border border-secondary/30 hover:bg-secondary-container px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px]">loyalty</span>
+<span>Promos 2x1</span>
+</button>
+</div>
+</div>
+<!-- Speed Grid of Products (Custom tactile cards with clear stock & shortcuts) -->
+<div class="flex-1 overflow-y-auto pr-1 thin-scroll">
+<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
+<!-- Product Tile 1 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Artisanal French baguette bread" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtRkq2nMbXq4LKQvGE6xUmD52tBdsYq2B8TjtvFw-OVcJquzQXVop-9-NP5N2wAQHngyS3jKCXTBO2We1iCE1nu8lHfqe4Xf55GG_W7lQ7A7mvRyDVQmT_F10kE-GAfU4Bh9d8CUtPyuSYUdfF-3jRCRZ3idhMlqIyYILDfzVDOc8pFBuj4xklM6bf9de7NNd-4eQIbijdQLWhzwmzfWe8nPtt5VajvpwolgvV1I6CnvPiCwcjWaZqdQ"/>
+<!-- Category Tag Pill -->
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Panadería</span>
+<!-- Stock Badge (> 15u Green) -->
+<span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1 border border-emerald-400/40">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              24 u.
+            </span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#78012</span>
+<!-- Quick Key [1] -->
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">1</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Baguette Rústica 250g</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Masa madre horneado al alba</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$1.890</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 2 (Active in Ticket with Amethyst Accent & Quick Indicator) -->
+<button class="group bg-white/95 border-2 border-secondary shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-secondary-light mb-2.5 relative border border-secondary/30">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Artisanal butter croissants" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMeqMzlgLcFAolhlTKhqiJ6s5MWscOeD0ZxRomTj52nqkvbZUUreQfPLGpugioBH0vAxduWdtDO2RNKE2DKZ20w6ykjXkVKFUqZ4G0O55oZijeA42_9zEKTH3ePsoTDEbTO_HCx5K9n0RBk07oYcoeMBCcgQedHq4uVy8DHzdSHi4bwMutd08uDAuBnaIKHTc7Fasz7U7oLGuBXCxF7u1pTNOlI18iM9M_AxWL-5zaTNU6D-B0CIc1Ow"/>
+<span class="absolute top-1.5 left-1.5 bg-secondary text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">shopping_bag</span>
+              En ticket (x2)
+            </span>
+<!-- Stock Badge (> 15u Green) -->
+<span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/40">18 u.</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#78044</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-secondary text-[10px] font-mono font-bold text-white flex items-center justify-center shadow-2xs">2</span>
+</div>
+<span class="font-display font-bold text-xs text-secondary line-clamp-1">Croissant Mantequilla</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Horneado hoy 07:30</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-secondary/25">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-secondary">$1.490</span>
+<span class="text-[10px] font-semibold text-secondary/70">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-secondary text-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 3 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Cafe Latte Barista" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAJJvjJNPlmgbPMuADOQtQz2mW1eViLLG3_ait4lt7ZJBRyK4Ut3ywwz2p3o9EpLyO_wT_YT-zMx1owyCqMa-RTraM6zkbmX-HqYAO5JjGq5QSMjZADFp--ZAqkb5TGmbEmI4emNowvMrVJo2kewTNeReWW4hFXf-sKG_V3wFpH7Rl8Qoo-Lnmms1F_O8L6xcuGHf8CSe5Hb711deHEiulftVHZaDvoRMenv39XboRJTt39Bze02qxL8w"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Barista</span>
+<span class="absolute top-1.5 right-1.5 bg-primary text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-primary-light/40">Ilimitado</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#55120</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">3</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Café Latte Barista 12oz</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Grano Arábica premium</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$2.490</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 4 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Multigrain turkey sandwich" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa7P2ikxacRmpeQzPf0shQY1y7gkfOurG4N9iqpOmARohQoiLCCyX7te5vlfNV6ZmTQvSV1KsalqJAoXKwLivtoHiGRbuMZQU-ow-QX6_yxYakIfG876ew3HYqfoqrltCIl3Eo4F3x9wdKQlWZj67drxCAENEaMCeUIXXjAwbxEjQ_s9GnxtCcrpYp-u4U96-1j_Xhq5qxsMp4YUGmyeeJnf6eiCW21AvwzUhk4ZK3OojFQdBPewSI_Q"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Gourmet</span>
+<!-- Stock Badge (< 10u Amber) -->
+<span class="absolute top-1.5 right-1.5 bg-amber-500 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs flex items-center gap-1 border border-amber-300/40">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+              9 u.
+            </span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#78099</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">4</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Sandwich Pavo &amp; Palta</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Multicereal 320g</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$4.290</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 5 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Sourdough loaf bread" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKB29nx-4N1_2J2R-RVRA8qrD00i7-9Fh7RRliPXwNKNCrcA91dAf3NKm0joAr7WOPp2Md6QRN6nsW_ADS47-xgJg77NELo0Do3NVw0i5rgOHtXBnfD2kwyYXbyarnekPXN7cvO1BvlqgoQjyf0mgjbGHCQnkE09DKaTK1W1SVexRElygGCeH_bty6axG5AIj-K2RxAl7PTN-ACl1ocOB9KvTnmmpknrDUY7yVW1H5rWLatXpTYZOdZA"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Panadería</span>
+<!-- Stock Badge (< 10u Amber) -->
+<span class="absolute top-1.5 right-1.5 bg-amber-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-amber-400/40">4 u.</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#78051</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">5</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Hogaza Masa Madre 600g</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Fermentación lenta 24h</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$3.190</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 6 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Cold pressed orange juice" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaHujLDgo2JQC12JcLb3JIk4nAUbHty8YMTV7c44bkhupD4qON0kPWmgv4rqrQ1A-c_wqLWFLe_vBwvAwfR83kHTgW028dp9bJOKPjGO_FbYlCoaNxEoo6UN0zQmV-BMxHkqbfSX_rDiHaSS0iK6didl6ayPIj6i9hEpZE6oxJZpC1ZIy63ZXOC-h_RSj3arwG4duCadzIsuLGWvxyWkCLIyFo0ndRa9l9NGGSv3YCHK032HKVwZeXLw"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Bebidas</span>
+<span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/40">32 u.</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#33010</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">6</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Jugo Naranja 500ml</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Prensado en frío</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$2.290</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 7 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Sparkling mineral water" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW6a3-vstEZFbFVjkCE8lRne3kRBsh5e33OvYIs4gCEoiYnwqj7udd9_Lg5cP0n0cswGPudWW8OBHicMFv6Uq3vF-qjc09k2MjiwPdlPRqIi_bEhXohNp0ce-0I66IuJuUN-9RtkyHGUEnYg-AGVJVcHk7xph_W4yRm5t9rYItbF10pw8JzIvEzo9e7FzcP7yBvi0lVp8LXHk0N27mbeoosajBirauZnTD7sUteBizWg_VG7tvHjuvKQ"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Bebidas</span>
+<span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/40">48 u.</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#21092</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">7</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Agua Mineral C/Gas 500ml</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Cordillera de los Andes</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$1.390</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+<!-- Product Tile 8 -->
+<button class="group bg-white/95 hover:bg-white border border-outline-variant/80 hover:border-primary/60 hover:shadow-card-smooth p-2.5 rounded-2xl flex flex-col text-left transition-all duration-200 relative active:scale-[0.98]">
+<div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-surface-container-low mb-2.5 relative border border-outline-variant/50">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Chocolate chip cookie" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMmG3-4PQ932ASM5CqSPQffn_S6Ilc07wCiVxYuyOaSWqmfluWY-GVDR0FNM_V3xKCIWbPYvaHcUmdr2jQI_1v5Dy7jOqckRxMIbJtGPHMP6S9QgbbnYetGhjb5YBfjQ0fETZq1kHkZB46K0SfKYrazQZPWqTu5e39Wr8D8xQJ2xb75leIStBx3JZCF0bxyn26wqbRBJska2eVk59hdeboAwlLQe6qPhoeGfFQcZNjLRPDtTBcwIT5Rg"/>
+<span class="absolute top-1.5 left-1.5 bg-white/95 backdrop-blur-md text-[9px] font-bold text-gray-700 px-2 py-0.5 rounded-full border border-outline-variant/60 shadow-2xs">Snacks</span>
+<span class="absolute top-1.5 right-1.5 bg-emerald-600 text-white backdrop-blur-md text-[10px] font-mono font-bold px-2 py-0.5 rounded-full shadow-2xs border border-emerald-400/40">15 u.</span>
+<span class="absolute bottom-1.5 right-1.5 bg-primary-dark/80 backdrop-blur-md text-[10px] font-mono text-white px-1.5 py-0.5 rounded-md border border-white/20">#66240</span>
+<span class="absolute bottom-1.5 left-1.5 w-5 h-5 rounded-md bg-white/95 backdrop-blur-md text-[10px] font-mono font-bold text-primary flex items-center justify-center border border-outline-variant shadow-2xs">8</span>
+</div>
+<span class="font-display font-bold text-xs text-on-surface line-clamp-1 group-hover:text-primary transition-colors">Galleta Chispas Choc 90g</span>
+<span class="text-[11px] text-gray-500 mb-2 truncate">Receta horneada artesanal</span>
+<div class="mt-auto flex items-center justify-between w-full pt-2 border-t border-outline-variant/50">
+<div class="flex items-baseline gap-0.5">
+<span class="font-display font-extrabold text-sm text-primary">$1.290</span>
+<span class="text-[10px] font-semibold text-gray-400">CLP</span>
+</div>
+<div class="w-7 h-7 rounded-xl bg-[#f4f7f5] group-hover:bg-primary group-hover:text-white text-primary flex items-center justify-center transition-all shadow-2xs border border-outline-variant/60">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</div>
+</div>
+</button>
+</div>
+</div>
+<!-- POS Keyboard Shortcuts Ribbon Footer (Hardware Tactile Keycap Styling) -->
+<div class="bg-white/95 backdrop-blur-md border border-outline-variant/80 rounded-2xl px-3.5 py-2 flex items-center justify-between text-xs text-gray-600 flex-shrink-0 shadow-2xs">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">keyboard</span>
+          Teclas POS:
+        </span>
+<div class="flex items-center gap-1.5">
+<button class="pos-keypad-btn bg-[#f8faf9] hover:bg-[#eef3f1] px-2.5 py-1 rounded-lg border border-outline-variant/80 font-mono text-[11px] font-bold text-gray-700 flex items-center gap-1">
+<span class="text-primary font-extrabold">[F1]</span> Ayuda
+          </button>
+<button class="pos-keypad-btn bg-[#f8faf9] hover:bg-[#eef3f1] px-2.5 py-1 rounded-lg border border-outline-variant/80 font-mono text-[11px] font-bold text-gray-700 flex items-center gap-1">
+<span class="text-primary font-extrabold">[F2]</span> Buscar
+          </button>
+<button class="pos-keypad-btn bg-[#f8faf9] hover:bg-[#eef3f1] px-2.5 py-1 rounded-lg border border-outline-variant/80 font-mono text-[11px] font-bold text-gray-700 flex items-center gap-1">
+<span class="text-secondary font-extrabold">[F4]</span> Descuento
+          </button>
+<button class="pos-keypad-btn bg-[#f8faf9] hover:bg-[#eef3f1] px-2.5 py-1 rounded-lg border border-outline-variant/80 font-mono text-[11px] font-bold text-gray-700 flex items-center gap-1">
+<span class="text-emerald-700 font-extrabold">[F8]</span> Balanza
+          </button>
+<button class="pos-keypad-btn bg-secondary-container/90 hover:bg-secondary-container px-3 py-1 rounded-lg border border-secondary/40 font-mono text-[11px] font-bold text-secondary flex items-center gap-1 shadow-2xs">
+<span class="text-secondary font-black">[F12]</span> Cobro Rápido
+          </button>
+</div>
+</div>
+<button class="text-primary hover:text-secondary font-semibold text-xs flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+<span>Sincronizar Góndola</span>
+</button>
+</div>
+</section>
+<!-- RIGHT COLUMN: Active Sale Ticket Drawer & Complete Checkout Terminal (5 cols) -->
+<section class="lg:col-span-5 xl:col-span-5 flex flex-col h-full bg-white/95 backdrop-blur-md rounded-2xl border-2 border-[#d0ddd8] shadow-panel-elevation overflow-hidden">
+<!-- Ticket Header: Order Number & Draft/Clear tools -->
+<div class="p-3.5 border-b border-outline-variant/60 bg-gradient-to-r from-[#eef4f1] via-[#f7faf8] to-[#edf4f1] flex-shrink-0 space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="font-display font-extrabold text-base text-primary">Ticket Activo</span>
+<span class="bg-secondary-container text-secondary border border-secondary/30 px-2.5 py-0.5 rounded-lg font-mono text-xs font-bold shadow-2xs">
+            #T-08429
+          </span>
+<span class="text-[10px] text-gray-600 font-mono bg-white px-2 py-0.5 rounded-md border border-outline-variant/70 font-semibold">6 arts.</span>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="p-1.5 rounded-xl border border-outline-variant/80 bg-white hover:bg-[#eaf1ee] text-primary transition-all active:scale-95 shadow-2xs" title="Pausar y guardar ticket">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+</button>
+<button class="p-1.5 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 text-gray-500 hover:text-rose-600 transition-all active:scale-95 shadow-2xs" title="Limpiar ticket actual">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+</button>
+</div>
+</div>
+<!-- CRM Customer Reactive Selector (Amethyst / Lavender VIP Capsule with Avatar & Loyalty) -->
+<div class="bg-[#f3e8ff] border border-secondary/40 rounded-2xl p-2.5 flex items-center justify-between shadow-2xs ring-1 ring-secondary/20">
+<div class="flex items-center gap-3">
+<div class="relative">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-secondary to-secondary-subtle text-white flex items-center justify-center font-bold text-xs shadow-sm shadow-secondary/30">
+              SV
+            </div>
+<span class="material-symbols-outlined absolute -top-1 -right-1 text-[13px] text-amber-500 bg-white rounded-full shadow-2xs">workspace_premium</span>
+</div>
+<div class="flex flex-col text-left">
+<div class="flex items-center gap-1.5">
+<span class="font-display font-bold text-xs text-primary">Sofia Valenzuela</span>
+<span class="bg-secondary text-white text-[9px] font-bold px-2 py-0.2 rounded-full shadow-2xs">Cliente Oro</span>
+</div>
+<div class="flex items-center gap-1 text-[10px] text-secondary font-semibold">
+<span class="material-symbols-outlined text-[13px]">stars</span>
+<span>1.420 pts acumulados</span>
+<span class="text-purple-300">•</span>
+<span class="text-emerald-800 font-bold bg-emerald-100/90 border border-emerald-300/60 px-1 rounded">10% Dcto aplicado</span>
+</div>
+</div>
+</div>
+<button class="text-secondary hover:text-purple-900 text-xs font-bold underline px-1.5 py-1 rounded transition-colors">
+          Cambiar
+        </button>
+</div>
+</div>
+<!-- Ticket Items List -->
+<div class="flex-1 overflow-y-auto divide-y divide-outline-variant/40 px-3.5 thin-scroll bg-[#fafcfa]/60">
+<!-- Item 1: Croissant Mantequilla (x2) -->
+<div class="py-2.5 flex items-center justify-between gap-2.5 group">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant/80 relative shadow-2xs">
+<img class="w-full h-full object-cover" data-alt="Croissant Mantequilla" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASA9eXARJgJSnnZxADKFzhwQNf56q5vVMpqewu_npuDggTPk0kJIjOMaSh6KAQo433Yppm5iPpJ5z94qk5HDwaBRL05erEApBPXv6BIqfc4qRQTm16C3lgv8uY7o6yVhfBPPzyJt-8m7QuxUXqlaKe4jRPVeLfYTRWQsKHO8H7sCpm2CHhMqcFlvoaDwTzdliEG8Q-FYYACM9rEyX1nInc0IfHTxi70zXYd04vOdAmvHiXJjeeP1CftQ"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-display font-bold text-xs text-on-surface truncate">Croissant Mantequilla</span>
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] text-gray-500 font-mono">$1.490 c/u</span>
+<span class="text-[9px] bg-secondary-container text-secondary font-bold px-1 rounded border border-secondary/20">Fresco</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-[#edf3f0] rounded-xl p-0.5 border border-outline-variant/80 shadow-2xs">
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+<span class="w-7 text-center font-mono text-xs font-bold text-primary">2</span>
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<div class="text-right min-w-[70px]">
+<span class="font-display font-extrabold text-xs text-primary block">$2.980</span>
+<span class="text-[9px] text-gray-400 font-mono">CLP</span>
+</div>
+<button class="text-gray-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Item 2: Sandwich Pavo & Palta (x1) -->
+<div class="py-2.5 flex items-center justify-between gap-2.5 group">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant/80 shadow-2xs">
+<img class="w-full h-full object-cover" data-alt="Sandwich Pavo Palta" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU-LfN4MKN3FWKJHdKPqpXvJTetxUkcN5l-4nGg8R1g9MBIfND60al9fy-E5BMH9GsZgUPq8k9VNf5onfnh8c61Lz_Treb6xgtu2PmyM-LOY392Assda-2TBaC-gYi3LAMQXbrjxWCPxYXtqCNMmVfWjf3rhHy2ak2athqkZJkgO0hcYp33kgMPhB9_PBkv-P-oOF5WzKvTHNRpO4Bvw4mz-6f6-D7RyUJWQ_WFatnz7XL3Dr4j7GT6w"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-display font-bold text-xs text-on-surface truncate">Sandwich Pavo &amp; Palta</span>
+<span class="text-[11px] text-gray-500 font-mono">$4.290 c/u</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-[#edf3f0] rounded-xl p-0.5 border border-outline-variant/80 shadow-2xs">
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+<span class="w-7 text-center font-mono text-xs font-bold text-primary">1</span>
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<div class="text-right min-w-[70px]">
+<span class="font-display font-extrabold text-xs text-primary block">$4.290</span>
+<span class="text-[9px] text-gray-400 font-mono">CLP</span>
+</div>
+<button class="text-gray-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Item 3: Café Latte Barista (x2) -->
+<div class="py-2.5 flex items-center justify-between gap-2.5 group">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant/80 shadow-2xs">
+<img class="w-full h-full object-cover" data-alt="Cafe Latte Barista" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDHiVVg0yfEhXJWeUZJpenH-IymngVrEPpkM7wT9BFWLaQ8wzHaUFlTY0V-5iamIBFYgwetXDy71Zh-Yj8qmpgHrQlrXhCBuzwQuXM2UCJq3aYImgBcoLZGMhvVVKxRR1HF108l_Hp9iqpfh8HL8_QF0kuL-E-Lkz8dwHcvm-OWOBR4Nra086zkg_s4OUaqy_K0IspJfGzNofjAh_06mScsN9YiTPW8gSQSnwb6OqV-85y7pGeJR3Y61Q"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-display font-bold text-xs text-on-surface truncate">Café Latte Barista 12oz</span>
+<span class="text-[11px] text-gray-500 font-mono">$2.490 c/u</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-[#edf3f0] rounded-xl p-0.5 border border-outline-variant/80 shadow-2xs">
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+<span class="w-7 text-center font-mono text-xs font-bold text-primary">2</span>
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<div class="text-right min-w-[70px]">
+<span class="font-display font-extrabold text-xs text-primary block">$4.980</span>
+<span class="text-[9px] text-gray-400 font-mono">CLP</span>
+</div>
+<button class="text-gray-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+<!-- Item 4: Jugo Natural Naranja (x1) -->
+<div class="py-2.5 flex items-center justify-between gap-2.5 group">
+<div class="flex items-center gap-3 flex-1 min-w-0">
+<div class="w-11 h-11 rounded-xl bg-surface-container-low overflow-hidden flex-shrink-0 border border-outline-variant/80 shadow-2xs">
+<img class="w-full h-full object-cover" data-alt="Jugo Natural Naranja" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJN1EUe7SXyRaVc8Dmc9w00gTD9JplrEJkaEfMR-c5wOi4_JIQ-GRcKcdTR0lwldj3II_vNeF69AxxWLrLdHMQ6HOA81V9gGoVZK0tTGbxgZ5UwMd4FjgZf6xl0_-Az9Yx7aP1dFmg8lHEeEfViIFAXchqAOdhpn2200afbfPo1Xxv0o7j0APhZL9J_Ez0nQn3XEnL3is_FUCAy2TGyipQ4UYgfnqktrJFkVamQRpxLuKdZp5w0cYNDQ"/>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-display font-bold text-xs text-on-surface truncate">Jugo Natural Naranja 500ml</span>
+<span class="text-[11px] text-gray-500 font-mono">$2.290 c/u</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex items-center bg-[#edf3f0] rounded-xl p-0.5 border border-outline-variant/80 shadow-2xs">
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">remove</span>
+</button>
+<span class="w-7 text-center font-mono text-xs font-bold text-primary">1</span>
+<button class="w-6 h-6 flex items-center justify-center rounded-lg bg-white text-gray-700 shadow-key hover:bg-gray-100 transition-all active:scale-90">
+<span class="material-symbols-outlined text-[14px]">add</span>
+</button>
+</div>
+<div class="text-right min-w-[70px]">
+<span class="font-display font-extrabold text-xs text-primary block">$2.290</span>
+<span class="text-[9px] text-gray-400 font-mono">CLP</span>
+</div>
+<button class="text-gray-400 hover:text-rose-600 transition-colors p-1 rounded-lg hover:bg-rose-50">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Financial Calculation Summary & Payment Section -->
+<div class="p-3.5 bg-gradient-to-b from-[#f2f6f4] to-[#e7efec] border-t border-outline-variant/70 flex-shrink-0 space-y-3">
+<!-- Financial Breakdown Lines -->
+<div class="space-y-1.5 text-xs text-gray-600">
+<div class="flex justify-between items-center">
+<span>Subtotal Bruto (6 artículos):</span>
+<span class="font-mono font-semibold text-primary">$12.479 CLP</span>
+</div>
+<div class="flex justify-between items-center text-secondary font-semibold">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">sell</span>
+            Descuento VIP Oro (10%):
+          </span>
+<span class="font-mono font-bold">-$1.250 CLP</span>
+</div>
+<div class="flex justify-between items-center text-gray-500">
+<span>IVA Crédito Fiscal (19% incl.):</span>
+<span class="font-mono">$2.133 CLP</span>
+</div>
+<!-- Prominent Total Amount Banner -->
+<div class="pt-2.5 border-t border-outline-variant/70 flex justify-between items-baseline">
+<div class="flex flex-col">
+<span class="font-display font-extrabold text-xs text-primary uppercase tracking-wider">Total a Pagar</span>
+<span class="text-[10px] text-gray-500">Boleta Electrónica SII</span>
+</div>
+<div class="text-right">
+<span class="font-display font-extrabold text-3xl text-primary tracking-tight">$13.362</span>
+<span class="text-xs font-mono font-bold text-gray-500 ml-1">CLP</span>
+</div>
+</div>
+</div>
+<!-- Tactile Payment Method Tab Selector -->
+<div class="bg-white/80 p-1 rounded-2xl border border-outline-variant/80 grid grid-cols-3 gap-1 shadow-inner">
+<!-- Active: Abyssal Forest -->
+<button class="py-2 px-2 rounded-xl text-center text-xs font-bold flex flex-col items-center gap-1 bg-primary text-white shadow-sm shadow-primary/30 transition-all">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+<span>Efectivo</span>
+</button>
+<button class="py-2 px-2 rounded-xl text-center text-xs font-semibold flex flex-col items-center gap-1 text-gray-600 hover:bg-[#f4f7f5] hover:text-primary transition-all">
+<span class="material-symbols-outlined text-[18px] text-secondary">credit_card</span>
+<span>Tarjeta / POS</span>
+</button>
+<button class="py-2 px-2 rounded-xl text-center text-xs font-semibold flex flex-col items-center gap-1 text-gray-600 hover:bg-[#f4f7f5] hover:text-primary transition-all">
+<span class="material-symbols-outlined text-[18px] text-purple-600">qr_code_2</span>
+<span>QR Digital</span>
+</button>
+</div>
+<!-- Quick Cash Bill Shortcuts & Exact Change Calculation -->
+<div class="bg-white border border-outline-variant/80 rounded-2xl p-2.5 space-y-2 shadow-2xs">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-gray-600 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">attach_money</span>
+            Pago con Efectivo:
+          </span>
+<span class="text-emerald-800 font-mono font-bold bg-emerald-100/90 px-2 py-0.5 rounded-lg border border-emerald-300/80 shadow-2xs">
+            Vuelto: $1.638 CLP
+          </span>
+</div>
+<!-- Tactile Currency Buttons -->
+<div class="grid grid-cols-4 gap-1.5 font-mono text-xs">
+<button class="pos-keypad-btn py-1.5 bg-[#f4f7f5] hover:bg-[#e9f0ec] rounded-xl border border-outline-variant/80 text-primary font-bold text-center">
+            $13.362
+          </button>
+<button class="pos-keypad-btn py-1.5 bg-secondary-container/80 hover:bg-secondary-container text-secondary border border-secondary/40 rounded-xl font-extrabold text-center ring-1 ring-secondary/20">
+            $15.000
+          </button>
+<button class="pos-keypad-btn py-1.5 bg-[#f4f7f5] hover:bg-[#e9f0ec] rounded-xl border border-outline-variant/80 text-primary font-bold text-center">
+            $20.000
+          </button>
+<button class="pos-keypad-btn py-1.5 bg-[#f4f7f5] hover:bg-[#e9f0ec] rounded-xl border border-outline-variant/80 text-primary font-bold text-center">
+            $50.000
+          </button>
+</div>
+</div>
+<!-- Checkout Action Buttons Lane -->
+<div class="space-y-2 pt-0.5">
+<!-- Primary Forest to Amethyst Gradient CTA with F12 trigger -->
+<button class="w-full h-12 bg-gradient-to-r from-primary via-primary-hover to-secondary hover:brightness-110 active:brightness-95 text-white rounded-xl font-display font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-primary/30 border border-white/20 transition-all duration-150 active:scale-[0.98]" id="btnCobrar">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span>Cobrar $13.362 — Imprimir Boleta [F12]</span>
+</button>
+<!-- Secondary Utility Actions -->
+<div class="grid grid-cols-2 gap-2">
+<button class="h-9 bg-white hover:bg-[#f4f7f5] border border-outline-variant/80 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px] text-secondary">confirmation_number</span>
+<span>Aplicar Cupón</span>
+</button>
+<button class="h-9 bg-white hover:bg-[#f4f7f5] border border-outline-variant/80 text-gray-700 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-2xs">
+<span class="material-symbols-outlined text-[16px] text-gray-500">forward_to_inbox</span>
+<span>Boleta por Email</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Keyboard Shortcuts Handler -->
+<script>
+  function triggerCheckout() {
+    alert('✅ Pago de $13.362 CLP procesado exitosamente.\n\n• Boleta Electrónica #B-92015 emitida\n• 142 Puntos SIRA sumados al cliente Sofia Valenzuela\n• Enviando recibo fiscal a impresora térmica...');
+  }
+
+  document.getElementById('btnCobrar').addEventListener('click', triggerCheckout);
+
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'F12') {
+      event.preventDefault();
+      triggerCheckout();
+    } else if (event.key === 'F2') {
+      event.preventDefault();
+      const search = document.getElementById('productSearchInput');
+      if (search) {
+        search.focus();
+        search.select();
+      }
+    }
+  });
+</script>
+</body></html>

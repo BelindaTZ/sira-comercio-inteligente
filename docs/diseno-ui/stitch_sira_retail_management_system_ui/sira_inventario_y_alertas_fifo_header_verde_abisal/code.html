@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA Retail OS - Gestión de Inventario &amp; Alertas FIFO</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f4f6f8",
+            "surface-container": "#eceef2",
+            "surface-container-high": "#e4e7eb",
+            "surface-container-highest": "#dbe0e5",
+            "surface": "#eef3f1",
+            "background": "#eaf1ee",
+            "primary": "#0a3632",
+            "primary-container": "#0e4540",
+            "primary-dark": "#072623",
+            "primary-light": "#145952",
+            "primary-subtle": "#e6f3f0",
+            "primary-fixed": "#c0ebe4",
+            "on-primary": "#ffffff",
+            "secondary": "#712ae2",
+            "secondary-container": "#ede9fe",
+            "secondary-light": "#f5f3ff",
+            "secondary-dark": "#5b21b6",
+            "lavender": "#8b5cf6",
+            "lavender-subtle": "#f3e8ff",
+            "on-secondary": "#ffffff",
+            "on-surface": "#131c1b",
+            "on-surface-variant": "#495351",
+            "outline": "#8b9492",
+            "outline-variant": "#d2dad8",
+            "error": "#ba1a1a",
+            "error-container": "#fef2f2",
+            "error-border": "#fecaca",
+            "warning": "#b45309",
+            "warning-container": "#fffbeb",
+            "warning-border": "#fde68a",
+            "success": "#047857",
+            "success-container": "#ecfdf5",
+            "success-border": "#a7f3d0"
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .frosted-glass {
+      background: rgba(248, 251, 250, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .apple-card {
+      background: #ffffff;
+      border: 1px solid rgba(192, 203, 201, 0.7);
+      box-shadow: 0 1px 3px 0 rgba(10, 54, 50, 0.03), 0 6px 18px -4px rgba(10, 54, 50, 0.06);
+    }
+    .apple-card-hover {
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .apple-card-hover:hover {
+      border-color: rgba(10, 54, 50, 0.35);
+      box-shadow: 0 12px 30px -4px rgba(10, 54, 50, 0.12);
+      transform: translateY(-2px);
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5d1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #8b9492;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-[#eaf1ee] via-[#ecf3f1] to-[#edeef6] text-on-surface font-sans antialiased min-h-screen flex flex-col selection:bg-primary-fixed selection:text-primary">
+<!-- UNIFIED TOP NAVIGATION -->
+<header class="sticky top-0 z-50 w-full border-b border-[#072623] bg-[#0a3632] shadow-md">
+<div class="flex items-center justify-between px-6 lg:px-8 w-full max-w-[1720px] mx-auto h-16 text-white">
+<!-- Brand & Left Navigation Links -->
+<div class="flex items-center gap-8">
+<!-- Logo SIRA Retail OS -->
+<a class="flex items-center gap-2.5 group cursor-pointer" href="#">
+<div class="w-9 h-9 rounded-xl bg-[#145952] flex items-center justify-center text-primary-fixed shadow-sm group-hover:bg-primary-dark transition-all ring-2 ring-primary-fixed/30">
+<span class="material-symbols-fill text-[20px]">inventory</span>
+</div>
+<div class="flex flex-col">
+<span class="font-display font-extrabold text-[18px] tracking-tight text-white leading-none">SIRA</span>
+<span class="text-[10px] font-bold text-secondary-fixed tracking-widest leading-none mt-0.5">RETAIL OS</span>
+</div>
+</a>
+<!-- Global Navigation Items -->
+<nav class="hidden md:flex items-center gap-1 h-full">
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/20 transition-all" href="#">
+            Dashboard
+          </a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/20 transition-all" href="#">
+            Punto de Venta
+          </a>
+<!-- Active Tab: Inventario & FIFO -->
+<a class="relative px-3.5 py-1.5 rounded-lg text-[13px] font-bold text-primary-fixed bg-[#145952] border border-primary-fixed/30 flex items-center gap-1.5 transition-all shadow-xs" href="#">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-pulse"></span>
+            Inventario &amp; FIFO
+          </a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/20 transition-all" href="#">
+            Catálogo
+          </a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/20 transition-all" href="#">
+            CRM Clientes
+          </a>
+<a class="px-3.5 py-1.5 rounded-lg text-[13px] font-medium text-white/80 hover:text-white hover:bg-white/20 transition-all" href="#">
+            Finanzas
+          </a>
+</nav>
+</div>
+<!-- Right Trailing Context: SAP Hana Sync, Store Selector & Role -->
+<div class="flex items-center gap-3">
+<!-- SAP HANA Live Sync Status Indicator -->
+<div class="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#145952] border border-primary-fixed/30 text-[11px] font-bold text-primary-fixed shadow-2xs">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping"></span>
+<span class="">SAP HANA En Línea</span>
+</div>
+<!-- Store Selector Pill -->
+<div class="hidden lg:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#0e4540] border border-[#145952] text-[12px] text-white/90 hover:border-primary-fixed/30 shadow-xs transition-all cursor-pointer">
+<span class="material-symbols-outlined text-[15px] text-primary-fixed">storefront</span>
+<span class="font-bold text-white">Tienda 04 - Providencia Express</span>
+<span class="text-white/40">|</span>
+<span class="text-[11px] text-white/80">Almacén Central</span>
+<span class="material-symbols-outlined text-[16px] text-white/80">expand_more</span>
+</div>
+<!-- Quick Action: Apertura de Caja -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-secondary/30 bg-secondary text-white hover:bg-secondary-dark text-[12px] font-bold transition-all shadow-2xs">
+<span class="material-symbols-outlined text-[16px]">point_of_sale</span>
+<span class="">Apertura de Caja</span>
+</button>
+<!-- Notifications Bell with Alert Badge -->
+<button class="relative p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/20 transition-colors" title="Alertas de Vencimiento FIFO">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-[#0a3632]"></span>
+</button>
+<!-- User Profile Pill with Active Role -->
+<div class="flex items-center pl-2 gap-2.5 border-l border-[#145952]">
+<img alt="Foto de perfil de usuario activo" class="w-8 h-8 rounded-full object-cover ring-2 ring-primary-fixed/30 shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDyyOxald3UoT15w_w3ZFyNDOEeMcwrfHhBc0BxFjAJiqgN_16oD5gwPLKhPHSN8-v0IIqkPFgHC9Bt77ljS0ym27B0BSCkR81ZzF-bBJ53lhW-WqxYFk3jn-7Vp9T9rWfZIVpD7qhttuy6Hmtmbwfmr0rm9n9HzjvA4ChnFfWJW71L0OJhNPzUBQJtmTYEnqDMLdPhaYq04ZYJGsF3vDKpyRppgLFHEbP8ZpMU1QB6dgy9ybqIcULfow"/>
+<div class="hidden sm:flex flex-col text-left leading-tight">
+<span class="text-[12px] font-bold text-white">Camila Valenzuela</span>
+<span class="text-[10px] font-semibold text-primary-fixed">Encargada de Tienda</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- SUB-RIBBON & OPERATIONS ROLE CONTEXT -->
+<section class="w-full bg-[#eaf1ee]/80 backdrop-blur border-b border-[#c3d0cc] px-6 lg:px-8 py-2">
+<div class="max-w-[1720px] mx-auto flex flex-wrap items-center justify-between gap-3">
+<!-- Breadcrumb Context -->
+<div class="flex items-center gap-2 text-[12px] text-on-surface-variant">
+<span class="inline-flex items-center gap-1 font-medium">
+<span class="material-symbols-outlined text-[14px] text-secondary">corporate_fare</span>
+          Marzú Retail Group
+        </span>
+<span class="text-outline-variant">/</span>
+<span class="font-bold text-primary inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+          Tienda 04 - Providencia Express
+        </span>
+<span class="text-outline-variant">/</span>
+<span class="text-on-surface-variant font-medium">Almacén Central &amp; Góndolas</span>
+</div>
+<!-- Quick Operational Mode Switch -->
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider">Vista de Operaciones:</span>
+<div class="inline-flex rounded-lg p-0.5 bg-[#d8e4df] border border-[#c3d0cc] shadow-inner">
+<button class="px-3 py-1 text-[11px] font-bold rounded-md bg-primary text-on-primary shadow-xs transition-all">
+            Encargado de Tienda
+          </button>
+<button class="px-3 py-1 text-[11px] font-medium rounded-md text-on-surface-variant hover:text-on-surface transition-all">
+            Reponedor
+          </button>
+<button class="px-3 py-1 text-[11px] font-medium rounded-md text-on-surface-variant hover:text-on-surface transition-all">
+            Jefe de Operaciones
+          </button>
+</div>
+</div>
+</div>
+</section>
+<!-- MAIN CANVAS -->
+<main class="flex-1 w-full max-w-[1720px] mx-auto px-6 lg:px-8 py-7 flex flex-col gap-6">
+<!-- HEADER TITLE & STANDARDIZED ACTION TOOLBAR -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h1 class="font-display text-2xl lg:text-[26px] font-extrabold text-on-surface tracking-tight">
+            Gestión de Inventario &amp; Alertas FIFO
+          </h1>
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-primary-subtle text-primary border border-primary/30 inline-flex items-center gap-1.5 shadow-2xs">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+            Tiempo Real
+          </span>
+</div>
+<p class="text-[13px] text-on-surface-variant">
+          Supervisión de stock crítico, rotación estricta FIFO, caducidades tempranas y control físico de góndolas.
+        </p>
+</div>
+<!-- Standarized Action Lane -->
+<div class="flex flex-wrap items-center gap-2.5">
+<!-- Primary Action: Forest / Nordic Oil Green -->
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary-dark text-on-primary font-bold text-[13px] shadow-sm hover:shadow-md transition-all active:scale-[0.98] border border-primary/30">
+<span class="material-symbols-outlined text-[18px]">add_box</span>
+<span class="">Nuevo / Registrar Entrada</span>
+</button>
+<!-- Secondary Action: Editar Stock / Lote -->
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#eaf1ee] border border-[#c3d0cc] text-on-surface hover:bg-[#d8e4df] text-[13px] font-semibold transition-all shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant">edit_note</span>
+<span class="">Editar Stock / Lote</span>
+</button>
+<!-- Destructive Action: Declarar Merma -->
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-error-container border border-error-border text-error hover:bg-red-100 text-[13px] font-bold transition-all shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[17px]">delete_sweep</span>
+<span class="">Declarar Merma</span>
+</button>
+<!-- Adjustment Action: Conteo Físico -->
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#eaf1ee] border border-[#c3d0cc] text-on-surface hover:bg-[#d8e4df] text-[13px] font-semibold transition-all shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[17px] text-on-surface-variant">fact_check</span>
+<span class="">Ajuste de Conteo Físico</span>
+</button>
+</div>
+</div>
+<!-- 4 PREMIUM KPI METRIC CARDS WITH RICH VISUAL GAUGES & CHARTS -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1: HERO PROTAGONISTA EN VERDE ABISAL PROFUNDO (#0a3632) -->
+<div class="apple-card apple-card-hover p-5 rounded-2xl flex flex-col justify-between relative overflow-hidden group bg-[#0a3632] border border-[#145952] text-white shadow-md">
+<!-- Subtle radial glow background -->
+<div class="absolute -right-6 -bottom-6 w-32 h-32 bg-[#145952]/50 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-start justify-between mb-3 relative z-10">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-primary-fixed">SKUs en Catálogo</span>
+<span class="px-1.5 py-0.2 rounded-full text-[9.5px] font-extrabold bg-[#145952] text-primary-fixed border border-primary-fixed/30">ACTIVO</span>
+</div>
+<div class="font-display text-[34px] font-extrabold text-white tracking-tight mt-0.5">1.840</div>
+</div>
+<!-- Progress Circular Ring 100% -->
+<div class="relative w-12 h-12 flex items-center justify-center">
+<svg class="w-12 h-12 -rotate-90" viewbox="0 0 44 44">
+<circle class="text-white/15" cx="22" cy="22" fill="transparent" r="18" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-primary-fixed" cx="22" cy="22" fill="transparent" r="18" stroke="currentColor" stroke-dasharray="113.1" stroke-dashoffset="0" stroke-linecap="round" stroke-width="4"></circle>
+</svg>
+<span class="material-symbols-fill absolute text-primary-fixed text-[18px]">done_all</span>
+</div>
+</div>
+<div class="pt-2.5 border-t border-white/15 flex items-center justify-between text-[11.5px] relative z-10">
+<span class="inline-flex items-center gap-1.5 font-bold text-primary-fixed">
+<span class="w-2 h-2 rounded-full bg-primary-fixed animate-ping inline-block"></span>
+            100% Sincronizado
+          </span>
+<span class="text-white/80 font-mono text-[11px]">1.840 / 1.840 activos</span>
+</div>
+</div>
+<!-- KPI 2: Reposición Inmediata con Sparkline Histórico de Quiebres -->
+<div class="apple-card apple-card-hover p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-error relative overflow-hidden group bg-[#f4f8f6] border border-[#dce8e3]">
+<div class="flex items-start justify-between mb-2">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-error">Reposición Inmediata</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-error-container text-error border border-error-border animate-pulse">CRÍTICO</span>
+</div>
+<div class="font-display text-[34px] font-extrabold text-on-surface tracking-tight mt-0.5">14</div>
+</div>
+<!-- SVG Sparkline of Critical Stock Trends -->
+<div class="flex flex-col items-end">
+<span class="p-1.5 rounded-xl bg-error-container text-error mb-1">
+<span class="material-symbols-outlined text-[18px]">crisis_alert</span>
+</span>
+<svg class="w-20 h-6 overflow-visible" fill="none" viewbox="0 0 70 20">
+<path d="M 2,16 L 14,14 L 26,17 L 38,9 L 50,11 L 62,3" stroke="#ba1a1a" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path>
+<circle cx="62" cy="3" fill="#ba1a1a" r="3"></circle>
+</svg>
+</div>
+</div>
+<div class="pt-2.5 border-t border-[#d8e4df] flex items-center justify-between text-[11.5px]">
+<span class="text-on-surface-variant font-medium">Bajo stock de seguridad</span>
+<span class="text-error font-extrabold inline-flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[13px]">arrow_upward</span> +3 hoy
+          </span>
+</div>
+</div>
+<!-- KPI 3: Vencimiento FIFO < 7D DESTACADA CON TINTES ÁMBAR CÁLIDO / AMATISTA (#f3e8ff / #fffbeb) -->
+<div class="apple-card apple-card-hover p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-warning border border-amber-200/60 bg-gradient-to-br from-[#fffdf5] via-[#fefbf0] to-[#fbf8ff] relative overflow-hidden group shadow-sm">
+<div>
+<div class="flex items-start justify-between mb-1.5">
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-warning">Vencimiento FIFO &lt; 7D</span>
+<span class="px-1.5 py-0.2 rounded-full text-[9.5px] font-bold bg-amber-100 text-warning border border-amber-300">ALERTA</span>
+</div>
+<span class="p-1.5 rounded-xl bg-amber-100 text-warning border border-amber-200">
+<span class="material-symbols-outlined text-[17px]">hourglass_bottom</span>
+</span>
+</div>
+<div class="flex items-baseline gap-2 mb-2">
+<span class="font-display text-[34px] font-extrabold text-on-surface tracking-tight leading-none">28</span>
+<span class="text-[12px] font-semibold text-on-surface-variant">lotes comprometidos</span>
+</div>
+<!-- Graduated Alert Bar (Urgent vs Short Term) -->
+<div class="w-full bg-amber-100/70 h-2.5 rounded-full overflow-hidden flex mb-2 border border-amber-200/50">
+<div class="bg-error h-full rounded-l-full" style="width: 35%;" title="10 lotes vencen en &lt; 72h"></div>
+<div class="bg-warning h-full" style="width: 45%;" title="13 lotes vencen en 4-5 días"></div>
+<div class="bg-amber-300 h-full rounded-r-full" style="width: 20%;" title="5 lotes vencen en 6-7 días"></div>
+</div>
+<div class="flex justify-between text-[10.5px] font-bold mb-2">
+<span class="text-error font-extrabold">10 críticas &lt;3d</span>
+<span class="text-warning">18 en 4-7d</span>
+</div>
+</div>
+<div class="pt-2 border-t border-amber-200/60 flex items-center justify-between">
+<span class="text-[11px] text-on-surface-variant font-semibold">Sugerido: 30% dcto</span>
+<button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary-dark text-white text-[11px] font-bold transition-all shadow-sm active:scale-95">
+<span class="">Ejecutar POS</span>
+<span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- KPI 4: Tasa Merma Mensual sobre fondo mineral cálido (#f4f8f6) -->
+<div class="apple-card apple-card-hover p-5 rounded-2xl flex flex-col justify-between border-t-4 border-t-success relative overflow-hidden group bg-[#f4f8f6] border border-[#dce8e3]">
+<div class="flex items-start justify-between mb-1">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] font-bold uppercase tracking-wider text-success">Tasa Merma Mensual</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-success-container text-success border border-success-border">Óptimo</span>
+</div>
+<div class="font-display text-[34px] font-extrabold text-on-surface tracking-tight mt-0.5">0.72%</div>
+</div>
+<!-- Semi-Circular / Donut Gauge con contraste nítido -->
+<div class="relative w-14 h-12 flex flex-col items-center justify-end">
+<svg class="w-14 h-10 overflow-visible" viewbox="0 0 50 28">
+<path d="M 5,25 A 20,20 0 0,1 45,25" fill="none" stroke="#d5e3de" stroke-linecap="round" stroke-width="5"></path>
+<path d="M 5,25 A 20,20 0 0,1 45,25" fill="none" stroke="#047857" stroke-dasharray="62.8" stroke-dashoffset="18" stroke-linecap="round" stroke-width="5"></path>
+</svg>
+<span class="text-[10px] font-extrabold text-success -mt-1 font-mono">0.72%</span>
+</div>
+</div>
+<div class="pt-2.5 border-t border-[#d8e4df] flex items-center justify-between text-[11.5px]">
+<span class="text-on-surface-variant font-medium">Tolerancia máxima</span>
+<span class="font-bold text-on-surface font-mono">&lt; 1.0% meta</span>
+</div>
+</div>
+</div>
+<!-- LIVE REACTIVE FILTER BAR (Zero-Submit, Instant Interaction) -->
+<div class="apple-card p-4 rounded-2xl flex flex-col gap-3.5 shadow-sm bg-[#f4f8f6] border border-[#c3d0cc]">
+<div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
+<!-- Live Instant Search Field -->
+<div class="relative flex-1 max-w-lg">
+<span class="material-symbols-outlined absolute left-3.5 top-2.5 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-9 text-[13px] bg-[#eaf1ee] border border-[#c3d0cc] rounded-xl focus:outline-none focus:border-primary focus:bg-white focus:ring-2 focus:ring-primary/15 transition-all placeholder:text-outline" id="liveSearch" placeholder="Filtrar por SKU, nombre, lote, pasillo o góndola..." type="text"/>
+<button class="absolute right-3 top-2.5 text-outline hover:text-on-surface hidden" id="clearSearchBtn">
+<span class="material-symbols-outlined text-[17px]">close</span>
+</button>
+</div>
+<!-- Clean macOS / Apple-style Dropdown Selectors & Actions -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- Categoría Dropdown Refinado -->
+<div class="relative flex items-center bg-[#eaf1ee] border border-[#c3d0cc] rounded-xl px-3 h-10 hover:border-primary/50 transition-all shadow-2xs hover:bg-[#d8e4df]">
+<span class="material-symbols-outlined text-[17px] text-primary mr-2">category</span>
+<select class="bg-transparent text-[12.5px] font-semibold text-on-surface border-none focus:ring-0 cursor-pointer pr-6 py-0 appearance-none">
+<option value="all">Todas las Categorías</option>
+<option value="lacteos">Lácteos y Frescos</option>
+<option value="despensa">Abarrotes &amp; Despensa</option>
+<option value="panaderia">Panadería y Masas</option>
+<option value="carnes">Carnes &amp; Embutidos</option>
+<option value="bebidas">Bebidas y Licores</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-outline pointer-events-none absolute right-2.5">unfold_more</span>
+</div>
+<!-- Pasillo Dropdown Refinado -->
+<div class="relative flex items-center bg-[#eaf1ee] border border-[#c3d0cc] rounded-xl px-3 h-10 hover:border-secondary/50 transition-all shadow-2xs hover:bg-[#d8e4df]">
+<span class="material-symbols-outlined text-[17px] text-secondary mr-2">view_column</span>
+<select class="bg-transparent text-[12.5px] font-semibold text-on-surface border-none focus:ring-0 cursor-pointer pr-6 py-0 appearance-none">
+<option value="all">Todos los Pasillos</option>
+<option value="p1">Pasillo 01 (Lácteos)</option>
+<option value="p2">Pasillo 02 (Panadería)</option>
+<option value="p3">Pasillo 03 (Refrigerados)</option>
+<option value="p4">Pasillo 04 (Despensa Central)</option>
+<option value="cold">Cámara Fría A</option>
+</select>
+<span class="material-symbols-outlined text-[16px] text-outline pointer-events-none absolute right-2.5">unfold_more</span>
+</div>
+<!-- More Filters -->
+<button class="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#eaf1ee] border border-[#c3d0cc] text-on-surface-variant hover:text-on-surface hover:bg-[#d8e4df] text-[12px] font-bold transition-all shadow-2xs">
+<span class="material-symbols-outlined text-[17px]">tune</span>
+<span class="">Más Filtros</span>
+</button>
+<!-- Export CSV -->
+<button class="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl bg-[#eaf1ee] border border-[#c3d0cc] text-on-surface-variant hover:text-primary hover:bg-[#d8e4df] text-[12px] font-bold transition-all shadow-2xs" title="Exportar Kárdex a Excel / CSV">
+<span class="material-symbols-outlined text-[17px]">download</span>
+<span class="">Exportar</span>
+</button>
+</div>
+</div>
+<!-- Reactive Segmented Filter Pills with Micro-Icons and Instant Live Counters -->
+<div class="flex items-center gap-2 overflow-x-auto pb-0.5 no-scrollbar text-[12px]">
+<!-- Active Pill: Todos -->
+<button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary text-on-primary font-bold shadow-xs transition-all ring-1 ring-primary/30">
+<span class="material-symbols-outlined text-[14px]">grid_view</span>
+<span class="">Todos</span>
+<span class="bg-white/20 text-on-primary px-2 py-0.2 rounded-full text-[11px] font-extrabold">1.840</span>
+</button>
+<!-- Quiebre de Stock Pill -->
+<button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#eaf1ee] border border-error-border text-error hover:bg-error-container/60 transition-all font-bold shadow-2xs">
+<span class="material-symbols-outlined text-[14px] text-error">error</span>
+<span class="">Quiebre de Stock</span>
+<span class="bg-error-container text-error px-2 py-0.2 rounded-full text-[11px] font-extrabold border border-error-border">14</span>
+</button>
+<!-- Próximos a Vencer FIFO Pill -->
+<button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#eaf1ee] border border-amber-300 text-warning hover:bg-amber-50 transition-all font-bold shadow-2xs">
+<span class="material-symbols-outlined text-[14px] text-warning">alarm</span>
+<span class="">Próximos a Vencer FIFO</span>
+<span class="bg-amber-100 text-warning px-2 py-0.2 rounded-full text-[11px] font-extrabold border border-amber-200">28</span>
+</button>
+<!-- Stock Normal Pill -->
+<button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#eaf1ee] border border-emerald-300 text-success hover:bg-success-container transition-all font-bold shadow-2xs">
+<span class="material-symbols-outlined text-[14px] text-success">check_circle</span>
+<span class="">Stock Normal</span>
+<span class="bg-success-container text-success px-2 py-0.2 rounded-full text-[11px] font-extrabold border border-success-border">1.750</span>
+</button>
+<!-- En Tránsito Pill -->
+<button class="flex-shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#eaf1ee] border border-purple-200 text-secondary hover:bg-secondary-container/60 transition-all font-bold shadow-2xs">
+<span class="material-symbols-outlined text-[14px] text-secondary">local_shipping</span>
+<span class="">En Tránsito</span>
+<span class="bg-secondary-container text-secondary px-2 py-0.2 rounded-full text-[11px] font-extrabold">48</span>
+</button>
+</div>
+</div>
+<!-- ENRICHED KÁRDEX & BATCH TABLE CON ENCABEZADO VERDE ABISAL (#0a3632) -->
+<div class="apple-card rounded-2xl overflow-hidden flex flex-col shadow-md border border-[#c3d0cc]">
+<div class="overflow-x-auto w-full">
+<table class="w-full text-left border-collapse">
+<!-- Table Head Sólido Verde Abisal (#0a3632) idéntico a SCREEN_3 -->
+<thead>
+<tr class="bg-[#0a3632] text-white border-b border-[#072623] text-[11px] font-bold uppercase tracking-wider">
+<th class="py-4 pl-4 pr-2 w-10 text-white" scope="col">
+<input class="rounded border-white/40 bg-[#0e4540] text-primary-fixed focus:ring-primary-fixed h-4 w-4 cursor-pointer" title="Seleccionar todos" type="checkbox"/>
+</th>
+<th class="py-4 px-3 text-primary-fixed tracking-wider font-extrabold" scope="col">SKU / CÓDIGO</th>
+<th class="py-4 px-3 min-w-[240px] text-white tracking-wider font-bold" scope="col">PRODUCTO</th>
+<th class="py-4 px-3 text-white/90 tracking-wider font-bold" scope="col">CATEGORÍA</th>
+<th class="py-4 px-3 text-white/90 tracking-wider font-bold" scope="col">UBICACIÓN</th>
+<th class="py-4 px-3 min-w-[170px] text-white/90 tracking-wider font-bold" scope="col">STOCK FÍSICO VS MÍN</th>
+<th class="py-4 px-3 min-w-[210px] text-white/90 tracking-wider font-bold" scope="col">LOTE &amp; VENCIMIENTO FIFO</th>
+<th class="py-4 px-3 text-right text-white/90 tracking-wider font-bold" scope="col">COSTO / PVP (MG%)</th>
+<th class="py-4 px-3 text-center text-white/90 tracking-wider font-bold" scope="col">ESTADO</th>
+<th class="py-4 pl-3 pr-4 text-right text-white/90 tracking-wider font-bold" scope="col">ACCIONES</th>
+</tr>
+</thead>
+<!-- Table Body con Micro-indicadores y Badges de Alto Contraste -->
+<tbody class="divide-y divide-[#c3d0cc] bg-[#f4f8f6] text-[13px]">
+<!-- ROW 1: Alerta Crítica FIFO (Vence en 3 días) -->
+<tr class="hover:bg-amber-50/50 transition-colors group">
+<td class="py-3.5 pl-4 pr-2">
+<input class="rounded border-[#c3d0cc] text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-mono text-[12px] font-bold text-on-surface group-hover:text-primary">SKU-77291</span>
+<div class="text-[11px] text-on-surface-variant font-medium">EAN: 78012345091</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-3">
+<img alt="Yogurt Griego Natural" class="w-10 h-10 rounded-xl object-cover bg-surface-container border border-[#c3d0cc] flex-shrink-0 shadow-2xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuABOTSLJR6JwxIC-bLbPMJkJzpICuGw_3zDLKHrsP37SzK3YYIt4oDW8x463p2uPlIawiCOJTs0bzsMR6quaUyFgWrPVo0I3JLjyDHqbZkx1Rq9CBvKK5uINDnokKmtojho8LglsO9k891Q-8bCbXgQcwubF6N3T9FjhCYUJB0bLSmYw3UE7WI1wrHyfqfWRwQHPP-e81WfFmstelZ6PeIiWghB-3nI-8V6fifohkZLMUTWyqqyuhTOeA"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Yogurt Griego Natural 1kg</div>
+<div class="text-[11px] text-on-surface-variant">Marca: Del Sur Lácteos</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2.5 py-1 rounded-md bg-[#eaf1ee] text-primary text-[11px] font-bold border border-primary/20">Lácteos y Frescos</span>
+</td>
+<td class="py-3.5 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-[11px] font-bold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">shelves</span>
+                  Pasillo 01 · G-03
+                </div>
+</td>
+<!-- Visual Stock Depletion Bar -->
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-[11px]">
+<span class="font-bold text-warning">18 un.</span>
+<span class="text-on-surface-variant font-medium">Mín: 25 un.</span>
+</div>
+<div class="w-full bg-[#d8e4df] h-2 rounded-full overflow-hidden flex">
+<div class="bg-warning h-full rounded-full transition-all" style="width: 72%;" title="Stock actual: 72% del mínimo"></div>
+</div>
+<span class="text-[10px] text-warning font-bold">-7 un. bajo umbral</span>
+</div>
+</td>
+<!-- Relative Countdown Timer Batch Tag con contraste nítido -->
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 text-warning text-[11px] font-extrabold w-fit border border-amber-300 shadow-2xs">
+<span class="material-symbols-outlined text-[14px] animate-pulse">timer</span>
+                    Vence en 3 días (L-492)
+                  </div>
+<span class="text-[11px] text-on-surface-variant font-medium">Cad: 28 Oct · 12 un. en góndola</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-right">
+<div class="font-bold text-on-surface">$2.490 / $3.890</div>
+<div class="text-[11px] font-extrabold text-success inline-flex items-center gap-0.5 justify-end">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> Mg: 35.9%
+                </div>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-warning border border-amber-300">
+                  Próximo a Vencer
+                </span>
+</td>
+<td class="py-3.5 pl-3 pr-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-secondary text-white hover:bg-secondary-dark text-[11px] font-bold transition-all shadow-xs" title="Aplicar Liquidación FIFO">
+                    Liquidar FIFO
+                  </button>
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Historial Kárdex">
+<span class="material-symbols-outlined text-[17px]">history</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2: Quiebre Crítico de Stock -->
+<tr class="hover:bg-red-50/40 transition-colors group">
+<td class="py-3.5 pl-4 pr-2">
+<input class="rounded border-[#c3d0cc] text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-mono text-[12px] font-bold text-on-surface group-hover:text-primary">SKU-44182</span>
+<div class="text-[11px] text-on-surface-variant font-medium">EAN: 78098231144</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-3">
+<img alt="Aceite Oliva Virgen Extra" class="w-10 h-10 rounded-xl object-cover bg-surface-container border border-[#c3d0cc] flex-shrink-0 shadow-2xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYit2KmiUuqZ2cC-p79IQjC5HJeTqnlS-IHPCSoLA1RGEdPvdxZPiLKVHVtlJz8h3ZYrF1Ca5HCRYP1iTyEKgGQ5DMSE4x8a8GQXm_K99nQAUBCEHXSeo4L7xqxCinsLHSvihAXAhc7I8HXHitDYLE2vAqwX9aU8d1zf-RL5t8HJQvUfFU9vplI_JSzg8kKgOgxlDVpRGp15PRC7D8F90cuLruEGamsRtWRGVogoDJ6MS1gd9fjstBPw"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Aceite Oliva Virgen Extra 500ml</div>
+<div class="text-[11px] text-on-surface-variant">Marca: Valle Dorado</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2.5 py-1 rounded-md bg-[#eaf1ee] text-primary text-[11px] font-bold border border-primary/20">Abarrotes &amp; Despensa</span>
+</td>
+<td class="py-3.5 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-[11px] font-bold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">shelves</span>
+                  Pasillo 04 · G-01
+                </div>
+</td>
+<!-- Visual Stock Depletion Bar Critical -->
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-[11px]">
+<span class="font-bold text-error">2 un.</span>
+<span class="text-on-surface-variant font-medium">Mín: 30 un.</span>
+</div>
+<div class="w-full bg-[#d8e4df] h-2 rounded-full overflow-hidden flex">
+<div class="bg-error h-full rounded-full transition-all animate-pulse" style="width: 7%;" title="Stock agotándose: 7%"></div>
+</div>
+<span class="text-[10px] text-error font-extrabold">Faltan 28 un. para reponer</span>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] text-on-surface text-[11px] font-bold w-fit border border-[#c3d0cc]">
+<span class="material-symbols-outlined text-[14px] text-primary">check_circle</span>
+                    Lote L-308
+                  </div>
+<span class="text-[11px] text-on-surface-variant font-medium mt-1">Cad: 14 Jul 2026 (FIFO OK)</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-right">
+<div class="font-bold text-on-surface">$5.100 / $7.990</div>
+<div class="text-[11px] font-extrabold text-success inline-flex items-center gap-0.5 justify-end">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> Mg: 36.1%
+                </div>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-error text-white shadow-2xs">
+                  Quiebre Crítico
+                </span>
+</td>
+<td class="py-3.5 pl-3 pr-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-2.5 py-1.5 rounded-lg bg-primary hover:bg-primary-dark text-on-primary text-[11px] font-bold transition-all shadow-2xs flex items-center gap-1" title="Pedir Reposición a Proveedor">
+<span class="material-symbols-outlined text-[13px]">refresh</span>
+                    Reordenar
+                  </button>
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Historial Kárdex">
+<span class="material-symbols-outlined text-[17px]">history</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3: Stock Normal y Óptimo -->
+<tr class="hover:bg-emerald-50/30 transition-colors group">
+<td class="py-3.5 pl-4 pr-2">
+<input class="rounded border-[#c3d0cc] text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-mono text-[12px] font-bold text-on-surface group-hover:text-primary">SKU-10892</span>
+<div class="text-[11px] text-on-surface-variant font-medium">EAN: 78055412903</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-3">
+<img alt="Café Arábica Grano Entero" class="w-10 h-10 rounded-xl object-cover bg-surface-container border border-[#c3d0cc] flex-shrink-0 shadow-2xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNC--keT7_7uqi20h2ZH_PSuh0Qa-UAmm-MyT3LobSPK7lQXWfqwK5TNc-lifp19mRGUlNKRnxVSSgGnVqYCc_kiP5h_Z7emolQ6ZS0TUpy7hggt58jnfxASd9ulVYsRENzdPh4surbo_QpViMxaOTQK3A4Koabh2lX0UVaJF27F_tUMYG2SOjHvNRrZVYiW8vmyNepdIlYm3u91z9y3PKYvKo1K-iLSwLY9-X8kgfkjmjM6U5sl2q2w"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Café Arábica Grano Entero 500g</div>
+<div class="text-[11px] text-on-surface-variant">Marca: Monte Alto</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2.5 py-1 rounded-md bg-[#eaf1ee] text-primary text-[11px] font-bold border border-primary/20">Abarrotes &amp; Despensa</span>
+</td>
+<td class="py-3.5 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-[11px] font-bold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">shelves</span>
+                  Pasillo 04 · G-05
+                </div>
+</td>
+<!-- Visual Stock Healthy Bar -->
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-[11px]">
+<span class="font-bold text-success">94 un.</span>
+<span class="text-on-surface-variant font-medium">Mín: 40 un.</span>
+</div>
+<div class="w-full bg-[#d8e4df] h-2 rounded-full overflow-hidden flex">
+<div class="bg-success h-full rounded-full transition-all" style="width: 100%;" title="Stock saludable: 235% del mínimo"></div>
+</div>
+<span class="text-[10px] text-success font-bold">+54 un. sobre stock mín</span>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] text-on-surface text-[11px] font-bold w-fit border border-[#c3d0cc]">
+<span class="material-symbols-outlined text-[14px] text-success">verified</span>
+                    Lote L-812
+                  </div>
+<span class="text-[11px] text-on-surface-variant font-medium mt-1">Cad: 02 May 2026 (FIFO OK)</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-right">
+<div class="font-bold text-on-surface">$6.200 / $9.990</div>
+<div class="text-[11px] font-extrabold text-success inline-flex items-center gap-0.5 justify-end">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> Mg: 37.9%
+                </div>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-success-container text-success border border-success-border">
+                  Suficiente
+                </span>
+</td>
+<td class="py-3.5 pl-3 pr-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Historial Kárdex">
+<span class="material-symbols-outlined text-[17px]">history</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Más Opciones">
+<span class="material-symbols-outlined text-[17px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4: Panadería / Vencimiento Corto 48h con Acción -30% FIFO -->
+<tr class="hover:bg-amber-50/50 transition-colors group">
+<td class="py-3.5 pl-4 pr-2">
+<input class="rounded border-[#c3d0cc] text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-mono text-[12px] font-bold text-on-surface group-hover:text-primary">SKU-31908</span>
+<div class="text-[11px] text-on-surface-variant font-medium">EAN: 78029981014</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-3">
+<img alt="Pan Masa Madre Integral" class="w-10 h-10 rounded-xl object-cover bg-surface-container border border-[#c3d0cc] flex-shrink-0 shadow-2xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdS5JvBnK8xCb6m5wGDnnA7GFLsfGOx_ib8fUs4QbPmiI0k55WytR-0LmnfXw6k9_cPrrAsvo3jTvoaTW97u9R1IsIcJzUo9FU0nlO14co3ECi0QvlJetqNAgW1wJSUP0Wr-QpPzFC_Z6il8jpVoplFFDLfPiKuSFS9-xCHZbmlH99Uly-eavEwP5KLO__pJhuarx1p9W1B394QMgIB5tGA-wMIeMo0tp0onuZRLSrsaFBN9Bmwz2yzA"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Pan Masa Madre Integral 650g</div>
+<div class="text-[11px] text-on-surface-variant">Marca: Horno San Miguel</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2.5 py-1 rounded-md bg-[#eaf1ee] text-primary text-[11px] font-bold border border-primary/20">Panadería y Masas</span>
+</td>
+<td class="py-3.5 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-[11px] font-bold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">shelves</span>
+                  Pasillo 02 · G-02
+                </div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-[11px]">
+<span class="font-bold text-on-surface">14 un.</span>
+<span class="text-on-surface-variant font-medium">Mín: 15 un.</span>
+</div>
+<div class="w-full bg-[#d8e4df] h-2 rounded-full overflow-hidden flex">
+<div class="bg-warning h-full rounded-full transition-all" style="width: 93%;"></div>
+</div>
+<span class="text-[10px] text-on-surface-variant font-bold">93% de dotación</span>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-error-container text-error text-[11px] font-extrabold w-fit border border-error-border shadow-2xs">
+<span class="material-symbols-outlined text-[14px] animate-bounce">alarm_on</span>
+                    Vence en 2 días (L-102)
+                  </div>
+<span class="text-[11px] text-on-surface-variant font-medium">Cad: 27 Oct · Rotar a góndola frontal</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-right">
+<div class="font-bold text-on-surface">$1.650 / $2.790</div>
+<div class="text-[11px] font-extrabold text-success inline-flex items-center gap-0.5 justify-end">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> Mg: 40.8%
+                </div>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-amber-100 text-warning border border-amber-300">
+                  Próximo a Vencer
+                </span>
+</td>
+<td class="py-3.5 pl-3 pr-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="px-3 py-1.5 rounded-lg bg-secondary hover:bg-secondary-dark text-white text-[11px] font-bold transition-all shadow-xs" title="Aplicar 30% Descuento FIFO">
+                    Liquidar FIFO -30%
+                  </button>
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Historial Kárdex">
+<span class="material-symbols-outlined text-[17px]">history</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5: Carnicería / Refrigerados -->
+<tr class="hover:bg-emerald-50/30 transition-colors group">
+<td class="py-3.5 pl-4 pr-2">
+<input class="rounded border-[#c3d0cc] text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+</td>
+<td class="py-3.5 px-3">
+<span class="font-mono text-[12px] font-bold text-on-surface group-hover:text-primary">SKU-90214</span>
+<div class="text-[11px] text-on-surface-variant font-medium">EAN: 78061299831</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex items-center gap-3">
+<img alt="Pechuga de Pavo Ahumada" class="w-10 h-10 rounded-xl object-cover bg-surface-container border border-[#c3d0cc] flex-shrink-0 shadow-2xs" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA536fLncPwB0TMTbJKqbwUIStNoRdY46QOJyF5LkRInklQ6uWMba_bMHdSKkRk_6CFrgD0z2E0mPxowu1fgSzfcgKRATJylZH75yRUCoz30pC80YCHGNXTID6olDw3WUtG5a-c4JdofSP0QngXm7U-4ZkjfUw-gS5xLKnUEmOsc5Mj8rRJ4JWaDslD-_hy90CZwKrGPYmHBQMsvv8PsE26lOdShErZdYRUYuJkI4G1mDMlwNZ59ECkFA"/>
+<div>
+<div class="font-bold text-on-surface group-hover:text-primary transition-colors">Pechuga de Pavo Ahumada 250g</div>
+<div class="text-[11px] text-on-surface-variant">Marca: Cumbres del Sur</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<span class="px-2.5 py-1 rounded-md bg-[#eaf1ee] text-primary text-[11px] font-bold border border-primary/20">Carnes &amp; Embutidos</span>
+</td>
+<td class="py-3.5 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-[11px] font-bold text-on-surface">
+<span class="material-symbols-outlined text-[14px] text-secondary">kitchen</span>
+                  Cámara Fría A · R-04
+                </div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-center text-[11px]">
+<span class="font-bold text-success">42 un.</span>
+<span class="text-on-surface-variant font-medium">Mín: 30 un.</span>
+</div>
+<div class="w-full bg-[#d8e4df] h-2 rounded-full overflow-hidden flex">
+<div class="bg-success h-full rounded-full transition-all" style="width: 100%;"></div>
+</div>
+<span class="text-[10px] text-success font-bold">+12 un. en holgura</span>
+</div>
+</td>
+<td class="py-3.5 px-3">
+<div class="flex flex-col">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#eaf1ee] text-on-surface text-[11px] font-bold w-fit border border-[#c3d0cc]">
+<span class="material-symbols-outlined text-[14px] text-success">verified</span>
+                    Lote L-955
+                  </div>
+<span class="text-[11px] text-on-surface-variant font-medium mt-1">Cad: 19 Nov 2025 (FIFO OK)</span>
+</div>
+</td>
+<td class="py-3.5 px-3 text-right">
+<div class="font-bold text-on-surface">$2.100 / $3.290</div>
+<div class="text-[11px] font-extrabold text-success inline-flex items-center gap-0.5 justify-end">
+<span class="material-symbols-outlined text-[13px]">trending_up</span> Mg: 36.1%
+                </div>
+</td>
+<td class="py-3.5 px-3 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-success-container text-success border border-success-border">
+                  Suficiente
+                </span>
+</td>
+<td class="py-3.5 pl-3 pr-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Historial Kárdex">
+<span class="material-symbols-outlined text-[17px]">history</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-[#d8e4df] text-on-surface-variant hover:text-on-surface transition-colors" title="Más Opciones">
+<span class="material-symbols-outlined text-[17px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- MANDATORY STICKY STANDARDIZED PAGINATION FOOTER -->
+<div class="border-t border-[#c3d0cc] px-5 py-3.5 bg-[#f4f8f6] flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-on-surface-variant">
+<!-- Left: Summary Info -->
+<div class="flex items-center gap-4">
+<span class="">Mostrando <span class="font-bold text-on-surface">1 - 15</span> de <span class="font-bold text-on-surface">1.840</span> productos</span>
+<div class="h-4 w-px bg-outline-variant/70 hidden sm:block"></div>
+<!-- Rows per page selector -->
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-medium">Filas por página:</span>
+<select class="h-8 py-0 pl-2.5 pr-7 text-[12px] font-bold rounded-lg bg-[#eaf1ee] border border-[#c3d0cc] text-on-surface focus:ring-primary focus:border-primary">
+<option selected="" value="15">15</option>
+<option value="30">30</option>
+<option value="50">50</option>
+</select>
+</div>
+</div>
+<!-- Right: Pagination Buttons & Controls -->
+<div class="flex items-center gap-1.5">
+<button class="w-8 h-8 rounded-lg flex items-center justify-center border border-[#c3d0cc] text-on-surface-variant hover:bg-[#d8e4df] hover:text-on-surface disabled:opacity-40 transition-colors" disabled="" title="Página anterior">
+<span class="material-symbols-outlined text-[17px]">chevron_left</span>
+</button>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-lg text-[12px] font-extrabold bg-primary text-on-primary shadow-2xs">1</button>
+<button class="w-8 h-8 rounded-lg text-[12px] font-bold text-on-surface-variant hover:bg-[#d8e4df] hover:text-on-surface transition-colors">2</button>
+<button class="w-8 h-8 rounded-lg text-[12px] font-bold text-on-surface-variant hover:bg-[#d8e4df] hover:text-on-surface transition-colors">3</button>
+<span class="px-1 text-outline font-bold">...</span>
+<button class="w-8 h-8 rounded-lg text-[12px] font-bold text-on-surface-variant hover:bg-[#d8e4df] hover:text-on-surface transition-colors">123</button>
+</div>
+<button class="w-8 h-8 rounded-lg flex items-center justify-center border border-[#c3d0cc] text-on-surface-variant hover:bg-[#d8e4df] hover:text-on-surface transition-colors" title="Página siguiente">
+<span class="material-symbols-outlined text-[17px]">chevron_right</span>
+</button>
+<span class="text-[12px] font-bold ml-2 text-on-surface-variant">Pág. 1 de 123</span>
+</div>
+</div>
+</div>
+</main>
+<!-- LIGHTWEIGHT ZERO-SUBMIT SEARCH INTERACTION -->
+<script>
+    const searchInput = document.getElementById('liveSearch');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    searchInput?.addEventListener('input', (e) => {
+      if (e.target.value.trim().length > 0) {
+        clearBtn?.classList.remove('hidden');
+      } else {
+        clearBtn?.classList.add('hidden');
+      }
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      if (searchInput) {
+        searchInput.value = '';
+        clearBtn.classList.add('hidden');
+        searchInput.focus();
+      }
+    });
+  </script>
+</body></html>
