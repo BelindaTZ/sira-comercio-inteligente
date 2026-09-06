@@ -144,6 +144,20 @@ This design system delivers an architectural, high-end enterprise retail experie
 
 The aesthetic fuses Apple-grade frosted glass minimalism with dense, disciplined Swiss data hierarchy. Interfaces must feel luminous, precise, and tranquil—evoking the surgical clarity of luxury retail operations rather than raw spreadsheet logistics. Every viewport balances generous pearlescent negative space with tightly structured tabular modules, crisp perimeter microrings, and atmospheric diffusion.
 
+## Logotipo y Uso de Marca
+
+El logotipo de Marzú Retail Group es el único elemento de marca real del sistema (todo lo demás — paleta, tipografía — es la identidad visual de SIRA como producto). Se agrega antes de `/speckit-implement`; esta sección fija dónde y cómo debe usarse en cuanto esté disponible, para que la implementación no quede a criterio del momento (gap detectado durante la especificación de 001, ver `checklists/requirements.md`).
+
+**Dónde aparece**:
+- **Navbar/topbar de la SPA**: esquina superior izquierda, sobre el fondo Abyssal Emerald (`#0a3632`) del panel de navegación maestro — requiere una variante clara/monocromática del logo si el archivo original no tiene contraste suficiente contra ese fondo oscuro (a confirmar cuando se reciba el archivo).
+- **Pantalla de login** (008-auth-administracion-sistema): centrado, sobre fondo claro (`Pearl Silk #f5f7f9`), en su versión a color original.
+- **Encabezado del comprobante de venta en PDF** (001, FR-004): esquina superior izquierda del documento, junto al nombre "Marzú Retail Group" y los datos de la tienda emisora — sobre fondo blanco, versión a color original.
+- **Favicon del navegador**: versión simplificada/monograma si el logo completo no es legible a 16x16px.
+
+**Formatos requeridos**: SVG vectorial como fuente principal (`frontend/src/assets/branding/logo.svg`) para cualquier uso en la SPA (escalable sin pérdida). Adicionalmente una versión rasterizada PNG con fondo transparente (`backend/src/assets/branding/logo.png`), porque `reportlab` (motor de PDF del comprobante, ver `research.md` de 001) no soporta SVG directamente. Si el usuario solo provee un formato, se deriva el otro una única vez durante la implementación con una herramienta estándar de conversión, sin agregar una dependencia nueva al proyecto.
+
+**Tratamiento**: el logo nunca se distorsiona, recorta ni se le aplican filtros de color fuera de la variante clara/oscura ya descrita arriba. Mantiene un margen de seguridad mínimo equivalente a la altura de su elemento más alto en todos los usos.
+
 ## Colors
 
 The palette establishes an immediate distinction between standard operational mechanics and forward-looking retail intelligence:

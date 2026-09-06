@@ -619,3 +619,298 @@ FROM roles r, modulos m
 WHERE r.nombre = 'Gerente_General';
 -- (sin filas en role_permisos_tabla con INSERT/UPDATE/DELETE = true para este rol
 --  a propósito: el nivel estratégico consulta/agrega, no opera registro a registro)
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (spec.md, ronda 4)
+-- Todos los cambios son aditivos sobre el esquema base de 50 tablas ya
+-- validado. Diseñados con /mcpmarket-me:schema-designer. Cada uno traza a un
+-- FR concreto de specs/001-core-ventas-inventario/spec.md.
+-- ============================================================================
+
+-- FR-020/FR-021/FR-016: alertas de reposición (stock bajo el punto dinámico)
+-- y de vencimiento próximo. Un solo tipo de tabla con 'tipo' evita duplicar
+-- estructura para dos conceptos que comparten el mismo ciclo de vida
+-- (pendiente -> atendida).
+CREATE TABLE alertas_inventario (
+    alerta_id BIGSERIAL PRIMARY KEY,
+    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('reposicion','vencimiento')),
+    product_id INTEGER NOT NULL REFERENCES productos(product_id),
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    lote_id BIGINT REFERENCES lotes(lote_id),          -- solo aplica cuando tipo = 'vencimiento'
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','atendida')),
+    fecha_generada TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_atendida TIMESTAMP,
+    empleado_atiende_id INTEGER REFERENCES empleados(empleado_id),
+    CHECK (tipo <> 'vencimiento' OR lote_id IS NOT NULL)
+);
+CREATE INDEX idx_alertas_inventario_producto_tienda ON alertas_inventario(product_id, tienda_id);
+CREATE INDEX idx_alertas_inventario_tipo ON alertas_inventario(tipo);
+-- FR-021: nunca dos alertas del mismo tipo pendientes a la vez para el mismo producto/tienda.
+CREATE UNIQUE INDEX uq_alertas_inventario_activa
+    ON alertas_inventario(product_id, tienda_id, tipo) WHERE estado = 'pendiente';
+
+-- FR-022: evento de quiebre de stock (producto agotado con demanda no satisfecha)
+CREATE TABLE eventos_quiebre_stock (
+    evento_id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id),
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    demanda_estimada_no_satisfecha INTEGER CHECK (demanda_estimada_no_satisfecha IS NULL OR demanda_estimada_no_satisfecha > 0),
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_eventos_quiebre_producto_tienda ON eventos_quiebre_stock(product_id, tienda_id);
+CREATE INDEX idx_eventos_quiebre_fecha ON eventos_quiebre_stock(fecha_hora);
+
+-- FR-028: frecuencia de reposición pactada por proveedor. NULL = usa la
+-- sugerencia semanal genérica (edge case documentado en spec.md).
+ALTER TABLE proveedores
+    ADD COLUMN frecuencia_reposicion VARCHAR(20)
+        CHECK (frecuencia_reposicion IN ('semanal','mensual','trimestral'));
+
+-- FR-024/FR-029: distinguir orden programada (según frecuencia del proveedor
+-- o la sugerencia semanal genérica) de un pedido especial fuera de calendario,
+-- y registrar el motivo cuando la orden se aparta de la sugerencia del sistema.
+ALTER TABLE ordenes_compra
+    ADD COLUMN tipo VARCHAR(20) NOT NULL DEFAULT 'programada'
+        CHECK (tipo IN ('programada','especial')),
+    ADD COLUMN motivo_desviacion TEXT;
+
+-- FR-027: una venta debe persistir desde que empieza a escanearse (Principio
+-- II — nada de estado simulado sin persistencia real), no solo al confirmar
+-- el cobro. 'estado' reemplaza al booleano 'anulada' (única fuente de verdad,
+-- evita dos columnas que podían quedar inconsistentes entre sí).
+ALTER TABLE ventas DROP COLUMN anulada;
+ALTER TABLE ventas
+    ADD COLUMN estado VARCHAR(20) NOT NULL DEFAULT 'en_curso'
+        CHECK (estado IN ('en_curso','confirmada','anulada'));
+-- Backfill: las ~92,331 ventas ya sembradas del dataset son ventas históricas
+-- cerradas (no quedan 'en_curso').
+UPDATE ventas SET estado = 'confirmada';
+CREATE INDEX idx_ventas_estado ON ventas(estado) WHERE estado <> 'confirmada';
+
+-- FR-027: registro auditable de una línea escaneada y luego removida antes de
+-- confirmar el pago. El CHECK impide que el mismo empleado se autorice a sí
+-- mismo la remoción (el "encargado" debe ser distinto del cajero).
+CREATE TABLE lineas_venta_removidas (
+    remocion_id BIGSERIAL PRIMARY KEY,
+    venta_id BIGINT NOT NULL REFERENCES ventas(venta_id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id),
+    cantidad INTEGER NOT NULL CHECK (cantidad > 0),
+    cajero_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    autoriza_empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    motivo VARCHAR(200),
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (cajero_id <> autoriza_empleado_id)
+);
+CREATE INDEX idx_lineas_venta_removidas_venta_id ON lineas_venta_removidas(venta_id);
+
+-- FR-030/FR-031: cada intento de cobro con tarjeta queda registrado (permite
+-- reintentos y distingue rechazo del banco vs. error técnico de la pasarela).
+CREATE TABLE intentos_pago_tarjeta (
+    intento_id BIGSERIAL PRIMARY KEY,
+    venta_id BIGINT NOT NULL REFERENCES ventas(venta_id) ON DELETE CASCADE,
+    resultado VARCHAR(20) NOT NULL CHECK (resultado IN ('aprobado','rechazado','error_tecnico')),
+    referencia_pasarela VARCHAR(100),      -- id del PaymentIntent de Stripe (modo prueba)
+    monto DECIMAL(12,2) NOT NULL CHECK (monto >= 0),
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_intentos_pago_tarjeta_venta_id ON intentos_pago_tarjeta(venta_id);
+CREATE INDEX idx_intentos_pago_tarjeta_resultado ON intentos_pago_tarjeta(resultado);
+
+-- FR-025: si la devolución reintegra o no la unidad al inventario disponible
+-- depende del motivo (p.ej. producto dañado no reingresa).
+ALTER TABLE devoluciones
+    ADD COLUMN reintegra_inventario BOOLEAN NOT NULL DEFAULT true;
+
+-- FR-014: código de lote del proveedor (impreso en el empaque/albarán físico),
+-- distinto del lote_id interno autogenerado. Solo relevante para trazabilidad
+-- ante una eventualidad sanitaria/de calidad -- no participa en el flujo
+-- normal de venta (que sigue descontando por FEFO a nivel de lote interno,
+-- nunca por este código). Nullable: el proveedor no siempre lo declara.
+ALTER TABLE lotes
+    ADD COLUMN codigo_lote_proveedor VARCHAR(50);
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (spec.md, ronda 6)
+-- Cuentas por pagar a proveedor (FR-032 a FR-035) y comprobante fiscal (FR-036)
+-- ============================================================================
+
+ALTER TABLE proveedores ADD COLUMN ruc VARCHAR(13);
+
+CREATE TABLE facturas_proveedor (
+    factura_id BIGSERIAL PRIMARY KEY,
+    orden_id BIGINT NOT NULL REFERENCES ordenes_compra(orden_id),
+    numero_factura VARCHAR(50) NOT NULL,
+    monto_total DECIMAL(12,2) NOT NULL CHECK (monto_total > 0),
+    fecha_emision DATE NOT NULL,
+    fecha_vencimiento DATE NOT NULL CHECK (fecha_vencimiento >= fecha_emision),
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+        CHECK (estado IN ('pendiente','pagada_parcial','pagada','vencida')),
+    empleado_registra_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX uq_factura_proveedor_numero ON facturas_proveedor(orden_id, numero_factura);
+CREATE INDEX idx_facturas_proveedor_estado ON facturas_proveedor(estado) WHERE estado <> 'pagada';
+CREATE INDEX idx_facturas_proveedor_vencimiento ON facturas_proveedor(fecha_vencimiento) WHERE estado <> 'pagada';
+
+CREATE TABLE pagos_proveedor (
+    pago_id BIGSERIAL PRIMARY KEY,
+    factura_id BIGINT NOT NULL REFERENCES facturas_proveedor(factura_id),
+    monto DECIMAL(12,2) NOT NULL CHECK (monto > 0),
+    medio_pago_id INTEGER NOT NULL REFERENCES medios_pago(medio_pago_id),
+    referencia VARCHAR(100),
+    empleado_registra_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    empleado_autoriza_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (empleado_registra_id <> empleado_autoriza_id)
+);
+CREATE INDEX idx_pagos_proveedor_factura_id ON pagos_proveedor(factura_id);
+
+ALTER TABLE ventas
+    ADD COLUMN tipo_comprobante VARCHAR(20) NOT NULL DEFAULT 'nota_venta'
+        CHECK (tipo_comprobante IN ('factura','nota_venta')),
+    ADD COLUMN identificacion_comprador VARCHAR(13) NOT NULL DEFAULT '9999999999999',
+    ADD COLUMN razon_social_comprador VARCHAR(150) NOT NULL DEFAULT 'CONSUMIDOR FINAL';
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 003-precios-margenes (spec.md, plan.md, research.md, data-model.md)
+-- ============================================================================
+
+-- FR-004: factor de sensibilidad ("elasticidad") por categoría, configurado manualmente por Jefe_Comercial.
+-- NULL = esa categoría todavía no tiene una regla de ajuste activa (el job semanal la omite, research.md §2).
+ALTER TABLE margenes_objetivo
+    ADD COLUMN factor_sensibilidad DECIMAL(4,2) CHECK (factor_sensibilidad IS NULL OR factor_sensibilidad BETWEEN 0 AND 1);
+
+-- FR-005/FR-006: propuestas de ajuste de precio generadas por el sistema, nunca publicadas sin aprobación
+-- explícita de Jefe_Comercial (SC-002). Al aprobarse, actualiza productos.precio_base + historial_precios (research.md §1).
+CREATE TABLE propuesta_ajuste_precio (
+    propuesta_id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    precio_actual DECIMAL(10,2) NOT NULL CHECK (precio_actual >= 0),
+    precio_propuesto DECIMAL(10,2) NOT NULL CHECK (precio_propuesto >= 0),
+    margen_esperado_pct DECIMAL(5,2) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada')),
+    fecha_generada TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_resolucion TIMESTAMP,
+    aprobado_por INTEGER REFERENCES empleados(empleado_id),
+    CHECK (estado = 'pendiente' OR (fecha_resolucion IS NOT NULL AND aprobado_por IS NOT NULL))
+);
+CREATE INDEX idx_propuesta_ajuste_precio_product_id ON propuesta_ajuste_precio(product_id);
+CREATE INDEX idx_propuesta_ajuste_precio_estado ON propuesta_ajuste_precio(estado) WHERE estado = 'pendiente';
+
+-- FR-009/FR-010: descuento manual en punto de venta con autorización obligatoria (mismo patrón CHECK de doble
+-- persona que lineas_venta_removidas/FR-027 y pagos_proveedor/FR-034 de 001, sin excepción por monto), más el
+-- margen real calculado para TODA línea confirmada (FR-002) y el indicador de margen bajo mínimo (FR-010).
+-- El rol de empleado_autoriza_id (Encargado_Tienda o superior) se valida en la capa de servicio (research.md §4).
+ALTER TABLE venta_detalle
+    ADD COLUMN motivo_descuento VARCHAR(200),
+    ADD COLUMN empleado_aplica_id INTEGER REFERENCES empleados(empleado_id),
+    ADD COLUMN empleado_autoriza_id INTEGER REFERENCES empleados(empleado_id),
+    ADD COLUMN margen_real DECIMAL(10,2),
+    ADD COLUMN margen_bajo_minimo BOOLEAN NOT NULL DEFAULT false,
+    ADD CONSTRAINT chk_venta_detalle_autorizacion_descuento CHECK (
+        (empleado_aplica_id IS NULL AND empleado_autoriza_id IS NULL)
+        OR (empleado_aplica_id IS NOT NULL AND empleado_autoriza_id IS NOT NULL AND empleado_aplica_id <> empleado_autoriza_id)
+    );
+
+-- FR-012: acción correctiva registrada por Jefe_Comercial sobre una línea marcada por margen bajo mínimo
+-- (gap: sin esta tabla, el listado consolidado semanal sería de solo lectura).
+CREATE TABLE revision_margen_bajo (
+    revision_id BIGSERIAL PRIMARY KEY,
+    venta_detalle_id BIGINT NOT NULL UNIQUE REFERENCES venta_detalle(venta_detalle_id) ON DELETE CASCADE,
+    revisado_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    accion_correctiva VARCHAR(500) NOT NULL,
+    fecha_revision TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- FR-014: catálogo de competidores nombrados (captura manual, research.md §5) — nombre/tipo/ciudad,
+-- sin relación con las tiendas propias de Marzú.
+CREATE TABLE competidores (
+    competidor_id SERIAL PRIMARY KEY,
+    nombre VARCHAR(120) NOT NULL,
+    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('supermercado','tienda_barrio','tienda_digital')),
+    ciudad VARCHAR(100)
+);
+
+-- FR-014/FR-015/FR-016: precio de referencia de competencia — tres fuentes (research.md §5):
+-- manual (Jefe_Comercial, por competidor nombrado, cualquier producto), open_prices (automático,
+-- solo productos agregados en vivo con barcode real, competidor_id NULL por ser dato crowdsourced
+-- sin atribuir) y sintetico (semilla inicial de demostración sobre clasificación A, dataset simulado
+-- ya documentado en domain-context.md). fuente_captura reemplaza al booleano es_sintetico de la
+-- primera versión de esta tabla porque dos fuentes no-sintéticas (manual/open_prices) ya no caben
+-- en un solo booleano.
+CREATE TABLE precio_competencia (
+    precio_competencia_id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    competidor_id INTEGER REFERENCES competidores(competidor_id),
+    tienda_id INTEGER REFERENCES tiendas(tienda_id),
+    precio DECIMAL(10,2) NOT NULL CHECK (precio >= 0),
+    fecha_captura DATE NOT NULL DEFAULT CURRENT_DATE,
+    es_promocional BOOLEAN NOT NULL DEFAULT false,
+    fuente_captura VARCHAR(20) NOT NULL DEFAULT 'manual' CHECK (fuente_captura IN ('manual','open_prices','sintetico')),
+    registrado_por INTEGER REFERENCES empleados(empleado_id)
+);
+CREATE INDEX idx_precio_competencia_product_id ON precio_competencia(product_id);
+
+-- FR-004 (tolerancia global de ajuste), FR-007 (margen mínimo global de respaldo, Edge Case de spec.md),
+-- FR-016 (umbral de alerta de competencia) — configuración clave/valor mínima, sin dueño natural en ninguna
+-- tabla existente (Principio VIII: evita 3 tablas de una sola fila o columnas sueltas mal ubicadas).
+CREATE TABLE configuracion_pricing (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(10,4) NOT NULL,
+    descripcion VARCHAR(200)
+);
+INSERT INTO configuracion_pricing (clave, valor, descripcion) VALUES
+    ('margen_minimo_global_pct', 5.0, 'Piso de respaldo del margen objetivo efectivo cuando una categoría no tiene margen objetivo definido, o cuando el modificador ancla/nicho lo dejaría por debajo de este valor (Edge Case spec.md, FR-007)'),
+    ('tolerancia_ajuste_pp', 2.0, 'Desviación mínima en puntos porcentuales para generar una propuesta de ajuste de precio (research.md #2, FR-005)'),
+    ('umbral_alerta_competencia_pct', 5.0, 'Desviación mínima frente al precio de competencia para generar una alerta semanal (FR-016)');
+
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 002-clientes-fidelizacion (spec.md, ronda 1)
+-- Consentimiento de tratamiento de datos (FR-001) y severidad de churn (FR-010)
+-- ============================================================================
+ALTER TABLE clientes
+    ADD COLUMN consentimiento_datos BOOLEAN NOT NULL DEFAULT true,
+    ADD COLUMN fecha_consentimiento_datos TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+ALTER TABLE churn_score
+    ADD COLUMN severidad VARCHAR(20)
+        CHECK (severidad IN ('en_riesgo','inactivo'));
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 002-clientes-fidelizacion (data-model.md, ronda 2)
+-- Clasificación de campaña propia de SIRA, grupo de control, resultado de
+-- uplift (FR-016 a FR-019) y registro de envío de cupón (FR-013/FR-014)
+-- ============================================================================
+CREATE SEQUENCE IF NOT EXISTS campanas_campaign_id_seq START WITH 100000;
+
+ALTER TABLE campanas
+    ADD COLUMN categoria_sira VARCHAR(20)
+        CHECK (categoria_sira IN ('hito','reactivacion'));
+
+ALTER TABLE campana_cliente
+    ADD COLUMN grupo VARCHAR(20)
+        CHECK (grupo IN ('tratado','control'));
+
+CREATE TABLE campana_resultado (
+    campaign_id INTEGER PRIMARY KEY REFERENCES campanas(campaign_id) ON DELETE CASCADE,
+    tasa_retorno_tratado DECIMAL(5,4),
+    tasa_retorno_control DECIMAL(5,4),
+    uplift DECIMAL(5,4) GENERATED ALWAYS AS (tasa_retorno_tratado - tasa_retorno_control) STORED,
+    decision VARCHAR(20) CHECK (decision IN ('aprobada_escalar','descartada')),
+    empleado_decide_id INTEGER REFERENCES empleados(empleado_id),
+    fecha_calculo DATE
+);
+
+CREATE TABLE cupon_enviado (
+    envio_id BIGSERIAL PRIMARY KEY,
+    evento_id BIGINT REFERENCES eventos_cliente(evento_id) ON DELETE CASCADE,
+    household_id INTEGER NOT NULL REFERENCES clientes(household_id) ON DELETE CASCADE,
+    coupon_upc VARCHAR(20) NOT NULL,
+    campaign_id INTEGER NOT NULL REFERENCES campanas(campaign_id),
+    fecha_envio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    entregado BOOLEAN NOT NULL DEFAULT true
+);
+CREATE INDEX idx_cupon_enviado_household_id ON cupon_enviado(household_id);
+CREATE INDEX idx_cupon_enviado_evento_id ON cupon_enviado(evento_id);

@@ -11,7 +11,7 @@ Toda feature, endpoint o tabla nueva debe trazarse a al menos un Objetivo Operat
 Toda operación de nivel operativo es un INSERT/UPDATE/DELETE sobre un registro concreto, ligado a un documento de negocio real (ticket de venta, nota de recepción, ajuste de inventario, apertura de caja, etc.). Nada de simulacros ni "estados" sin persistencia transaccional real en PostgreSQL.
 
 ### III. Separación de Motores por Responsabilidad
-PostgreSQL = único motor operativo (OLTP). MinIO tiene dos responsabilidades en buckets separados: `landing-zone` (raw del Extract, nunca consultado como fuente de negocio) y `producto-imagenes` (almacenamiento estático de imágenes de producto, servido directo a la app — es un archivo, no un dato transaccional). ClickHouse = warehouse para agregaciones tácticas/estratégicas. Flujo ELT (no ETL): Extract → Load raw a MinIO (landing-zone) → Load a ClickHouse → Transform in-warehouse, orquestado por Airflow. Ninguna feature mezcla responsabilidades entre motores ni entre buckets.
+PostgreSQL = único motor operativo (OLTP). MinIO tiene tres responsabilidades en buckets separados: `landing-zone` (raw del Extract, nunca consultado como fuente de negocio), `producto-imagenes` (almacenamiento estático de imágenes de producto, servido directo a la app) y `comprobantes-venta` (PDF de comprobante de venta generado al confirmar cada venta, servido vía endpoint autenticado) — las tres son archivos estáticos servidos directo a la app, no datos transaccionales. ClickHouse = warehouse para agregaciones tácticas/estratégicas. Flujo ELT (no ETL): Extract → Load raw a MinIO (landing-zone) → Load a ClickHouse → Transform in-warehouse, orquestado por Airflow. Ninguna feature mezcla responsabilidades entre motores ni entre buckets.
 
 ### IV. RBAC de Dos Niveles Obligatorio
 Toda funcionalidad nueva declara sus permisos en el esquema existente: rol→módulo y rol→módulo→tabla (select/insert/update/delete), respetando la FK compuesta que exige acceso al módulo antes del permiso de tabla. No se crean rutas de acceso paralelas.
@@ -61,10 +61,10 @@ Los filtros de búsqueda son reactivos/automáticos — sin botón "Buscar" o "F
 
 ## Flujo de Trabajo (Spec Kit)
 
-Para cada una de las 9 features (001-core-ventas-inventario, 002-clientes-fidelizacion, 003-precios-margenes, 004-pronostico-demanda, 005-promociones-inteligentes, 006-caja-mermas-fraude, 007-pagos-seguridad, 008-auth-administracion-sistema, 009-dashboards-multinivel): /speckit-specify → (opcional /speckit-clarify) → /speckit-plan → /speckit-tasks → (opcional /speckit-analyze) → /speckit-implement. Ninguna feature avanza a plan sin spec aprobado, ni a implement sin tasks aprobado. La feature 009 queda especificada pero no implementada hasta cerrar la capa táctica/estratégica (ClickHouse + Airflow), actualmente en pausa.
+Para cada una de las 12 features (001-core-ventas-inventario, 002-clientes-fidelizacion, 003-precios-margenes, 004-pronostico-demanda, 005-promociones-inteligentes, 006-caja-mermas-fraude, 007-pagos-seguridad, 008-auth-administracion-sistema, 009-dashboards-multinivel, 010-plataforma-datos-tactico-estrategico, 011-recursos-humanos, 012-traslados-stock-entre-tiendas): /speckit-specify → (opcional /speckit-clarify) → /speckit-plan → /speckit-tasks → (opcional /speckit-analyze) → /speckit-implement. Ninguna feature avanza a plan sin spec aprobado, ni a implement sin tasks aprobado. Las features 009 y 010 quedan especificadas pero no implementadas hasta retomar la capa táctica/estratégica (ClickHouse + Airflow), actualmente en pausa — 010 construye esa plataforma y 009 solo la consume para dashboards. 011 y 012 no tienen ninguna dependencia de 009/010 y no quedan en espera.
 
 ## Governance
 
 Esta constitución tiene prioridad sobre cualquier spec individual. Un cambio aquí obliga a revisar las specs ya creadas que dependan del principio modificado. Toda spec/plan/tasks debe verificar cumplimiento de estos principios antes de pasar a la siguiente fase.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-04
+**Version**: 1.3.2 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-06
