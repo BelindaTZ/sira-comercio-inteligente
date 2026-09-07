@@ -1,21 +1,21 @@
-"""Entrypoint FastAPI de SIRA (T015).
+"""Entrypoint FastAPI de SIRA.
 
-Monta los routers por módulo de negocio bajo `/api`. Cada módulo
-(ventas, inventario, catalogo, compras) registra su router en su propia fase de
-`tasks.md`; aquí solo queda el punto de montaje y lo transversal (CORS,
-manejo de errores, logging, healthcheck).
+Monta los routers por módulo de negocio bajo `/api` y arranca el scheduler de
+jobs periódicos (feature 002) en el ciclo de vida de la app.
 """
 
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from typing import Annotated
 
-from fastapi import APIRouter, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from src.core.config import settings
 from src.core.database import engine
+from src.jobs import scheduler
 from src.shared.exceptions import configure_logging, logger, register_exception_handlers
 
 
@@ -23,14 +23,14 @@ from src.shared.exceptions import configure_logging, logger, register_exception_
 async def lifespan(_: FastAPI):
     configure_logging()
     logger.info("SIRA API arrancando (env=%s)", settings.app_env)
+    scheduler.start()
     yield
+    scheduler.stop()
     await engine.dispose()
 
 
 app = FastAPI(
-    title="SIRA — Core de Ventas e Inventario",
-    version="0.1.0",
-    lifespan=lifespan,
+    title="SIRA — Sistema Inteligente de Retail Adaptativo", version="0.2.0", lifespan=lifespan
 )
 
 app.add_middleware(
@@ -53,8 +53,9 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-# --- Routers por módulo (se activan en sus fases respectivas) ---
+# --- Routers por módulo ---
 from src.modules.catalogo.router import router as catalogo_router  # noqa: E402
+from src.modules.clientes.router import router as clientes_router  # noqa: E402
 from src.modules.compras.router import router as compras_router  # noqa: E402
 from src.modules.inventario.router import router as inventario_router  # noqa: E402
 from src.modules.ventas.router import router as ventas_router  # noqa: E402
@@ -63,5 +64,31 @@ api.include_router(ventas_router)
 api.include_router(inventario_router)
 api.include_router(compras_router)
 api.include_router(catalogo_router)
+api.include_router(clientes_router)
+
+
+# --- Endpoints de desarrollo (T005) — fuerzan un job periódico a mano.
+#     No se registran en producción (usados por quickstart.md de la feature 002).
+if settings.app_env != "production":
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from src.core.database import get_session
+
+    dev = APIRouter(prefix="/_dev", tags=["_dev"])
+
+    @dev.post("/jobs/{nombre}")
+    async def ejecutar_job(
+        nombre: str, session: Annotated[AsyncSession, Depends(get_session)]
+    ) -> dict:
+        try:
+            return await scheduler.ejecutar_ahora(nombre, session)
+        except KeyError as exc:
+            raise HTTPException(404, f"Job '{nombre}' no existe") from exc
+
+    @dev.get("/jobs")
+    async def listar_jobs() -> dict:
+        return {"jobs": list(scheduler.JOBS)}
+
+    api.include_router(dev)
 
 app.include_router(api)

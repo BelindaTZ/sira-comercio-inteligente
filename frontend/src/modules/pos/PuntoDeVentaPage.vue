@@ -9,6 +9,7 @@
 import { computed, reactive, ref } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
 import BuscadorProducto from './components/BuscadorProducto.vue'
+import BuscadorCliente from './components/BuscadorCliente.vue'
 import TicketVenta from './components/TicketVenta.vue'
 import SimuladorDatafono from './components/SimuladorDatafono.vue'
 
@@ -19,6 +20,7 @@ const sesion = reactive({
 })
 
 const venta = ref(null)
+const clienteId = ref(null)
 const medioPagoId = ref(null)
 const mediosPago = [
   { id: 1, nombre: 'Efectivo', tarjeta: false },
@@ -62,13 +64,38 @@ async function conError(fn) {
 async function nuevaVenta() {
   pagoTarjetaAprobado.value = false
   medioPagoId.value = null
+  clienteId.value = null
   venta.value = await conError(() =>
     ventasApi.iniciar({ tiendaId: sesion.tiendaId, cajeroId: sesion.cajeroId })
   )
 }
 
+// Si aún no hay venta abierta, el cliente elegido queda pendiente hasta que se
+// abra la venta con la primera línea; si ya hay, se reinicia la venta con el
+// household_id vinculado (el backend acepta household_id solo al iniciar).
+async function vincularCliente(c) {
+  clienteId.value = c.household_id
+  if (venta.value && venta.value.estado === 'en_curso' && !venta.value.lineas.length) {
+    venta.value = await conError(() =>
+      ventasApi.iniciar({
+        tiendaId: sesion.tiendaId,
+        cajeroId: sesion.cajeroId,
+        householdId: c.household_id,
+      })
+    )
+  }
+}
+
 async function agregar({ productId, codigoBarras, cantidad }) {
-  if (!venta.value) await nuevaVenta()
+  if (!venta.value) {
+    venta.value = await conError(() =>
+      ventasApi.iniciar({
+        tiendaId: sesion.tiendaId,
+        cajeroId: sesion.cajeroId,
+        householdId: clienteId.value,
+      })
+    )
+  }
   venta.value = await conError(() =>
     ventasApi.agregarLinea(venta.value.venta_id, { productId, codigoBarras, cantidad })
   )
@@ -142,6 +169,12 @@ async function confirmar() {
       </section>
 
       <aside class="space-y-4">
+        <BuscadorCliente
+          v-if="venta.estado === 'en_curso'"
+          :seleccionado-id="clienteId"
+          @seleccionar="vincularCliente"
+          @quitar="clienteId = null"
+        />
         <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
           <h2 class="mb-3 text-sm font-semibold text-on-surface">Cobro</h2>
 

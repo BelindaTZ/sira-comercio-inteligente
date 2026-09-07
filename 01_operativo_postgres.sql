@@ -1126,3 +1126,62 @@ CREATE TABLE cupon_enviado (
 );
 CREATE INDEX idx_cupon_enviado_household_id ON cupon_enviado(household_id);
 CREATE INDEX idx_cupon_enviado_evento_id ON cupon_enviado(evento_id);
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 002-clientes-fidelizacion (spec.md, ronda 5)
+-- Identificación del cliente afiliado por cédula en punto de venta (FR-001) y
+-- generador de household_id para altas nuevas (el dataset llega hasta 2500).
+-- ============================================================================
+
+ALTER TABLE clientes ADD COLUMN documento_identidad VARCHAR(13);
+CREATE UNIQUE INDEX uq_clientes_documento_identidad
+    ON clientes(documento_identidad) WHERE documento_identidad IS NOT NULL;
+
+CREATE SEQUENCE IF NOT EXISTS clientes_household_id_seq AS INTEGER START WITH 900000;
+ALTER TABLE clientes ALTER COLUMN household_id SET DEFAULT nextval('clientes_household_id_seq');
+
+-- RBAC ronda 5: el maestro de cliente se opera en caja (alta/edición por
+-- Cajero/Encargado, baja sólo por Encargado_Tienda o Jefe_Marketing).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'Marketing_CRM' AND r.nombre IN ('Cajero','Encargado_Tienda')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, (r.nombre = 'Encargado_Tienda')
+FROM roles r
+JOIN modulos m ON m.nombre = 'Marketing_CRM'
+CROSS JOIN (VALUES ('clientes'), ('clientes_demograficos')) AS t(tabla)
+WHERE r.nombre IN ('Cajero','Encargado_Tienda')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+UPDATE role_permisos_tabla SET can_delete = true
+WHERE role_id = (SELECT role_id FROM roles WHERE nombre = 'Jefe_Marketing')
+  AND nombre_tabla IN ('clientes','clientes_demograficos');
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 002-clientes-fidelizacion (spec.md, ronda 6)
+-- Niveles de fidelización por defecto. El CLV compuesto (research.md §1) es un
+-- score 0..1; el Jefe de Marketing ajusta los umbrales vía PATCH (FR-007).
+-- ============================================================================
+INSERT INTO niveles_fidelizacion (nombre, umbral_clv_min) VALUES
+    ('Bronce', 0.00),
+    ('Plata', 0.40),
+    ('Oro', 0.70),
+    ('Platino', 0.90)
+ON CONFLICT (nombre) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 002-clientes-fidelizacion (spec.md, ronda 7)
+-- Redención de cupón en caja (FR-015): la ejecuta el Cajero al aplicar el cupón
+-- en el punto de venta. El patrón base sólo sembró cupon_redimido para
+-- Jefe_Marketing; el Cajero ya tiene el módulo Marketing_CRM desde la ronda 5.
+-- ============================================================================
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'cupon_redimido', true, true, false, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Marketing_CRM'
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+WHERE r.nombre = 'Cajero'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

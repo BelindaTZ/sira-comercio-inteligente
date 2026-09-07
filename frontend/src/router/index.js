@@ -28,6 +28,21 @@ const routes = [
     name: 'catalogo',
     component: () => import('@/modules/catalogo/CatalogoPage.vue'),
   },
+  {
+    path: '/clientes',
+    name: 'clientes',
+    component: () => import('@/modules/clientes/ClientesPage.vue'),
+  },
+  {
+    path: '/clientes/riesgo-fuga',
+    name: 'riesgo-fuga',
+    component: () => import('@/modules/clientes/RiesgoFugaPage.vue'),
+  },
+  {
+    path: '/clientes/campanas',
+    name: 'campanas',
+    component: () => import('@/modules/clientes/CampanasPage.vue'),
+  },
 ]
 
 const router = createRouter({

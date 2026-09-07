@@ -5,16 +5,16 @@ Backend: `backend/src/modules/clientes/router.py`. RBAC: módulo `Marketing_CRM`
 ## Perfil de cliente
 
 ### POST /api/clientes
-Body: `{nombre, email, fecha_nacimiento?, consentimiento_datos: bool, datos_demograficos?: {age?, income?, home_ownership?, marital_status?, household_size?, kids_count?}}`. Rechaza 409 si `email` ya existe. Si `consentimiento_datos = false`, el cliente queda registrado sin quedar sujeto a CLV/churn/campañas (FR-001). Rol: `Cajero`/`Encargado_Tienda`.
+Body: `{nombre, email, fecha_nacimiento?, documento_identidad?, consentimiento_datos: bool, datos_demograficos?: {age?, income?, home_ownership?, marital_status?, household_size?, kids_count?}}`. Rechaza 409 si `email` ya existe, o si `documento_identidad` ya existe cuando se proporciona. Si `consentimiento_datos = false`, el cliente queda registrado sin quedar sujeto a CLV/churn/campañas (FR-001, Ronda 5). Rol: `Cajero`/`Encargado_Tienda`.
 
 ### PATCH /api/clientes/{household_id}
-Body parcial: `{nombre?, email?, telefono?, datos_demograficos?, consentimiento_datos?}`. No altera historial de ventas ni cálculos de CLV/churn ya calculados. Revocar `consentimiento_datos` (pasar a `false`) excluye al cliente de todo cálculo futuro de CLV/churn y de toda campaña/cupón segmentado — sin anonimizar el resto de sus datos ni requerir `DELETE`; volver a pasarlo a `true` lo reincorpora hacia adelante. Actualiza `fecha_consentimiento_datos` en cada cambio. (FR-002). Rol: `Cajero`/`Encargado_Tienda`.
+Body parcial: `{nombre?, email?, telefono?, documento_identidad?, datos_demograficos?, consentimiento_datos?}`. No altera historial de ventas ni cálculos de CLV/churn ya calculados. Revocar `consentimiento_datos` (pasar a `false`) excluye al cliente de todo cálculo futuro de CLV/churn y de toda campaña/cupón segmentado — sin anonimizar el resto de sus datos ni requerir `DELETE`; volver a pasarlo a `true` lo reincorpora hacia adelante. Actualiza `fecha_consentimiento_datos` en cada cambio. (FR-002). Rol: `Cajero`/`Encargado_Tienda`.
 
 ### DELETE /api/clientes/{household_id}
 Baja + anonimización real (`nombre`, `email`, `telefono`, `fecha_nacimiento` reemplazados; `household_id` se conserva). (FR-003). Rol: `Encargado_Tienda`.
 
 ### GET /api/clientes
-Query: `search, activo, nivel_fidelizacion_id`. Paginado, filtros reactivos (Principio XII). Devuelve, por cliente, su `clv_score`/nivel y `severidad` de churn más recientes (join contra `cliente_clv`/`churn_score`, última `fecha_calculo`).
+Query: `search, activo, nivel_fidelizacion_id`. `search` compara contra `nombre`, `email` y `documento_identidad` (Ronda 5 — permite localizar a un cliente afiliado por cédula en el punto de venta). Paginado, filtros reactivos (Principio XII). Devuelve, por cliente, su `clv_score`/nivel y `severidad` de churn más recientes (join contra `cliente_clv`/`churn_score`, última `fecha_calculo`).
 
 ### GET /api/clientes/{household_id}
 Detalle: perfil + datos demográficos + CLV actual + churn actual + eventos/cupones recientes.

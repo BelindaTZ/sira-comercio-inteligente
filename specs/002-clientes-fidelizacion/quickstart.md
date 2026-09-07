@@ -52,7 +52,13 @@ cd frontend && npm install && npm run dev
 4. `POST /api/clientes/cupones/{coupon_upc}/redimir` con ese cliente.
 5. **Verificar**: `GET /api/clientes/cupones/tasa-redencion?tipo_evento=cumpleanos` refleja la redención (FR-014).
 
-## Escenario 6 — Campaña de reactivación con grupo de control obligatorio y uplift real (US5, P5)
+## Escenario 6 — Localizar a un cliente afiliado por cédula en el punto de venta (US1, Ronda 5)
+
+1. Registrar un cliente nuevo indicando su número de cédula además de nombre y email.
+2. En el punto de venta, buscar ese cliente usando únicamente su número de cédula (`GET /api/clientes?search=<cedula>`).
+3. **Verificar**: el sistema lo encuentra y permite vincular su `household_id` a la venta en curso, sin necesidad del nombre o email (FR-001, SC-008).
+
+## Escenario 7 — Campaña de reactivación con grupo de control obligatorio y uplift real (US5, P5)
 
 1. Tomar 10 clientes de `GET /api/clientes/riesgo-fuga` (mezcla de `en_riesgo`/`inactivo`).
 2. `POST /api/clientes/campanas` con `categoria_sira: "reactivacion"` y los 10 miembros, todos con `grupo: "tratado"` (sin ningún `control`).

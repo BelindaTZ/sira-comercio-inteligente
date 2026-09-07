@@ -210,6 +210,20 @@ async def auth_jefe_comercial(db_session: AsyncSession, escenario_pos: dict) -> 
 
 
 @pytest_asyncio.fixture
+async def auth_jefe_marketing(db_session: AsyncSession, escenario_pos: dict) -> dict[str, str]:
+    role_id = await db_session.scalar(
+        text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Marketing'")
+    )
+    token = _token(
+        empleado_id=escenario_pos["encargado_id"],
+        role_id=role_id,
+        rol="Jefe_Marketing",
+        tienda_id=escenario_pos["tienda_id"],
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest_asyncio.fixture
 async def escenario_inventario(db_session: AsyncSession, escenario_pos: dict) -> dict:
     """Amplía `escenario_pos` con lo que necesita US2: un Reponedor, un proveedor,
     una orden de compra `aprobada` y un producto SIN stock previo."""
