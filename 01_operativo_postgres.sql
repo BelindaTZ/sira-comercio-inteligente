@@ -1216,3 +1216,94 @@ JOIN modulos m ON m.nombre = 'Marketing_CRM'
 JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
 WHERE r.nombre = 'Cajero'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 004-pronostico-demanda (spec.md, plan.md, research.md, data-model.md)
+-- Pronóstico de demanda con variables exógenas. 4 tablas nuevas (salida del
+-- modelo) + columna origen_calculo aditiva sobre alertas_inventario y
+-- orden_compra_detalle de 001. No crea tablas de entrada: entrena contra
+-- ventas / venta_detalle / promociones / historial_precios / eventos_quiebre_stock.
+-- ============================================================================
+
+-- 1. Versión de modelo — mismo patrón pendiente/aprobado/rechazado que propuesta_ajuste_precio (003).
+CREATE TABLE modelo_demanda (
+    modelo_id BIGSERIAL PRIMARY KEY,
+    fecha_entrenamiento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    metrica_precision_validacion DECIMAL(6,4),
+    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
+        CHECK (estado IN ('pendiente','aprobado','rechazado','reemplazado')),
+    fecha_resolucion TIMESTAMP,
+    aprobado_por INTEGER REFERENCES empleados(empleado_id),
+    observaciones VARCHAR(500),
+    CHECK (estado = 'pendiente' OR (fecha_resolucion IS NOT NULL AND aprobado_por IS NOT NULL))
+);
+-- FR-005: sólo un modelo vigente en producción a la vez.
+CREATE UNIQUE INDEX uq_modelo_demanda_aprobado ON modelo_demanda((estado)) WHERE estado = 'aprobado';
+
+-- 2. Pronóstico por modelo/producto/tienda/semana (research.md Decisión 1).
+CREATE TABLE pronostico_demanda (
+    pronostico_id BIGSERIAL PRIMARY KEY,
+    modelo_id BIGINT NOT NULL REFERENCES modelo_demanda(modelo_id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    semana INTEGER NOT NULL CHECK (semana BETWEEN 1 AND 53),
+    anio INTEGER NOT NULL,
+    cantidad_pronosticada DECIMAL(10,2) NOT NULL CHECK (cantidad_pronosticada >= 0),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (modelo_id, product_id, tienda_id, semana, anio)
+);
+CREATE INDEX idx_pronostico_demanda_producto_tienda ON pronostico_demanda(product_id, tienda_id, semana, anio);
+
+-- 3. Monitoreo semanal de precisión (FR-011/FR-013).
+CREATE TABLE monitoreo_precision_modelo (
+    monitoreo_id BIGSERIAL PRIMARY KEY,
+    modelo_id BIGINT NOT NULL REFERENCES modelo_demanda(modelo_id) ON DELETE CASCADE,
+    semana INTEGER NOT NULL CHECK (semana BETWEEN 1 AND 53),
+    anio INTEGER NOT NULL,
+    metrica_precision DECIMAL(6,4) NOT NULL,
+    supero_umbral_alerta BOOLEAN NOT NULL DEFAULT false,
+    fecha_calculo TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (modelo_id, semana, anio)
+);
+
+-- 4. Configuración clave/valor (mismo patrón que configuracion_pricing de 003).
+CREATE TABLE configuracion_pronostico (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(10,4) NOT NULL,
+    descripcion VARCHAR(250)
+);
+INSERT INTO configuracion_pronostico (clave, valor, descripcion) VALUES
+    ('precision_minima_aprobacion', 0.35, 'WAPE de validación máximo aceptable para que el Jefe de TI apruebe un modelo — referencia, no bloqueo automático (FR-002/FR-003)'),
+    ('umbral_degradacion_semanal_pct', 0.45, 'WAPE semanal en producción por encima del cual se genera una alerta de degradación para el Jefe de TI (FR-012)'),
+    ('historial_minimo_semanas', 12, 'Semanas mínimas de historial de ventas para incluir un producto/tienda en el entrenamiento; por debajo queda cubierto por el respaldo de rotación reciente (FR-006, research.md Decisión 6)');
+
+-- 5/6. Origen del cálculo en las salidas ya construidas por 001 (FR-010).
+ALTER TABLE alertas_inventario ADD COLUMN origen_calculo VARCHAR(20) NOT NULL DEFAULT 'rotacion_reciente'
+    CHECK (origen_calculo IN ('modelo_pronostico','rotacion_reciente'));
+ALTER TABLE orden_compra_detalle ADD COLUMN origen_calculo VARCHAR(20) NOT NULL DEFAULT 'rotacion_reciente'
+    CHECK (origen_calculo IN ('modelo_pronostico','rotacion_reciente'));
+
+-- RBAC feature 004: el módulo 'TI' cubre modelo_demanda / pronostico_demanda /
+-- monitoreo_precision_modelo / configuracion_pronostico (Jefe_TI); el reporte de
+-- demanda perdida es una consulta sobre eventos_quiebre_stock, ya cubierta por
+-- 'Operaciones' para Jefe_Operaciones (research.md Decisión 8).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'TI' AND r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r JOIN modulos m ON m.nombre = 'TI'
+CROSS JOIN (VALUES ('modelo_demanda'), ('pronostico_demanda'),
+                    ('monitoreo_precision_modelo'), ('configuracion_pronostico')) AS t(tabla)
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'eventos_quiebre_stock', true, true, false, false
+FROM roles r JOIN modulos m ON m.nombre = 'Operaciones'
+WHERE r.nombre = 'Jefe_Operaciones'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

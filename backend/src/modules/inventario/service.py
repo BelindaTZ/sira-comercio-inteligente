@@ -34,13 +34,22 @@ from src.modules.inventario.schemas import (
 )
 from src.shared.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from src.shared.inventario_fifo import ordenar_lotes_fifo_fefo
-from src.shared.reposicion import punto_reposicion_desde_ventas
+from src.shared.reposicion import punto_reposicion, punto_reposicion_desde_ventas
 
 logger = logging.getLogger("sira.inventario")
 
 
 def _ahora() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
+
+
+def _forecasting_service(session):
+    """Instancia el servicio de pronóstico de 004 sobre la misma sesión, con
+    import diferido para no acoplar `inventario` a `forecasting` a nivel de módulo."""
+    from src.modules.forecasting.repository import ForecastingRepository
+    from src.modules.forecasting.service import ForecastingService
+
+    return ForecastingService(ForecastingRepository(session))
 
 
 class InventarioService:
@@ -317,10 +326,21 @@ class InventarioService:
         seguridad = float(await self.repo.config("stock_seguridad_pct", Decimal("0.20")))
         desde = _ahora() - timedelta(days=ventana)
 
+        # feature 004: si hay un pronóstico vigente del modelo en producción, la
+        # demanda proyectada reemplaza a la rotación reciente como base del cálculo
+        # (FR-007). Sin pronóstico, se usa el respaldo de 001 sin interrupción (FR-008).
+        forecasting = _forecasting_service(self.repo.session)
+
         generadas: list[dict] = []
         for product_id, t_id in await self.repo.pares_inventario(tienda_id):
-            vendidas = await self.repo.unidades_vendidas(product_id, t_id, desde)
-            punto = punto_reposicion_desde_ventas(vendidas, ventana, lead_time, seguridad)
+            pronostico = await forecasting.demanda_semanal_vigente(product_id, t_id)
+            if pronostico is not None:
+                punto = punto_reposicion(pronostico / 7.0, lead_time, seguridad)
+                origen = "modelo_pronostico"
+            else:
+                vendidas = await self.repo.unidades_vendidas(product_id, t_id, desde)
+                punto = punto_reposicion_desde_ventas(vendidas, ventana, lead_time, seguridad)
+                origen = "rotacion_reciente"
 
             inv = await self.repo.get_inventario_for_update(product_id, t_id)
             if inv is None:
@@ -337,10 +357,16 @@ class InventarioService:
                     product_id=product_id,
                     tienda_id=t_id,
                     estado="pendiente",
+                    origen_calculo=origen,
                 )
                 self.repo.agregar(alerta)
                 generadas.append(
-                    {"product_id": product_id, "tienda_id": t_id, "punto_reposicion": punto}
+                    {
+                        "product_id": product_id,
+                        "tienda_id": t_id,
+                        "punto_reposicion": punto,
+                        "origen_calculo": origen,
+                    }
                 )
         await self.repo.flush()
         return generadas

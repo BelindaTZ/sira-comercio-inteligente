@@ -16,16 +16,16 @@
 
 ## Phase 1: Setup
 
-- **T001** Crear el esqueleto de `backend/src/modules/forecasting/` (`router.py`, `service.py`, `repository.py`, `schemas.py`, `ml/__init__.py`, `ml/variables.py`, `ml/entrenamiento.py`, `ml/metricas.py`), vacíos con la estructura de capas ya usada en `pricing/` de 003.
-- **T002** [P] Migración Alembic: crear `modelo_demanda`, `pronostico_demanda`, `monitoreo_precision_modelo`, `configuracion_pronostico`, y `ALTER TABLE alertas_inventario ADD COLUMN origen_calculo` / `ALTER TABLE orden_compra_detalle ADD COLUMN origen_calculo` (`data-model.md` completo), con seed inicial de `configuracion_pronostico` (`precision_minima_aprobacion`, `umbral_degradacion_semanal_pct`, `historial_minimo_semanas=12`).
-- **T003** [P] Frontend: crear `frontend/src/modules/forecasting/` (`pages/ModelosPage.vue`, `pages/DemandaPerdidaPage.vue` vacíos) y `frontend/src/services/forecastingApi.js`; extender `inventarioApi.js` y `comprasApi.js` para incluir `origen_calculo` en sus respuestas ya existentes.
+- [X] T001 Crear el esqueleto de `backend/src/modules/forecasting/` (`router.py`, `service.py`, `repository.py`, `schemas.py`, `ml/__init__.py`, `ml/variables.py`, `ml/entrenamiento.py`, `ml/metricas.py`), vacíos con la estructura de capas ya usada en `pricing/` de 003.
+- [X] T002 [P] Migración Alembic: crear `modelo_demanda`, `pronostico_demanda`, `monitoreo_precision_modelo`, `configuracion_pronostico`, y `ALTER TABLE alertas_inventario ADD COLUMN origen_calculo` / `ALTER TABLE orden_compra_detalle ADD COLUMN origen_calculo` (`data-model.md` completo), con seed inicial de `configuracion_pronostico` (`precision_minima_aprobacion`, `umbral_degradacion_semanal_pct`, `historial_minimo_semanas=12`).
+- [X] T003 [P] Frontend: crear `frontend/src/modules/forecasting/` (`pages/ModelosPage.vue`, `pages/DemandaPerdidaPage.vue` vacíos) y `frontend/src/services/forecastingApi.js`; extender `inventarioApi.js` y `comprasApi.js` para incluir `origen_calculo` en sus respuestas ya existentes.
 
 ## Phase 2: Foundational (Bloqueante — ninguna user story empieza sin esto)
 
-- **T004** [P] Modelos SQLAlchemy: `ModeloDemanda`, `PronosticoDemanda`, `MonitoreoPrecisionModelo`, `ConfiguracionPronostico` en `models/`; extender `AlertaInventario` y `OrdenCompraDetalle` con el campo `origen_calculo`.
-- **T005** Registrar dos nuevos jobs en el `scheduler.py` ya existente (APScheduler, mismo mecanismo de 002/003): `entrenar_modelo_demanda_job` (mensual) y `monitorear_precision_job` (semanal), sin ejecutar todavía su lógica (se completa en Phase 3/5).
-- **T006** [P] Extender el endpoint de "forzar corrida" de desarrollo ya usado en 003 para incluir estos dos jobs (`POST /api/forecasting/modelos/entrenar`, `POST /api/forecasting/monitoreo/calcular`).
-- **T007** Montar `forecasting.router` en `main.py`; verificar en RBAC que los módulos `TI` y `Operaciones` (ya sembrados) cubren los endpoints de esta feature — sin rol ni módulo nuevo (`research.md` Decisión 8).
+- [X] T004 [P] Modelos SQLAlchemy: `ModeloDemanda`, `PronosticoDemanda`, `MonitoreoPrecisionModelo`, `ConfiguracionPronostico` en `models/`; extender `AlertaInventario` y `OrdenCompraDetalle` con el campo `origen_calculo`.
+- [X] T005 Registrar dos nuevos jobs en el `scheduler.py` ya existente (APScheduler, mismo mecanismo de 002/003): `entrenar_modelo_demanda_job` (mensual) y `monitorear_precision_job` (semanal), sin ejecutar todavía su lógica (se completa en Phase 3/5).
+- [X] T006 [P] Extender el endpoint de "forzar corrida" de desarrollo ya usado en 003 para incluir estos dos jobs (`POST /api/forecasting/modelos/entrenar`, `POST /api/forecasting/monitoreo/calcular`).
+- [X] T007 Montar `forecasting.router` en `main.py`; verificar en RBAC que los módulos `TI` y `Operaciones` (ya sembrados) cubren los endpoints de esta feature — sin rol ni módulo nuevo (`research.md` Decisión 8).
 
 **Checkpoint**: Migraciones aplicadas, modelos disponibles, jobs registrados (sin lógica), router montado — listo para implementar historias de usuario.
 
@@ -39,21 +39,21 @@
 
 ### Tests para User Story 1 ⚠️
 
-- **T008** [P] [US1] Unit test: cálculo de la métrica WAPE (`ml/metricas.py`) — incluye el caso de semanas con demanda real igual a cero, verificando que no queda indefinido ni distorsiona el agregado (`research.md` Decisión 5).
-- **T009** [P] [US1] Unit test: exclusión de productos/tienda con menos del historial mínimo configurado (`historial_minimo_semanas`) del conjunto de entrenamiento (FR-006).
-- **T010** [P] [US1] Contract test: `POST /api/forecasting/modelos/{id}/aprobar` y `.../rechazar` — verificar transición de estado, el `CHECK` de consistencia, y el reemplazo automático del modelo previamente vigente al aprobar uno nuevo.
-- **T011** [US1] Integration test: ciclo completo — forzar entrenamiento → modelo pendiente con métrica calculada → aprobar → queda vigente y disponible para consulta de pronóstico (Escenario 1 de `quickstart.md`).
+- [X] T008 [P] [US1] Unit test: cálculo de la métrica WAPE (`ml/metricas.py`) — incluye el caso de semanas con demanda real igual a cero, verificando que no queda indefinido ni distorsiona el agregado (`research.md` Decisión 5).
+- [X] T009 [P] [US1] Unit test: exclusión de productos/tienda con menos del historial mínimo configurado (`historial_minimo_semanas`) del conjunto de entrenamiento (FR-006).
+- [X] T010 [P] [US1] Contract test: `POST /api/forecasting/modelos/{id}/aprobar` y `.../rechazar` — verificar transición de estado, el `CHECK` de consistencia, y el reemplazo automático del modelo previamente vigente al aprobar uno nuevo.
+- [X] T011 [US1] Integration test: ciclo completo — forzar entrenamiento → modelo pendiente con métrica calculada → aprobar → queda vigente y disponible para consulta de pronóstico (Escenario 1 de `quickstart.md`).
 
 ### Implementación de User Story 1
 
-- **T012** [P] [US1] `ml/variables.py`: construir el dataset de entrenamiento (una fila por producto×tienda×semana con historial suficiente) con rezagos/promedio móvil de ventas, indicador de promoción (`promociones`), indicador y magnitud de cambio de precio (`historial_precios`), indicador de quiebre propio y tasa de quiebre de la categoría (`eventos_quiebre_stock`) — `research.md` Decisión 3.
-- **T013** [US1] `ml/entrenamiento.py`: entrenar el modelo global de regresión (`scikit-learn`) con partición temporal (no aleatoria) para el conjunto de validación (`research.md` Decisión 2 y 4).
-- **T014** [US1] `ml/metricas.py`: calcular el WAPE de validación (depende de T008).
-- **T015** [US1] `ForecastingRepository`: CRUD de `modelo_demanda` y `pronostico_demanda` (guardar el modelo entrenado con sus predicciones iniciales, estado `pendiente`).
-- **T016** [US1] `ForecastingService.entrenar_modelo()`: orquesta T012-T015, respeta `historial_minimo_semanas` (depende de T009), completa la lógica del job `entrenar_modelo_demanda_job` (T005).
-- **T017** [US1] `ForecastingService.aprobar_modelo()` / `.rechazar_modelo()`: transición de estado, reemplazo automático del vigente anterior al aprobar (`research.md` Decisión 7).
-- **T018** [US1] Endpoints: `GET /api/forecasting/modelos`, `GET .../{id}`, `POST .../aprobar`, `POST .../rechazar`, `POST .../entrenar` (dev) — `contracts/pronostico.md`.
-- **T019** [US1] `frontend/src/modules/forecasting/pages/ModelosPage.vue`: listado de modelos por estado, acciones de aprobar/rechazar con motivo obligatorio al rechazar.
+- [X] T012 [P] [US1] `ml/variables.py`: construir el dataset de entrenamiento (una fila por producto×tienda×semana con historial suficiente) con rezagos/promedio móvil de ventas, indicador de promoción (`promociones`), indicador y magnitud de cambio de precio (`historial_precios`), indicador de quiebre propio y tasa de quiebre de la categoría (`eventos_quiebre_stock`) — `research.md` Decisión 3.
+- [X] T013 [US1] `ml/entrenamiento.py`: entrenar el modelo global de regresión (`scikit-learn`) con partición temporal (no aleatoria) para el conjunto de validación (`research.md` Decisión 2 y 4).
+- [X] T014 [US1] `ml/metricas.py`: calcular el WAPE de validación (depende de T008).
+- [X] T015 [US1] `ForecastingRepository`: CRUD de `modelo_demanda` y `pronostico_demanda` (guardar el modelo entrenado con sus predicciones iniciales, estado `pendiente`).
+- [X] T016 [US1] `ForecastingService.entrenar_modelo()`: orquesta T012-T015, respeta `historial_minimo_semanas` (depende de T009), completa la lógica del job `entrenar_modelo_demanda_job` (T005).
+- [X] T017 [US1] `ForecastingService.aprobar_modelo()` / `.rechazar_modelo()`: transición de estado, reemplazo automático del vigente anterior al aprobar (`research.md` Decisión 7).
+- [X] T018 [US1] Endpoints: `GET /api/forecasting/modelos`, `GET .../{id}`, `POST .../aprobar`, `POST .../rechazar`, `POST .../entrenar` (dev) — `contracts/pronostico.md`.
+- [X] T019 [US1] `frontend/src/modules/forecasting/pages/ModelosPage.vue`: listado de modelos por estado, acciones de aprobar/rechazar con motivo obligatorio al rechazar.
 
 **Checkpoint**: un modelo puede entrenarse, validarse y aprobarse/rechazarse de punta a punta — MVP entregable de forma independiente.
 
@@ -67,17 +67,17 @@
 
 ### Tests para User Story 2 ⚠️
 
-- **T020** [P] [US2] Unit test: `ForecastingService.obtener_pronostico_vigente()` devuelve el valor del modelo `aprobado` cuando existe, y `None` (sin error) cuando no — dispara el respaldo (FR-007/FR-008).
-- **T021** [US2] Integration test: cálculo diario de punto de reposición y sugerencia semanal de compra, una vez para un producto con pronóstico vigente y otra vez para uno sin él, verificando `origen_calculo` en ambos casos (Escenario 3 y 4 de `quickstart.md`).
+- [X] T020 [P] [US2] Unit test: `ForecastingService.obtener_pronostico_vigente()` devuelve el valor del modelo `aprobado` cuando existe, y `None` (sin error) cuando no — dispara el respaldo (FR-007/FR-008).
+- [X] T021 [US2] Integration test: cálculo diario de punto de reposición y sugerencia semanal de compra, una vez para un producto con pronóstico vigente y otra vez para uno sin él, verificando `origen_calculo` en ambos casos (Escenario 3 y 4 de `quickstart.md`).
 
 ### Implementación de User Story 2
 
-- **T022** [US2] `ForecastingService.obtener_pronostico_vigente(product_id, tienda_id, semana, anio)`: función compartida — la usará también el endpoint de consulta directa (T024) (depende de T015).
-- **T023** [US2] Extender el job diario de punto de reposición de 001 (`modules/inventario/`) para consultar T022 antes de su lógica de rotación reciente actual, escribiendo `origen_calculo` en la alerta generada (FR-007, FR-008, FR-010).
-- **T024** [US2] Extender el job semanal de sugerencia de compra de 001 (`modules/compras/`) con la misma lógica sobre `orden_compra_detalle` (FR-009, FR-010).
-- **T025** [US2] Endpoint: `GET /api/forecasting/productos/{product_id}/tiendas/{tienda_id}/pronostico` (`contracts/pronostico.md`).
-- **T026** [US2] Extender las respuestas ya existentes de `contracts/inventario.md`/`contracts/compras.md` de 001 con el campo `origen_calculo` (sin romper compatibilidad — campo aditivo).
-- **T027** [US2] Extender `TablaAlertas.vue` (usado en los módulos `inventario` y `compras` del frontend) para mostrar un indicador visual de origen (modelo/rotación reciente) — FR-010.
+- [X] T022 [US2] `ForecastingService.obtener_pronostico_vigente(product_id, tienda_id, semana, anio)`: función compartida — la usará también el endpoint de consulta directa (T024) (depende de T015).
+- [X] T023 [US2] Extender el job diario de punto de reposición de 001 (`modules/inventario/`) para consultar T022 antes de su lógica de rotación reciente actual, escribiendo `origen_calculo` en la alerta generada (FR-007, FR-008, FR-010).
+- [X] T024 [US2] Extender el job semanal de sugerencia de compra de 001 (`modules/compras/`) con la misma lógica sobre `orden_compra_detalle` (FR-009, FR-010).
+- [X] T025 [US2] Endpoint: `GET /api/forecasting/productos/{product_id}/tiendas/{tienda_id}/pronostico` (`contracts/pronostico.md`).
+- [X] T026 [US2] Extender las respuestas ya existentes de `contracts/inventario.md`/`contracts/compras.md` de 001 con el campo `origen_calculo` (sin romper compatibilidad — campo aditivo).
+- [X] T027 [US2] Extender `TablaAlertas.vue` (usado en los módulos `inventario` y `compras` del frontend) para mostrar un indicador visual de origen (modelo/rotación reciente) — FR-010.
 
 **Checkpoint**: OT-5.1 y la parte de OT-2.1 sobre demanda proyectada quedan completamente realizadas, sin romper el comportamiento de 001 cuando no hay modelo.
 
@@ -91,16 +91,16 @@
 
 ### Tests para User Story 3 ⚠️
 
-- **T028** [P] [US3] Unit test: comparación de pronóstico vs. demanda real de una semana ya cerrada, y la marca `supero_umbral_alerta` contra `umbral_degradacion_semanal_pct` de `configuracion_pronostico`.
-- **T029** [US3] Contract test: `GET /api/forecasting/modelos/{id}/monitoreo` y `GET /api/forecasting/monitoreo/alertas`.
-- **T030** [US3] Integration test: dos semanas de monitoreo consecutivas sobre el mismo modelo, verificando que el histórico completo queda consultable, no solo la última (Escenario 5 de `quickstart.md`).
+- [X] T028 [P] [US3] Unit test: comparación de pronóstico vs. demanda real de una semana ya cerrada, y la marca `supero_umbral_alerta` contra `umbral_degradacion_semanal_pct` de `configuracion_pronostico`.
+- [X] T029 [US3] Contract test: `GET /api/forecasting/modelos/{id}/monitoreo` y `GET /api/forecasting/monitoreo/alertas`.
+- [X] T030 [US3] Integration test: dos semanas de monitoreo consecutivas sobre el mismo modelo, verificando que el histórico completo queda consultable, no solo la última (Escenario 5 de `quickstart.md`).
 
 ### Implementación de User Story 3
 
-- **T031** [US3] `ml/metricas.py`: extender con el cálculo de WAPE semanal contra demanda real ya observada (depende de T014).
-- **T032** [US3] `ForecastingService.calcular_monitoreo_semanal()`: solo sobre el modelo vigente en producción; completa la lógica del job `monitorear_precision_job` (T005) (depende de T022, T031).
-- **T033** [US3] Endpoints: `GET .../monitoreo`, `GET .../monitoreo/alertas`, `POST .../monitoreo/calcular` (dev) — `contracts/pronostico.md`.
-- **T034** [US3] Frontend: gráfico de tendencia de precisión semanal (`vue-echarts`, ya aprobado en `domain-context.md` §7) dentro de `ModelosPage.vue`, con indicador de alerta cuando corresponda.
+- [X] T031 [US3] `ml/metricas.py`: extender con el cálculo de WAPE semanal contra demanda real ya observada (depende de T014).
+- [X] T032 [US3] `ForecastingService.calcular_monitoreo_semanal()`: solo sobre el modelo vigente en producción; completa la lógica del job `monitorear_precision_job` (T005) (depende de T022, T031).
+- [X] T033 [US3] Endpoints: `GET .../monitoreo`, `GET .../monitoreo/alertas`, `POST .../monitoreo/calcular` (dev) — `contracts/pronostico.md`.
+- [X] T034 [US3] Frontend: gráfico de tendencia de precisión semanal (`vue-echarts`, ya aprobado en `domain-context.md` §7) dentro de `ModelosPage.vue`, con indicador de alerta cuando corresponda.
 
 **Checkpoint**: un modelo en producción queda vigilado semana a semana sin intervención manual, con una alerta clara cuando se degrada.
 
@@ -114,13 +114,13 @@
 
 ### Tests para User Story 4 ⚠️
 
-- **T035** [US4] Integration test: varios `eventos_quiebre_stock` en tiendas/categorías distintas, verificando el desglose del reporte y que una tienda/categoría sin eventos no aparece forzada a cero (Escenario 6 de `quickstart.md`).
+- [X] T035 [US4] Integration test: varios `eventos_quiebre_stock` en tiendas/categorías distintas, verificando el desglose del reporte y que una tienda/categoría sin eventos no aparece forzada a cero (Escenario 6 de `quickstart.md`).
 
 ### Implementación de User Story 4
 
-- **T036** [US4] `ForecastingService.reporte_demanda_perdida(fecha_desde, fecha_hasta, tienda_id?)`: consulta agregada sobre `eventos_quiebre_stock` (sin tabla nueva, `data-model.md`).
-- **T037** [US4] Endpoint: `GET /api/forecasting/reportes/demanda-perdida` (`contracts/pronostico.md`).
-- **T038** [US4] Frontend: `DemandaPerdidaPage.vue` — tabla desglosada por tienda/categoría, reutilizando `DataTable.vue`.
+- [X] T036 [US4] `ForecastingService.reporte_demanda_perdida(fecha_desde, fecha_hasta, tienda_id?)`: consulta agregada sobre `eventos_quiebre_stock` (sin tabla nueva, `data-model.md`).
+- [X] T037 [US4] Endpoint: `GET /api/forecasting/reportes/demanda-perdida` (`contracts/pronostico.md`).
+- [X] T038 [US4] Frontend: `DemandaPerdidaPage.vue` — tabla desglosada por tienda/categoría, reutilizando `DataTable.vue`.
 
 **Checkpoint**: OO-5.2.2 queda cerrado, reutilizando datos ya registrados desde 001, sin bloquear ninguna historia anterior.
 
@@ -128,10 +128,10 @@
 
 ## Phase 7: Polish
 
-- **T039** Ejecutar `/speckit-analyze` sobre esta feature y corregir cualquier inconsistencia detectada entre spec/plan/tasks.
-- **T040** Correr los 6 escenarios de `quickstart.md` de punta a punta contra el entorno local.
-- **T041** Revisar cobertura de Principio X: confirmar que el cálculo de WAPE, la exclusión por historial insuficiente y el respaldo a rotación reciente tienen test unitario (T008, T009, T020) antes de cerrar la feature.
-- **T042** Actualizar `checklists/requirements.md` con cualquier hallazgo de la revisión final (nueva "Ronda" si aplica).
+- [X] T039 Ejecutar `/speckit-analyze` sobre esta feature y corregir cualquier inconsistencia detectada entre spec/plan/tasks.
+- [X] T040 Correr los 6 escenarios de `quickstart.md` de punta a punta contra el entorno local.
+- [X] T041 Revisar cobertura de Principio X: confirmar que el cálculo de WAPE, la exclusión por historial insuficiente y el respaldo a rotación reciente tienen test unitario (T008, T009, T020) antes de cerrar la feature.
+- [X] T042 Actualizar `checklists/requirements.md` con cualquier hallazgo de la revisión final (nueva "Ronda" si aplica).
 
 ## Dependencias clave
 

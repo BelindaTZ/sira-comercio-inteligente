@@ -89,6 +89,8 @@ class SugerenciaLinea(BaseModel):
     cantidad_disponible: int
     punto_reposicion: int
     cantidad_sugerida: int
+    # feature 004 (FR-010): 'modelo_pronostico' o 'rotacion_reciente'
+    origen_calculo: str = "rotacion_reciente"
 
 
 # --- facturas y pagos ---

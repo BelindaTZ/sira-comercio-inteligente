@@ -20,6 +20,7 @@ from src.models.cliente_demografico import ClienteDemografico
 from src.models.competidor import Competidor
 from src.models.configuracion_inventario import ConfiguracionInventario
 from src.models.configuracion_pricing import ConfiguracionPricing
+from src.models.configuracion_pronostico import ConfiguracionPronostico
 from src.models.cupon import Cupon
 from src.models.cupon_enviado import CuponEnviado
 from src.models.cupon_redimido import CuponRedimido
@@ -35,6 +36,8 @@ from src.models.lote import Lote
 from src.models.margen_objetivo import MargenObjetivo
 from src.models.medio_pago import MedioPago
 from src.models.merma import Merma
+from src.models.modelo_demanda import ModeloDemanda
+from src.models.monitoreo_precision_modelo import MonitoreoPrecisionModelo
 from src.models.movimiento_inventario import MovimientoInventario
 from src.models.nivel_fidelizacion import NivelFidelizacion
 from src.models.orden_compra import OrdenCompra
@@ -42,6 +45,7 @@ from src.models.orden_compra_detalle import OrdenCompraDetalle
 from src.models.pago_proveedor import PagoProveedor
 from src.models.precio_competencia import PrecioCompetencia
 from src.models.producto import Producto
+from src.models.pronostico_demanda import PronosticoDemanda
 from src.models.propuesta_ajuste_precio import PropuestaAjustePrecio
 from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
@@ -65,6 +69,7 @@ __all__ = [
     "Competidor",
     "ConfiguracionInventario",
     "ConfiguracionPricing",
+    "ConfiguracionPronostico",
     "Cupon",
     "CuponEnviado",
     "CuponRedimido",
@@ -80,6 +85,8 @@ __all__ = [
     "MargenObjetivo",
     "MedioPago",
     "Merma",
+    "ModeloDemanda",
+    "MonitoreoPrecisionModelo",
     "MovimientoInventario",
     "NivelFidelizacion",
     "OrdenCompra",
@@ -87,6 +94,7 @@ __all__ = [
     "PagoProveedor",
     "PrecioCompetencia",
     "Producto",
+    "PronosticoDemanda",
     "PropuestaAjustePrecio",
     "Proveedor",
     "RecepcionMercaderia",

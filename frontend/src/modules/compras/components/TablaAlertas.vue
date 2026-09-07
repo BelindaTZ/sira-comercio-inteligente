@@ -44,7 +44,25 @@ const claseTipo = {
               {{ a.tipo.replace('_', ' ') }}
             </span>
           </td>
-          <td class="px-4 py-2">#{{ a.product_id }}</td>
+          <td class="px-4 py-2">
+            #{{ a.product_id }}
+            <span
+              v-if="a.origen_calculo"
+              class="ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
+              :class="
+                a.origen_calculo === 'modelo_pronostico'
+                  ? 'bg-tertiary-container text-on-tertiary-container'
+                  : 'bg-surface-container-high text-on-surface-variant'
+              "
+              :title="
+                a.origen_calculo === 'modelo_pronostico'
+                  ? 'Punto de reposición calculado con el modelo de pronóstico de demanda'
+                  : 'Punto de reposición calculado con la rotación reciente (sin pronóstico vigente)'
+              "
+            >
+              {{ a.origen_calculo === 'modelo_pronostico' ? 'pronóstico' : 'rotación' }}
+            </span>
+          </td>
           <td class="px-4 py-2 text-on-surface-variant">{{ a.lote_id ?? '—' }}</td>
           <td class="px-4 py-2 text-on-surface-variant">
             {{ new Date(a.fecha_generada).toLocaleString('es-EC') }}

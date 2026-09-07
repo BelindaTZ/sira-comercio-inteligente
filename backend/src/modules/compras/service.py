@@ -67,10 +67,23 @@ class ComprasService:
 
     # -------------------------------------------------------- sugerencia (FR-023)
     async def generar_sugerencia_semanal(self, tienda_id: int) -> list[dict]:
+        # feature 004 (FR-009/FR-010): la cantidad sugerida se basa en el pronóstico
+        # vigente cuando existe; si no, en la rotación reciente de 001 (respaldo).
+        from src.modules.forecasting.repository import ForecastingRepository
+        from src.modules.forecasting.service import ForecastingService
+
+        forecasting = ForecastingService(ForecastingRepository(self.repo.session))
+
         sugerencias: list[dict] = []
         for inv in await self.repo.productos_bajo_punto(tienda_id):
-            # Reponer hasta 2× el punto de reposición (heurística MVP).
-            objetivo = inv.cantidad_minima * 2
+            pronostico = await forecasting.demanda_semanal_vigente(inv.product_id, tienda_id)
+            if pronostico is not None:
+                # Cubrir ~2 semanas de demanda proyectada.
+                objetivo = round(pronostico * 2)
+                origen = "modelo_pronostico"
+            else:
+                objetivo = inv.cantidad_minima * 2  # heurística MVP de 001
+                origen = "rotacion_reciente"
             cantidad = max(1, objetivo - inv.cantidad_disponible)
             proveedor_id = await self.repo.ultimo_proveedor_de(inv.product_id, tienda_id)
             sugerencias.append(
@@ -81,6 +94,7 @@ class ComprasService:
                     "cantidad_disponible": inv.cantidad_disponible,
                     "punto_reposicion": inv.cantidad_minima,
                     "cantidad_sugerida": cantidad,
+                    "origen_calculo": origen,
                 }
             )
         return sugerencias
@@ -90,10 +104,9 @@ class ComprasService:
         if await self.repo.get_proveedor(data.proveedor_id) is None:
             raise NotFoundError(f"Proveedor {data.proveedor_id} no existe")
 
-        sugerencia = {
-            s["product_id"]: s["cantidad_sugerida"]
-            for s in await self.generar_sugerencia_semanal(data.tienda_id)
-        }
+        sugerencias = await self.generar_sugerencia_semanal(data.tienda_id)
+        sugerencia = {s["product_id"]: s["cantidad_sugerida"] for s in sugerencias}
+        origen_por_producto = {s["product_id"]: s["origen_calculo"] for s in sugerencias}
         difiere = any(sugerencia.get(ln.product_id) != ln.cantidad for ln in data.lineas)
         if difiere and not (data.motivo_desviacion or "").strip():
             raise BusinessRuleError(
@@ -117,6 +130,7 @@ class ComprasService:
                     product_id=ln.product_id,
                     cantidad=ln.cantidad,
                     costo_unitario=ln.costo_unitario,
+                    origen_calculo=origen_por_producto.get(ln.product_id, "rotacion_reciente"),
                 )
             )
         await self.repo.flush()

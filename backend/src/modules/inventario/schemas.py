@@ -126,6 +126,8 @@ class AlertaOut(BaseModel):
     fecha_generada: datetime
     fecha_atendida: datetime | None
     empleado_atiende_id: int | None
+    # feature 004 (FR-010): 'modelo_pronostico' o 'rotacion_reciente'
+    origen_calculo: str = "rotacion_reciente"
 
     model_config = {"from_attributes": True}
 

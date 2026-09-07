@@ -21,8 +21,10 @@ from src.core.database import AsyncSessionLocal
 from src.jobs import (
     calcular_alertas_competencia_job,
     calcular_clv_churn_job,
+    entrenar_modelo_demanda_job,
     eventos_hito_job,
     generar_propuestas_ajuste_job,
+    monitorear_precision_job,
 )
 
 logger = logging.getLogger("sira.jobs")
@@ -36,6 +38,8 @@ JOBS = {
     eventos_hito_job.NOMBRE: eventos_hito_job,
     generar_propuestas_ajuste_job.NOMBRE: generar_propuestas_ajuste_job,
     calcular_alertas_competencia_job.NOMBRE: calcular_alertas_competencia_job,
+    entrenar_modelo_demanda_job.NOMBRE: entrenar_modelo_demanda_job,
+    monitorear_precision_job.NOMBRE: monitorear_precision_job,
 }
 
 
@@ -92,6 +96,21 @@ def start() -> None:
         CronTrigger(day_of_week="mon", hour=5, minute=0),
         args=[calcular_alertas_competencia_job.NOMBRE],
         id=calcular_alertas_competencia_job.NOMBRE,
+        replace_existing=True,
+    )
+    # Feature 004: entrenamiento mensual (día 1, 02:00) y monitoreo semanal (lunes 05:30).
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day=1, hour=2, minute=0),
+        args=[entrenar_modelo_demanda_job.NOMBRE],
+        id=entrenar_modelo_demanda_job.NOMBRE,
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day_of_week="mon", hour=5, minute=30),
+        args=[monitorear_precision_job.NOMBRE],
+        id=monitorear_precision_job.NOMBRE,
         replace_existing=True,
     )
     _scheduler.start()

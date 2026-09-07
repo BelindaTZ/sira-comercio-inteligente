@@ -63,6 +63,16 @@ const routes = [
     name: 'pricing-competencia',
     component: () => import('@/modules/pricing/pages/CompetenciaPage.vue'),
   },
+  {
+    path: '/forecasting',
+    name: 'forecasting-modelos',
+    component: () => import('@/modules/forecasting/pages/ModelosPage.vue'),
+  },
+  {
+    path: '/forecasting/demanda-perdida',
+    name: 'forecasting-demanda-perdida',
+    component: () => import('@/modules/forecasting/pages/DemandaPerdidaPage.vue'),
+  },
 ]
 
 const router = createRouter({

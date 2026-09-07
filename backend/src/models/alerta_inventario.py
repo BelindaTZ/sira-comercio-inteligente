@@ -42,3 +42,7 @@ class AlertaInventario(Base):
     fecha_generada: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     fecha_atendida: Mapped[datetime | None] = mapped_column(DateTime)
     empleado_atiende_id: Mapped[int | None] = mapped_column(Integer)
+    # feature 004 (FR-010): de dónde salió el punto de reposición que la disparó.
+    origen_calculo: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="rotacion_reciente"
+    )

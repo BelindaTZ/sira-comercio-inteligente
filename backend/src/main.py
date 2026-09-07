@@ -57,6 +57,7 @@ async def health() -> dict[str, str]:
 from src.modules.catalogo.router import router as catalogo_router  # noqa: E402
 from src.modules.clientes.router import router as clientes_router  # noqa: E402
 from src.modules.compras.router import router as compras_router  # noqa: E402
+from src.modules.forecasting.router import router as forecasting_router  # noqa: E402
 from src.modules.inventario.router import router as inventario_router  # noqa: E402
 from src.modules.pricing.router import router as pricing_router  # noqa: E402
 from src.modules.ventas.router import router as ventas_router  # noqa: E402
@@ -67,6 +68,7 @@ api.include_router(compras_router)
 api.include_router(catalogo_router)
 api.include_router(clientes_router)
 api.include_router(pricing_router)
+api.include_router(forecasting_router)
 
 
 # --- Endpoints de desarrollo (T005) — fuerzan un job periódico a mano.

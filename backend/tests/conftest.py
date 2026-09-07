@@ -196,6 +196,88 @@ def auth_encargado(escenario_pos: dict) -> dict[str, str]:
 
 
 @pytest_asyncio.fixture
+async def escenario_forecasting(db_session: AsyncSession, escenario_pos: dict) -> dict:
+    """Amplía `escenario_pos` para la feature 004: un Jefe_TI y un Jefe_Operaciones
+    con token, ~16 semanas de ventas confirmadas del producto principal (historial
+    suficiente) y un segundo producto con sólo 3 semanas (cold start)."""
+    from datetime import datetime
+
+    s = db_session
+    e = escenario_pos
+    anio = 2025
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    rol_ti = await _rol("Jefe_TI")
+    rol_ops = await _rol("Jefe_Operaciones")
+
+    # producto cold start en la misma tienda
+    cold_id = await s.scalar(text("SELECT COALESCE(MAX(product_id),0)+1 FROM productos"))
+    await s.execute(
+        text(
+            "INSERT INTO productos (product_id, product_category, product_type, costo, "
+            "precio_base, es_perecedero) VALUES (:p, 'TEST CAT', 'COLD', 1.00, 3.00, false)"
+        ),
+        {"p": cold_id},
+    )
+
+    async def _semana_de_ventas(product_id: int, semana: int, unidades: int) -> None:
+        venta_id = await s.scalar(
+            text(
+                "INSERT INTO ventas (tienda_id, cajero_id, fecha_hora, semana, total, estado) "
+                "VALUES (:t, :c, :f, :sem, 0, 'confirmada') RETURNING venta_id"
+            ),
+            {
+                "t": e["tienda_id"],
+                "c": e["cajero_id"],
+                "f": datetime(anio, 1, 1) + timedelta(weeks=semana - 1),
+                "sem": semana,
+            },
+        )
+        await s.execute(
+            text(
+                "INSERT INTO venta_detalle (venta_id, product_id, cantidad, sales_value) "
+                "VALUES (:v, :p, :cant, 2.50)"
+            ),
+            {"v": venta_id, "p": product_id, "cant": unidades},
+        )
+
+    for semana in range(1, 17):
+        # patrón semanal estable + leve tendencia → el modelo aprende bien
+        await _semana_de_ventas(e["product_id"], semana, 10 + (semana % 4))
+    for semana in range(1, 4):
+        await _semana_de_ventas(cold_id, semana, 5)
+    await s.flush()
+
+    return {
+        **e,
+        "anio_historial": anio,
+        "product_cold": cold_id,
+        "semana_pronostico": 17,  # primera semana del horizonte tras 16 semanas
+        "token_jefe_ti": _token(
+            empleado_id=e["encargado_id"], role_id=rol_ti, rol="Jefe_TI", tienda_id=e["tienda_id"]
+        ),
+        "token_jefe_ops": _token(
+            empleado_id=e["encargado_id"],
+            role_id=rol_ops,
+            rol="Jefe_Operaciones",
+            tienda_id=e["tienda_id"],
+        ),
+    }
+
+
+@pytest.fixture
+def auth_jefe_ti(escenario_forecasting: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_forecasting['token_jefe_ti']}"}
+
+
+@pytest.fixture
+def auth_jefe_ops_fc(escenario_forecasting: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_forecasting['token_jefe_ops']}"}
+
+
+@pytest_asyncio.fixture
 async def auth_jefe_comercial(db_session: AsyncSession, escenario_pos: dict) -> dict[str, str]:
     role_id = await db_session.scalar(
         text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Comercial'")
