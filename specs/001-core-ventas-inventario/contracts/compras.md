@@ -31,3 +31,9 @@ Query: `mes=YYYY-MM`. Devuelve el porcentaje de órdenes `tipo='programada'` (po
 
 ## POST /api/compras/facturas/{factura_id}/pagos
 Body: `{monto, medio_pago_id, referencia?, empleado_registra_id, empleado_autoriza_id}`. 403 si `empleado_registra_id == empleado_autoriza_id`. 200 → pago registrado, estado de la factura recalculado (`pagada_parcial`/`pagada`). (FR-034, FR-035)
+
+## GET /api/compras/proveedores/{proveedor_id}/productos (Ronda 11)
+Productos que este proveedor ha suministrado anteriormente, derivado del historial real de `ordenes_compra`/`orden_compra_detalle` (sin catálogo maestro nuevo). (FR-044)
+
+## GET /api/compras/productos/{product_id}/proveedores (Ronda 11)
+Proveedores que han suministrado este producto anteriormente, mismo criterio que el endpoint anterior. (FR-044)

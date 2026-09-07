@@ -1,0 +1,220 @@
+"""Router del módulo Ventas — implementa `contracts/ventas.md` (T031).
+
+Sin lógica de negocio (Principio XI): cada endpoint valida RBAC, delega en
+`VentasService` y forma la respuesta.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import Response
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.database import get_session
+from src.core.security import Principal, require_permission
+from src.integrations import reportlab_invoice
+from src.models.venta import Venta
+from src.modules.ventas.repository import VentasRepository
+from src.modules.ventas.schemas import (
+    AgregarLineaIn,
+    AnularVentaIn,
+    ConfirmarVentaIn,
+    DevolucionIn,
+    DevolucionOut,
+    IniciarVentaIn,
+    LineaOut,
+    PagoTarjetaIn,
+    PagoTarjetaOut,
+    RemoverLineaIn,
+    VentaOut,
+)
+from src.modules.ventas.service import VentasService
+from src.shared.exceptions import ForbiddenError, NotFoundError
+from src.shared.pagination import Page, PageParams, page_params
+
+router = APIRouter(prefix="/ventas", tags=["ventas"])
+
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+_ver = require_permission("Ventas", "ventas", "select")
+_operar = require_permission("Ventas", "ventas", "insert")
+_actualizar = require_permission("Ventas", "ventas", "update")
+_linea_insert = require_permission("Ventas", "venta_detalle", "insert")
+_linea_delete = require_permission("Ventas", "venta_detalle", "delete")
+_devolucion = require_permission("Ventas", "devoluciones", "insert")
+
+
+def _svc(session: SessionDep) -> VentasService:
+    return VentasService(VentasRepository(session))
+
+
+ServiceDep = Annotated[VentasService, Depends(_svc)]
+
+
+async def _venta_out(svc: VentasService, venta: Venta) -> VentaOut:
+    lineas = await svc.repo.lineas_de(venta.venta_id)
+    return VentaOut(
+        venta_id=venta.venta_id,
+        tienda_id=venta.tienda_id,
+        cajero_id=venta.cajero_id,
+        household_id=venta.household_id,
+        estado=venta.estado,
+        total=venta.total,
+        medio_pago_id=venta.medio_pago_id,
+        tipo_comprobante=venta.tipo_comprobante,
+        identificacion_comprador=venta.identificacion_comprador,
+        razon_social_comprador=venta.razon_social_comprador,
+        fecha_hora=venta.fecha_hora,
+        comprobante_objeto=venta.comprobante_objeto,
+        lineas=[
+            LineaOut(
+                venta_detalle_id=ln.venta_detalle_id,
+                product_id=ln.product_id,
+                cantidad=ln.cantidad,
+                sales_value=ln.sales_value,
+                subtotal=ln.sales_value * ln.cantidad,
+            )
+            for ln in lineas
+        ],
+    )
+
+
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=VentaOut)
+async def iniciar_venta(
+    data: IniciarVentaIn, svc: ServiceDep, _: Annotated[Principal, Depends(_operar)]
+) -> VentaOut:
+    venta = await svc.iniciar_venta(data)
+    return await _venta_out(svc, venta)
+
+
+@router.post("/{venta_id}/lineas", response_model=VentaOut)
+async def agregar_linea(
+    venta_id: int,
+    data: AgregarLineaIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_linea_insert)],
+) -> VentaOut:
+    venta, _linea = await svc.agregar_linea(venta_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.delete("/{venta_id}/lineas/{linea_id}", response_model=VentaOut)
+async def remover_linea(
+    venta_id: int,
+    linea_id: int,
+    data: RemoverLineaIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_linea_delete)],
+) -> VentaOut:
+    # El principal autenticado es quien autoriza: no se autoriza en nombre de otro.
+    if data.autoriza_empleado_id != principal.empleado_id:
+        raise ForbiddenError("autoriza_empleado_id debe coincidir con el empleado autenticado")
+    venta = await svc.remover_linea(venta_id, linea_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.post("/{venta_id}/pago-tarjeta", response_model=PagoTarjetaOut)
+async def pago_tarjeta(
+    venta_id: int,
+    data: PagoTarjetaIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_actualizar)],
+) -> PagoTarjetaOut:
+    intento = await svc.procesar_pago_tarjeta(venta_id, data)
+    return PagoTarjetaOut(
+        intento_id=intento.intento_id,
+        resultado=intento.resultado,
+        referencia_pasarela=intento.referencia_pasarela,
+    )
+
+
+@router.post("/{venta_id}/confirmar", response_model=VentaOut)
+async def confirmar_venta(
+    venta_id: int,
+    data: ConfirmarVentaIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_actualizar)],
+) -> VentaOut:
+    venta = await svc.confirmar_venta(venta_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.post("/{venta_id}/anular", response_model=VentaOut)
+async def anular_venta(
+    venta_id: int,
+    data: AnularVentaIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_actualizar)],
+) -> VentaOut:
+    venta = await svc.anular_venta(venta_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.post(
+    "/{venta_id}/devoluciones", status_code=status.HTTP_201_CREATED, response_model=DevolucionOut
+)
+async def registrar_devolucion(
+    venta_id: int,
+    data: DevolucionIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_devolucion)],
+) -> DevolucionOut:
+    dev = await svc.registrar_devolucion(venta_id, data, principal.empleado_id)
+    return DevolucionOut(
+        devolucion_id=dev.devolucion_id,
+        venta_id=dev.venta_id,
+        product_id=dev.product_id,
+        cantidad=dev.cantidad,
+        motivo=dev.motivo,
+        reintegra_inventario=dev.reintegra_inventario,
+        empleado_id=dev.empleado_id,
+    )
+
+
+@router.get("/{venta_id}/comprobante")
+async def comprobante(
+    venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+) -> Response:
+    venta = await svc.repo.get_venta(venta_id)
+    if venta is None:
+        raise NotFoundError(f"Venta {venta_id} no existe")
+    if not venta.comprobante_objeto:
+        raise NotFoundError("La venta aún no tiene comprobante emitido")
+    pdf = reportlab_invoice.descargar_comprobante(venta.comprobante_objeto)
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'inline; filename="venta-{venta_id}.pdf"'},
+    )
+
+
+@router.get("", response_model=Page[VentaOut])
+async def listar_ventas(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    params: Annotated[PageParams, Depends(page_params)],
+    tienda_id: int | None = None,
+    estado: str | None = None,
+    household_id: int | None = None,
+    fecha_desde: date | None = Query(default=None),
+    fecha_hasta: date | None = Query(default=None),
+) -> Page[VentaOut]:
+    stmt = select(Venta)
+    if tienda_id is not None:
+        stmt = stmt.where(Venta.tienda_id == tienda_id)
+    if estado is not None:
+        stmt = stmt.where(Venta.estado == estado)
+    if household_id is not None:
+        stmt = stmt.where(Venta.household_id == household_id)
+    if fecha_desde is not None:
+        stmt = stmt.where(Venta.fecha_hora >= fecha_desde)
+    if fecha_hasta is not None:
+        stmt = stmt.where(Venta.fecha_hora < fecha_hasta)
+
+    page = await svc.repo.paginate(params, stmt=stmt, order_by=Venta.fecha_hora.desc())
+    items = [await _venta_out(svc, v) for v in page.items]
+    return Page(items=items, total=page.total, page=page.page, size=page.size)

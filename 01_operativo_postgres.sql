@@ -773,6 +773,217 @@ ALTER TABLE ventas
     ADD COLUMN razon_social_comprador VARCHAR(150) NOT NULL DEFAULT 'CONSUMIDOR FINAL';
 
 -- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (ronda 7 — implementación US1)
+-- Detalles que el modelo conceptual dejaba implícitos y que el punto de venta
+-- necesita para funcionar. Todo aditivo, cada uno traza a spec/research de 001.
+-- ============================================================================
+
+-- FR-001: 'venta_id' es el basket_id del dataset para las ventas históricas
+-- sembradas (máx. 41_481_282_915). Las ventas nuevas del POS necesitan un
+-- generador propio que no colisione con ese rango.
+CREATE SEQUENCE IF NOT EXISTS ventas_venta_id_seq AS BIGINT START WITH 100000000000;
+ALTER TABLE ventas ALTER COLUMN venta_id SET DEFAULT nextval('ventas_venta_id_seq');
+
+-- FR-004 / research.md §7: el comprobante PDF se genera al confirmar y se
+-- persiste tal cual se emitió en el bucket MinIO 'comprobantes-venta'. Aquí se
+-- guarda la clave del objeto (no el binario) para servirlo luego.
+ALTER TABLE ventas ADD COLUMN IF NOT EXISTS comprobante_objeto VARCHAR(300);
+
+-- spec.md (Key Entities → Lote de Inventario): "cantidad recibida, cantidad
+-- disponible". El DDL base solo tenía 'cantidad_recibida'; el descuento FIFO/FEFO
+-- (FR-005) necesita el saldo vivo por lote. Se inicializa = cantidad_recibida.
+ALTER TABLE lotes ADD COLUMN IF NOT EXISTS cantidad_disponible INTEGER;
+UPDATE lotes SET cantidad_disponible = cantidad_recibida WHERE cantidad_disponible IS NULL;
+ALTER TABLE lotes ALTER COLUMN cantidad_disponible SET NOT NULL;
+ALTER TABLE lotes ADD CONSTRAINT chk_lotes_cantidad_disponible
+    CHECK (cantidad_disponible >= 0 AND cantidad_disponible <= cantidad_recibida);
+
+-- FR-005 / FR-026: trazabilidad venta → línea → lote(s) afectado(s). Una salida
+-- por venta puede tocar más de un lote; cada movimiento anota de qué lote salió.
+ALTER TABLE movimientos_inventario ADD COLUMN IF NOT EXISTS lote_id BIGINT REFERENCES lotes(lote_id);
+CREATE INDEX IF NOT EXISTS idx_movimientos_inventario_lote_id ON movimientos_inventario(lote_id);
+
+-- RBAC de la ronda 7: el patrón base solo sembró Cajero/Jefe_Marketing/Gerente_General.
+-- El flujo de venta necesita que el cajero confirme (UPDATE) y que el Encargado_Tienda
+-- autorice remociones (FR-027) y anule ventas (FR-007).
+UPDATE role_permisos_tabla SET can_update = true
+    WHERE role_id = (SELECT role_id FROM roles WHERE nombre = 'Cajero')
+      AND nombre_tabla = 'ventas';
+
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE r.nombre = 'Encargado_Tienda' AND m.nombre = 'Ventas'
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, (t.tabla = 'venta_detalle')
+FROM roles r
+JOIN modulos m ON m.nombre = 'Ventas'
+CROSS JOIN (VALUES ('ventas'), ('venta_detalle'), ('devoluciones')) AS t(tabla)
+WHERE r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (ronda 8 — implementación US2)
+-- Gestión de inventario por lotes: estado de validación de merma y su lote.
+-- spec.md Key Entities → Merma: "producto, tienda, lote, cantidad, causa,
+-- estado de validación (pendiente/validada/rechazada)". El DDL base no los tenía.
+-- ============================================================================
+
+ALTER TABLE mermas ADD COLUMN IF NOT EXISTS lote_id BIGINT REFERENCES lotes(lote_id);
+ALTER TABLE mermas ADD COLUMN IF NOT EXISTS estado_validacion VARCHAR(20) NOT NULL DEFAULT 'pendiente';
+ALTER TABLE mermas ADD COLUMN IF NOT EXISTS empleado_valida_id INTEGER REFERENCES empleados(empleado_id);
+ALTER TABLE mermas ADD COLUMN IF NOT EXISTS fecha_validacion TIMESTAMP;
+ALTER TABLE mermas ADD CONSTRAINT chk_mermas_estado_validacion
+    CHECK (estado_validacion IN ('pendiente','validada','rechazada'));
+CREATE INDEX IF NOT EXISTS idx_mermas_estado_validacion ON mermas(estado_validacion)
+    WHERE estado_validacion = 'pendiente';
+
+-- RBAC ronda 8: el módulo 'Operaciones' no tenía permisos sembrados.
+-- Reponedor registra recepciones/ajustes/mermas; Encargado_Tienda valida mermas;
+-- Jefe_Operaciones supervisa toda la red.
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'Operaciones' AND r.nombre IN ('Reponedor','Encargado_Tienda','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla,
+       true,
+       true,
+       (r.nombre <> 'Reponedor' OR t.tabla IN ('lotes','inventario')),
+       false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Operaciones'
+CROSS JOIN (VALUES ('lotes'), ('recepcion_mercaderia'), ('ajustes_inventario'),
+                    ('mermas'), ('inventario'), ('movimientos_inventario'),
+                    ('ordenes_compra'), ('orden_compra_detalle')) AS t(tabla)
+WHERE r.nombre IN ('Reponedor','Encargado_Tienda','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (ronda 9 — implementación US3)
+-- Alertas de reposición/vencimiento/exceso, quiebre de alta demanda, stock
+-- máximo por categoría, verificación de anaquel, y config de inventario.
+-- data-model.md §17 / §17.1 (tablas Ronda 9/10 que faltaban en el DDL base).
+-- ============================================================================
+
+-- FR-038: nuevo tipo de alerta 'exceso_stock' (no requiere lote, como 'reposicion').
+ALTER TABLE alertas_inventario DROP CONSTRAINT IF EXISTS alertas_inventario_tipo_check;
+ALTER TABLE alertas_inventario ADD CONSTRAINT alertas_inventario_tipo_check
+    CHECK (tipo IN ('reposicion','vencimiento','exceso_stock'));
+
+-- FR-043: quiebre marcado como alta demanda al insertar (según clasificacion_abc='A'
+-- vigente en ese momento; no se recalcula retroactivamente — data-model.md §12).
+ALTER TABLE eventos_quiebre_stock ADD COLUMN IF NOT EXISTS es_alta_demanda BOOLEAN NOT NULL DEFAULT false;
+
+-- FR-037 (Ronda 9): stock máximo vigente por categoría y tienda. Sin FK a productos
+-- (granularidad de categoría, mismo criterio que umbral_merma_categoria de 006).
+CREATE TABLE IF NOT EXISTS stock_maximo_categoria (
+    id BIGSERIAL PRIMARY KEY,
+    product_category VARCHAR(100) NOT NULL,
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    cantidad_maxima INTEGER NOT NULL CHECK (cantidad_maxima > 0),
+    empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_definicion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_stock_maximo_categoria
+    ON stock_maximo_categoria(product_category, tienda_id);
+
+-- FR-042 (Ronda 10): verificación diaria de anaquel de productos clasificación A.
+CREATE TABLE IF NOT EXISTS verificacion_anaquel (
+    id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id),
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    fecha DATE NOT NULL DEFAULT CURRENT_DATE,
+    disponible BOOLEAN NOT NULL,
+    empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_verificacion_anaquel_dia
+    ON verificacion_anaquel(product_id, tienda_id, fecha);
+
+-- FR-016 / FR-020: parámetros configurables por el negocio (spec: "no se fija un
+-- valor único de fábrica"). Mismo patrón clave/valor que configuracion_pricing (003).
+CREATE TABLE IF NOT EXISTS configuracion_inventario (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(10,4) NOT NULL,
+    descripcion VARCHAR(250)
+);
+INSERT INTO configuracion_inventario (clave, valor, descripcion) VALUES
+    ('lead_time_dias_default', 7, 'Días estimados entre orden y recepción, usado por el cálculo del punto de reposición cuando no hay un valor por proveedor (FR-020, research.md #5)'),
+    ('stock_seguridad_pct', 0.20, 'Fracción del consumo del lead time que se mantiene como colchón de seguridad (FR-020, research.md #5)'),
+    ('reposicion_ventana_dias', 14, 'Ventana de la media móvil de demanda diaria para el punto de reposición (FR-020)'),
+    ('vencimiento_umbral_dias', 15, 'Días de anticipación para alertar un lote perecedero próximo a vencer (FR-016)')
+ON CONFLICT (clave) DO NOTHING;
+
+-- RBAC ronda 9: alertas/quiebres/stock-máximo/anaquel (Operaciones) y
+-- facturas/pagos a proveedor (Finanzas).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE (m.nombre = 'Operaciones'
+         AND r.nombre IN ('Reponedor','Encargado_Tienda','Jefe_Operaciones'))
+   OR (m.nombre = 'Finanzas' AND r.nombre IN ('Jefe_Finanzas','Jefe_Operaciones'))
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla,
+       true,
+       (r.nombre <> 'Reponedor'
+        OR t.tabla IN ('alertas_inventario','eventos_quiebre_stock','verificacion_anaquel')),
+       (r.nombre <> 'Reponedor'),
+       false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Operaciones'
+CROSS JOIN (VALUES ('alertas_inventario'), ('eventos_quiebre_stock'),
+                    ('stock_maximo_categoria'), ('verificacion_anaquel'),
+                    ('proveedores'), ('facturas_proveedor')) AS t(tabla)
+WHERE r.nombre IN ('Reponedor','Encargado_Tienda','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES ('facturas_proveedor'), ('pagos_proveedor')) AS t(tabla)
+WHERE r.nombre IN ('Jefe_Finanzas','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 001-core-ventas-inventario (ronda 10 — implementación US4/US5)
+-- Catálogo de productos: nombre/marca y generador de product_id para altas nuevas.
+-- spec.md Key Entities → Producto: "código interno, código de barras, nombre,
+-- categoría, marca, ...". El DDL base (del dataset) no traía nombre ni marca libre.
+-- ============================================================================
+
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS nombre VARCHAR(200);
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS marca VARCHAR(120);
+
+-- FR-009: 'product_id' es la natural key del dataset (máx. 18_316_298). Las altas
+-- nuevas por la UI necesitan su propio generador que no colisione con ese rango.
+CREATE SEQUENCE IF NOT EXISTS productos_product_id_seq AS INTEGER START WITH 90000000;
+ALTER TABLE productos ALTER COLUMN product_id SET DEFAULT nextval('productos_product_id_seq');
+
+-- RBAC ronda 10: el módulo 'Comercial' no tenía permisos sembrados.
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'Comercial' AND r.nombre IN ('Jefe_Comercial','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+-- La "baja" de un producto es lógica (activo=false → UPDATE), por eso can_delete=false.
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Comercial'
+CROSS JOIN (VALUES ('productos'), ('historial_precios'), ('margenes_objetivo')) AS t(tabla)
+WHERE r.nombre IN ('Jefe_Comercial','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
 -- EXTENSIÓN — Feature 003-precios-margenes (spec.md, plan.md, research.md, data-model.md)
 -- ============================================================================
 
@@ -858,7 +1069,8 @@ CREATE INDEX idx_precio_competencia_product_id ON precio_competencia(product_id)
 CREATE TABLE configuracion_pricing (
     clave VARCHAR(60) PRIMARY KEY,
     valor DECIMAL(10,4) NOT NULL,
-    descripcion VARCHAR(200)
+    descripcion VARCHAR(250)   -- 250 (no 200): la descripción de 'margen_minimo_global_pct'
+                               -- documenta el Edge Case de FR-007 y mide 201 caracteres.
 );
 INSERT INTO configuracion_pricing (clave, valor, descripcion) VALUES
     ('margen_minimo_global_pct', 5.0, 'Piso de respaldo del margen objetivo efectivo cuando una categoría no tiene margen objetivo definido, o cuando el modificador ancla/nicho lo dejaría por debajo de este valor (Edge Case spec.md, FR-007)'),

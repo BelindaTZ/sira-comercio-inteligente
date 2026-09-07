@@ -1,0 +1,232 @@
+"""InventarioRepository (T038) — acceso a datos de lotes, recepciones, ajustes,
+mermas, inventario y movimientos. Sin lógica de negocio (Principio XI).
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from decimal import Decimal
+
+from sqlalchemy import Select, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.models.alerta_inventario import AlertaInventario
+from src.models.configuracion_inventario import ConfiguracionInventario
+from src.models.inventario import Inventario
+from src.models.lote import Lote
+from src.models.merma import Merma
+from src.models.orden_compra import OrdenCompra
+from src.models.producto import Producto
+from src.models.stock_maximo_categoria import StockMaximoCategoria
+from src.models.venta import Venta
+from src.models.venta_detalle import VentaDetalle
+from src.models.verificacion_anaquel import VerificacionAnaquel
+from src.shared.repository import BaseRepository
+
+
+class InventarioRepository(BaseRepository[Lote]):
+    model = Lote
+
+    def __init__(self, session: AsyncSession) -> None:
+        super().__init__(session)
+
+    # --- genérico ---
+    def agregar(self, entity) -> None:
+        self.session.add(entity)
+
+    async def flush(self) -> None:
+        await self.session.flush()
+
+    async def refrescar(self, entity) -> None:
+        await self.session.refresh(entity)
+
+    # --- productos / órdenes ---
+    async def get_producto(self, product_id: int) -> Producto | None:
+        return await self.session.get(Producto, product_id)
+
+    async def get_orden_for_update(self, orden_id: int) -> OrdenCompra | None:
+        stmt = select(OrdenCompra).where(OrdenCompra.orden_id == orden_id).with_for_update()
+        return (await self.session.scalars(stmt)).first()
+
+    # --- inventario ---
+    async def get_inventario_for_update(self, product_id: int, tienda_id: int) -> Inventario | None:
+        stmt = (
+            select(Inventario)
+            .where(Inventario.product_id == product_id, Inventario.tienda_id == tienda_id)
+            .with_for_update()
+        )
+        return (await self.session.scalars(stmt)).first()
+
+    async def upsert_inventario(self, product_id: int, tienda_id: int, delta: int) -> Inventario:
+        inv = await self.get_inventario_for_update(product_id, tienda_id)
+        if inv is None:
+            inv = Inventario(
+                product_id=product_id,
+                tienda_id=tienda_id,
+                cantidad_disponible=max(0, delta),
+            )
+            self.session.add(inv)
+            await self.session.flush()
+        else:
+            inv.cantidad_disponible += delta
+        return inv
+
+    # --- lotes ---
+    async def get_lote_for_update(self, lote_id: int) -> Lote | None:
+        stmt = select(Lote).where(Lote.lote_id == lote_id).with_for_update()
+        return (await self.session.scalars(stmt)).first()
+
+    async def lotes_con_saldo_for_update(self, product_id: int, tienda_id: int) -> list[Lote]:
+        stmt = (
+            select(Lote)
+            .where(
+                Lote.product_id == product_id,
+                Lote.tienda_id == tienda_id,
+                Lote.cantidad_disponible > 0,
+            )
+            .order_by(
+                Lote.fecha_vencimiento.asc().nulls_last(),
+                Lote.cantidad_recibida.asc(),
+                Lote.lote_id.asc(),
+            )
+            .with_for_update()
+        )
+        return list((await self.session.scalars(stmt)).all())
+
+    def lotes_query(
+        self,
+        *,
+        product_id: int | None = None,
+        tienda_id: int | None = None,
+        vence_antes_de: object | None = None,
+    ) -> Select:
+        stmt = select(Lote)
+        if product_id is not None:
+            stmt = stmt.where(Lote.product_id == product_id)
+        if tienda_id is not None:
+            stmt = stmt.where(Lote.tienda_id == tienda_id)
+        if vence_antes_de is not None:
+            stmt = stmt.where(Lote.fecha_vencimiento <= vence_antes_de)
+        return stmt
+
+    # --- mermas ---
+    async def get_merma_for_update(self, merma_id: int) -> Merma | None:
+        stmt = select(Merma).where(Merma.merma_id == merma_id).with_for_update()
+        return (await self.session.scalars(stmt)).first()
+
+    # --- US3: configuración ---
+    async def config(self, clave: str, defecto: Decimal) -> Decimal:
+        valor = await self.session.scalar(
+            select(ConfiguracionInventario.valor).where(ConfiguracionInventario.clave == clave)
+        )
+        return Decimal(str(valor)) if valor is not None else defecto
+
+    # --- US3: demanda / reposición ---
+    async def unidades_vendidas(self, product_id: int, tienda_id: int, desde: datetime) -> int:
+        stmt = (
+            select(func.coalesce(func.sum(VentaDetalle.cantidad), 0))
+            .select_from(VentaDetalle)
+            .join(Venta, Venta.venta_id == VentaDetalle.venta_id)
+            .where(
+                VentaDetalle.product_id == product_id,
+                Venta.tienda_id == tienda_id,
+                Venta.estado == "confirmada",
+                Venta.fecha_hora >= desde,
+            )
+        )
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def pares_inventario(self, tienda_id: int | None = None) -> list[tuple[int, int]]:
+        stmt = select(Inventario.product_id, Inventario.tienda_id)
+        if tienda_id is not None:
+            stmt = stmt.where(Inventario.tienda_id == tienda_id)
+        return [(r[0], r[1]) for r in (await self.session.execute(stmt)).all()]
+
+    # --- US3: alertas ---
+    async def alerta_pendiente(
+        self, product_id: int, tienda_id: int, tipo: str
+    ) -> AlertaInventario | None:
+        stmt = select(AlertaInventario).where(
+            AlertaInventario.product_id == product_id,
+            AlertaInventario.tienda_id == tienda_id,
+            AlertaInventario.tipo == tipo,
+            AlertaInventario.estado == "pendiente",
+        )
+        return (await self.session.scalars(stmt)).first()
+
+    async def alerta_vencimiento_pendiente_lote(self, lote_id: int) -> bool:
+        stmt = select(AlertaInventario.alerta_id).where(
+            AlertaInventario.lote_id == lote_id,
+            AlertaInventario.tipo == "vencimiento",
+            AlertaInventario.estado == "pendiente",
+        )
+        return (await self.session.scalars(stmt)).first() is not None
+
+    async def get_alerta_for_update(self, alerta_id: int) -> AlertaInventario | None:
+        stmt = (
+            select(AlertaInventario)
+            .where(AlertaInventario.alerta_id == alerta_id)
+            .with_for_update()
+        )
+        return (await self.session.scalars(stmt)).first()
+
+    def alertas_query(
+        self,
+        *,
+        tipo: str | None = None,
+        estado: str | None = None,
+        tienda_id: int | None = None,
+    ) -> Select:
+        stmt = select(AlertaInventario)
+        if tipo is not None:
+            stmt = stmt.where(AlertaInventario.tipo == tipo)
+        if estado is not None:
+            stmt = stmt.where(AlertaInventario.estado == estado)
+        if tienda_id is not None:
+            stmt = stmt.where(AlertaInventario.tienda_id == tienda_id)
+        return stmt
+
+    async def lotes_perecederos_venciendo(
+        self, umbral: date, tienda_id: int | None = None
+    ) -> list[Lote]:
+        stmt = (
+            select(Lote)
+            .join(Producto, Producto.product_id == Lote.product_id)
+            .where(
+                Producto.es_perecedero.is_(True),
+                Lote.fecha_vencimiento.is_not(None),
+                Lote.fecha_vencimiento <= umbral,
+                Lote.cantidad_disponible > 0,
+            )
+            .order_by(Lote.fecha_vencimiento.asc())
+        )
+        if tienda_id is not None:
+            stmt = stmt.where(Lote.tienda_id == tienda_id)
+        return list((await self.session.scalars(stmt)).all())
+
+    # --- US3: stock máximo por categoría ---
+    async def get_stock_maximo(
+        self, product_category: str, tienda_id: int
+    ) -> StockMaximoCategoria | None:
+        stmt = select(StockMaximoCategoria).where(
+            StockMaximoCategoria.product_category == product_category,
+            StockMaximoCategoria.tienda_id == tienda_id,
+        )
+        return (await self.session.scalars(stmt)).first()
+
+    def stock_maximo_query(self, *, tienda_id: int, product_category: str | None = None) -> Select:
+        stmt = select(StockMaximoCategoria).where(StockMaximoCategoria.tienda_id == tienda_id)
+        if product_category is not None:
+            stmt = stmt.where(StockMaximoCategoria.product_category == product_category)
+        return stmt
+
+    # --- US3: verificación de anaquel ---
+    async def get_verificacion_anaquel(
+        self, product_id: int, tienda_id: int, fecha: date
+    ) -> VerificacionAnaquel | None:
+        stmt = select(VerificacionAnaquel).where(
+            VerificacionAnaquel.product_id == product_id,
+            VerificacionAnaquel.tienda_id == tienda_id,
+            VerificacionAnaquel.fecha == fecha,
+        )
+        return (await self.session.scalars(stmt)).first()

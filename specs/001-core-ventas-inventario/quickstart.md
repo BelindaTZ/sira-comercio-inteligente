@@ -73,6 +73,12 @@ cd frontend && npm install && npm run dev
 2. Registrar un evento de quiebre de stock (FR-022) para ese mismo producto clasificación A.
 3. **Verificar**: el evento queda marcado como quiebre de alta demanda y el Jefe de Operaciones de esa tienda recibe la notificación de inmediato, sin esperar al reporte mensual (FR-042, FR-043).
 
+## Escenario 9 — Historial proveedor↔producto (US3, Ronda 11)
+
+1. Como Jefe de Operaciones, consultar los productos suministrados por un proveedor específico (`GET /api/compras/proveedores/{id}/productos`).
+2. Consultar los proveedores que han suministrado un producto específico (`GET /api/compras/productos/{id}/proveedores`).
+3. **Verificar**: ambas consultas devuelven resultados basados en el historial real de órdenes de compra ya registradas, sin depender de ningún catálogo maestro producto→proveedor (FR-044).
+
 ## Fuera de alcance de esta guía
 
 Cuadre de caja horario (006), pronóstico predictivo completo (004), CLV/fidelización (002) — no se validan aquí aunque compartan datos con esta feature.

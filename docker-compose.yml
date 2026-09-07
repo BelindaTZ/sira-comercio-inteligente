@@ -1,0 +1,61 @@
+# SIRA — entorno de desarrollo/demo local.
+# Feature 001 solo levanta PostgreSQL + MinIO (Principio III: ClickHouse/Airflow
+# quedan fuera del alcance, capa táctica/estratégica en pausa).
+#   docker compose up -d postgres minio
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: sira-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sira}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sira}
+      POSTGRES_DB: ${POSTGRES_DB:-sira}
+    ports:
+      - "15432:5432"
+    volumes:
+      - sira_pgdata:/var/lib/postgresql/data
+      # El esquema NO se aplica aquí: lo aplica Alembic (`alembic upgrade head`,
+      # migración 0001) como fuente única, para no duplicar la creación de tablas.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sira} -d ${POSTGRES_DB:-sira}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: sira-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - sira_miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Crea los buckets de esta feature al arrancar (Principio III: uno por responsabilidad).
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${MINIO_ACCESS_KEY:-minioadmin} ${MINIO_SECRET_KEY:-minioadmin} &&
+      mc mb --ignore-existing local/producto-imagenes &&
+      mc mb --ignore-existing local/comprobantes-venta &&
+      mc mb --ignore-existing local/landing-zone &&
+      echo 'buckets listos';
+      "
+
+volumes:
+  sira_pgdata:
+  sira_miniodata:

@@ -10,6 +10,12 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+backend/dist/
 
 # Node / Vue
 node_modules/
