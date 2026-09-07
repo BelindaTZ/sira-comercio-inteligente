@@ -107,6 +107,18 @@ async function remover({ lineaId, autorizaEmpleadoId, motivo }) {
   )
 }
 
+async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutorizaId }) {
+  venta.value = await conError(() =>
+    ventasApi.aplicarDescuento(venta.value.venta_id, lineaId, {
+      tipo,
+      valor,
+      motivo,
+      empleadoAplicaId: sesion.cajeroId,
+      empleadoAutorizaId,
+    })
+  )
+}
+
 async function cobrarTarjeta({ escenario, onResultado }) {
   procesandoPago.value = true
   try {
@@ -165,7 +177,12 @@ async function confirmar() {
     <div v-else class="grid gap-6 lg:grid-cols-[1fr_20rem]">
       <section class="space-y-4">
         <BuscadorProducto v-if="venta.estado === 'en_curso'" @agregar="agregar" />
-        <TicketVenta :venta="venta" :removible="venta.estado === 'en_curso'" @remover="remover" />
+        <TicketVenta
+          :venta="venta"
+          :removible="venta.estado === 'en_curso'"
+          @remover="remover"
+          @descuento="aplicarDescuento"
+        />
       </section>
 
       <aside class="space-y-4">

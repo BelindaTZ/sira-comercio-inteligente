@@ -37,6 +37,17 @@ class RemoverLineaIn(BaseModel):
     motivo: str | None = None
 
 
+class DescuentoManualIn(BaseModel):
+    """FR-009 — descuento manual con autorización obligatoria de un
+    Encargado_Tienda (o superior) distinto del cajero, sin excepción por monto."""
+
+    tipo: Literal["monto", "porcentaje"]
+    valor: Decimal = Field(gt=0)
+    motivo: str = Field(min_length=1, max_length=200)
+    empleado_aplica_id: int
+    empleado_autoriza_id: int
+
+
 class PagoTarjetaIn(BaseModel):
     monto: Decimal = Field(gt=0)
     # Afordancia de demo (modo test): elige qué tarjeta de prueba de Stripe usa el
@@ -87,6 +98,12 @@ class LineaOut(BaseModel):
     cantidad: int
     sales_value: Decimal
     subtotal: Decimal
+    # feature 003 — descuento manual / margen (None si no aplica)
+    retail_disc: Decimal = Decimal("0")
+    motivo_descuento: str | None = None
+    empleado_autoriza_id: int | None = None
+    margen_real: Decimal | None = None
+    margen_bajo_minimo: bool = False
 
 
 class VentaOut(BaseModel):

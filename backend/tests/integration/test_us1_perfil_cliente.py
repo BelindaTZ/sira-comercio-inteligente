@@ -57,4 +57,8 @@ async def test_escenario_2_baja_con_anonimizacion_real(
 
 
 async def test_los_jobs_estan_registrados():
-    assert set(scheduler.JOBS) == {"clv_churn_semanal", "eventos_hito_diario"}
+    # 002: clv/churn + hitos. 003: propuestas de ajuste + alertas de competencia.
+    assert {"clv_churn_semanal", "eventos_hito_diario"}.issubset(set(scheduler.JOBS))
+    assert {"propuestas_ajuste_semanal", "alertas_competencia_semanal"}.issubset(
+        set(scheduler.JOBS)
+    )

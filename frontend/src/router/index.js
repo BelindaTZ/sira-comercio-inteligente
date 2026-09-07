@@ -43,6 +43,26 @@ const routes = [
     name: 'campanas',
     component: () => import('@/modules/clientes/CampanasPage.vue'),
   },
+  {
+    path: '/pricing',
+    name: 'pricing-margenes',
+    component: () => import('@/modules/pricing/pages/MargenesPage.vue'),
+  },
+  {
+    path: '/pricing/propuestas',
+    name: 'pricing-propuestas',
+    component: () => import('@/modules/pricing/pages/PropuestasPrecioPage.vue'),
+  },
+  {
+    path: '/pricing/reporte',
+    name: 'pricing-reporte',
+    component: () => import('@/modules/pricing/pages/ReporteMargenPage.vue'),
+  },
+  {
+    path: '/pricing/competencia',
+    name: 'pricing-competencia',
+    component: () => import('@/modules/pricing/pages/CompetenciaPage.vue'),
+  },
 ]
 
 const router = createRouter({

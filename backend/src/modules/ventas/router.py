@@ -23,6 +23,7 @@ from src.modules.ventas.schemas import (
     AgregarLineaIn,
     AnularVentaIn,
     ConfirmarVentaIn,
+    DescuentoManualIn,
     DevolucionIn,
     DevolucionOut,
     IniciarVentaIn,
@@ -44,6 +45,7 @@ _ver = require_permission("Ventas", "ventas", "select")
 _operar = require_permission("Ventas", "ventas", "insert")
 _actualizar = require_permission("Ventas", "ventas", "update")
 _linea_insert = require_permission("Ventas", "venta_detalle", "insert")
+_linea_update = require_permission("Ventas", "venta_detalle", "update")
 _linea_delete = require_permission("Ventas", "venta_detalle", "delete")
 _devolucion = require_permission("Ventas", "devoluciones", "insert")
 
@@ -76,7 +78,12 @@ async def _venta_out(svc: VentasService, venta: Venta) -> VentaOut:
                 product_id=ln.product_id,
                 cantidad=ln.cantidad,
                 sales_value=ln.sales_value,
-                subtotal=ln.sales_value * ln.cantidad,
+                subtotal=ln.sales_value * ln.cantidad - (ln.retail_disc or 0),
+                retail_disc=ln.retail_disc or 0,
+                motivo_descuento=ln.motivo_descuento,
+                empleado_autoriza_id=ln.empleado_autoriza_id,
+                margen_real=ln.margen_real,
+                margen_bajo_minimo=ln.margen_bajo_minimo,
             )
             for ln in lineas
         ],
@@ -114,6 +121,22 @@ async def remover_linea(
     if data.autoriza_empleado_id != principal.empleado_id:
         raise ForbiddenError("autoriza_empleado_id debe coincidir con el empleado autenticado")
     venta = await svc.remover_linea(venta_id, linea_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.post("/{venta_id}/lineas/{linea_id}/descuento", response_model=VentaOut)
+async def aplicar_descuento_manual(
+    venta_id: int,
+    linea_id: int,
+    data: DescuentoManualIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_linea_update)],
+) -> VentaOut:
+    """FR-009/FR-010 — el cajero (autenticado) aplica; un Encargado_Tienda o
+    superior distinto autoriza (`contracts/pricing.md`)."""
+    if data.empleado_aplica_id != principal.empleado_id:
+        raise ForbiddenError("empleado_aplica_id debe coincidir con el empleado autenticado")
+    venta, _linea = await svc.aplicar_descuento_manual(venta_id, linea_id, data)
     return await _venta_out(svc, venta)
 
 

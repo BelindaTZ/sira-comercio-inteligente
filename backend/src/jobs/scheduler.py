@@ -18,7 +18,12 @@ from apscheduler.triggers.cron import CronTrigger
 
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal
-from src.jobs import calcular_clv_churn_job, eventos_hito_job
+from src.jobs import (
+    calcular_alertas_competencia_job,
+    calcular_clv_churn_job,
+    eventos_hito_job,
+    generar_propuestas_ajuste_job,
+)
 
 logger = logging.getLogger("sira.jobs")
 
@@ -29,6 +34,8 @@ _scheduler: AsyncIOScheduler | None = None
 JOBS = {
     calcular_clv_churn_job.NOMBRE: calcular_clv_churn_job,
     eventos_hito_job.NOMBRE: eventos_hito_job,
+    generar_propuestas_ajuste_job.NOMBRE: generar_propuestas_ajuste_job,
+    calcular_alertas_competencia_job.NOMBRE: calcular_alertas_competencia_job,
 }
 
 
@@ -70,6 +77,21 @@ def start() -> None:
         CronTrigger(hour=6, minute=0),
         args=[eventos_hito_job.NOMBRE],
         id=eventos_hito_job.NOMBRE,
+        replace_existing=True,
+    )
+    # Feature 003: propuestas de ajuste (lunes 04:00) y alertas de competencia (lunes 05:00).
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day_of_week="mon", hour=4, minute=0),
+        args=[generar_propuestas_ajuste_job.NOMBRE],
+        id=generar_propuestas_ajuste_job.NOMBRE,
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day_of_week="mon", hour=5, minute=0),
+        args=[calcular_alertas_competencia_job.NOMBRE],
+        id=calcular_alertas_competencia_job.NOMBRE,
         replace_existing=True,
     )
     _scheduler.start()

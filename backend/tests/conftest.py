@@ -210,6 +210,79 @@ async def auth_jefe_comercial(db_session: AsyncSession, escenario_pos: dict) -> 
 
 
 @pytest_asyncio.fixture
+async def escenario_pricing(db_session: AsyncSession, escenario_pos: dict) -> dict:
+    """Amplía `escenario_pos` para la feature 003: usuarios reales (para resolver
+    el rol de quien autoriza un descuento, research.md §4), un Jefe_Comercial y un
+    Jefe_TI (rol NO habilitado para autorizar descuentos)."""
+    s = db_session
+    e = escenario_pos
+    tienda_id = e["tienda_id"]
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    async def _empleado(nombre: str) -> int:
+        puesto_id = await s.scalar(
+            text(
+                "INSERT INTO roles_puesto (nombre) VALUES "
+                "('Puesto ' || gen_random_uuid()::text) RETURNING puesto_id"
+            )
+        )
+        return await s.scalar(
+            text(
+                "INSERT INTO empleados (tienda_id, puesto_id, nombre, fecha_contratacion) "
+                "VALUES (:t, :p, :n, CURRENT_DATE) RETURNING empleado_id"
+            ),
+            {"t": tienda_id, "p": puesto_id, "n": nombre},
+        )
+
+    async def _usuario(empleado_id: int, role_id: int) -> None:
+        import uuid
+
+        await s.execute(
+            text(
+                "INSERT INTO usuarios (empleado_id, role_id, username, password_hash) "
+                "VALUES (:e, :r, :u, 'x')"
+            ),
+            {"e": empleado_id, "r": role_id, "u": f"u{empleado_id}-{uuid.uuid4().hex[:6]}"},
+        )
+
+    rol_cajero = await _rol("Cajero")
+    rol_encargado = await _rol("Encargado_Tienda")
+    rol_jefe_comercial = await _rol("Jefe_Comercial")
+    rol_jefe_ti = await _rol("Jefe_TI")
+
+    await _usuario(e["cajero_id"], rol_cajero)
+    await _usuario(e["encargado_id"], rol_encargado)
+
+    jefe_comercial_id = await _empleado("Jefe Comercial Test")
+    await _usuario(jefe_comercial_id, rol_jefe_comercial)
+    jefe_ti_id = await _empleado("Jefe TI Test")
+    await _usuario(jefe_ti_id, rol_jefe_ti)
+    await s.flush()
+
+    return {
+        **e,
+        "jefe_comercial_id": jefe_comercial_id,
+        "jefe_ti_id": jefe_ti_id,
+        "token_jefe_comercial": _token(
+            empleado_id=jefe_comercial_id,
+            role_id=rol_jefe_comercial,
+            rol="Jefe_Comercial",
+            tienda_id=tienda_id,
+        ),
+        "token_jefe_ti": _token(
+            empleado_id=jefe_ti_id, role_id=rol_jefe_ti, rol="Jefe_TI", tienda_id=tienda_id
+        ),
+    }
+
+
+@pytest.fixture
+def auth_pricing_jc(escenario_pricing: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_pricing['token_jefe_comercial']}"}
+
+
+@pytest_asyncio.fixture
 async def auth_jefe_marketing(db_session: AsyncSession, escenario_pos: dict) -> dict[str, str]:
     role_id = await db_session.scalar(
         text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Marketing'")

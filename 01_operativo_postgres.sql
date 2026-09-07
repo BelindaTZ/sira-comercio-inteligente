@@ -1077,6 +1077,37 @@ INSERT INTO configuracion_pricing (clave, valor, descripcion) VALUES
     ('tolerancia_ajuste_pp', 2.0, 'Desviación mínima en puntos porcentuales para generar una propuesta de ajuste de precio (research.md #2, FR-005)'),
     ('umbral_alerta_competencia_pct', 5.0, 'Desviación mínima frente al precio de competencia para generar una alerta semanal (FR-016)');
 
+-- RBAC feature 003: el módulo 'Comercial' cubre las tablas nuevas de pricing/competencia;
+-- Cajero/Encargado_Tienda pueden actualizar venta_detalle (descuento manual, contracts/pricing.md).
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Comercial'
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+CROSS JOIN (VALUES ('margenes_objetivo'), ('propuesta_ajuste_precio'), ('historial_precios'),
+                    ('revision_margen_bajo'), ('competidores'), ('precio_competencia'),
+                    ('configuracion_pricing')) AS t(tabla)
+WHERE r.nombre IN ('Jefe_Comercial','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- FR-011/FR-012: el Encargado_Tienda ve y cierra el listado diario de margen bajo de SU tienda.
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE r.nombre = 'Encargado_Tienda' AND m.nombre = 'Comercial'
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'revision_margen_bajo', true, true, true, false
+FROM roles r JOIN modulos m ON m.nombre = 'Comercial'
+WHERE r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+UPDATE role_permisos_tabla SET can_update = true
+WHERE nombre_tabla = 'venta_detalle'
+  AND modulo_id = (SELECT modulo_id FROM modulos WHERE nombre = 'Ventas')
+  AND role_id IN (SELECT role_id FROM roles WHERE nombre IN ('Cajero','Encargado_Tienda'));
+
 
 -- ============================================================================
 -- EXTENSIÓN — Feature 002-clientes-fidelizacion (spec.md, ronda 1)

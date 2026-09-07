@@ -114,6 +114,19 @@ class VentasRepository(BaseRepository[Venta]):
     async def get_medio_pago(self, medio_pago_id: int) -> MedioPago | None:
         return await self.session.get(MedioPago, medio_pago_id)
 
+    async def rol_de_empleado(self, empleado_id: int) -> str | None:
+        """Rol RBAC del empleado vía `usuarios.role_id → roles.nombre` (feature 003,
+        research.md §4). `None` si el empleado no tiene usuario / rol asociado."""
+        from sqlalchemy import text
+
+        return await self.session.scalar(
+            text(
+                "SELECT r.nombre FROM usuarios u JOIN roles r ON r.role_id = u.role_id "
+                "WHERE u.empleado_id = :e"
+            ),
+            {"e": empleado_id},
+        )
+
     async def cantidad_devuelta(self, venta_id: int, product_id: int) -> int:
         from src.models.devolucion import Devolucion
 

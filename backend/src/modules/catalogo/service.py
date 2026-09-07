@@ -63,6 +63,20 @@ class CatalogoService:
         self.repo.agregar(producto)
         await self.repo.flush()
         await self.repo.refrescar(producto)
+
+        # FR-014 (feature 003): un producto agregado en vivo lleva código de barras
+        # real → se intenta una primera captura de precio de competencia vía Open
+        # Prices. Best-effort: no bloquea el alta si falla o no hay dato.
+        try:
+            from src.modules.pricing.repository import PricingRepository
+            from src.modules.pricing.service import PricingService
+
+            await PricingService(PricingRepository(self.repo.session)).capturar_open_prices(
+                producto.product_id
+            )
+        except Exception:  # noqa: BLE001
+            logger.info("Open Prices no disponible al alta del producto %s", producto.product_id)
+
         return producto, autocompletado
 
     async def actualizar_producto(self, product_id: int, data: ProductoPatch) -> Producto:

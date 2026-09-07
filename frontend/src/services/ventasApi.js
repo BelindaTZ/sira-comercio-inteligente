@@ -34,6 +34,23 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
+  /**
+   * FR-009/FR-010 (feature 003) — descuento manual con autorización obligatoria
+   * de un Encargado_Tienda (o superior) distinto del cajero, sin excepción por
+   * monto. `empleadoAutorizaId` se obtiene re-autenticando al encargado.
+   */
+  aplicarDescuento(ventaId, lineaId, { tipo, valor, motivo, empleadoAplicaId, empleadoAutorizaId }) {
+    return http
+      .post(`/api/ventas/${ventaId}/lineas/${lineaId}/descuento`, {
+        tipo,
+        valor,
+        motivo,
+        empleado_aplica_id: empleadoAplicaId,
+        empleado_autoriza_id: empleadoAutorizaId,
+      })
+      .then((r) => r.data)
+  },
+
   pagoTarjeta(ventaId, { monto, escenario = 'aprobado' }) {
     return http
       .post(`/api/ventas/${ventaId}/pago-tarjeta`, { monto, escenario })

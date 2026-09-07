@@ -24,11 +24,13 @@ from src.modules.ventas.schemas import (
     AgregarLineaIn,
     AnularVentaIn,
     ConfirmarVentaIn,
+    DescuentoManualIn,
     DevolucionIn,
     IniciarVentaIn,
     PagoTarjetaIn,
     RemoverLineaIn,
 )
+from src.shared import pricing as pricing_calc
 from src.shared.exceptions import (
     BusinessRuleError,
     ConflictError,
@@ -56,11 +58,14 @@ def _semana_iso(dt: datetime) -> int:
 
 
 def calcular_total(lineas: Iterable[VentaDetalle]) -> Decimal:
-    """Total línea a línea: Σ (precio unitario aplicado × cantidad). Sin
-    redondeos intermedios — `Decimal` conserva la precisión de 2 decimales."""
+    """Total línea a línea: Σ (precio unitario × cantidad − descuento manual de la
+    línea). Sin redondeos intermedios — `Decimal` conserva la precisión de 2
+    decimales. `retail_disc` (feature 003) es el monto total del descuento manual
+    autorizado de esa línea; 0 en el flujo base de 001."""
     total = Decimal("0")
     for linea in lineas:
         total += Decimal(str(linea.sales_value)) * linea.cantidad
+        total -= Decimal(str(getattr(linea, "retail_disc", 0) or 0))
     return total.quantize(Decimal("0.01"))
 
 
@@ -162,6 +167,89 @@ class VentasService:
         await self.repo.flush()
         return venta
 
+    # ------------------------------------------------------- feature 003
+    @staticmethod
+    def _precio_unitario_aplicado(linea: VentaDetalle) -> Decimal:
+        """Precio unitario ya descontado, después de TODOS los descuentos de la
+        línea (Edge Case de `spec.md`: descuento manual de 003 + cupón de 002):
+        `sales_value - (retail_disc + coupon_disc + coupon_match_disc) / cantidad`.
+        Los tres montos son totales de la línea; hoy sólo `retail_disc` recibe
+        valor en el flujo, los otros dos quedan preparados para 002."""
+        cantidad = linea.cantidad or 1
+        descuento_total = (
+            Decimal(str(linea.retail_disc or 0))
+            + Decimal(str(linea.coupon_disc or 0))
+            + Decimal(str(linea.coupon_match_disc or 0))
+        )
+        return Decimal(str(linea.sales_value)) - (descuento_total / cantidad)
+
+    async def _calcular_margen_real_lineas(self, lineas: list[VentaDetalle]) -> None:
+        """FR-002: margen real de TODA línea confirmada, con el precio ya
+        descontado y el costo vigente del producto. Valor congelado (Principio II)."""
+        for linea in lineas:
+            producto = await self.repo.get_producto(linea.product_id)
+            costo = producto.costo if producto is not None else None
+            linea.margen_real = pricing_calc.margen_real_pct(
+                self._precio_unitario_aplicado(linea), costo
+            )
+        await self.repo.flush()
+
+    async def _margen_objetivo_efectivo(self, product_id: int) -> Decimal:
+        from src.modules.pricing.repository import PricingRepository
+        from src.modules.pricing.service import PricingService
+
+        svc = PricingService(PricingRepository(self.repo.session))
+        data = await svc.margen_objetivo_efectivo(product_id)
+        return data["margen_objetivo_efectivo"]
+
+    async def aplicar_descuento_manual(
+        self, venta_id: int, linea_id: int, data: DescuentoManualIn
+    ) -> tuple[Venta, VentaDetalle]:
+        """FR-009/FR-010 — control detectivo + preventivo del descuento manual.
+
+        Autorización obligatoria de un empleado distinto con rol
+        `Encargado_Tienda` o superior (research.md §4), sin excepción por monto.
+        Si el margen real resultante cae bajo el margen objetivo efectivo del
+        producto, la línea se marca `margen_bajo_minimo` sin bloquear la venta.
+        """
+        venta = await self._venta_en_curso(venta_id)
+        linea = await self.repo.get_linea(venta_id, linea_id)
+        if linea is None:
+            raise NotFoundError(f"La línea {linea_id} no pertenece a la venta {venta_id}")
+
+        if data.empleado_aplica_id == data.empleado_autoriza_id:
+            raise ForbiddenError("Quien autoriza el descuento debe ser distinto de quien lo aplica")
+        rol_autoriza = await self.repo.rol_de_empleado(data.empleado_autoriza_id)
+        if not pricing_calc.rol_autoriza_descuento(rol_autoriza):
+            raise ForbiddenError(
+                "Sólo un Encargado_Tienda (o superior) puede autorizar un descuento manual"
+            )
+
+        cantidad = linea.cantidad or 1
+        bruto_linea = Decimal(str(linea.sales_value)) * cantidad
+        if data.tipo == "porcentaje":
+            descuento = (bruto_linea * data.valor / 100).quantize(Decimal("0.01"))
+        else:
+            descuento = Decimal(str(data.valor)).quantize(Decimal("0.01"))
+        descuento = min(descuento, bruto_linea)  # nunca deja el precio negativo
+
+        linea.retail_disc = descuento
+        linea.motivo_descuento = data.motivo
+        linea.empleado_aplica_id = data.empleado_aplica_id
+        linea.empleado_autoriza_id = data.empleado_autoriza_id
+
+        producto = await self.repo.get_producto(linea.product_id)
+        costo = producto.costo if producto is not None else None
+        linea.margen_real = pricing_calc.margen_real_pct(
+            self._precio_unitario_aplicado(linea), costo
+        )
+        objetivo = await self._margen_objetivo_efectivo(linea.product_id)
+        linea.margen_bajo_minimo = linea.margen_real is not None and linea.margen_real < objetivo
+
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id))
+        await self.repo.flush()
+        return venta, linea
+
     async def procesar_pago_tarjeta(self, venta_id: int, data: PagoTarjetaIn) -> IntentoPagoTarjeta:
         await self._venta_en_curso(venta_id)
 
@@ -191,6 +279,7 @@ class VentasService:
             raise BusinessRuleError("El cobro con tarjeta requiere un intento de pago aprobado")
 
         await self._descontar_inventario_fifo(venta, lineas)
+        await self._calcular_margen_real_lineas(lineas)
 
         venta.total = calcular_total(lineas)
         venta.estado = "confirmada"

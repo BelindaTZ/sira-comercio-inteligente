@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     openfoodfacts_base_url: str = Field(
         default="https://world.openfoodfacts.org", alias="OPENFOODFACTS_BASE_URL"
     )
+    open_prices_base_url: str = Field(
+        default="https://prices.openfoodfacts.org", alias="OPEN_PRICES_BASE_URL"
+    )
 
     # --- App ---
     cors_origins: list[str] = Field(default=["http://localhost:5173"], alias="CORS_ORIGINS")

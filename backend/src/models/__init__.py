@@ -17,7 +17,9 @@ from src.models.churn_score import ChurnScore
 from src.models.cliente import Cliente
 from src.models.cliente_clv import ClienteClv
 from src.models.cliente_demografico import ClienteDemografico
+from src.models.competidor import Competidor
 from src.models.configuracion_inventario import ConfiguracionInventario
+from src.models.configuracion_pricing import ConfiguracionPricing
 from src.models.cupon import Cupon
 from src.models.cupon_enviado import CuponEnviado
 from src.models.cupon_redimido import CuponRedimido
@@ -25,10 +27,12 @@ from src.models.devolucion import Devolucion
 from src.models.evento_cliente import EventoCliente
 from src.models.evento_quiebre_stock import EventoQuiebreStock
 from src.models.factura_proveedor import FacturaProveedor
+from src.models.historial_precio import HistorialPrecio
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
 from src.models.inventario import Inventario
 from src.models.linea_venta_removida import LineaVentaRemovida
 from src.models.lote import Lote
+from src.models.margen_objetivo import MargenObjetivo
 from src.models.medio_pago import MedioPago
 from src.models.merma import Merma
 from src.models.movimiento_inventario import MovimientoInventario
@@ -36,9 +40,12 @@ from src.models.nivel_fidelizacion import NivelFidelizacion
 from src.models.orden_compra import OrdenCompra
 from src.models.orden_compra_detalle import OrdenCompraDetalle
 from src.models.pago_proveedor import PagoProveedor
+from src.models.precio_competencia import PrecioCompetencia
 from src.models.producto import Producto
+from src.models.propuesta_ajuste_precio import PropuestaAjustePrecio
 from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
+from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.stock_maximo_categoria import StockMaximoCategoria
 from src.models.venta import Venta
 from src.models.venta_detalle import VentaDetalle
@@ -55,7 +62,9 @@ __all__ = [
     "Cliente",
     "ClienteClv",
     "ClienteDemografico",
+    "Competidor",
     "ConfiguracionInventario",
+    "ConfiguracionPricing",
     "Cupon",
     "CuponEnviado",
     "CuponRedimido",
@@ -63,10 +72,12 @@ __all__ = [
     "EventoCliente",
     "EventoQuiebreStock",
     "FacturaProveedor",
+    "HistorialPrecio",
     "IntentoPagoTarjeta",
     "Inventario",
     "LineaVentaRemovida",
     "Lote",
+    "MargenObjetivo",
     "MedioPago",
     "Merma",
     "MovimientoInventario",
@@ -74,9 +85,12 @@ __all__ = [
     "OrdenCompra",
     "OrdenCompraDetalle",
     "PagoProveedor",
+    "PrecioCompetencia",
     "Producto",
+    "PropuestaAjustePrecio",
     "Proveedor",
     "RecepcionMercaderia",
+    "RevisionMargenBajo",
     "StockMaximoCategoria",
     "Venta",
     "VentaDetalle",
