@@ -8,9 +8,10 @@
  *    sin excepción por monto. Si el margen resultante cae bajo el mínimo, la línea
  *    se marca para revisión sin bloquear la venta (FR-010).
  */
-import { reactive, ref } from 'vue'
+import { reactive, ref, watch } from 'vue'
+import { promocionesApi } from '@/services/promocionesApi'
 
-defineProps({
+const props = defineProps({
   venta: { type: Object, default: null },
   removible: { type: Boolean, default: true },
 })
@@ -22,6 +23,23 @@ function moneda(v) {
     Number(v || 0)
   )
 }
+
+// FR-003 (feature 005): recomendación de cross-sell por afinidad de canasta.
+const recomendacion = ref(null)
+watch(
+  () => (props.venta?.lineas || []).map((l) => l.product_id).join(','),
+  async (ids) => {
+    recomendacion.value = null
+    const productIds = ids ? ids.split(',').map(Number) : []
+    if (!productIds.length || !props.removible) return
+    try {
+      const r = await promocionesApi.recomendacionCrossSell(productIds)
+      recomendacion.value = r.recomendacion_disponible ? r : null
+    } catch {
+      recomendacion.value = null
+    }
+  }
+)
 
 function pedirRemocion(linea) {
   const autoriza = window.prompt(
@@ -85,6 +103,16 @@ function confirmarDescuento() {
 </script>
 
 <template>
+  <div
+    v-if="recomendacion"
+    class="mb-3 flex items-center gap-2 rounded-xl border border-tertiary bg-tertiary-container px-4 py-2 text-sm text-on-tertiary-container"
+  >
+    <span class="font-semibold">Sugerencia:</span>
+    ofrecer el producto #{{ recomendacion.product_id_recomendado }} — suele comprarse junto ({{
+      (Number(recomendacion.confianza) * 100).toFixed(0)
+    }}% de las veces).
+  </div>
+
   <div class="rounded-xl border border-outline-variant bg-surface-container-lowest">
     <table class="w-full text-sm">
       <thead>
@@ -168,8 +196,8 @@ function confirmarDescuento() {
         Descuento manual — producto #{{ modal.linea?.product_id }}
       </h3>
       <p class="mb-4 text-xs text-on-surface-variant">
-        Requiere autorización de un Encargado_Tienda (o superior) distinto del cajero, sin
-        excepción por monto.
+        Requiere autorización de un Encargado_Tienda (o superior) distinto del cajero, sin excepción
+        por monto.
       </p>
 
       <div class="mb-3 flex gap-2">

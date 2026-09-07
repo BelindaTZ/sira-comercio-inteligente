@@ -292,6 +292,20 @@ class VentasService:
             ).strip() or "SIN RAZÓN SOCIAL"
         await self.repo.flush()
 
+        # feature 005 (FR-006): si la venta es de un cliente identificado y contiene
+        # el antecedente de una regla de afinidad vigente sin el consecuente, dispara
+        # el cupón de afinidad. Best-effort — un fallo no revierte la venta (Principio II).
+        if venta.household_id is not None:
+            try:
+                from src.modules.promociones.repository import PromocionesRepository
+                from src.modules.promociones.service import PromocionesService
+
+                await PromocionesService(
+                    PromocionesRepository(self.repo.session)
+                ).evaluar_venta_para_afinidad(venta_id)
+            except Exception:  # noqa: BLE001
+                logger.exception("No se pudo evaluar la venta %s para cupón de afinidad", venta_id)
+
         venta.comprobante_objeto = await self._emitir_comprobante(venta, lineas)
         await self.repo.flush()
         return venta

@@ -278,6 +278,122 @@ def auth_jefe_ops_fc(escenario_forecasting: dict) -> dict[str, str]:
 
 
 @pytest_asyncio.fixture
+async def escenario_promociones(db_session: AsyncSession, escenario_pos: dict) -> dict:
+    """Amplía `escenario_pos` para la feature 005: productos A/B con afinidad fuerte
+    (comprados juntos en casi todos los tickets) + un producto C de baja rotación,
+    un cliente con consentimiento, y tokens de Jefe_Marketing / Jefe_Operaciones."""
+    from datetime import UTC, datetime
+
+    s = db_session
+    e = escenario_pos
+    prod_a = e["product_id"]
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    rol_mkt = await _rol("Jefe_Marketing")
+    rol_ops = await _rol("Jefe_Operaciones")
+
+    async def _producto(cat: str, tipo: str) -> int:
+        pid = await s.scalar(text("SELECT COALESCE(MAX(product_id),0)+1 FROM productos"))
+        await s.execute(
+            text(
+                "INSERT INTO productos (product_id, product_category, product_type, costo, "
+                "precio_base, activo) VALUES (:p, :c, :t, 1.00, 3.00, true)"
+            ),
+            {"p": pid, "c": cat, "t": tipo},
+        )
+        return pid
+
+    prod_b = await _producto("TEST CAT", "AFIN B")
+    prod_c = await _producto("CAT BAJA", "ROTACION BAJA")
+    # productos de relleno para que el Pareto de "CAT BAJA" deje a C fuera de A/B
+    prod_top = await _producto("CAT BAJA", "TOP")
+
+    household_id = await s.scalar(
+        text(
+            "INSERT INTO clientes (nombre, email, consentimiento_datos, activo) "
+            "VALUES ('Cliente Afin', 'afin@test.local', true, true) RETURNING household_id"
+        )
+    )
+
+    async def _venta(productos: list[int], household=None, semana=1) -> int:
+        venta_id = await s.scalar(
+            text(
+                "INSERT INTO ventas (tienda_id, cajero_id, household_id, fecha_hora, semana, "
+                "total, estado) VALUES (:t, :c, :h, :f, :sem, 0, 'confirmada') RETURNING venta_id"
+            ),
+            {
+                "t": e["tienda_id"],
+                "c": e["cajero_id"],
+                "h": household,
+                "f": datetime.now(UTC).replace(tzinfo=None),
+                "sem": semana,
+            },
+        )
+        for p in productos:
+            await s.execute(
+                text(
+                    "INSERT INTO venta_detalle (venta_id, product_id, cantidad, sales_value) "
+                    "VALUES (:v, :p, 1, 3.00)"
+                ),
+                {"v": venta_id, "p": p},
+            )
+        return venta_id
+
+    # afinidad fuerte A↔B: 12 tickets con ambos, 2 con solo A, 1 con solo B
+    for _ in range(12):
+        await _venta([prod_a, prod_b])
+    for _ in range(2):
+        await _venta([prod_a])
+    await _venta([prod_b])
+    # producto TOP concentra el valor de 'CAT BAJA'; C casi no vende
+    for _ in range(20):
+        await _venta([prod_top])
+    await _venta([prod_c])  # una sola venta histórica de C
+
+    # inventario de C en la tienda (para candidatos a liquidación)
+    await s.execute(
+        text(
+            "INSERT INTO inventario (product_id, tienda_id, cantidad_disponible) "
+            "VALUES (:p, :t, 50)"
+        ),
+        {"p": prod_c, "t": e["tienda_id"]},
+    )
+    await s.flush()
+
+    return {
+        **e,
+        "product_a": prod_a,
+        "product_b": prod_b,
+        "product_c": prod_c,
+        "household_afin": household_id,
+        "token_jefe_marketing": _token(
+            empleado_id=e["encargado_id"],
+            role_id=rol_mkt,
+            rol="Jefe_Marketing",
+            tienda_id=e["tienda_id"],
+        ),
+        "token_jefe_ops": _token(
+            empleado_id=e["encargado_id"],
+            role_id=rol_ops,
+            rol="Jefe_Operaciones",
+            tienda_id=e["tienda_id"],
+        ),
+    }
+
+
+@pytest.fixture
+def auth_mkt(escenario_promociones: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_promociones['token_jefe_marketing']}"}
+
+
+@pytest.fixture
+def auth_ops(escenario_promociones: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_promociones['token_jefe_ops']}"}
+
+
+@pytest_asyncio.fixture
 async def auth_jefe_comercial(db_session: AsyncSession, escenario_pos: dict) -> dict[str, str]:
     role_id = await db_session.scalar(
         text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Comercial'")

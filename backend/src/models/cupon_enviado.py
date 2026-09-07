@@ -28,3 +28,8 @@ class CuponEnviado(Base):
     )
     fecha_envio: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     entregado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # feature 005: regla de afinidad que originó el cupón (NULL para cupones de hito
+    # o de campañas de reactivación de 002).
+    regla_afinidad_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("regla_afinidad.regla_id")
+    )

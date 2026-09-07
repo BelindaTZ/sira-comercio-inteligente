@@ -19,10 +19,13 @@ from apscheduler.triggers.cron import CronTrigger
 from src.core.config import settings
 from src.core.database import AsyncSessionLocal
 from src.jobs import (
+    calcular_afinidad_job,
     calcular_alertas_competencia_job,
     calcular_clv_churn_job,
+    clasificar_abc_job,
     entrenar_modelo_demanda_job,
     eventos_hito_job,
+    generar_candidatos_liquidacion_job,
     generar_propuestas_ajuste_job,
     monitorear_precision_job,
 )
@@ -40,6 +43,9 @@ JOBS = {
     calcular_alertas_competencia_job.NOMBRE: calcular_alertas_competencia_job,
     entrenar_modelo_demanda_job.NOMBRE: entrenar_modelo_demanda_job,
     monitorear_precision_job.NOMBRE: monitorear_precision_job,
+    calcular_afinidad_job.NOMBRE: calcular_afinidad_job,
+    clasificar_abc_job.NOMBRE: clasificar_abc_job,
+    generar_candidatos_liquidacion_job.NOMBRE: generar_candidatos_liquidacion_job,
 }
 
 
@@ -111,6 +117,28 @@ def start() -> None:
         CronTrigger(day_of_week="mon", hour=5, minute=30),
         args=[monitorear_precision_job.NOMBRE],
         id=monitorear_precision_job.NOMBRE,
+        replace_existing=True,
+    )
+    # Feature 005: afinidad (día 1, 03:00) + ABC (día 1, 03:30) mensuales; candidatos (lunes 06:00).
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day=1, hour=3, minute=0),
+        args=[calcular_afinidad_job.NOMBRE],
+        id=calcular_afinidad_job.NOMBRE,
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day=1, hour=3, minute=30),
+        args=[clasificar_abc_job.NOMBRE],
+        id=clasificar_abc_job.NOMBRE,
+        replace_existing=True,
+    )
+    _scheduler.add_job(
+        _run,
+        CronTrigger(day_of_week="mon", hour=6, minute=0),
+        args=[generar_candidatos_liquidacion_job.NOMBRE],
+        id=generar_candidatos_liquidacion_job.NOMBRE,
         replace_existing=True,
     )
     _scheduler.start()

@@ -73,6 +73,21 @@ const routes = [
     name: 'forecasting-demanda-perdida',
     component: () => import('@/modules/forecasting/pages/DemandaPerdidaPage.vue'),
   },
+  {
+    path: '/promociones',
+    name: 'promociones-afinidad',
+    component: () => import('@/modules/promociones/pages/ReglasAfinidadPage.vue'),
+  },
+  {
+    path: '/promociones/liquidacion',
+    name: 'promociones-liquidacion',
+    component: () => import('@/modules/promociones/pages/LiquidacionPage.vue'),
+  },
+  {
+    path: '/promociones/colocacion',
+    name: 'promociones-colocacion',
+    component: () => import('@/modules/promociones/pages/ColocacionPromocionalPage.vue'),
+  },
 ]
 
 const router = createRouter({

@@ -10,9 +10,11 @@ en PostgreSQL (migración Alembic desde `01_operativo_postgres.sql`), no el ORM.
 from src.models.ajuste_inventario import AjusteInventario
 from src.models.alerta_inventario import AlertaInventario
 from src.models.anulacion_venta import AnulacionVenta
+from src.models.cambio_clasificacion_abc import CambioClasificacionAbc
 from src.models.campana import Campana
 from src.models.campana_cliente import CampanaCliente
 from src.models.campana_resultado import CampanaResultado
+from src.models.candidato_liquidacion import CandidatoLiquidacion
 from src.models.churn_score import ChurnScore
 from src.models.cliente import Cliente
 from src.models.cliente_clv import ClienteClv
@@ -20,6 +22,7 @@ from src.models.cliente_demografico import ClienteDemografico
 from src.models.competidor import Competidor
 from src.models.configuracion_inventario import ConfiguracionInventario
 from src.models.configuracion_pricing import ConfiguracionPricing
+from src.models.configuracion_promociones import ConfiguracionPromociones
 from src.models.configuracion_pronostico import ConfiguracionPronostico
 from src.models.cupon import Cupon
 from src.models.cupon_enviado import CuponEnviado
@@ -49,6 +52,7 @@ from src.models.pronostico_demanda import PronosticoDemanda
 from src.models.propuesta_ajuste_precio import PropuestaAjustePrecio
 from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
+from src.models.regla_afinidad import ReglaAfinidad
 from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.stock_maximo_categoria import StockMaximoCategoria
 from src.models.venta import Venta
@@ -59,9 +63,11 @@ __all__ = [
     "AjusteInventario",
     "AlertaInventario",
     "AnulacionVenta",
+    "CambioClasificacionAbc",
     "Campana",
     "CampanaCliente",
     "CampanaResultado",
+    "CandidatoLiquidacion",
     "ChurnScore",
     "Cliente",
     "ClienteClv",
@@ -69,6 +75,7 @@ __all__ = [
     "Competidor",
     "ConfiguracionInventario",
     "ConfiguracionPricing",
+    "ConfiguracionPromociones",
     "ConfiguracionPronostico",
     "Cupon",
     "CuponEnviado",
@@ -98,6 +105,7 @@ __all__ = [
     "PropuestaAjustePrecio",
     "Proveedor",
     "RecepcionMercaderia",
+    "ReglaAfinidad",
     "RevisionMargenBajo",
     "StockMaximoCategoria",
     "Venta",

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.database import Base
 
-CATEGORIA_SIRA = ("hito", "reactivacion")
+CATEGORIA_SIRA = ("hito", "reactivacion", "afinidad")
 
 # Campañas creadas por SIRA arrancan en 100000 (las del dataset Dunnhumby van por
 # debajo de ese valor).

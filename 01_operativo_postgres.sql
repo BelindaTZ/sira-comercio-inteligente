@@ -1307,3 +1307,120 @@ SELECT r.role_id, m.modulo_id, 'eventos_quiebre_stock', true, true, false, false
 FROM roles r JOIN modulos m ON m.nombre = 'Operaciones'
 WHERE r.nombre = 'Jefe_Operaciones'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 005-promociones-inteligentes (spec.md, plan.md, research.md, data-model.md)
+-- Motor de afinidad de canasta (mlxtend), cupón de afinidad (reutiliza campanas/
+-- cupon_enviado de 002), clasificación ABC (puebla productos.clasificacion_abc de
+-- 001), liquidación de categoría C y colocación promocional (puebla promociones).
+-- ============================================================================
+
+-- 1. Reglas de asociación (afinidad de canasta) — research.md Decisión 1/3.
+CREATE TABLE regla_afinidad (
+    regla_id BIGSERIAL PRIMARY KEY,
+    product_id_antecedente INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    product_id_consecuente INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    soporte DECIMAL(8,6) NOT NULL CHECK (soporte >= 0),
+    confianza DECIMAL(8,6) NOT NULL CHECK (confianza >= 0),
+    lift DECIMAL(10,4),
+    fecha_calculo TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(20) NOT NULL DEFAULT 'vigente'
+        CHECK (estado IN ('vigente','reemplazada','desactivada')),
+    desactivada_por INTEGER REFERENCES empleados(empleado_id),
+    fecha_desactivacion TIMESTAMP,
+    motivo_desactivacion VARCHAR(300),
+    CHECK (product_id_antecedente <> product_id_consecuente),
+    CHECK (estado <> 'desactivada'
+           OR (desactivada_por IS NOT NULL AND fecha_desactivacion IS NOT NULL))
+);
+CREATE INDEX idx_regla_afinidad_antecedente ON regla_afinidad(product_id_antecedente) WHERE estado = 'vigente';
+
+-- 2. Extensión de campanas (002): nuevo valor 'afinidad' en categoria_sira.
+ALTER TABLE campanas DROP CONSTRAINT IF EXISTS campanas_categoria_sira_check;
+ALTER TABLE campanas ADD CONSTRAINT campanas_categoria_sira_check
+    CHECK (categoria_sira IN ('hito','reactivacion','afinidad'));
+
+-- 3. Extensión de cupon_enviado (002): regla de afinidad que originó el cupón.
+ALTER TABLE cupon_enviado ADD COLUMN regla_afinidad_id BIGINT REFERENCES regla_afinidad(regla_id);
+
+-- 4. Candidatos a liquidación de categoría C (FR-012/FR-014).
+CREATE TABLE candidato_liquidacion (
+    candidato_id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
+    semana INTEGER NOT NULL CHECK (semana BETWEEN 1 AND 53),
+    anio INTEGER NOT NULL,
+    rotacion_reciente_calculada DECIMAL(10,2) NOT NULL,
+    descuento_sugerido_pct DECIMAL(5,2) NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'candidato' CHECK (estado IN ('candidato','ejecutado')),
+    fecha_ejecucion TIMESTAMP,
+    ejecutado_por INTEGER REFERENCES empleados(empleado_id),
+    UNIQUE (product_id, tienda_id, semana, anio),
+    CHECK (estado = 'candidato' OR (fecha_ejecucion IS NOT NULL AND ejecutado_por IS NOT NULL))
+);
+CREATE INDEX idx_candidato_liquidacion_tienda_semana ON candidato_liquidacion(tienda_id, semana, anio);
+
+-- 5. Bitácora de reclasificaciones ABC (FR-010) — la clasificación en sí vive en
+-- productos.clasificacion_abc (sin dimensión de tienda); esto es sólo el changelog.
+CREATE TABLE cambio_clasificacion_abc (
+    cambio_id BIGSERIAL PRIMARY KEY,
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    clasificacion_anterior CHAR(1),
+    clasificacion_nueva CHAR(1) NOT NULL,
+    fecha_calculo TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_cambio_clasificacion_abc_fecha ON cambio_clasificacion_abc(fecha_calculo);
+
+-- 6. Configuración clave/valor (research.md Decisiones 2/5/6/9).
+CREATE TABLE configuracion_promociones (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(12,6) NOT NULL,
+    descripcion VARCHAR(250)
+);
+INSERT INTO configuracion_promociones (clave, valor, descripcion) VALUES
+    ('soporte_minimo_regla', 0.02, 'Soporte mínimo (fracción de tickets) para que un par de productos genere una regla de asociación (FR-001, research.md Decisión 2)'),
+    ('confianza_minima_regla', 0.30, 'Confianza mínima (P(consecuente|antecedente)) para que una regla de asociación sea accionable (FR-001)'),
+    ('vigencia_cupon_afinidad_dias', 30, 'Días durante los cuales un cupón de afinidad ya enviado bloquea el reenvío al mismo cliente para el mismo par (FR-007, research.md Decisión 9)'),
+    ('rotacion_minima_liquidacion_semanal', 1.0, 'Unidades/semana por debajo de las cuales un producto categoría C en una tienda es candidato a liquidación (FR-011/FR-012)'),
+    ('descuento_liquidacion_pct', 25.0, 'Descuento sugerido por defecto para la liquidación de un candidato de categoría C (FR-011)');
+
+-- RBAC feature 005: Marketing_CRM (Jefe_Marketing) para afinidad/cupones/colocación;
+-- Operaciones (Jefe_Operaciones / Encargado_Tienda) para ABC y liquidación (research.md Decisión 10).
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Marketing_CRM'
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+CROSS JOIN (VALUES ('regla_afinidad'), ('promociones')) AS t(tabla)
+WHERE r.nombre = 'Jefe_Marketing'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'promociones', true, true, false, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Marketing_CRM'
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+WHERE r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Operaciones'
+CROSS JOIN (VALUES ('candidato_liquidacion'), ('configuracion_promociones'),
+                    ('cambio_clasificacion_abc'), ('productos')) AS t(tabla)
+WHERE r.nombre IN ('Jefe_Operaciones','Encargado_Tienda')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'Operaciones' AND r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'regla_afinidad', true, false, false, false
+FROM roles r JOIN modulos m ON m.nombre = 'Ventas'
+WHERE r.nombre = 'Cajero'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
