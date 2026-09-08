@@ -4,7 +4,7 @@ El reporte mensual consolida `eventos_quiebre_stock` por tienda y categoría; un
 tienda/categoría sin eventos no aparece forzada a cero.
 """
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import text
@@ -48,7 +48,9 @@ async def test_reporte_demanda_perdida_por_tienda_y_categoria(
     await _quiebre(otro_pid, 10)
     await db_session.flush()
 
-    hoy = date.today()
+    # UTC, no fecha local: `fecha_hora` se guarda en UTC naive, así que la ventana
+    # de la query debe calcularse en la misma zona (mismo criterio que 006).
+    hoy = datetime.now(UTC).date()
     reporte = (
         await client.get(
             "/api/forecasting/reportes/demanda-perdida",
@@ -69,7 +71,7 @@ async def test_reporte_demanda_perdida_por_tienda_y_categoria(
 
 
 async def test_jefe_ti_no_ve_el_reporte_de_operaciones(client, escenario_forecasting, auth_jefe_ti):
-    hoy = date.today()
+    hoy = datetime.now(UTC).date()
     resp = await client.get(
         "/api/forecasting/reportes/demanda-perdida",
         params={"fecha_desde": hoy.isoformat(), "fecha_hasta": hoy.isoformat()},
