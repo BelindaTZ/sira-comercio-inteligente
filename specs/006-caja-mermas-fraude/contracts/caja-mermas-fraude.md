@@ -101,7 +101,8 @@
 - RBAC: `Jefe_Operaciones`.
 - 200: umbral actualizado (upsert).
 
-`GET /api/caja/tiendas/{tienda_id}/seguimiento-merma-semanal?semana=`
-- Porcentaje de merma acumulada de la tienda por categoría frente al umbral definido, para la semana indicada (research.md Decisión 9) — FR-018, FR-019.
+`GET /api/caja/tiendas/{tienda_id}/seguimiento-merma-semanal?semana=&anio=`
+- Porcentaje de merma acumulada de la tienda por categoría frente al umbral definido, para la semana ISO indicada (research.md Decisión 9) — FR-018, FR-019.
+- `semana`: número de semana ISO (obligatorio). `anio`: opcional, año ISO — por defecto el año ISO vigente, para desambiguar la semana en un cruce de año.
 - RBAC: `Encargado_Tienda`.
 - 200: `[{product_category, porcentaje_merma_acumulado, porcentaje_umbral, supera_umbral: boolean}]` — `supera_umbral=true` es solo informativo, nunca bloquea ninguna otra operación (FR-019).

@@ -79,6 +79,16 @@ Append-only (research.md Decisión 7). Vigente = fila más reciente por `fecha_c
 
 Actualizable in place, no append-only (research.md Decisión 8).
 
+### Configuración de Caja (`configuracion_caja`)
+
+| Campo | Tipo | Validación |
+|---|---|---|
+| clave | VARCHAR(60) PK | |
+| valor | DECIMAL(12,6) NOT NULL | |
+| descripcion | VARCHAR(250) | |
+
+Clave/valor genérica, mismo patrón que `configuracion_pricing`/`configuracion_pronostico`/`configuracion_promociones`. Fila sembrada: `umbral_ajuste_inventario_anomalo = 10` (unidades, valor absoluto) — umbral configurable que FR-010 exige para señalar ajustes de inventario de 001 con diferencia negativa anómala en el reporte mensual de patrones.
+
 ## Extensión aditiva de entidad existente
 
 ### Incidente de Fraude (`incidentes_fraude`, desde 001 — extendida)

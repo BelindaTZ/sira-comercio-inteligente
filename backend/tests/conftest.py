@@ -622,3 +622,78 @@ def auth_jefe_ops(escenario_compras: dict) -> dict[str, str]:
 @pytest.fixture
 def auth_jefe_fin(escenario_compras: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_compras['token_jefe_fin']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_caja(db_session: AsyncSession, escenario_pos: dict) -> dict:
+    """Amplía `escenario_pos` para la feature 006: dos cajas de la tienda con un
+    datáfono cada una (uno con firmware desactualizado), y tokens de Jefe_Finanzas,
+    Jefe_TI y Jefe_Operaciones. Reutiliza el cajero/encargado de `escenario_pos`."""
+    s = db_session
+    e = escenario_pos
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    rol_fin = await _rol("Jefe_Finanzas")
+    rol_ti = await _rol("Jefe_TI")
+    rol_ops = await _rol("Jefe_Operaciones")
+
+    caja_1 = await s.scalar(
+        text(
+            "INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 1') RETURNING caja_id"
+        ),
+        {"t": e["tienda_id"]},
+    )
+    caja_2 = await s.scalar(
+        text(
+            "INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 2') RETURNING caja_id"
+        ),
+        {"t": e["tienda_id"]},
+    )
+    datafono_viejo = await s.scalar(
+        text(
+            "INSERT INTO datafonos (caja_id, modelo, version_firmware, estado) "
+            "VALUES (:c, 'Verifone VX', '2.9.0', 'activo') RETURNING datafono_id"
+        ),
+        {"c": caja_1},
+    )
+    datafono_nuevo = await s.scalar(
+        text(
+            "INSERT INTO datafonos (caja_id, modelo, version_firmware, estado) "
+            "VALUES (:c, 'Ingenico Move', '3.2.0', 'activo') RETURNING datafono_id"
+        ),
+        {"c": caja_2},
+    )
+    await s.flush()
+
+    def _tok(role_id: int, rol: str) -> str:
+        return _token(
+            empleado_id=e["encargado_id"], role_id=role_id, rol=rol, tienda_id=e["tienda_id"]
+        )
+
+    return {
+        **e,
+        "caja_1": caja_1,
+        "caja_2": caja_2,
+        "datafono_viejo": datafono_viejo,
+        "datafono_nuevo": datafono_nuevo,
+        "token_jefe_finanzas": _tok(rol_fin, "Jefe_Finanzas"),
+        "token_jefe_ti": _tok(rol_ti, "Jefe_TI"),
+        "token_jefe_operaciones": _tok(rol_ops, "Jefe_Operaciones"),
+    }
+
+
+@pytest.fixture
+def auth_caja_finanzas(escenario_caja: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_caja['token_jefe_finanzas']}"}
+
+
+@pytest.fixture
+def auth_caja_ti(escenario_caja: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_caja['token_jefe_ti']}"}
+
+
+@pytest.fixture
+def auth_caja_ops(escenario_caja: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_caja['token_jefe_operaciones']}"}

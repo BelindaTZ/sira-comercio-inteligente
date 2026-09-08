@@ -356,7 +356,7 @@ CREATE TABLE datafonos (
     modelo VARCHAR(60),
     version_firmware VARCHAR(30),
     fecha_ultima_actualizacion DATE,
-    estado VARCHAR(20) NOT NULL DEFAULT 'activo'
+    estado VARCHAR(30) NOT NULL DEFAULT 'activo'
         CHECK (estado IN ('activo','requiere_actualizacion','fuera_servicio'))
 );
 
@@ -1423,4 +1423,123 @@ INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, c
 SELECT r.role_id, m.modulo_id, 'regla_afinidad', true, false, false, false
 FROM roles r JOIN modulos m ON m.nombre = 'Ventas'
 WHERE r.nombre = 'Cajero'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 006-caja-mermas-fraude (spec.md, plan.md, research.md, data-model.md)
+-- Cuadre de caja horario con diferencia calculada (columna GENERATED ya reservada),
+-- inventario de datáfonos con conformidad automática frente al estándar de
+-- seguridad de pagos, reporte mensual de patrones + incidentes de fraude,
+-- protocolo de escalamiento versionado y umbral de merma aceptable por categoría.
+-- `apertura_caja`, `cierre_caja`, `datafonos` e `incidentes_fraude` ya existen
+-- desde 001; esta feature las puebla y extiende aditivamente `incidentes_fraude`.
+-- ============================================================================
+
+-- 1. Extensión aditiva de incidentes_fraude (research.md Decisión 6): un incidente
+-- puede originarse en un cuadre (US3), en un ajuste de inventario anómalo (FR-010)
+-- o registrarse directamente (US4); el ciclo abierto→en_revisión→cerrado deja
+-- constancia de quién y cuándo (FR-015).
+ALTER TABLE incidentes_fraude ALTER COLUMN cierre_id DROP NOT NULL;
+ALTER TABLE incidentes_fraude ADD COLUMN ajuste_id BIGINT REFERENCES ajustes_inventario(ajuste_id);
+ALTER TABLE incidentes_fraude ADD COLUMN acciones_tomadas TEXT;
+ALTER TABLE incidentes_fraude ADD COLUMN resultado VARCHAR(20)
+    CHECK (resultado IS NULL OR resultado IN ('fraude_confirmado','descartado'));
+ALTER TABLE incidentes_fraude ADD COLUMN actualizado_por INTEGER REFERENCES empleados(empleado_id);
+ALTER TABLE incidentes_fraude ADD COLUMN fecha_actualizacion TIMESTAMP;
+
+-- 2. Estándar de seguridad de pagos (append-only, research.md Decisión 5).
+CREATE TABLE configuracion_seguridad_pagos (
+    config_id BIGSERIAL PRIMARY KEY,
+    version_minima_firmware VARCHAR(30) NOT NULL,
+    vigente_desde DATE NOT NULL DEFAULT CURRENT_DATE,
+    actualizado_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_config_seguridad_pagos_vigente_desde ON configuracion_seguridad_pagos(vigente_desde DESC);
+
+-- 3. Protocolo de escalamiento ante fraude (texto versionado, research.md Decisión 7).
+CREATE TABLE protocolo_escalamiento (
+    protocolo_id BIGSERIAL PRIMARY KEY,
+    texto TEXT NOT NULL,
+    definido_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_protocolo_escalamiento_fecha ON protocolo_escalamiento(fecha_creacion DESC);
+
+-- 4. Umbral de merma aceptable por categoría (upsert in place, research.md Decisión 8).
+CREATE TABLE umbral_merma_categoria (
+    product_category VARCHAR(100) PRIMARY KEY,
+    porcentaje_umbral DECIMAL(5,2) NOT NULL CHECK (porcentaje_umbral > 0 AND porcentaje_umbral <= 100),
+    definido_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_actualizacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. Configuración clave/valor de caja — hoy sólo el umbral de ajuste anómalo (FR-010).
+CREATE TABLE configuracion_caja (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(12,6) NOT NULL,
+    descripcion VARCHAR(250)
+);
+INSERT INTO configuracion_caja (clave, valor, descripcion) VALUES
+    ('umbral_ajuste_inventario_anomalo', 10, 'Unidades (valor absoluto) a partir de las cuales un ajuste de inventario de 001 con diferencia negativa se señala en el reporte mensual de patrones (FR-010)');
+
+-- 6. Estado vigente inicial (best-effort: sólo si ya hay empleados sembrados).
+INSERT INTO configuracion_seguridad_pagos (version_minima_firmware, actualizado_por)
+SELECT '1.0.0', empleado_id FROM empleados ORDER BY empleado_id LIMIT 1;
+INSERT INTO protocolo_escalamiento (texto, definido_por)
+SELECT 'Protocolo de escalamiento ante fraude confirmado (versión inicial). Al detectar un caso: 1) documentar la evidencia, 2) notificar al Jefe de Finanzas, 3) aplicar las acciones del protocolo vigente, 4) registrar el resultado sin acusar al empleado si la investigación no lo confirma.',
+       empleado_id FROM empleados ORDER BY empleado_id LIMIT 1;
+
+-- 7. RBAC feature 006: módulo Finanzas (ya sembrado desde 001) — sin rol ni módulo
+-- nuevo (research.md Decisión 10). Jefe_TI recibe acceso al módulo para datáfonos.
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'Finanzas'
+  AND r.nombre IN ('Encargado_Tienda','Jefe_Finanzas','Jefe_TI','Jefe_Operaciones')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, t.sel, t.ins, t.upd, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES
+     ('apertura_caja', true, false, false),
+     ('cierre_caja', true, false, false),
+     ('incidentes_fraude', true, false, true),
+     ('protocolo_escalamiento', true, false, false),
+     ('umbral_merma_categoria', true, false, false),
+     ('mermas', true, false, false),
+     ('venta_detalle', true, false, false)
+) AS t(tabla, sel, ins, upd)
+WHERE r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, t.sel, t.ins, t.upd, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES
+     ('apertura_caja', true, false, false),
+     ('cierre_caja', true, false, false),
+     ('ajustes_inventario', true, false, false),
+     ('configuracion_caja', true, false, true),
+     ('incidentes_fraude', true, true, true),
+     ('protocolo_escalamiento', true, true, false)
+) AS t(tabla, sel, ins, upd)
+WHERE r.nombre = 'Jefe_Finanzas'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES ('datafonos'), ('configuracion_seguridad_pagos')) AS t(tabla)
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'umbral_merma_categoria', true, true, true, false
+FROM roles r JOIN modulos m ON m.nombre = 'Finanzas'
+WHERE r.nombre = 'Jefe_Operaciones'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

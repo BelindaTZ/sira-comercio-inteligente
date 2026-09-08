@@ -16,17 +16,17 @@
 
 ## Phase 1: Setup
 
-- **T001** Crear el esqueleto de `backend/src/modules/caja/` (`router.py`, `service.py`, `repository.py`, `schemas.py`), calcado de la estructura de capas ya usada en `pricing/` (003) y `promociones/` (005).
-- **T002** [P] Migración Alembic: crear `configuracion_seguridad_pagos`, `protocolo_escalamiento`, `umbral_merma_categoria`; `ALTER TABLE incidentes_fraude` (`cierre_id` pasa a nullable, se agregan `ajuste_id`, `acciones_tomadas`, `resultado`, `actualizado_por`, `fecha_actualizacion` — `data-model.md` completo).
-- **T003** [P] Seed de `role_permisos_tabla` para `Encargado_Tienda`, `Jefe_Finanzas`, `Jefe_TI`, `Jefe_Operaciones` sobre las tablas de esta feature (`data-model.md`, Extensión RBAC) — sin rol ni módulo nuevo, reutiliza `Finanzas` ya sembrado.
-- **T004** [P] Frontend: crear `frontend/src/modules/caja/` (`pages/CuadreCajaPage.vue`, `DatafonosPage.vue`, `ReporteDiferenciasPage.vue`, `IncidentesFraudePage.vue`, `ProtocoloEscalamientoPage.vue`, `SeguimientoMermaPage.vue` vacíos) y `frontend/src/services/cajaApi.js`.
+- [X] T001 Crear el esqueleto de `backend/src/modules/caja/` (`router.py`, `service.py`, `repository.py`, `schemas.py`), calcado de la estructura de capas ya usada en `pricing/` (003) y `promociones/` (005).
+- [X] T002 [P] Migración Alembic: crear `configuracion_seguridad_pagos`, `protocolo_escalamiento`, `umbral_merma_categoria`; `ALTER TABLE incidentes_fraude` (`cierre_id` pasa a nullable, se agregan `ajuste_id`, `acciones_tomadas`, `resultado`, `actualizado_por`, `fecha_actualizacion` — `data-model.md` completo).
+- [X] T003 [P] Seed de `role_permisos_tabla` para `Encargado_Tienda`, `Jefe_Finanzas`, `Jefe_TI`, `Jefe_Operaciones` sobre las tablas de esta feature (`data-model.md`, Extensión RBAC) — sin rol ni módulo nuevo, reutiliza `Finanzas` ya sembrado.
+- [X] T004 [P] Frontend: crear `frontend/src/modules/caja/` (`pages/CuadreCajaPage.vue`, `DatafonosPage.vue`, `ReporteDiferenciasPage.vue`, `IncidentesFraudePage.vue`, `ProtocoloEscalamientoPage.vue`, `SeguimientoMermaPage.vue` vacíos) y `frontend/src/services/cajaApi.js`.
 
 ## Phase 2: Foundational (Bloqueante — ninguna user story empieza sin esto)
 
-- **T005** [P] Modelos SQLAlchemy: `ConfiguracionSeguridadPagos`, `ProtocoloEscalamiento`, `UmbralMermaCategoria` en `models/`; extender `IncidenteFraude` con las columnas de T002.
-- **T006** `CajaRepository`: helper compartido para resolver la apertura de caja vigente de un cuadre (`research.md` Decisión 2 y 3) — usado tanto por el cuadre horario (US1) como por el reporte mensual (US3).
-- **T007** [P] Seed inicial de `configuracion_seguridad_pagos` (una versión mínima de firmware por defecto) y `protocolo_escalamiento` (un texto inicial), para que US2/US4 tengan un estado vigente desde el arranque.
-- **T008** Montar `caja.router` en `main.py`; verificar en RBAC que el módulo `Finanzas` (ya sembrado) cubre los endpoints de esta feature, incluido el acceso concedido a `Jefe_TI` (`research.md` Decisión 10) — sin rol ni módulo nuevo.
+- [X] T005 [P] Modelos SQLAlchemy: `ConfiguracionSeguridadPagos`, `ProtocoloEscalamiento`, `UmbralMermaCategoria` en `models/`; extender `IncidenteFraude` con las columnas de T002.
+- [X] T006 `CajaRepository`: helper compartido para resolver la apertura de caja vigente de un cuadre (`research.md` Decisión 2 y 3) — usado tanto por el cuadre horario (US1) como por el reporte mensual (US3).
+- [X] T007 [P] Seed inicial de `configuracion_seguridad_pagos` (una versión mínima de firmware por defecto) y `protocolo_escalamiento` (un texto inicial), para que US2/US4 tengan un estado vigente desde el arranque.
+- [X] T008 Montar `caja.router` en `main.py`; verificar en RBAC que el módulo `Finanzas` (ya sembrado) cubre los endpoints de esta feature, incluido el acceso concedido a `Jefe_TI` (`research.md` Decisión 10) — sin rol ni módulo nuevo.
 
 **Checkpoint**: Migraciones aplicadas, modelos disponibles, router montado — listo para implementar historias de usuario.
 
@@ -40,20 +40,20 @@
 
 ### Tests para User Story 1 ⚠️
 
-- **T009** [P] [US1] Unit test: cálculo de `total_esperado` por cajero sobre la ventana horaria (`research.md` Decisión 1 y 2), incluyendo el caso de una ventana sin ninguna venta.
-- **T010** [P] [US1] Unit test: marcado automático para revisión cuando `diferencia <> 0`, y ausencia de marca cuando `diferencia = 0` (FR-004, Edge Case).
-- **T011** [US1] Contract test: `POST caja/apertura`, `POST caja/cierre`, `GET caja/cierres` — verificar que `total_esperado` nunca se acepta del cliente (Principio V).
-- **T012** [US1] Integration test: apertura → ventas → cierre con diferencia → el Encargado de Tienda ve todas las cajas de su tienda en una sola consulta (Escenarios 1 y 2 de `quickstart.md`).
+- [X] T009 [P] [US1] Unit test: cálculo de `total_esperado` por cajero sobre la ventana horaria (`research.md` Decisión 1 y 2), incluyendo el caso de una ventana sin ninguna venta.
+- [X] T010 [P] [US1] Unit test: marcado automático para revisión cuando `diferencia <> 0`, y ausencia de marca cuando `diferencia = 0` (FR-004, Edge Case).
+- [X] T011 [US1] Contract test: `POST caja/apertura`, `POST caja/cierre`, `GET caja/cierres` — verificar que `total_esperado` nunca se acepta del cliente (Principio V).
+- [X] T012 [US1] Integration test: apertura → ventas → cierre con diferencia → el Encargado de Tienda ve todas las cajas de su tienda en una sola consulta (Escenarios 1 y 2 de `quickstart.md`).
 
 ### Implementación de User Story 1
 
-- **T013** [US1] `CajaRepository`: insert de `apertura_caja`; insert de `cierre_caja` con `total_esperado` calculado server-side.
-- **T014** [US1] `CajaService.calcular_total_esperado()`: ventana horaria por cajero (depende de T009, T006).
-- **T015** [US1] `CajaService.registrar_apertura()` / `.registrar_cierre()`: orquesta T013+T014, determina `marcado_para_revision` (depende de T010).
-- **T016** [US1] `CajaService.listar_cierres_tienda()`: todas las cajas de una tienda en una sola consulta (FR-005).
-- **T017** [US1] Endpoints: `POST caja/apertura`, `POST caja/cierre`, `GET caja/cierres` — `contracts/caja-mermas-fraude.md`.
-- **T018** [US1] `frontend/.../CuadreCajaPage.vue`: formulario de apertura/cuadre para el Cajero, vista consolidada de cajas para el Encargado de Tienda.
-- **T019** [US1] Frontend: badge visual de diferencia (positiva/negativa/cero), sin ningún cálculo en el cliente (Principio V).
+- [X] T013 [US1] `CajaRepository`: insert de `apertura_caja`; insert de `cierre_caja` con `total_esperado` calculado server-side.
+- [X] T014 [US1] `CajaService.calcular_total_esperado()`: ventana horaria por cajero (depende de T009, T006).
+- [X] T015 [US1] `CajaService.registrar_apertura()` / `.registrar_cierre()`: orquesta T013+T014, determina `marcado_para_revision` (depende de T010).
+- [X] T016 [US1] `CajaService.listar_cierres_tienda()`: todas las cajas de una tienda en una sola consulta (FR-005).
+- [X] T017 [US1] Endpoints: `POST caja/apertura`, `POST caja/cierre`, `GET caja/cierres` — `contracts/caja-mermas-fraude.md`.
+- [X] T018 [US1] `frontend/.../CuadreCajaPage.vue`: formulario de apertura/cuadre para el Cajero, vista consolidada de cajas para el Encargado de Tienda.
+- [X] T019 [US1] Frontend: badge visual de diferencia (positiva/negativa/cero), sin ningún cálculo en el cliente (Principio V).
 
 **Checkpoint**: MVP — un cajero cuadra su caja y el Encargado de Tienda valida todas las cajas de su tienda, de punta a punta.
 
@@ -67,17 +67,17 @@
 
 ### Tests para User Story 2 ⚠️
 
-- **T020** [P] [US2] Unit test: identificación de un datáfono no conforme comparando `version_firmware` contra la versión mínima vigente (`research.md` Decisión 4).
-- **T021** [US2] Integration test: definir estándar → datáfono desactualizado aparece no conforme → se actualiza → deja de aparecer, con `fecha_ultima_actualizacion` registrada (Escenario 3 de `quickstart.md`).
+- [X] T020 [P] [US2] Unit test: identificación de un datáfono no conforme comparando `version_firmware` contra la versión mínima vigente (`research.md` Decisión 4).
+- [X] T021 [US2] Integration test: definir estándar → datáfono desactualizado aparece no conforme → se actualiza → deja de aparecer, con `fecha_ultima_actualizacion` registrada (Escenario 3 de `quickstart.md`).
 
 ### Implementación de User Story 2
 
-- **T022** [US2] `CajaRepository`: CRUD de `datafonos`; insert de `configuracion_seguridad_pagos` (vigente = fila más reciente).
-- **T023** [US2] `CajaService.evaluar_conformidad_datafonos()`: recorre `datafonos`, actualiza `estado` según T020 (depende de T020, T022).
-- **T024** [US2] `CajaService.definir_estandar_seguridad()`: inserta nueva versión vigente y dispara T023 (efecto secundario documentado en `contracts/caja-mermas-fraude.md`).
-- **T025** [US2] `CajaService.actualizar_datafono()`: `estado='activo'`, `fecha_ultima_actualizacion=hoy`.
-- **T026** [US2] Endpoints: `GET datafonos`, `PATCH datafonos/{id}/actualizar`, `GET`/`PUT configuracion-seguridad-pagos`.
-- **T027** [US2] `frontend/.../DatafonosPage.vue`: inventario con filtro por estado, acción de registrar actualización.
+- [X] T022 [US2] `CajaRepository`: CRUD de `datafonos`; insert de `configuracion_seguridad_pagos` (vigente = fila más reciente).
+- [X] T023 [US2] `CajaService.evaluar_conformidad_datafonos()`: recorre `datafonos`, actualiza `estado` según T020 (depende de T020, T022).
+- [X] T024 [US2] `CajaService.definir_estandar_seguridad()`: inserta nueva versión vigente y dispara T023 (efecto secundario documentado en `contracts/caja-mermas-fraude.md`).
+- [X] T025 [US2] `CajaService.actualizar_datafono()`: `estado='activo'`, `fecha_ultima_actualizacion=hoy`.
+- [X] T026 [US2] Endpoints: `GET datafonos`, `PATCH datafonos/{id}/actualizar`, `GET`/`PUT configuracion-seguridad-pagos`.
+- [X] T027 [US2] `frontend/.../DatafonosPage.vue`: inventario con filtro por estado, acción de registrar actualización.
 
 **Checkpoint**: OT-6.3 completo — un datáfono no conforme se identifica sin inventariar manualmente (SC-003).
 
@@ -91,18 +91,18 @@
 
 ### Tests para User Story 3 ⚠️
 
-- **T028** [P] [US3] Unit test: agrupación del reporte mensual por `cajero_id` + `apertura_id` (`research.md` Decisión 3), no por el total agregado de la tienda.
-- **T029** [P] [US3] Unit test: señalización de ajustes de inventario (001) con diferencia negativa sobre el umbral configurable (FR-010).
-- **T030** [US3] Integration test: cuadres con diferencia repetida de un cajero + un ajuste de inventario anómalo → reporte mensual → apertura de incidente de fraude (Escenario 4 de `quickstart.md`).
+- [X] T028 [P] [US3] Unit test: agrupación del reporte mensual por `cajero_id` + `apertura_id` (`research.md` Decisión 3), no por el total agregado de la tienda.
+- [X] T029 [P] [US3] Unit test: señalización de ajustes de inventario (001) con diferencia negativa sobre el umbral configurable (FR-010).
+- [X] T030 [US3] Integration test: cuadres con diferencia repetida de un cajero + un ajuste de inventario anómalo → reporte mensual → apertura de incidente de fraude (Escenario 4 de `quickstart.md`).
 
 ### Implementación de User Story 3
 
-- **T031** [US3] `CajaRepository`: consulta de solo lectura contra `ajustes_inventario` (001, `plan.md`) para el reporte (depende de T029).
-- **T032** [US3] `CajaService.generar_reporte_diferencias(mes, anio)`: agrupación por cajero/turno (depende de T028, T006) + ajustes señalados (depende de T031).
-- **T033** [US3] `CajaRepository`: insert sobre `incidentes_fraude` admitiendo `cierre_id`/`ajuste_id` opcionales (`data-model.md` Decisión 6).
-- **T034** [US3] `CajaService.escalar_incidente()`: abre un incidente de fraude con la evidencia que lo originó (FR-011) (depende de T033).
-- **T035** [US3] Endpoints: `GET reporte-diferencias`, `POST incidentes-fraude`.
-- **T036** [US3] `frontend/.../ReporteDiferenciasPage.vue`: reporte agrupado por cajero/turno con ajustes señalados, acción de escalar a incidente.
+- [X] T031 [US3] `CajaRepository`: consulta de solo lectura contra `ajustes_inventario` (001, `plan.md`) para el reporte (depende de T029).
+- [X] T032 [US3] `CajaService.generar_reporte_diferencias(mes, anio)`: agrupación por cajero/turno (depende de T028, T006) + ajustes señalados (depende de T031).
+- [X] T033 [US3] `CajaRepository`: insert sobre `incidentes_fraude` admitiendo `cierre_id`/`ajuste_id` opcionales (`data-model.md` Decisión 6).
+- [X] T034 [US3] `CajaService.escalar_incidente()`: abre un incidente de fraude con la evidencia que lo originó (FR-011) (depende de T033).
+- [X] T035 [US3] Endpoints: `GET reporte-diferencias`, `POST incidentes-fraude`.
+- [X] T036 [US3] `frontend/.../ReporteDiferenciasPage.vue`: reporte agrupado por cajero/turno con ajustes señalados, acción de escalar a incidente.
 
 **Checkpoint**: OT-6.2 completo — los datos generados por US1 (y los ajustes de 001) se convierten en una señal accionable.
 
@@ -116,16 +116,16 @@
 
 ### Tests para User Story 4 ⚠️
 
-- **T037** [P] [US4] Unit test: transición `abierto` → `en_revision` → `cerrado`, y que un incidente sobre un empleado con `fecha_baja` no queda bloqueado (FR-016).
-- **T038** [US4] Integration test: consultar protocolo vigente → aplicar sobre un incidente abierto → cerrar con resultado, sin acusar al empleado si no se confirma (Escenario 5 de `quickstart.md`).
+- [X] T037 [P] [US4] Unit test: transición `abierto` → `en_revision` → `cerrado`, y que un incidente sobre un empleado con `fecha_baja` no queda bloqueado (FR-016).
+- [X] T038 [US4] Integration test: consultar protocolo vigente → aplicar sobre un incidente abierto → cerrar con resultado, sin acusar al empleado si no se confirma (Escenario 5 de `quickstart.md`).
 
 ### Implementación de User Story 4
 
-- **T039** [US4] `CajaRepository`: CRUD de `protocolo_escalamiento` (insert de nueva versión, consulta de la vigente).
-- **T040** [US4] `CajaService.aplicar_protocolo()`: registra `acciones_tomadas`, transiciona a `en_revision`, completa `actualizado_por`/`fecha_actualizacion` (depende de T037).
-- **T041** [US4] `CajaService.cerrar_incidente()`: registra `resultado`, transiciona a `cerrado`, sin bloquear por empleado dado de baja (depende de T037).
-- **T042** [US4] Endpoints: `GET`/`PUT protocolo-escalamiento`, `PATCH incidentes-fraude/{id}/aplicar-protocolo`, `PATCH .../cerrar`, `GET incidentes-fraude`.
-- **T043** [US4] `frontend/.../IncidentesFraudePage.vue` y `ProtocoloEscalamientoPage.vue`: ciclo completo del incidente; texto del protocolo consultable por cualquier Encargado de Tienda.
+- [X] T039 [US4] `CajaRepository`: CRUD de `protocolo_escalamiento` (insert de nueva versión, consulta de la vigente).
+- [X] T040 [US4] `CajaService.aplicar_protocolo()`: registra `acciones_tomadas`, transiciona a `en_revision`, completa `actualizado_por`/`fecha_actualizacion` (depende de T037).
+- [X] T041 [US4] `CajaService.cerrar_incidente()`: registra `resultado`, transiciona a `cerrado`, sin bloquear por empleado dado de baja (depende de T037).
+- [X] T042 [US4] Endpoints: `GET`/`PUT protocolo-escalamiento`, `PATCH incidentes-fraude/{id}/aplicar-protocolo`, `PATCH .../cerrar`, `GET incidentes-fraude`.
+- [X] T043 [US4] `frontend/.../IncidentesFraudePage.vue` y `ProtocoloEscalamientoPage.vue`: ciclo completo del incidente; texto del protocolo consultable por cualquier Encargado de Tienda.
 
 **Checkpoint**: un incidente de fraude sigue su ciclo completo, consultable en cualquier momento (SC-005).
 
@@ -139,15 +139,15 @@
 
 ### Tests para User Story 5 ⚠️
 
-- **T044** [P] [US5] Unit test: cálculo del porcentaje de merma acumulada semanal por categoría/tienda (`research.md` Decisión 9).
-- **T045** [US5] Integration test: definir umbral → mermas ya registradas de 001 → seguimiento semanal muestra el porcentaje frente al umbral, sin bloquear ninguna operación (Escenario 6 de `quickstart.md`).
+- [X] T044 [P] [US5] Unit test: cálculo del porcentaje de merma acumulada semanal por categoría/tienda (`research.md` Decisión 9).
+- [X] T045 [US5] Integration test: definir umbral → mermas ya registradas de 001 → seguimiento semanal muestra el porcentaje frente al umbral, sin bloquear ninguna operación (Escenario 6 de `quickstart.md`).
 
 ### Implementación de User Story 5
 
-- **T046** [US5] `CajaRepository`: CRUD (upsert) de `umbral_merma_categoria`.
-- **T047** [US5] `CajaService.calcular_seguimiento_semanal(tienda_id, semana)`: join de `mermas` y `venta_detalle` por `product_category` (depende de T044).
-- **T048** [US5] Endpoints: `GET`/`PUT umbral-merma`, `GET tiendas/{id}/seguimiento-merma-semanal`.
-- **T049** [US5] `frontend/.../SeguimientoMermaPage.vue`: porcentaje acumulado por categoría frente al umbral, presentado como alerta no bloqueante.
+- [X] T046 [US5] `CajaRepository`: CRUD (upsert) de `umbral_merma_categoria`.
+- [X] T047 [US5] `CajaService.calcular_seguimiento_semanal(tienda_id, semana)`: join de `mermas` y `venta_detalle` por `product_category` (depende de T044).
+- [X] T048 [US5] Endpoints: `GET`/`PUT umbral-merma`, `GET tiendas/{id}/seguimiento-merma-semanal`.
+- [X] T049 [US5] `frontend/.../SeguimientoMermaPage.vue`: porcentaje acumulado por categoría frente al umbral, presentado como alerta no bloqueante.
 
 **Checkpoint**: OT-5.5 completo — el Encargado de Tienda ve el porcentaje sin calcularlo manualmente (SC-006).
 
@@ -155,10 +155,10 @@
 
 ## Phase 8: Polish
 
-- **T050** Ejecutar `/speckit-analyze` sobre esta feature y corregir cualquier inconsistencia detectada entre spec/plan/tasks.
-- **T051** Correr los 6 escenarios de `quickstart.md` de punta a punta contra el entorno local.
-- **T052** Revisar cobertura de Principio X: confirmar que el cálculo de diferencia de cuadre (T009), la identificación de datáfono no conforme (T020), el cálculo de % de merma (T044) y la no obstrucción por empleado dado de baja (T037) tienen test unitario antes de cerrar la feature.
-- **T053** Actualizar `checklists/requirements.md` con cualquier hallazgo de la revisión final (nueva "Ronda" si aplica).
+- [X] T050 Ejecutar `/speckit-analyze` sobre esta feature y corregir cualquier inconsistencia detectada entre spec/plan/tasks.
+- [X] T051 Correr los 6 escenarios de `quickstart.md` de punta a punta contra el entorno local.
+- [X] T052 Revisar cobertura de Principio X: confirmar que el cálculo de diferencia de cuadre (T009), la identificación de datáfono no conforme (T020), el cálculo de % de merma (T044) y la no obstrucción por empleado dado de baja (T037) tienen test unitario antes de cerrar la feature.
+- [X] T053 Actualizar `checklists/requirements.md` con cualquier hallazgo de la revisión final (nueva "Ronda" si aplica).
 
 ## Dependencias clave
 

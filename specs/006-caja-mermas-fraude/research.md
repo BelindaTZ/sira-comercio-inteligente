@@ -34,6 +34,8 @@
 
 **Alternativas consideradas**: Agregar una columna booleana `es_conforme` — rechazada por duplicar información que el enum `estado` ya expresa.
 
+**Corrección (implementación)**: el valor `'requiere_actualizacion'` (22 caracteres) nunca cupo en el `VARCHAR(20)` original de `datafonos.estado` de 001 — hubiera fallado con `StringDataRightTruncationError` al primer intento de uso real. La migración 0013 ensancha la columna a `VARCHAR(30)` (`01_operativo_postgres.sql` actualizado en el mismo commit); el enum en sí no cambia, solo el ancho de columna que lo contiene.
+
 ## Decisión 5: Nueva tabla `configuracion_seguridad_pagos` para el estándar vigente
 
 **Decisión**: Se crea `configuracion_seguridad_pagos` (versión mínima de firmware, `vigente_desde`, quién la definió) como tabla append-only — cada cambio de estándar inserta una fila nueva; el estándar vigente es la fila con `vigente_desde` más reciente.

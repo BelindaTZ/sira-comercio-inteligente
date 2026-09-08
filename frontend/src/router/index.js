@@ -88,6 +88,36 @@ const routes = [
     name: 'promociones-colocacion',
     component: () => import('@/modules/promociones/pages/ColocacionPromocionalPage.vue'),
   },
+  {
+    path: '/caja',
+    name: 'caja-cuadre',
+    component: () => import('@/modules/caja/pages/CuadreCajaPage.vue'),
+  },
+  {
+    path: '/caja/datafonos',
+    name: 'caja-datafonos',
+    component: () => import('@/modules/caja/pages/DatafonosPage.vue'),
+  },
+  {
+    path: '/caja/reporte-diferencias',
+    name: 'caja-reporte-diferencias',
+    component: () => import('@/modules/caja/pages/ReporteDiferenciasPage.vue'),
+  },
+  {
+    path: '/caja/incidentes',
+    name: 'caja-incidentes',
+    component: () => import('@/modules/caja/pages/IncidentesFraudePage.vue'),
+  },
+  {
+    path: '/caja/protocolo',
+    name: 'caja-protocolo',
+    component: () => import('@/modules/caja/pages/ProtocoloEscalamientoPage.vue'),
+  },
+  {
+    path: '/caja/seguimiento-merma',
+    name: 'caja-seguimiento-merma',
+    component: () => import('@/modules/caja/pages/SeguimientoMermaPage.vue'),
+  },
 ]
 
 const router = createRouter({
