@@ -19,8 +19,10 @@ services:
       - "15432:5432"
     volumes:
       - sira_pgdata:/var/lib/postgresql/data
-      # El esquema NO se aplica aquí: lo aplica Alembic (`alembic upgrade head`,
-      # migración 0001) como fuente única, para no duplicar la creación de tablas.
+      # El esquema de `sira` NO se aplica aquí: lo aplica Alembic (`alembic upgrade
+      # head`, migración 0001) como fuente única. Este init sólo crea la base
+      # `airflow` (metadata de Airflow, feature 010) y sólo corre en un volumen nuevo.
+      - ./data_platform/postgres-init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sira} -d ${POSTGRES_DB:-sira}"]
       interval: 5s
@@ -99,11 +101,17 @@ services:
     environment:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__LOAD_EXAMPLES: "false"
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/${POSTGRES_DB:-sira}
+      # Airflow lleva su propia metadata en una base APARTE (`airflow`) — nunca en
+      # la base operativa `sira`: comparten servidor pero no tabla `alembic_version`.
+      # La base se crea sola en un volumen nuevo (data_platform/postgres-init/);
+      # en un volumen ya existente: `docker compose exec postgres createdb -U sira airflow`.
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/airflow
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
       _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
       _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
-      _PIP_ADDITIONAL_REQUIREMENTS: "clickhouse-connect>=0.7 minio>=7.2 asyncpg>=0.30 SQLAlchemy>=2.0"
+      # Airflow 2.9 fija SQLAlchemy 1.4.x (no tocar) — ya trae `sqlalchemy.ext.asyncio`,
+      # que es lo que usa dags_utils/. Sólo se agregan los drivers que no vienen.
+      _PIP_ADDITIONAL_REQUIREMENTS: "clickhouse-connect>=0.7 minio>=7.2 asyncpg>=0.30"
       # Origen operativo + destinos que consumen los DAGs (dags_utils/*).
       SIRA_PG_DSN: postgresql://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/${POSTGRES_DB:-sira}
       SIRA_CLICKHOUSE_URL: http://${CLICKHOUSE_USER:-sira}:${CLICKHOUSE_PASSWORD:-sira}@clickhouse:8123/sira_warehouse

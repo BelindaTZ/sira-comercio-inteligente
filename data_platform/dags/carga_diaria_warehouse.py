@@ -16,7 +16,7 @@ Airflow (los tests ejercitan `dags_utils/*` directamente).
 from __future__ import annotations
 
 import os
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 _PG_DSN = os.environ.get("SIRA_PG_DSN", "postgresql://sira:sira@postgres:5432/sira")
 _CH_URL = os.environ.get("SIRA_CLICKHOUSE_URL", "")
@@ -27,11 +27,14 @@ _BUCKET_LANDING = os.environ.get("SIRA_MINIO_BUCKET_LANDING", "landing-zone")
 
 
 def _async_engine():
-    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    # `sessionmaker(class_=AsyncSession)` en vez de `async_sessionmaker`: sirve en
+    # SQLAlchemy 1.4 (la que fija Airflow 2.9) y en 2.0 (la del backend).
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+    from sqlalchemy.orm import sessionmaker
 
     url = _PG_DSN.replace("postgresql://", "postgresql+asyncpg://", 1)
     engine = create_async_engine(url, pool_pre_ping=True)
-    return engine, async_sessionmaker(engine, expire_on_commit=False)
+    return engine, sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 def _minio_client():
@@ -71,11 +74,14 @@ class _ClickHouseAdapter:
 
 
 async def _cargar_entidad(entidad_id: int, nombre_entidad: str) -> dict:
+    """Todo dentro de una sola corrutina (un único `asyncio.run` por task) —
+    incluida la disposición del engine, para no dejar conexiones asyncpg atadas
+    a un event loop ya cerrado."""
     from dags_utils import pipeline
 
     engine, Session = _async_engine()
     minio, ch = _minio_client(), _ch_client()
-    claves = {}
+    claves: dict = {}
     try:
         async with Session() as session:
             if ch is not None and nombre_entidad == "fact_venta":
@@ -91,6 +97,23 @@ async def _cargar_entidad(entidad_id: int, nombre_entidad: str) -> dict:
             )
             await session.commit()
         return res.__dict__
+    finally:
+        await engine.dispose()
+
+
+async def _entidades_activas() -> list[dict]:
+    from sqlalchemy import text
+
+    engine, Session = _async_engine()
+    try:
+        async with Session() as s:
+            rows = await s.execute(
+                text(
+                    "SELECT entidad_id, nombre_entidad FROM modelo_datos_warehouse "
+                    "WHERE activa = true ORDER BY entidad_id"
+                )
+            )
+            return [dict(r._mapping) for r in rows]
     finally:
         await engine.dispose()
 
@@ -114,7 +137,7 @@ def _build_dag():
     @dag(
         dag_id="carga_diaria_warehouse",
         schedule="0 2 * * *",  # diaria, 02:00 UTC
-        start_date=datetime(2026, 1, 1),
+        start_date=datetime(2026, 1, 1, tzinfo=UTC),
         catchup=False,
         default_args={"retries": 1, "retry_delay": timedelta(minutes=5)},
         tags=["sira", "elt", "feature-010"],
@@ -122,24 +145,7 @@ def _build_dag():
     def carga_diaria_warehouse():
         @task
         def entidades_activas() -> list[dict]:
-            engine, Session = _async_engine()
-
-            async def _q():
-                from sqlalchemy import text
-
-                async with Session() as s:
-                    rows = await s.execute(
-                        text(
-                            "SELECT entidad_id, nombre_entidad FROM modelo_datos_warehouse "
-                            "WHERE activa = true ORDER BY entidad_id"
-                        )
-                    )
-                    return [dict(r._mapping) for r in rows]
-
-            try:
-                return asyncio.run(_q())
-            finally:
-                asyncio.run(engine.dispose())
+            return asyncio.run(_entidades_activas())
 
         @task
         def cargar(entidad: dict) -> dict:

@@ -1,0 +1,4 @@
+# Airflow escanea todos los .py de dags/ buscando DAGs. `dags_utils/` son módulos
+# de apoyo (Extract/Load/Transform + orquestador), no DAGs — se importan desde
+# carga_diaria_warehouse.py, no se parsean sueltos.
+dags_utils/
