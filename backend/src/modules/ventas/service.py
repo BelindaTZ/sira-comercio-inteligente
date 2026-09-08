@@ -16,6 +16,7 @@ from src.models.anulacion_venta import AnulacionVenta
 from src.models.devolucion import Devolucion
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
 from src.models.linea_venta_removida import LineaVentaRemovida
+from src.models.medio_pago import MedioPago
 from src.models.movimiento_inventario import MovimientoInventario
 from src.models.venta import Venta
 from src.models.venta_detalle import VentaDetalle
@@ -30,6 +31,7 @@ from src.modules.ventas.schemas import (
     PagoTarjetaIn,
     RemoverLineaIn,
 )
+from src.shared import pagos
 from src.shared import pricing as pricing_calc
 from src.shared.exceptions import (
     BusinessRuleError,
@@ -81,6 +83,10 @@ class VentasService:
             cajero_id=data.cajero_id,
             household_id=data.household_id,
             fecha_hora=ahora,
+            # feature 007 (FR-015): marca de inicio del cobro. `fecha_hora` se
+            # re-sella al confirmar (research.md Decisión 6) — la diferencia es la
+            # duración total del cobro.
+            fecha_inicio_cobro=ahora,
             semana=_semana_iso(ahora),
             estado="en_curso",
             total=Decimal("0.00"),
@@ -283,6 +289,14 @@ class VentasService:
 
         venta.total = calcular_total(lineas)
         venta.estado = "confirmada"
+        # feature 007 (FR-015): `fecha_hora` es el momento de CONFIRMACIÓN (el
+        # dataset sembrado ya la usa así); `fecha_inicio_cobro` conserva el inicio.
+        # Sólo se re-sella para ventas registradas en vivo por el flujo (siempre
+        # traen `fecha_inicio_cobro`).
+        if venta.fecha_inicio_cobro is not None:
+            ahora = datetime.now(UTC).replace(tzinfo=None)
+            venta.fecha_hora = ahora
+            venta.semana = _semana_iso(ahora)
         venta.medio_pago_id = data.medio_pago_id
         venta.tipo_comprobante = data.tipo_comprobante
         if data.tipo_comprobante == "factura":
@@ -495,3 +509,85 @@ class VentasService:
             await self.repo.flush()
 
         return devolucion
+
+    # ------------------------------------------------------- feature 007
+    async def dar_alta_medio_pago(self, nombre: str, empleado_id: int) -> MedioPago:
+        """FR-005 — alta de un medio de pago con constancia de aprobación."""
+        nombre = nombre.strip()
+        if await self.repo.get_medio_pago_por_nombre(nombre) is not None:
+            raise ConflictError(f"Ya existe un medio de pago '{nombre}'")
+        ahora = datetime.now(UTC).replace(tzinfo=None)
+        return await self.repo.crear_medio_pago(
+            MedioPago(
+                nombre=nombre,
+                aprobado=True,
+                aprobado_por=empleado_id,
+                fecha_aprobacion=ahora,
+            )
+        )
+
+    async def dar_baja_medio_pago(self, medio_pago_id: int) -> MedioPago:
+        """FR-006 — baja sin borrar la fila ni desasociar ninguna venta registrada."""
+        medio = await self.repo.get_medio_pago(medio_pago_id)
+        if medio is None:
+            raise NotFoundError(f"medio_pago_id {medio_pago_id} no existe")
+        if not medio.aprobado or medio.fecha_baja is not None:
+            raise ConflictError(f"El medio de pago {medio_pago_id} ya está dado de baja")
+        medio.aprobado = False
+        medio.fecha_baja = datetime.now(UTC).replace(tzinfo=None)
+        await self.repo.flush()
+        return medio
+
+    async def listar_medios_pago(self, aprobado: bool | None = None) -> list[MedioPago]:
+        return await self.repo.listar_medios_pago(aprobado)
+
+    async def medios_pago_disponibles(self) -> list[MedioPago]:
+        """FR-007 — sólo los aprobados y no dados de baja."""
+        return await self.repo.medios_pago_disponibles()
+
+    async def datafono_disponible_de_caja(self, caja_id: int) -> dict:
+        """FR-004 — consulta rápida de solo lectura del estado del datáfono de la
+        caja (dato de `modules/caja/`), usada por el flujo de cobro para advertir
+        antes de intentar con tarjeta. Nunca bloquea otro medio de pago."""
+        estados = await self.repo.datafonos_de_caja(caja_id)
+        if not estados:
+            return {"disponible": False, "estado": None}
+        if "activo" in estados:
+            return {"disponible": True, "estado": "activo"}
+        # ninguno operativo: reporta el estado del primero como referencia
+        return {"disponible": False, "estado": estados[0]}
+
+    async def tiempo_cobro_semanal(self, caja_id: int, semana: int, anio: int | None) -> dict:
+        """FR-016/FR-018 — tiempo promedio de cobro de una caja en una semana,
+        excluyendo ventas anuladas y sin `fecha_inicio_cobro`."""
+        cajeros = await self.repo.cajeros_de_caja(caja_id)
+        ventas = (
+            await self.repo.ventas_tiempo_cobro(cajero_ids=cajeros, semana=semana, anio=anio)
+            if cajeros
+            else []
+        )
+        promedio, consideradas = pagos.promedio_duracion_cobro(ventas)
+        return {
+            "caja_id": caja_id,
+            "semana": semana,
+            "duracion_promedio_segundos": promedio,
+            "cantidad_ventas_consideradas": consideradas,
+        }
+
+    async def tiempo_cobro_mensual(self, mes: int, anio: int) -> list[dict]:
+        """FR-017 — tiempo promedio de cobro por tienda a nivel de red, para un mes."""
+        ventas = await self.repo.ventas_tiempo_cobro_mes(mes, anio)
+        por_tienda: dict[int, list] = {}
+        for v in ventas:
+            por_tienda.setdefault(v["tienda_id"], []).append(v)
+        salida = []
+        for tienda_id, filas in sorted(por_tienda.items()):
+            promedio, consideradas = pagos.promedio_duracion_cobro(filas)
+            salida.append(
+                {
+                    "tienda_id": tienda_id,
+                    "duracion_promedio_segundos": promedio,
+                    "cantidad_ventas_consideradas": consideradas,
+                }
+            )
+        return salida

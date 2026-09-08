@@ -28,15 +28,22 @@ from src.modules.caja.schemas import (
     CierreOut,
     CierreTiendaItem,
     ConfiguracionSeguridadOut,
+    ConteoIncidentesSeguridadOut,
     DatafonoOut,
+    DatafonoRestablecidoOut,
     DefinirEstandarSeguridadIn,
+    DefinirPoliticaIn,
     DefinirProtocoloIn,
     DefinirUmbralMermaIn,
     IncidenteFraudeIn,
     IncidenteFraudeOut,
+    IncidenteSeguridadIn,
+    IncidenteSeguridadOut,
+    PoliticaSeguridadPagosOut,
     ProtocoloEscalamientoOut,
     ReporteDiferenciasOut,
     SeguimientoMermaOut,
+    TransicionarIncidenteSeguridadIn,
     UmbralMermaOut,
 )
 from src.modules.caja.service import CajaService
@@ -60,6 +67,14 @@ _ve_protocolo = require_permission("Finanzas", "protocolo_escalamiento", "select
 _define_protocolo = require_permission("Finanzas", "protocolo_escalamiento", "insert")
 _ve_umbral = require_permission("Finanzas", "umbral_merma_categoria", "select")
 _edita_umbral = require_permission("Finanzas", "umbral_merma_categoria", "update")
+# feature 007
+_ve_incidente_seguridad = require_permission("Finanzas", "incidente_seguridad_pago", "select")
+_gestiona_incidente_seguridad = require_permission("Finanzas", "incidente_seguridad_pago", "insert")
+_transiciona_incidente_seguridad = require_permission(
+    "Finanzas", "incidente_seguridad_pago", "update"
+)
+_ve_politica = require_permission("Finanzas", "politica_seguridad_pagos", "select")
+_define_politica = require_permission("Finanzas", "politica_seguridad_pagos", "insert")
 
 
 def _svc(session: SessionDep) -> CajaService:
@@ -125,6 +140,22 @@ async def actualizar_datafono(
     return DatafonoOut.model_validate(
         await svc.actualizar_datafono(datafono_id, data.version_firmware_nueva)
     )
+
+
+@router.patch("/datafonos/{datafono_id}/fuera-servicio", response_model=DatafonoOut)
+async def datafono_fuera_servicio(
+    datafono_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_edita_datafonos)]
+) -> DatafonoOut:
+    """FR-001 (007) — el Encargado de Tienda marca un datáfono fuera de servicio."""
+    return DatafonoOut.model_validate(await svc.marcar_datafono_fuera_servicio(datafono_id))
+
+
+@router.patch("/datafonos/{datafono_id}/restablecer", response_model=DatafonoRestablecidoOut)
+async def datafono_restablecer(
+    datafono_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_edita_datafonos)]
+) -> DatafonoRestablecidoOut:
+    """FR-002/FR-003 (007) — restablece un datáfono reevaluando su conformidad."""
+    return DatafonoRestablecidoOut(**await svc.restablecer_datafono(datafono_id))
 
 
 @router.get("/configuracion-seguridad-pagos", response_model=ConfiguracionSeguridadOut)
@@ -276,6 +307,99 @@ async def seguimiento_merma_semanal(
 ) -> list[SeguimientoMermaOut]:
     filas = await svc.calcular_seguimiento_semanal(tienda_id=tienda_id, semana=semana, anio=anio)
     return [SeguimientoMermaOut(**f) for f in filas]
+
+
+# ========================================= incidentes de seguridad de pago (007, FR-008 a FR-011)
+@router.post(
+    "/incidentes-seguridad-pago",
+    status_code=status.HTTP_201_CREATED,
+    response_model=IncidenteSeguridadOut,
+)
+async def crear_incidente_seguridad(
+    data: IncidenteSeguridadIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_gestiona_incidente_seguridad)],
+) -> IncidenteSeguridadOut:
+    return IncidenteSeguridadOut.model_validate(
+        await svc.registrar_incidente_seguridad(
+            datafono_id=data.datafono_id,
+            descripcion=data.descripcion,
+            registrado_por=principal.empleado_id,
+        )
+    )
+
+
+@router.get("/incidentes-seguridad-pago/conteo", response_model=ConteoIncidentesSeguridadOut)
+async def conteo_incidentes_seguridad(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve_incidente_seguridad)],
+    desde: date | None = None,
+    hasta: date | None = None,
+) -> ConteoIncidentesSeguridadOut:
+    return ConteoIncidentesSeguridadOut(**await svc.contar_incidentes_seguridad(desde, hasta))
+
+
+@router.get("/incidentes-seguridad-pago", response_model=list[IncidenteSeguridadOut])
+async def listar_incidentes_seguridad(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve_incidente_seguridad)],
+    estado: str | None = None,
+) -> list[IncidenteSeguridadOut]:
+    return [
+        IncidenteSeguridadOut.model_validate(i)
+        for i in await svc.listar_incidentes_seguridad(estado)
+    ]
+
+
+@router.patch(
+    "/incidentes-seguridad-pago/{incidente_seguridad_id}/transicionar",
+    response_model=IncidenteSeguridadOut,
+)
+async def transicionar_incidente_seguridad(
+    incidente_seguridad_id: int,
+    data: TransicionarIncidenteSeguridadIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_transiciona_incidente_seguridad)],
+) -> IncidenteSeguridadOut:
+    return IncidenteSeguridadOut.model_validate(
+        await svc.transicionar_incidente_seguridad(
+            incidente_seguridad_id,
+            estado_nuevo=data.estado_nuevo,
+            empleado_id=principal.empleado_id,
+        )
+    )
+
+
+# ========================================= política de seguridad de pagos (007, FR-012 a FR-014)
+@router.get("/politica-seguridad-pagos", response_model=PoliticaSeguridadPagosOut)
+async def politica_seguridad_pagos(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve_politica)]
+) -> PoliticaSeguridadPagosOut:
+    return PoliticaSeguridadPagosOut.model_validate(await svc.politica_seguridad_vigente())
+
+
+@router.put(
+    "/politica-seguridad-pagos",
+    status_code=status.HTTP_201_CREATED,
+    response_model=PoliticaSeguridadPagosOut,
+)
+async def definir_politica_seguridad(
+    data: DefinirPoliticaIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_define_politica)],
+) -> PoliticaSeguridadPagosOut:
+    return PoliticaSeguridadPagosOut.model_validate(
+        await svc.definir_politica_seguridad(texto=data.texto, definido_por=principal.empleado_id)
+    )
+
+
+@router.get("/politica-seguridad-pagos/{politica_id}", response_model=PoliticaSeguridadPagosOut)
+async def politica_seguridad_por_id(
+    politica_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ve_politica)]
+) -> PoliticaSeguridadPagosOut:
+    return PoliticaSeguridadPagosOut.model_validate(
+        await svc.politica_seguridad_por_id(politica_id)
+    )
 
 
 # ==================================================== forzar corrida (dev only)

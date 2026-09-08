@@ -121,4 +121,56 @@ export const cajaApi = {
       })
       .then((r) => r.data)
   },
+
+  // --- feature 007: disponibilidad de datáfonos, incidentes de seguridad, política ---
+  datafonoFueraServicio(datafonoId) {
+    return http.patch(`/api/caja/datafonos/${datafonoId}/fuera-servicio`).then((r) => r.data)
+  },
+
+  datafonoRestablecer(datafonoId) {
+    return http.patch(`/api/caja/datafonos/${datafonoId}/restablecer`).then((r) => r.data)
+  },
+
+  incidentesSeguridad(estado) {
+    return http
+      .get('/api/caja/incidentes-seguridad-pago', { params: { estado: estado || undefined } })
+      .then((r) => r.data)
+  },
+
+  registrarIncidenteSeguridad({ datafonoId, descripcion }) {
+    return http
+      .post('/api/caja/incidentes-seguridad-pago', {
+        datafono_id: datafonoId ?? null,
+        descripcion,
+      })
+      .then((r) => r.data)
+  },
+
+  transicionarIncidenteSeguridad(incidenteId, estadoNuevo) {
+    return http
+      .patch(`/api/caja/incidentes-seguridad-pago/${incidenteId}/transicionar`, {
+        estado_nuevo: estadoNuevo,
+      })
+      .then((r) => r.data)
+  },
+
+  conteoIncidentesSeguridad({ desde, hasta } = {}) {
+    return http
+      .get('/api/caja/incidentes-seguridad-pago/conteo', {
+        params: { desde: desde || undefined, hasta: hasta || undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  politicaSeguridad() {
+    return http.get('/api/caja/politica-seguridad-pagos').then((r) => r.data)
+  },
+
+  politicaSeguridadPorId(politicaId) {
+    return http.get(`/api/caja/politica-seguridad-pagos/${politicaId}`).then((r) => r.data)
+  },
+
+  definirPoliticaSeguridad(texto) {
+    return http.put('/api/caja/politica-seguridad-pagos', { texto }).then((r) => r.data)
+  },
 }

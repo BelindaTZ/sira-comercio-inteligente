@@ -21,16 +21,22 @@ from src.models.venta import Venta
 from src.modules.ventas.repository import VentasRepository
 from src.modules.ventas.schemas import (
     AgregarLineaIn,
+    AltaMedioPagoIn,
     AnularVentaIn,
     ConfirmarVentaIn,
+    DatafonoDisponibleOut,
     DescuentoManualIn,
     DevolucionIn,
     DevolucionOut,
     IniciarVentaIn,
     LineaOut,
+    MedioPagoDisponibleOut,
+    MedioPagoOut,
     PagoTarjetaIn,
     PagoTarjetaOut,
     RemoverLineaIn,
+    TiempoCobroMensualItem,
+    TiempoCobroSemanalOut,
     VentaOut,
 )
 from src.modules.ventas.service import VentasService
@@ -48,6 +54,10 @@ _linea_insert = require_permission("Ventas", "venta_detalle", "insert")
 _linea_update = require_permission("Ventas", "venta_detalle", "update")
 _linea_delete = require_permission("Ventas", "venta_detalle", "delete")
 _devolucion = require_permission("Ventas", "devoluciones", "insert")
+# feature 007 — Jefe_TI administra medios_pago; el resto son lecturas del módulo Ventas.
+_admin_medios = require_permission("Ventas", "medios_pago", "select")
+_alta_medio = require_permission("Ventas", "medios_pago", "insert")
+_baja_medio = require_permission("Ventas", "medios_pago", "update")
 
 
 def _svc(session: SessionDep) -> VentasService:
@@ -213,6 +223,81 @@ async def comprobante(
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="venta-{venta_id}.pdf"'},
     )
+
+
+# ==================================================== feature 007: pagos y seguridad
+@router.get("/medios-pago/disponibles", response_model=list[MedioPagoDisponibleOut])
+async def medios_pago_disponibles(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+) -> list[MedioPagoDisponibleOut]:
+    """FR-007 — medios de pago ofrecidos en caja (aprobados y sin baja)."""
+    return [MedioPagoDisponibleOut.model_validate(m) for m in await svc.medios_pago_disponibles()]
+
+
+@router.get("/medios-pago", response_model=list[MedioPagoOut])
+async def listar_medios_pago(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_admin_medios)],
+    aprobado: bool | None = None,
+) -> list[MedioPagoOut]:
+    return [MedioPagoOut.model_validate(m) for m in await svc.listar_medios_pago(aprobado)]
+
+
+@router.post("/medios-pago", status_code=status.HTTP_201_CREATED, response_model=MedioPagoOut)
+async def alta_medio_pago(
+    data: AltaMedioPagoIn, svc: ServiceDep, principal: Annotated[Principal, Depends(_alta_medio)]
+) -> MedioPagoOut:
+    return MedioPagoOut.model_validate(
+        await svc.dar_alta_medio_pago(data.nombre, principal.empleado_id)
+    )
+
+
+@router.patch("/medios-pago/{medio_pago_id}/baja", response_model=MedioPagoOut)
+async def baja_medio_pago(
+    medio_pago_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_baja_medio)]
+) -> MedioPagoOut:
+    return MedioPagoOut.model_validate(await svc.dar_baja_medio_pago(medio_pago_id))
+
+
+@router.get("/cajas/{caja_id}/datafono-disponible", response_model=DatafonoDisponibleOut)
+async def datafono_disponible(
+    caja_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+) -> DatafonoDisponibleOut:
+    """FR-004 — el flujo de cobro consulta esto antes de intentar con tarjeta."""
+    return DatafonoDisponibleOut(**await svc.datafono_disponible_de_caja(caja_id))
+
+
+_ROLES_REPORTE_COBRO_CAJA = frozenset(
+    {"Encargado_Tienda", "Jefe_Comercial", "Jefe_Operaciones", "Gerente_General"}
+)
+_ROLES_REPORTE_COBRO_RED = frozenset({"Jefe_Comercial", "Gerente_General"})
+
+
+@router.get("/cajas/{caja_id}/tiempo-cobro-semanal", response_model=TiempoCobroSemanalOut)
+async def tiempo_cobro_semanal(
+    caja_id: int,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ver)],
+    semana: int = Query(..., ge=1, le=53),
+    anio: int | None = None,
+) -> TiempoCobroSemanalOut:
+    """FR-016 — revisión semanal por caja (Encargado de Tienda)."""
+    if principal.rol not in _ROLES_REPORTE_COBRO_CAJA:
+        raise ForbiddenError("Este reporte es para el Encargado de Tienda o superior")
+    return TiempoCobroSemanalOut(**await svc.tiempo_cobro_semanal(caja_id, semana, anio))
+
+
+@router.get("/tiendas/tiempo-cobro-mensual", response_model=list[TiempoCobroMensualItem])
+async def tiempo_cobro_mensual(
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ver)],
+    mes: int = Query(..., ge=1, le=12),
+    anio: int = Query(..., ge=2000),
+) -> list[TiempoCobroMensualItem]:
+    """FR-017 — revisión mensual por tienda a nivel de red (Jefe Comercial)."""
+    if principal.rol not in _ROLES_REPORTE_COBRO_RED:
+        raise ForbiddenError("El reporte de tiempo de cobro a nivel de red es del Jefe Comercial")
+    return [TiempoCobroMensualItem(**f) for f in await svc.tiempo_cobro_mensual(mes, anio)]
 
 
 @router.get("", response_model=Page[VentaOut])

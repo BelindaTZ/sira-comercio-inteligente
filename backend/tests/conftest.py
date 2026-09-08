@@ -697,3 +697,47 @@ def auth_caja_ti(escenario_caja: dict) -> dict[str, str]:
 @pytest.fixture
 def auth_caja_ops(escenario_caja: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_caja['token_jefe_operaciones']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_pagos(db_session: AsyncSession, escenario_caja: dict) -> dict:
+    """Amplía `escenario_caja` para la feature 007: un estándar de seguridad de
+    pagos vigente (firmware ≥ 3.0.0 — deja `datafono_viejo` no conforme y
+    `datafono_nuevo` conforme), una política de seguridad vigente, y un token de
+    Jefe_Comercial (reporte mensual de tiempo de cobro)."""
+    s = db_session
+    e = escenario_caja
+
+    rol_comercial = await s.scalar(
+        text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Comercial'")
+    )
+    await s.execute(
+        text(
+            "INSERT INTO configuracion_seguridad_pagos (version_minima_firmware, actualizado_por) "
+            "VALUES ('3.0.0', :emp)"
+        ),
+        {"emp": e["encargado_id"]},
+    )
+    await s.execute(
+        text(
+            "INSERT INTO politica_seguridad_pagos (texto, definido_por) "
+            "VALUES ('Política inicial de prueba', :emp)"
+        ),
+        {"emp": e["encargado_id"]},
+    )
+    await s.flush()
+
+    return {
+        **e,
+        "token_jefe_comercial": _token(
+            empleado_id=e["encargado_id"],
+            role_id=rol_comercial,
+            rol="Jefe_Comercial",
+            tienda_id=e["tienda_id"],
+        ),
+    }
+
+
+@pytest.fixture
+def auth_pagos_comercial(escenario_pagos: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_pagos['token_jefe_comercial']}"}

@@ -83,4 +83,41 @@ export const ventasApi = {
   listar(params = {}) {
     return http.get('/api/ventas', { params }).then((r) => r.data)
   },
+
+  // --- feature 007: medios de pago, datáfono disponible, tiempo de cobro ---
+  mediosPagoDisponibles() {
+    return http.get('/api/ventas/medios-pago/disponibles').then((r) => r.data)
+  },
+
+  mediosPago(aprobado) {
+    return http
+      .get('/api/ventas/medios-pago', { params: { aprobado: aprobado ?? undefined } })
+      .then((r) => r.data)
+  },
+
+  altaMedioPago(nombre) {
+    return http.post('/api/ventas/medios-pago', { nombre }).then((r) => r.data)
+  },
+
+  bajaMedioPago(medioPagoId) {
+    return http.patch(`/api/ventas/medios-pago/${medioPagoId}/baja`).then((r) => r.data)
+  },
+
+  datafonoDisponible(cajaId) {
+    return http.get(`/api/ventas/cajas/${cajaId}/datafono-disponible`).then((r) => r.data)
+  },
+
+  tiempoCobroSemanal(cajaId, { semana, anio } = {}) {
+    return http
+      .get(`/api/ventas/cajas/${cajaId}/tiempo-cobro-semanal`, {
+        params: { semana, anio: anio ?? undefined },
+      })
+      .then((r) => r.data)
+  },
+
+  tiempoCobroMensual({ mes, anio }) {
+    return http
+      .get('/api/ventas/tiendas/tiempo-cobro-mensual', { params: { mes, anio } })
+      .then((r) => r.data)
+  },
 }

@@ -168,3 +168,49 @@ class SeguimientoMermaOut(BaseModel):
     porcentaje_merma_acumulado: Decimal | None
     porcentaje_umbral: Decimal
     supera_umbral: bool
+
+
+# ============================================================ feature 007: pagos y seguridad
+class DatafonoRestablecidoOut(BaseModel):
+    datafono_id: int
+    estado: str  # 'activo' | 'requiere_actualizacion' — nunca 'fuera_servicio'
+
+
+class IncidenteSeguridadIn(BaseModel):
+    datafono_id: int | None = None
+    descripcion: str = Field(min_length=1)
+
+
+class IncidenteSeguridadOut(BaseModel):
+    incidente_seguridad_id: int
+    datafono_id: int | None
+    registrado_por: int
+    descripcion: str
+    estado: str
+    actualizado_por: int | None
+    fecha_actualizacion: datetime | None
+    fecha_hora: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class TransicionarIncidenteSeguridadIn(BaseModel):
+    estado_nuevo: str = Field(pattern="^(en_investigacion|cerrado)$")
+
+
+class ConteoIncidentesSeguridadOut(BaseModel):
+    total: int
+    periodo: dict[str, date | None]
+
+
+class PoliticaSeguridadPagosOut(BaseModel):
+    politica_id: int
+    texto: str
+    definido_por: int
+    fecha_creacion: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DefinirPoliticaIn(BaseModel):
+    texto: str = Field(min_length=1)

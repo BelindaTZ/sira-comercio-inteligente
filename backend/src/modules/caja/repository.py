@@ -20,6 +20,8 @@ from src.models.configuracion_caja import CLAVE_UMBRAL_AJUSTE_ANOMALO, Configura
 from src.models.configuracion_seguridad_pagos import ConfiguracionSeguridadPagos
 from src.models.datafono import Datafono
 from src.models.incidente_fraude import IncidenteFraude
+from src.models.incidente_seguridad_pago import IncidenteSeguridadPago
+from src.models.politica_seguridad_pagos import PoliticaSeguridadPagos
 from src.models.protocolo_escalamiento import ProtocoloEscalamiento
 from src.models.umbral_merma_categoria import UmbralMermaCategoria
 
@@ -320,6 +322,67 @@ class CajaRepository:
             {"t": tienda_id, "sem": semana, "anio": anio},
         )
         return {r.cat: Decimal(str(r.valor)) for r in rows if r.cat is not None}
+
+    # ============================================================ feature 007
+    async def marcar_estado_datafono(self, datafono: Datafono, estado: str) -> Datafono:
+        datafono.estado = estado
+        await self.session.flush()
+        return datafono
+
+    async def crear_incidente_seguridad(
+        self, *, datafono_id: int | None, registrado_por: int, descripcion: str
+    ) -> IncidenteSeguridadPago:
+        incidente = IncidenteSeguridadPago(
+            datafono_id=datafono_id, registrado_por=registrado_por, descripcion=descripcion
+        )
+        self.session.add(incidente)
+        await self.session.flush()
+        await self.session.refresh(incidente)
+        return incidente
+
+    async def get_incidente_seguridad(self, incidente_id: int) -> IncidenteSeguridadPago | None:
+        return await self.session.get(IncidenteSeguridadPago, incidente_id)
+
+    async def listar_incidentes_seguridad(
+        self, estado: str | None = None
+    ) -> list[IncidenteSeguridadPago]:
+        stmt = select(IncidenteSeguridadPago)
+        if estado is not None:
+            stmt = stmt.where(IncidenteSeguridadPago.estado == estado)
+        stmt = stmt.order_by(IncidenteSeguridadPago.incidente_seguridad_id.desc())
+        return list((await self.session.scalars(stmt)).all())
+
+    async def contar_incidentes_seguridad(
+        self, desde: date | None, hasta: date | None
+    ) -> int:
+        stmt = select(func.count(IncidenteSeguridadPago.incidente_seguridad_id))
+        if desde is not None:
+            stmt = stmt.where(IncidenteSeguridadPago.fecha_hora >= desde)
+        if hasta is not None:
+            # `hasta` inclusivo por día
+            stmt = stmt.where(func.date(IncidenteSeguridadPago.fecha_hora) <= hasta)
+        return int(await self.session.scalar(stmt) or 0)
+
+    async def politica_vigente(self) -> PoliticaSeguridadPagos | None:
+        stmt = (
+            select(PoliticaSeguridadPagos)
+            .order_by(
+                PoliticaSeguridadPagos.fecha_creacion.desc(),
+                PoliticaSeguridadPagos.politica_id.desc(),
+            )
+            .limit(1)
+        )
+        return (await self.session.scalars(stmt)).first()
+
+    async def get_politica(self, politica_id: int) -> PoliticaSeguridadPagos | None:
+        return await self.session.get(PoliticaSeguridadPagos, politica_id)
+
+    async def crear_politica(self, *, texto: str, definido_por: int) -> PoliticaSeguridadPagos:
+        fila = PoliticaSeguridadPagos(texto=texto, definido_por=definido_por)
+        self.session.add(fila)
+        await self.session.flush()
+        await self.session.refresh(fila)
+        return fila
 
     async def valor_ventas_semana(
         self, tienda_id: int, semana: int, anio: int

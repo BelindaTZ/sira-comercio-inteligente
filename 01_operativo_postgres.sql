@@ -1543,3 +1543,101 @@ SELECT r.role_id, m.modulo_id, 'umbral_merma_categoria', true, true, true, false
 FROM roles r JOIN modulos m ON m.nombre = 'Finanzas'
 WHERE r.nombre = 'Jefe_Operaciones'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 007-pagos-seguridad (spec.md, plan.md, research.md, data-model.md)
+-- Disponibilidad operativa diaria de datáfonos (reutiliza el valor `fuera_servicio`
+-- del enum de `datafonos.estado`), alta/baja de medios de pago con aprobación,
+-- incidentes de seguridad de pago (independientes de `incidentes_fraude` de 006),
+-- política de seguridad de pagos versionada, y marca de inicio de cobro en `ventas`
+-- para medir el tiempo de cobro (solo ventas registradas en vivo — Principio VII).
+-- Extiende `modules/caja/` (006) y `modules/ventas/` (001); sin módulo nuevo.
+-- ============================================================================
+
+-- 1. medios_pago: aprobación explícita del Jefe de TI + baja sin borrar historial.
+ALTER TABLE medios_pago ADD COLUMN aprobado BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE medios_pago ADD COLUMN aprobado_por INTEGER REFERENCES empleados(empleado_id);
+ALTER TABLE medios_pago ADD COLUMN fecha_aprobacion TIMESTAMP;
+ALTER TABLE medios_pago ADD COLUMN fecha_baja TIMESTAMP;
+
+-- 2. ventas: momento de inicio del cobro (nullable — NULL en las ~1.47M ventas
+-- ya sembradas y en cualquier venta previa a esta feature, research.md Decisión 7).
+ALTER TABLE ventas ADD COLUMN fecha_inicio_cobro TIMESTAMP;
+CREATE INDEX idx_ventas_fecha_inicio_cobro ON ventas(fecha_inicio_cobro) WHERE fecha_inicio_cobro IS NOT NULL;
+
+-- 3. Incidente de seguridad de pago — entidad nueva, independiente de
+-- incidentes_fraude (006): no exige empleado implicado (research.md Decisión 4).
+CREATE TABLE incidente_seguridad_pago (
+    incidente_seguridad_id BIGSERIAL PRIMARY KEY,
+    datafono_id INTEGER REFERENCES datafonos(datafono_id),
+    registrado_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    descripcion TEXT NOT NULL,
+    estado VARCHAR(20) NOT NULL DEFAULT 'abierto'
+        CHECK (estado IN ('abierto','en_investigacion','cerrado')),
+    actualizado_por INTEGER REFERENCES empleados(empleado_id),
+    fecha_actualizacion TIMESTAMP,
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_incidente_seguridad_pago_estado ON incidente_seguridad_pago(estado);
+CREATE INDEX idx_incidente_seguridad_pago_fecha ON incidente_seguridad_pago(fecha_hora);
+
+-- 4. Política de seguridad de pagos — texto versionado append-only (Decisión 5).
+CREATE TABLE politica_seguridad_pagos (
+    politica_id BIGSERIAL PRIMARY KEY,
+    texto TEXT NOT NULL,
+    definido_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_politica_seguridad_pagos_fecha_creacion ON politica_seguridad_pagos(fecha_creacion DESC);
+
+-- 5. Estado vigente inicial de la política (best-effort: sólo si ya hay empleados).
+INSERT INTO politica_seguridad_pagos (texto, definido_por)
+SELECT 'Política de seguridad de pagos (versión inicial). Lineamientos: 1) todo datáfono debe cumplir la versión mínima de firmware vigente antes de operar; 2) no se almacenan datos completos de tarjeta en ningún sistema propio; 3) todo incidente de seguridad de pago se registra y se investiga hasta cerrarse; 4) sólo se ofrecen en caja los medios de pago aprobados por el Jefe de TI.',
+       empleado_id FROM empleados ORDER BY empleado_id LIMIT 1;
+
+-- 6. RBAC feature 007 — sin rol ni módulo nuevo. Jefe_TI y Jefe_Comercial
+-- reciben acceso al módulo Ventas (mismo patrón que Jefe_Marketing→Ventas en 005).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, (r.nombre = 'Jefe_TI')
+FROM roles r, modulos m
+WHERE m.nombre = 'Ventas' AND r.nombre IN ('Jefe_TI','Jefe_Comercial')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'medios_pago', true, true, true, false
+FROM roles r JOIN modulos m ON m.nombre = 'Ventas'
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'ventas', true, false, false, false
+FROM roles r JOIN modulos m ON m.nombre = 'Ventas'
+WHERE r.nombre = 'Jefe_Comercial'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, t.sel, t.ins, t.upd, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES
+     ('datafonos', true, false, true),
+     ('politica_seguridad_pagos', true, false, false)
+) AS t(tabla, sel, ins, upd)
+WHERE r.nombre = 'Encargado_Tienda'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES ('incidente_seguridad_pago'), ('politica_seguridad_pagos')) AS t(tabla)
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, false, false, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Finanzas'
+CROSS JOIN (VALUES ('incidente_seguridad_pago'), ('politica_seguridad_pagos')) AS t(tabla)
+WHERE r.nombre = 'Jefe_Finanzas'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

@@ -118,6 +118,26 @@ const routes = [
     name: 'caja-seguimiento-merma',
     component: () => import('@/modules/caja/pages/SeguimientoMermaPage.vue'),
   },
+  {
+    path: '/caja/incidentes-seguridad',
+    name: 'caja-incidentes-seguridad',
+    component: () => import('@/modules/caja/pages/IncidentesSeguridadPagoPage.vue'),
+  },
+  {
+    path: '/caja/politica-seguridad',
+    name: 'caja-politica-seguridad',
+    component: () => import('@/modules/caja/pages/PoliticaSeguridadPagosPage.vue'),
+  },
+  {
+    path: '/ventas/medios-pago',
+    name: 'ventas-medios-pago',
+    component: () => import('@/modules/ventas/pages/MediosPagoPage.vue'),
+  },
+  {
+    path: '/ventas/tiempo-cobro',
+    name: 'ventas-tiempo-cobro',
+    component: () => import('@/modules/ventas/pages/TiempoCobroPage.vue'),
+  },
 ]
 
 const router = createRouter({

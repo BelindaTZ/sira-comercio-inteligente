@@ -126,3 +126,44 @@ class PagoTarjetaOut(BaseModel):
     intento_id: int
     resultado: ResultadoPagoTarjeta
     referencia_pasarela: str | None
+
+
+# --- feature 007: medios de pago, datáfono disponible, tiempo de cobro ---
+class MedioPagoOut(BaseModel):
+    medio_pago_id: int
+    nombre: str
+    aprobado: bool
+    aprobado_por: int | None = None
+    fecha_aprobacion: datetime | None = None
+    fecha_baja: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class MedioPagoDisponibleOut(BaseModel):
+    medio_pago_id: int
+    nombre: str
+
+    model_config = {"from_attributes": True}
+
+
+class AltaMedioPagoIn(BaseModel):
+    nombre: str = Field(min_length=1, max_length=30)
+
+
+class DatafonoDisponibleOut(BaseModel):
+    disponible: bool
+    estado: str | None
+
+
+class TiempoCobroSemanalOut(BaseModel):
+    caja_id: int
+    semana: int
+    duracion_promedio_segundos: float | None
+    cantidad_ventas_consideradas: int
+
+
+class TiempoCobroMensualItem(BaseModel):
+    tienda_id: int
+    duracion_promedio_segundos: float | None
+    cantidad_ventas_consideradas: int

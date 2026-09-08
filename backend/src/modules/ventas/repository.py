@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
@@ -113,6 +113,91 @@ class VentasRepository(BaseRepository[Venta]):
 
     async def get_medio_pago(self, medio_pago_id: int) -> MedioPago | None:
         return await self.session.get(MedioPago, medio_pago_id)
+
+    # --- feature 007: medios de pago (alta/baja/disponibles) ---
+    async def get_medio_pago_por_nombre(self, nombre: str) -> MedioPago | None:
+        stmt = select(MedioPago).where(func.lower(MedioPago.nombre) == nombre.lower())
+        return (await self.session.scalars(stmt)).first()
+
+    async def listar_medios_pago(self, aprobado: bool | None = None) -> list[MedioPago]:
+        stmt = select(MedioPago)
+        if aprobado is not None:
+            stmt = stmt.where(MedioPago.aprobado.is_(aprobado))
+        return list((await self.session.scalars(stmt.order_by(MedioPago.medio_pago_id))).all())
+
+    async def medios_pago_disponibles(self) -> list[MedioPago]:
+        stmt = (
+            select(MedioPago)
+            .where(MedioPago.aprobado.is_(True), MedioPago.fecha_baja.is_(None))
+            .order_by(MedioPago.medio_pago_id)
+        )
+        return list((await self.session.scalars(stmt)).all())
+
+    async def crear_medio_pago(self, medio: MedioPago) -> MedioPago:
+        self.session.add(medio)
+        await self.session.flush()
+        await self.session.refresh(medio)
+        return medio
+
+    # --- feature 007: estado del datáfono de una caja (consulta cruzada a modules/caja) ---
+    async def datafonos_de_caja(self, caja_id: int) -> list[str]:
+        rows = await self.session.execute(
+            text("SELECT estado FROM datafonos WHERE caja_id = :c ORDER BY datafono_id"),
+            {"c": caja_id},
+        )
+        return [r.estado for r in rows]
+
+    # --- feature 007: tiempo de cobro ---
+    async def cajeros_de_caja(self, caja_id: int) -> list[int]:
+        """Los cajeros que han abierto esta caja (research: `ventas` no tiene
+        `caja_id`, el vínculo caja↔cajero vive en `apertura_caja` de 006)."""
+        rows = await self.session.execute(
+            text("SELECT DISTINCT cajero_id FROM apertura_caja WHERE caja_id = :c"),
+            {"c": caja_id},
+        )
+        return [r.cajero_id for r in rows]
+
+    async def ventas_tiempo_cobro(
+        self, *, cajero_ids: list[int] | None = None, tienda_id: int | None = None,
+        semana: int | None = None, anio: int | None = None,
+    ) -> list[dict]:
+        """Ventas con `fecha_inicio_cobro` registrada (excluye las sembradas y las
+        previas a 007). El filtro de anuladas lo aplica la lógica pura."""
+        cond = ["v.fecha_inicio_cobro IS NOT NULL"]
+        params: dict = {}
+        if cajero_ids is not None:
+            cond.append("v.cajero_id = ANY(:cajeros)")
+            params["cajeros"] = cajero_ids or [-1]
+        if tienda_id is not None:
+            cond.append("v.tienda_id = :tienda")
+            params["tienda"] = tienda_id
+        if semana is not None:
+            cond.append("v.semana = :sem")
+            params["sem"] = semana
+        if anio is not None:
+            cond.append("EXTRACT(YEAR FROM v.fecha_hora)::int = :anio")
+            params["anio"] = anio
+        rows = await self.session.execute(
+            text(
+                "SELECT v.venta_id, v.tienda_id, v.fecha_inicio_cobro, v.fecha_hora, v.estado "
+                f"FROM ventas v WHERE {' AND '.join(cond)}"
+            ),
+            params,
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def ventas_tiempo_cobro_mes(self, mes: int, anio: int) -> list[dict]:
+        rows = await self.session.execute(
+            text("""
+                SELECT v.venta_id, v.tienda_id, v.fecha_inicio_cobro, v.fecha_hora, v.estado
+                FROM ventas v
+                WHERE v.fecha_inicio_cobro IS NOT NULL
+                  AND EXTRACT(MONTH FROM v.fecha_hora)::int = :mes
+                  AND EXTRACT(YEAR FROM v.fecha_hora)::int = :anio
+            """),
+            {"mes": mes, "anio": anio},
+        )
+        return [dict(r._mapping) for r in rows]
 
     async def rol_de_empleado(self, empleado_id: int) -> str | None:
         """Rol RBAC del empleado vía `usuarios.role_id → roles.nombre` (feature 003,

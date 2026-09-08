@@ -38,6 +38,7 @@ from src.models.evento_quiebre_stock import EventoQuiebreStock
 from src.models.factura_proveedor import FacturaProveedor
 from src.models.historial_precio import HistorialPrecio
 from src.models.incidente_fraude import IncidenteFraude
+from src.models.incidente_seguridad_pago import IncidenteSeguridadPago
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
 from src.models.inventario import Inventario
 from src.models.linea_venta_removida import LineaVentaRemovida
@@ -52,6 +53,7 @@ from src.models.nivel_fidelizacion import NivelFidelizacion
 from src.models.orden_compra import OrdenCompra
 from src.models.orden_compra_detalle import OrdenCompraDetalle
 from src.models.pago_proveedor import PagoProveedor
+from src.models.politica_seguridad_pagos import PoliticaSeguridadPagos
 from src.models.precio_competencia import PrecioCompetencia
 from src.models.producto import Producto
 from src.models.pronostico_demanda import PronosticoDemanda
@@ -99,6 +101,7 @@ __all__ = [
     "FacturaProveedor",
     "HistorialPrecio",
     "IncidenteFraude",
+    "IncidenteSeguridadPago",
     "IntentoPagoTarjeta",
     "Inventario",
     "LineaVentaRemovida",
@@ -113,6 +116,7 @@ __all__ = [
     "OrdenCompra",
     "OrdenCompraDetalle",
     "PagoProveedor",
+    "PoliticaSeguridadPagos",
     "PrecioCompetencia",
     "Producto",
     "PronosticoDemanda",

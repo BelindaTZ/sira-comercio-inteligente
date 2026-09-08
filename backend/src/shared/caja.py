@@ -80,6 +80,19 @@ def datafono_no_conforme(version_firmware, version_minima) -> bool:
     return actual < minima
 
 
+def estado_datafono_restablecido(version_firmware, version_minima) -> str:
+    """Feature 007 (FR-003) — al restablecer un datáfono `fuera_servicio` no se pasa
+    directo a `activo`: se reevalúa su conformidad reutilizando `datafono_no_conforme`
+    (la misma regla de 006, sin duplicarla). Devuelve `'requiere_actualizacion'` si
+    su firmware no cumple el estándar vigente, `'activo'` si cumple.
+    """
+    return (
+        "requiere_actualizacion"
+        if datafono_no_conforme(version_firmware, version_minima)
+        else "activo"
+    )
+
+
 # ============================================================ reporte mensual (US3)
 def agrupar_diferencias_por_turno(cierres) -> list[dict]:
     """FR-009 / research.md Decisión 3 — agrupa los cuadres del mes por

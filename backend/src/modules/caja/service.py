@@ -14,6 +14,7 @@ from decimal import Decimal
 from src.modules.caja.repository import CajaRepository
 from src.modules.caja.schemas import IncidenteFraudeIn
 from src.shared import caja as logica
+from src.shared import pagos
 from src.shared.exceptions import ConflictError, NotFoundError
 
 logger = logging.getLogger("sira.caja")
@@ -99,20 +100,107 @@ class CajaService:
     async def listar_datafonos(self, estado: str | None = None):
         return await self.repo.listar_datafonos(estado)
 
+    async def _version_minima_vigente(self) -> str | None:
+        vigente = await self.repo.configuracion_seguridad_vigente()
+        return vigente.version_minima_firmware if vigente is not None else None
+
     async def evaluar_conformidad_datafonos(self) -> int:
         """FR-007 — recorre el inventario y marca `requiere_actualizacion` los
         datáfonos por debajo del estándar vigente (y devuelve a `activo` los que ya
         cumplen). No toca los `fuera_servicio`. Devuelve cuántos quedaron no
         conformes."""
-        vigente = await self.repo.configuracion_seguridad_vigente()
-        version_minima = vigente.version_minima_firmware if vigente is not None else None
+        version_minima = await self._version_minima_vigente()
         no_conformes = 0
         for datafono in await self.repo.datafonos_evaluables():
-            no_conforme = logica.datafono_no_conforme(datafono.version_firmware, version_minima)
-            datafono.estado = "requiere_actualizacion" if no_conforme else "activo"
-            no_conformes += int(no_conforme)
+            estado = logica.estado_datafono_restablecido(datafono.version_firmware, version_minima)
+            datafono.estado = estado
+            no_conformes += int(estado == "requiere_actualizacion")
         await self.repo.flush()
         return no_conformes
+
+    # ============================================================ US1 (007): disponibilidad diaria
+    async def marcar_datafono_fuera_servicio(self, datafono_id: int):
+        """FR-001 — el Encargado de Tienda marca un datáfono como fuera de servicio."""
+        datafono = await self.repo.get_datafono(datafono_id)
+        if datafono is None:
+            raise NotFoundError(f"Datáfono {datafono_id} no existe")
+        if datafono.estado == "fuera_servicio":
+            raise ConflictError(f"El datáfono {datafono_id} ya está fuera de servicio")
+        return await self.repo.marcar_estado_datafono(datafono, "fuera_servicio")
+
+    async def restablecer_datafono(self, datafono_id: int) -> dict:
+        """FR-002/FR-003 — restablece un datáfono fuera de servicio reevaluando su
+        conformidad de seguridad (reutiliza la regla de 006, sin duplicarla): queda
+        `activo` si cumple el estándar vigente, `requiere_actualizacion` si no."""
+        datafono = await self.repo.get_datafono(datafono_id)
+        if datafono is None:
+            raise NotFoundError(f"Datáfono {datafono_id} no existe")
+        if datafono.estado != "fuera_servicio":
+            raise ConflictError(
+                f"El datáfono {datafono_id} no está fuera de servicio (está '{datafono.estado}')"
+            )
+        version_minima = await self._version_minima_vigente()
+        estado = logica.estado_datafono_restablecido(datafono.version_firmware, version_minima)
+        await self.repo.marcar_estado_datafono(datafono, estado)
+        return {"datafono_id": datafono.datafono_id, "estado": estado}
+
+    # ================================================= US3 (007): incidentes de seguridad
+    async def registrar_incidente_seguridad(
+        self, *, datafono_id: int | None, descripcion: str, registrado_por: int
+    ):
+        """FR-008 — registra un incidente de seguridad de pago, con o sin datáfono
+        asociado (Edge Case)."""
+        if datafono_id is not None and await self.repo.get_datafono(datafono_id) is None:
+            raise NotFoundError(f"Datáfono {datafono_id} no existe")
+        return await self.repo.crear_incidente_seguridad(
+            datafono_id=datafono_id, registrado_por=registrado_por, descripcion=descripcion
+        )
+
+    async def listar_incidentes_seguridad(self, estado: str | None = None):
+        return await self.repo.listar_incidentes_seguridad(estado)
+
+    async def transicionar_incidente_seguridad(
+        self, incidente_id: int, *, estado_nuevo: str, empleado_id: int
+    ):
+        """FR-009 — avanza el incidente entre abierto → en_investigacion → cerrado,
+        dejando constancia de quién y cuándo."""
+        incidente = await self.repo.get_incidente_seguridad(incidente_id)
+        if incidente is None:
+            raise NotFoundError(f"Incidente de seguridad {incidente_id} no existe")
+        try:
+            incidente.estado = pagos.siguiente_estado_incidente_seguridad(
+                incidente.estado, estado_nuevo
+            )
+        except ValueError as exc:
+            raise ConflictError(str(exc)) from exc
+        incidente.actualizado_por = empleado_id
+        incidente.fecha_actualizacion = _ahora()
+        await self.repo.flush()
+        return incidente
+
+    async def contar_incidentes_seguridad(self, desde: date | None, hasta: date | None) -> dict:
+        """FR-011 — número de incidentes de seguridad de pago de un periodo."""
+        total = await self.repo.contar_incidentes_seguridad(desde, hasta)
+        return {"total": total, "periodo": {"desde": desde, "hasta": hasta}}
+
+    # ============================================================ US4 (007): política de seguridad
+    async def politica_seguridad_vigente(self):
+        """FR-013 — texto vigente de la política de seguridad de pagos."""
+        vigente = await self.repo.politica_vigente()
+        if vigente is None:
+            raise NotFoundError("Aún no se ha definido una política de seguridad de pagos")
+        return vigente
+
+    async def politica_seguridad_por_id(self, politica_id: int):
+        """FR-014 — una versión específica de la política (aunque ya no sea vigente)."""
+        fila = await self.repo.get_politica(politica_id)
+        if fila is None:
+            raise NotFoundError(f"Política de seguridad {politica_id} no existe")
+        return fila
+
+    async def definir_politica_seguridad(self, *, texto: str, definido_por: int):
+        """FR-012 — nueva versión vigente (append-only, research.md Decisión 5)."""
+        return await self.repo.crear_politica(texto=texto, definido_por=definido_por)
 
     async def actualizar_datafono(self, datafono_id: int, version_firmware_nueva: str):
         """FR-008 — registra la actualización/reemplazo: vuelve a `activo` y deja

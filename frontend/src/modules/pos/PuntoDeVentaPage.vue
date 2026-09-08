@@ -6,7 +6,7 @@
  *
  * Toda regla vive en el backend; esta página sólo llama a `ventasApi`.
  */
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
 import BuscadorProducto from './components/BuscadorProducto.vue'
 import BuscadorCliente from './components/BuscadorCliente.vue'
@@ -17,17 +17,14 @@ import SimuladorDatafono from './components/SimuladorDatafono.vue'
 const sesion = reactive({
   tiendaId: Number(localStorage.getItem('sira_tienda_id')) || 1,
   cajeroId: Number(localStorage.getItem('sira_empleado_id')) || 1,
+  cajaId: Number(localStorage.getItem('sira_caja_id')) || null,
 })
 
 const venta = ref(null)
 const clienteId = ref(null)
 const medioPagoId = ref(null)
-const mediosPago = [
-  { id: 1, nombre: 'Efectivo', tarjeta: false },
-  { id: 2, nombre: 'Tarjeta', tarjeta: true },
-  { id: 3, nombre: 'Transferencia', tarjeta: false },
-  { id: 4, nombre: 'Billetera Digital', tarjeta: false },
-]
+// feature 007: sólo los medios de pago aprobados y no dados de baja (FR-007).
+const mediosPago = ref([])
 const tipoComprobante = ref('nota_venta')
 const identificacion = ref('')
 const razonSocial = ref('')
@@ -36,9 +33,36 @@ const cargando = ref(false)
 const procesandoPago = ref(false)
 const error = ref('')
 const pagoTarjetaAprobado = ref(false)
+// feature 007 (FR-004): advertencia no bloqueante si el datáfono de la caja no está disponible.
+const datafonoAviso = ref('')
 
-const medioSeleccionado = computed(() => mediosPago.find((m) => m.id === medioPagoId.value) || null)
-const requiereTarjeta = computed(() => medioSeleccionado.value?.tarjeta === true)
+const medioSeleccionado = computed(
+  () => mediosPago.value.find((m) => m.medio_pago_id === medioPagoId.value) || null,
+)
+const requiereTarjeta = computed(() => medioSeleccionado.value?.nombre === 'Tarjeta')
+
+async function cargarMediosPago() {
+  try {
+    mediosPago.value = await ventasApi.mediosPagoDisponibles()
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+watch(requiereTarjeta, async (necesita) => {
+  datafonoAviso.value = ''
+  if (!necesita || !sesion.cajaId) return
+  try {
+    const { disponible, estado } = await ventasApi.datafonoDisponible(sesion.cajaId)
+    if (!disponible) {
+      datafonoAviso.value = `El datáfono de esta caja está ${estado || 'no disponible'}. Puedes cobrar con otro medio de pago.`
+    }
+  } catch {
+    /* la advertencia es best-effort, nunca bloquea el cobro */
+  }
+})
+
+onMounted(cargarMediosPago)
 const puedeConfirmar = computed(
   () =>
     venta.value?.estado === 'en_curso' &&
@@ -204,8 +228,17 @@ async function confirmar() {
             class="mb-3 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
           >
             <option :value="null">Selecciona…</option>
-            <option v-for="m in mediosPago" :key="m.id" :value="m.id">{{ m.nombre }}</option>
+            <option v-for="m in mediosPago" :key="m.medio_pago_id" :value="m.medio_pago_id">
+              {{ m.nombre }}
+            </option>
           </select>
+
+          <p
+            v-if="datafonoAviso"
+            class="mb-3 rounded-lg bg-error-container px-3 py-2 text-xs text-on-error-container"
+          >
+            ⚠️ {{ datafonoAviso }}
+          </p>
 
           <label class="mb-2 block text-xs font-medium text-on-surface-variant">Comprobante</label>
           <select

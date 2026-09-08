@@ -42,3 +42,7 @@ class Venta(Base):
     # Clave del PDF del comprobante en el bucket MinIO 'comprobantes-venta'
     # (ronda 7, FR-004). NULL mientras la venta no se ha confirmado.
     comprobante_objeto: Mapped[str | None] = mapped_column(String(300))
+    # feature 007 (FR-015): momento en que se inició el cobro, distinto de
+    # `fecha_hora` (confirmación). NULL en las ventas ya sembradas de Dunnhumby y
+    # en cualquier venta previa a 007 — se excluyen del cálculo de tiempo de cobro.
+    fecha_inicio_cobro: Mapped[datetime | None] = mapped_column(DateTime)

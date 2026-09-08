@@ -55,6 +55,25 @@ async function actualizar(d) {
   }
 }
 
+// feature 007: disponibilidad operativa diaria (Encargado de Tienda)
+async function fueraServicio(d) {
+  try {
+    await cajaApi.datafonoFueraServicio(d.datafono_id)
+    await cargar()
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
+async function restablecer(d) {
+  try {
+    await cajaApi.datafonoRestablecer(d.datafono_id)
+    await cargar()
+  } catch (e) {
+    error.value = e.message
+  }
+}
+
 onMounted(cargar)
 </script>
 
@@ -143,23 +162,41 @@ onMounted(cargar)
               <span
                 class="rounded-md px-2 py-0.5 text-xs font-semibold"
                 :class="
-                  d.estado === 'requiere_actualizacion'
-                    ? 'bg-error-container text-on-error-container'
-                    : 'bg-tertiary-container text-on-tertiary-container'
+                  d.estado === 'activo'
+                    ? 'bg-tertiary-container text-on-tertiary-container'
+                    : 'bg-error-container text-on-error-container'
                 "
               >
                 {{ ETIQUETA_ESTADO[d.estado] || d.estado }}
               </span>
             </td>
-            <td class="px-3 py-2 text-right">
-              <button
-                v-if="d.estado === 'requiere_actualizacion'"
-                type="button"
-                class="rounded-lg bg-primary-container px-2 py-1 text-xs font-semibold text-on-primary-container"
-                @click="actualizar(d)"
-              >
-                Registrar actualización
-              </button>
+            <td class="px-3 py-2">
+              <div class="flex flex-wrap justify-end gap-1">
+                <button
+                  v-if="d.estado === 'requiere_actualizacion'"
+                  type="button"
+                  class="rounded-lg bg-primary-container px-2 py-1 text-xs font-semibold text-on-primary-container"
+                  @click="actualizar(d)"
+                >
+                  Registrar actualización
+                </button>
+                <button
+                  v-if="d.estado !== 'fuera_servicio'"
+                  type="button"
+                  class="rounded-lg bg-error-container px-2 py-1 text-xs font-semibold text-on-error-container"
+                  @click="fueraServicio(d)"
+                >
+                  Marcar fuera de servicio
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="rounded-lg bg-primary-container px-2 py-1 text-xs font-semibold text-on-primary-container"
+                  @click="restablecer(d)"
+                >
+                  Restablecer
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
