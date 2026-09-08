@@ -1,9 +1,9 @@
 <script setup>
 /**
- * Tabla de datos genérica (Principio XII: una sola implementación de listado).
- * Réplica del data-grid de `docs/diseno-ui/.../sira_inventario_y_alertas_fifo/`:
- * header oscuro, filas de 44px, valores numéricos `tabular-nums` a la derecha,
- * footer con "Mostrando X–Y de N", filas por página y números de página.
+ * Data-grid — markup EXACTO del panel "Rendimiento Operacional por Sucursal" de
+ * `docs/diseno-ui/.../sira_dashboard_ejecutivo/code.html`: `.satin-card`,
+ * cabecera con gradiente sage, header de tabla en gradiente emerald, filas
+ * `divide-y divide-brand-100/90`, celdas `py-3.5 px-6`.
  *
  * Recibe filas ya paginadas por el backend; emite eventos, no pagina en cliente.
  */
@@ -17,10 +17,11 @@ const props = defineProps({
   page: { type: Number, default: 1 },
   size: { type: Number, default: 25 },
   total: { type: Number, default: 0 },
+  titulo: { type: String, default: '' },
+  subtitulo: { type: String, default: '' },
   emptyText: { type: String, default: 'Sin resultados' },
   sizeOptions: { type: Array, default: () => [15, 25, 50, 100] },
 })
-
 const emit = defineEmits(['update:page', 'update:size', 'row-click'])
 
 const keyFor = (row, idx) =>
@@ -31,7 +32,6 @@ const pages = computed(() => Math.max(1, Math.ceil(props.total / props.size)))
 const desde = computed(() => (props.total === 0 ? 0 : (props.page - 1) * props.size + 1))
 const hasta = computed(() => Math.min(props.page * props.size, props.total))
 
-// Ventana de números de página (máx 5) alrededor de la actual.
 const numeros = computed(() => {
   const t = pages.value
   if (t <= 7) return Array.from({ length: t }, (_, i) => i + 1)
@@ -48,33 +48,59 @@ const numeros = computed(() => {
 </script>
 
 <template>
-  <div
-    class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest shadow-tier-1"
-  >
+  <section class="satin-card overflow-hidden rounded-2xl">
+    <header
+      v-if="titulo || $slots.acciones"
+      class="flex flex-col justify-between gap-3 border-b border-brand-200 bg-gradient-to-r from-brand-100/80 via-sage-100 to-brand-50 p-4 sm:flex-row sm:items-center sm:px-6"
+    >
+      <div>
+        <div class="flex items-center gap-2">
+          <h2 class="font-display text-base font-bold text-brand-950">{{ titulo }}</h2>
+          <span
+            class="rounded-full border border-brand-300 bg-white px-2.5 py-0.5 text-[11px] font-bold text-brand-900 tabular-nums shadow-sm"
+          >
+            {{ total.toLocaleString('es-CL') }}
+          </span>
+        </div>
+        <p v-if="subtitulo" class="mt-0.5 text-[12px] text-slate-600">{{ subtitulo }}</p>
+      </div>
+      <div v-if="$slots.acciones" class="flex items-center gap-2.5">
+        <slot name="acciones" />
+      </div>
+    </header>
+
     <div class="overflow-x-auto">
-      <table class="w-full border-collapse text-[13px]">
+      <table class="w-full border-collapse text-left">
         <thead>
-          <tr class="bg-primary text-white">
+          <tr
+            class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[11px] font-bold uppercase tracking-wider text-brand-100"
+          >
             <th
               v-for="col in columns"
               :key="col.key"
               scope="col"
-              class="whitespace-nowrap px-4 py-2.5 text-[11px] font-semibold uppercase tracking-[0.04em]"
-              :class="col.align === 'right' ? 'text-right' : 'text-left'"
+              class="whitespace-nowrap px-6 py-3.5"
+              :class="
+                col.align === 'right'
+                  ? 'text-right'
+                  : col.align === 'center'
+                    ? 'text-center'
+                    : 'text-left'
+              "
               :style="col.width ? { width: col.width } : null"
             >
               {{ col.label }}
             </th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="divide-y divide-brand-100/90 bg-white/80 text-[13px]">
           <tr v-if="loading">
-            <td :colspan="columns.length" class="px-4 py-10 text-center text-on-surface-variant">
+            <td :colspan="columns.length" class="px-6 py-12 text-center text-slate-500">
               Cargando…
             </td>
           </tr>
           <tr v-else-if="!rows.length">
-            <td :colspan="columns.length" class="px-4 py-10 text-center text-on-surface-variant">
+            <td :colspan="columns.length" class="px-6 py-12 text-center text-slate-500">
               {{ emptyText }}
             </td>
           </tr>
@@ -82,14 +108,20 @@ const numeros = computed(() => {
             v-for="(row, idx) in rows"
             v-else
             :key="keyFor(row, idx)"
-            class="border-b border-[rgba(15,23,42,0.05)] transition-colors last:border-0 hover:bg-[rgba(10,54,50,0.03)]"
+            class="transition-colors hover:bg-brand-50/70"
             @click="emit('row-click', row)"
           >
             <td
               v-for="col in columns"
               :key="col.key"
-              class="h-11 px-4 text-on-surface"
-              :class="col.align === 'right' ? 'text-right tabular-nums' : 'text-left'"
+              class="px-6 py-3.5 text-slate-800"
+              :class="
+                col.align === 'right'
+                  ? 'text-right font-bold tabular-nums text-slate-900'
+                  : col.align === 'center'
+                    ? 'text-center'
+                    : 'text-left'
+              "
             >
               <slot :name="`cell:${col.key}`" :row="row" :value="row[col.key]">
                 {{ cell(row, col) }}
@@ -100,19 +132,19 @@ const numeros = computed(() => {
       </table>
     </div>
 
-    <div
-      class="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant px-4 py-2.5 text-[12px] text-on-surface-variant"
+    <footer
+      class="flex flex-wrap items-center justify-between gap-3 border-t border-brand-200 bg-white/60 px-6 py-3 text-[12px] text-slate-600"
     >
       <div class="flex items-center gap-3">
-        <span
-          >Mostrando <b class="tabular-nums text-on-surface">{{ desde }}–{{ hasta }}</b> de
-          <b class="tabular-nums text-on-surface">{{ total }}</b></span
-        >
+        <span>
+          Mostrando <b class="tabular-nums text-slate-900">{{ desde }}–{{ hasta }}</b> de
+          <b class="tabular-nums text-slate-900">{{ total.toLocaleString('es-CL') }}</b>
+        </span>
         <label class="flex items-center gap-1.5">
           Filas
           <select
             :value="size"
-            class="rounded-md border border-outline-variant bg-white px-1.5 py-0.5 text-[12px] text-on-surface"
+            class="rounded-md border border-brand-300 bg-white px-1.5 py-0.5 text-[12px] text-slate-800"
             @change="emit('update:size', Number($event.target.value))"
           >
             <option v-for="s in sizeOptions" :key="s" :value="s">{{ s }}</option>
@@ -122,23 +154,19 @@ const numeros = computed(() => {
       <div class="flex items-center gap-1">
         <button
           type="button"
-          class="rounded-md px-2 py-1 font-medium text-on-surface-variant hover:bg-surface-container disabled:opacity-30"
+          class="rounded-md px-2 py-1 font-medium text-slate-500 hover:bg-brand-50 disabled:opacity-30"
           :disabled="page <= 1"
           @click="emit('update:page', page - 1)"
         >
           ‹
         </button>
         <template v-for="(n, i) in numeros" :key="i">
-          <span v-if="n === '…'" class="px-1.5 text-on-surface-variant">…</span>
+          <span v-if="n === '…'" class="px-1.5 text-slate-400">…</span>
           <button
             v-else
             type="button"
             class="min-w-[26px] rounded-md px-1.5 py-1 text-center font-semibold transition"
-            :class="
-              n === page
-                ? 'bg-primary text-white'
-                : 'text-on-surface-variant hover:bg-surface-container'
-            "
+            :class="n === page ? 'bg-brand-800 text-white' : 'text-slate-500 hover:bg-brand-50'"
             @click="emit('update:page', n)"
           >
             {{ n }}
@@ -146,13 +174,13 @@ const numeros = computed(() => {
         </template>
         <button
           type="button"
-          class="rounded-md px-2 py-1 font-medium text-on-surface-variant hover:bg-surface-container disabled:opacity-30"
+          class="rounded-md px-2 py-1 font-medium text-slate-500 hover:bg-brand-50 disabled:opacity-30"
           :disabled="page >= pages"
           @click="emit('update:page', page + 1)"
         >
           ›
         </button>
       </div>
-    </div>
-  </div>
+    </footer>
+  </section>
 </template>

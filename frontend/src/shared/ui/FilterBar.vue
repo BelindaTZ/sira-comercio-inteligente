@@ -17,11 +17,11 @@ defineProps({
 const emit = defineEmits(['update:modelValue', 'pill'])
 
 const PILL_INACTIVA = {
-  fifo: 'border-damask-amber/40 text-[#b45309] hover:bg-[#fef3c7]',
-  quiebre: 'border-crimson-ruby/40 text-[#be123c] hover:bg-[#ffe4e6]',
-  ok: 'border-tertiary/40 text-[#047857] hover:bg-[#d1fae5]',
-  ia: 'border-secondary/40 text-[#6b21a8] hover:bg-orchid-soft',
-  neutral: 'border-outline-variant text-on-surface-variant hover:bg-surface-container',
+  fifo: 'border-amber-300 text-[#b45309] hover:bg-amber-50',
+  quiebre: 'border-rose-300 text-[#be123c] hover:bg-rose-50',
+  ok: 'border-emerald-300 text-[#047857] hover:bg-emerald-50',
+  ia: 'border-amethyst-300 text-amethyst-800 hover:bg-amethyst-50',
+  neutral: 'border-brand-200 text-slate-600 hover:bg-brand-50',
 }
 </script>
 
@@ -38,7 +38,7 @@ const PILL_INACTIVA = {
           :value="modelValue"
           type="text"
           :placeholder="placeholder"
-          class="h-10 w-full rounded-xl border border-outline-variant bg-white pl-9 pr-3 text-[13px] text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10"
+          class="h-10 w-full rounded-xl border border-brand-300 bg-white pl-9 pr-3 text-[13px] text-slate-800 placeholder:text-slate-400 focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           @input="emit('update:modelValue', $event.target.value)"
         />
       </div>
@@ -50,10 +50,10 @@ const PILL_INACTIVA = {
         v-for="p in pills"
         :key="p.value"
         type="button"
-        class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 font-bold shadow-tier-1 transition"
+        class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 font-bold shadow-2xs transition"
         :class="
           pillActiva === p.value
-            ? 'border-primary bg-primary text-white ring-1 ring-primary/30'
+            ? 'border-brand-800 bg-brand-800 text-white ring-1 ring-brand-800/30'
             : `bg-white ${PILL_INACTIVA[p.tipo] || PILL_INACTIVA.neutral}`
         "
         @click="emit('pill', p.value)"
@@ -62,7 +62,7 @@ const PILL_INACTIVA = {
         <span
           v-if="p.count != null"
           class="rounded-full px-1.5 text-[11px] font-extrabold tabular-nums"
-          :class="pillActiva === p.value ? 'bg-white/20' : 'bg-surface-container'"
+          :class="pillActiva === p.value ? 'bg-white/20' : 'bg-brand-50 text-brand-900'"
         >
           {{ p.count }}
         </span>

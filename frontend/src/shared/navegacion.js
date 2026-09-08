@@ -9,6 +9,12 @@
  * Cada ítem declara el módulo RBAC que lo habilita (`modulo`) o una lista de la
  * que basta tener uno (`modulos`). Se muestra si el rol puede ver ese módulo;
  * `Gerente_General` ve todo. Nombres de módulo = los del seed.
+ *
+ * `tabla`: cuando el permiso de tabla del endpoint es más estrecho que el del
+ * módulo (p. ej. `Encargado_Tienda` ve el módulo `Comercial` sólo por
+ * `revision_margen_bajo`, no por `productos`), el ítem se oculta si el rol no
+ * tiene `can_select` sobre esa tabla — evita que la navegación lleve a un 403.
+ * Debe coincidir con el `require_permission(modulo, tabla, "select")` del router.
  */
 
 const TACTICOS = ['Comercial', 'Marketing_CRM', 'Operaciones', 'Finanzas', 'TI', 'RRHH']
@@ -32,17 +38,23 @@ export const CATEGORIAS = [
         label: 'Dashboard estratégico',
         to: '/direccion/dashboard-estrategico',
         modulo: 'Direccion',
+        tabla: 'dashboard_kpi',
       },
       { label: 'Dashboard táctico de mi área', to: '/ti/dashboards/tactico', modulos: TACTICOS },
-      { label: 'Dashboards operativos', to: '/ti/dashboards/operativos', modulo: 'TI' },
+      {
+        label: 'Dashboards operativos',
+        to: '/ti/dashboards/operativos',
+        modulo: 'TI',
+        tabla: 'dashboard_operativo_estado',
+      },
     ],
   },
   {
     label: 'Punto de Venta',
     icon: 'cart',
     items: [
-      { label: 'Registrar venta (POS)', to: '/pos', modulo: 'Ventas' },
-      { label: 'Cuadre de caja', to: '/caja', modulo: 'Finanzas' },
+      { label: 'Registrar venta (POS)', to: '/pos', modulo: 'Ventas', tabla: 'ventas' },
+      { label: 'Cuadre de caja', to: '/caja', modulo: 'Finanzas', tabla: 'cierre_caja' },
     ],
   },
   {
@@ -53,18 +65,38 @@ export const CATEGORIAS = [
         titulo: 'Stock',
         icon: 'cube',
         items: [
-          { label: 'Inventario y lotes', to: '/inventario', modulo: 'Operaciones' },
-          { label: 'Traslados entre tiendas', to: '/operaciones/traslados', modulo: 'Operaciones' },
-          { label: 'Seguimiento de merma', to: '/caja/seguimiento-merma', modulo: 'Operaciones' },
+          { label: 'Inventario y lotes', to: '/inventario', modulo: 'Operaciones', tabla: 'lotes' },
+          {
+            label: 'Traslados entre tiendas',
+            to: '/operaciones/traslados',
+            modulo: 'Operaciones',
+            tabla: 'traslados_stock',
+          },
+          {
+            label: 'Seguimiento de merma',
+            to: '/caja/seguimiento-merma',
+            modulo: 'Operaciones',
+            tabla: 'mermas',
+          },
         ],
       },
       {
         titulo: 'Abastecimiento',
         icon: 'truck',
         items: [
-          { label: 'Órdenes de compra', to: '/compras', modulo: 'Operaciones' },
+          {
+            label: 'Órdenes de compra',
+            to: '/compras',
+            modulo: 'Operaciones',
+            tabla: 'ordenes_compra',
+          },
           { label: 'Pronóstico de demanda', to: '/forecasting', modulos: ['Operaciones', 'TI'] },
-          { label: 'Demanda perdida', to: '/forecasting/demanda-perdida', modulo: 'Operaciones' },
+          {
+            label: 'Demanda perdida',
+            to: '/forecasting/demanda-perdida',
+            modulo: 'Operaciones',
+            tabla: 'eventos_quiebre_stock',
+          },
         ],
       },
     ],
@@ -77,25 +109,47 @@ export const CATEGORIAS = [
         titulo: 'Clientes',
         icon: 'users',
         items: [
-          { label: 'Clientes y fidelización', to: '/clientes', modulo: 'Marketing_CRM' },
-          { label: 'Riesgo de fuga (churn)', to: '/clientes/riesgo-fuga', modulo: 'Marketing_CRM' },
+          {
+            label: 'Clientes y fidelización',
+            to: '/clientes',
+            modulo: 'Marketing_CRM',
+            tabla: 'clientes',
+          },
+          {
+            label: 'Riesgo de fuga (churn)',
+            to: '/clientes/riesgo-fuga',
+            modulo: 'Marketing_CRM',
+            tabla: 'churn_score',
+          },
         ],
       },
       {
         titulo: 'Campañas y promociones',
         icon: 'megaphone',
         items: [
-          { label: 'Campañas de reactivación', to: '/clientes/campanas', modulo: 'Marketing_CRM' },
-          { label: 'Reglas de afinidad', to: '/promociones', modulo: 'Marketing_CRM' },
+          {
+            label: 'Campañas de reactivación',
+            to: '/clientes/campanas',
+            modulo: 'Marketing_CRM',
+            tabla: 'campanas',
+          },
+          {
+            label: 'Reglas de afinidad',
+            to: '/promociones',
+            modulo: 'Marketing_CRM',
+            tabla: 'regla_afinidad',
+          },
           {
             label: 'Candidatos a liquidación',
             to: '/promociones/liquidacion',
-            modulos: ['Marketing_CRM', 'Operaciones'],
+            modulo: 'Operaciones',
+            tabla: 'cambio_clasificacion_abc',
           },
           {
             label: 'Colocación promocional',
             to: '/promociones/colocacion',
             modulo: 'Marketing_CRM',
+            tabla: 'cupon_enviado',
           },
         ],
       },
@@ -108,23 +162,42 @@ export const CATEGORIAS = [
       {
         titulo: 'Catálogo',
         icon: 'cube',
-        items: [{ label: 'Catálogo de productos', to: '/catalogo', modulo: 'Comercial' }],
+        items: [
+          {
+            label: 'Catálogo de productos',
+            to: '/catalogo',
+            modulo: 'Comercial',
+            tabla: 'productos',
+          },
+        ],
       },
       {
         titulo: 'Precios y márgenes',
         icon: 'tag',
         items: [
-          { label: 'Márgenes objetivo', to: '/pricing', modulo: 'Comercial' },
+          {
+            label: 'Márgenes objetivo',
+            to: '/pricing',
+            modulo: 'Comercial',
+            tabla: 'margenes_objetivo',
+          },
           {
             label: 'Propuestas de ajuste de precio',
             to: '/pricing/propuestas',
             modulo: 'Comercial',
+            tabla: 'propuesta_ajuste_precio',
           },
-          { label: 'Reporte de margen real', to: '/pricing/reporte', modulo: 'Comercial' },
+          {
+            label: 'Reporte de margen real',
+            to: '/pricing/reporte',
+            modulo: 'Comercial',
+            tabla: 'margenes_objetivo',
+          },
           {
             label: 'Comparación con la competencia',
             to: '/pricing/competencia',
             modulo: 'Comercial',
+            tabla: 'precio_competencia',
           },
         ],
       },
@@ -142,9 +215,20 @@ export const CATEGORIAS = [
             label: 'Reporte de diferencias de caja',
             to: '/caja/reporte-diferencias',
             modulo: 'Finanzas',
+            tabla: 'ajustes_inventario',
           },
-          { label: 'Datáfonos y firmware', to: '/caja/datafonos', modulos: ['Finanzas', 'TI'] },
-          { label: 'Medios de pago', to: '/ventas/medios-pago', modulo: 'Finanzas' },
+          {
+            label: 'Datáfonos y firmware',
+            to: '/caja/datafonos',
+            modulo: 'Finanzas',
+            tabla: 'datafonos',
+          },
+          {
+            label: 'Medios de pago',
+            to: '/ventas/medios-pago',
+            modulo: 'Ventas',
+            tabla: 'medios_pago',
+          },
           {
             label: 'Tiempo de cobro',
             to: '/ventas/tiempo-cobro',
@@ -156,17 +240,29 @@ export const CATEGORIAS = [
         titulo: 'Seguridad de pagos',
         icon: 'shield',
         items: [
-          { label: 'Incidentes de fraude', to: '/caja/incidentes', modulo: 'Finanzas' },
-          { label: 'Protocolo de escalamiento', to: '/caja/protocolo', modulo: 'Finanzas' },
+          {
+            label: 'Incidentes de fraude',
+            to: '/caja/incidentes',
+            modulo: 'Finanzas',
+            tabla: 'incidentes_fraude',
+          },
+          {
+            label: 'Protocolo de escalamiento',
+            to: '/caja/protocolo',
+            modulo: 'Finanzas',
+            tabla: 'protocolo_escalamiento',
+          },
           {
             label: 'Incidentes de seguridad de pago',
             to: '/caja/incidentes-seguridad',
             modulo: 'Finanzas',
+            tabla: 'incidente_seguridad_pago',
           },
           {
             label: 'Política de seguridad de pagos',
             to: '/caja/politica-seguridad',
             modulo: 'Finanzas',
+            tabla: 'politica_seguridad_pagos',
           },
         ],
       },
@@ -180,18 +276,43 @@ export const CATEGORIAS = [
         titulo: 'Personal',
         icon: 'users',
         items: [
-          { label: 'Empleados', to: '/rrhh/empleados', modulo: 'RRHH' },
-          { label: 'Puestos críticos', to: '/rrhh/puestos-criticos', modulo: 'RRHH' },
-          { label: 'Acciones de retención', to: '/rrhh/retencion', modulo: 'RRHH' },
+          { label: 'Empleados', to: '/rrhh/empleados', modulo: 'RRHH', tabla: 'empleados' },
+          {
+            label: 'Puestos críticos',
+            to: '/rrhh/puestos-criticos',
+            modulo: 'RRHH',
+            tabla: 'empleados',
+          },
+          {
+            label: 'Acciones de retención',
+            to: '/rrhh/retencion',
+            modulo: 'RRHH',
+            tabla: 'acciones_retencion',
+          },
         ],
       },
       {
         titulo: 'Desarrollo',
         icon: 'academic',
         items: [
-          { label: 'Capacitaciones', to: '/rrhh/capacitaciones', modulo: 'RRHH' },
-          { label: 'Clima laboral y rotación', to: '/rrhh/clima-laboral', modulo: 'RRHH' },
-          { label: 'Plan de sucesión', to: '/rrhh/plan-sucesion', modulo: 'RRHH' },
+          {
+            label: 'Capacitaciones',
+            to: '/rrhh/capacitaciones',
+            modulo: 'RRHH',
+            tabla: 'empleado_capacitacion',
+          },
+          {
+            label: 'Clima laboral y rotación',
+            to: '/rrhh/clima-laboral',
+            modulo: 'RRHH',
+            tabla: 'clima_laboral',
+          },
+          {
+            label: 'Plan de sucesión',
+            to: '/rrhh/plan-sucesion',
+            modulo: 'RRHH',
+            tabla: 'plan_sucesion',
+          },
         ],
       },
     ],
@@ -204,21 +325,42 @@ export const CATEGORIAS = [
         titulo: 'Seguridad',
         icon: 'shield',
         items: [
-          { label: 'Usuarios', to: '/sistema/usuarios', modulo: 'Sistema' },
-          { label: 'Roles y permisos', to: '/sistema/roles-permisos', modulo: 'Sistema' },
-          { label: 'Auditoría', to: '/sistema/auditoria', modulo: 'Sistema' },
+          { label: 'Usuarios', to: '/sistema/usuarios', modulo: 'Sistema', tabla: 'usuarios' },
+          {
+            label: 'Roles y permisos',
+            to: '/sistema/roles-permisos',
+            modulo: 'Sistema',
+            tabla: 'role_permisos_modulo',
+          },
+          {
+            label: 'Auditoría',
+            to: '/sistema/auditoria',
+            modulo: 'Sistema',
+            tabla: 'auditoria_log',
+          },
         ],
       },
       {
         titulo: 'Datos e integraciones',
         icon: 'database',
         items: [
-          { label: 'Modelo de datos del warehouse', to: '/plataforma-datos/modelo', modulo: 'TI' },
-          { label: 'Monitoreo de corridas (ELT)', to: '/plataforma-datos/corridas', modulo: 'TI' },
+          {
+            label: 'Modelo de datos del warehouse',
+            to: '/plataforma-datos/modelo',
+            modulo: 'TI',
+            tabla: 'modelo_datos_warehouse',
+          },
+          {
+            label: 'Monitoreo de corridas (ELT)',
+            to: '/plataforma-datos/corridas',
+            modulo: 'TI',
+            tabla: 'corrida_carga',
+          },
           {
             label: 'Política de gobierno de datos',
             to: '/plataforma-datos/politica',
             modulo: 'TI',
+            tabla: 'politica_gobierno_datos',
           },
         ],
       },
@@ -229,7 +371,10 @@ export const CATEGORIAS = [
 /** ¿El rol (vía el store de sesión) puede ver este ítem? */
 export function itemVisible(item, sesion) {
   if (item.modulos) return item.modulos.some((m) => sesion.puedeVer(m))
-  return sesion.puedeVer(item.modulo)
+  if (!sesion.puedeVer(item.modulo)) return false
+  // Permiso de tabla: más fino que el de módulo — evita llevar la navegación a un 403.
+  if (item.tabla) return sesion.puedeLeerTabla(item.modulo, item.tabla)
+  return true
 }
 
 /** Todos los ítems de una categoría, tenga `items` o `grupos`. */

@@ -107,6 +107,7 @@ async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
     necesita para pintar la navegación (Principio XII). No expone la tabla RBAC
     completa, sólo el nivel de módulo del propio rol."""
     modulos = await svc.listar_permisos_modulo(principal.role_id)
+    tablas = await svc.listar_tablas_legibles(principal.role_id)
     return PerfilOut(
         usuario_id=principal.usuario_id,
         empleado_id=principal.empleado_id,
@@ -116,6 +117,7 @@ async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
         nombre=principal.nombre,
         username=principal.username,
         modulos=[m for m in modulos if m["puede_ver"]],
+        tablas=tablas,
     )
 
 

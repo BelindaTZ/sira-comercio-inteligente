@@ -178,6 +178,9 @@ class SistemaService:
         await self._role_o_404(role_id)
         return await self.repo.permisos_tabla_de_rol(role_id, modulo_id)
 
+    async def listar_tablas_legibles(self, role_id: int) -> list[dict]:
+        return await self.repo.tablas_legibles_de_rol(role_id)
+
     async def definir_permiso_tabla(
         self,
         role_id: int,

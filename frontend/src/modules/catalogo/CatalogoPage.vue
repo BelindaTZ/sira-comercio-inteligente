@@ -193,6 +193,8 @@ onMounted(() => {
     </p>
 
     <DataTable
+      titulo="Productos"
+      subtitulo="Catálogo maestro de la red — alta, edición de precio/costo y baja lógica."
       :columns="columnas"
       :rows="rows"
       row-key="product_id"

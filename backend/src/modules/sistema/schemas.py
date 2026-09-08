@@ -30,6 +30,18 @@ class PerfilModuloOut(BaseModel):
     puede_editar: bool
 
 
+class PerfilTablaOut(BaseModel):
+    """Una tabla que el rol puede leer, con su módulo. El frontend la usa para
+    ocultar ítems de navegación cuyo permiso de tabla es más estrecho que el del
+    módulo (p. ej. `Encargado_Tienda` ve el módulo `Comercial` sólo por
+    `revision_margen_bajo`, no por `productos`)."""
+
+    modulo: str
+    nombre_tabla: str
+    can_select: bool
+    can_editar: bool
+
+
 class PerfilOut(BaseModel):
     """`GET /auth/me` — identidad de la sesión + módulos visibles para el rol.
 
@@ -45,6 +57,7 @@ class PerfilOut(BaseModel):
     nombre: str | None
     username: str | None
     modulos: list[PerfilModuloOut]
+    tablas: list[PerfilTablaOut] = []
 
 
 class RecuperarPasswordIn(BaseModel):

@@ -27,6 +27,8 @@ export const useSesion = defineStore('sesion', {
     /** Módulo propio del Jefe (para su dashboard táctico); null para otros roles. */
     miModulo: (s) => ROL_A_MODULO[s.perfil?.rol] ?? null,
     _modulos: (s) => Object.fromEntries((s.perfil?.modulos ?? []).map((m) => [m.nombre, m])),
+    /** Set de `"Modulo/tabla"` que el rol puede leer (permiso de tabla, más fino que el de módulo). */
+    _tablas: (s) => new Set((s.perfil?.tablas ?? []).map((t) => `${t.modulo}/${t.nombre_tabla}`)),
   },
 
   actions: {
@@ -63,6 +65,17 @@ export const useSesion = defineStore('sesion', {
 
     puedeEditar(modulo) {
       return Boolean(this._modulos[modulo]?.puede_editar)
+    },
+
+    /**
+     * ¿El rol puede leer esta tabla concreta del módulo? Más fino que `puedeVer`:
+     * un rol puede tener el módulo visible por una sola de sus tablas (p. ej.
+     * `Encargado_Tienda` ve `Comercial` sólo por `revision_margen_bajo`).
+     */
+    puedeLeerTabla(modulo, tabla) {
+      if (!this.perfil) return false
+      if (this.esGerente) return true
+      return this._tablas.has(`${modulo}/${tabla}`)
     },
 
     logout() {

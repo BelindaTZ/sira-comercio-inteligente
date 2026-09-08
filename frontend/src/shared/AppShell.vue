@@ -11,7 +11,7 @@
  * categoría con ≥4 sub-opciones abre un mega-menú (panel blanco redondeado,
  * columnas temáticas con ícono + título); con <4, lista simple (Principio XII).
  */
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { categoriasVisibles } from './navegacion'
@@ -32,8 +32,27 @@ const columnas = computed(() => {
   return c.grupos ?? [{ titulo: c.label, icon: c.icon, items: c.items, plano: true }]
 })
 
-function toggle(label) {
-  abierta.value = abierta.value === label ? null : label
+const navWrap = ref(null)
+const panel = ref(null)
+const panelLeft = ref(0)
+
+function toggle(label, ev) {
+  if (abierta.value === label) {
+    abierta.value = null
+    return
+  }
+  abierta.value = label
+  const btn = ev?.currentTarget
+  nextTick(() => {
+    if (!btn || !navWrap.value) return
+    const wrapBox = navWrap.value.getBoundingClientRect()
+    const btnBox = btn.getBoundingClientRect()
+    const panelW = panel.value?.offsetWidth ?? 420
+    // alineado a la izquierda del botón, sin desbordar la ventana
+    const left = btnBox.left - wrapBox.left
+    const maxLeft = window.innerWidth - 24 - panelW - wrapBox.left
+    panelLeft.value = Math.max(0, Math.min(left, Math.max(0, maxLeft)))
+  })
 }
 function cerrar() {
   abierta.value = null
@@ -47,7 +66,7 @@ function activa(cat) {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col bg-background">
+  <div class="flex min-h-screen flex-col">
     <header
       class="relative sticky top-0 z-40 w-full border-b border-shell-line bg-shell-bar text-white shadow-lg shadow-black/20"
       @mouseleave="cerrar"
@@ -80,7 +99,7 @@ function activa(cat) {
         </RouterLink>
 
         <!-- Navegación + mega-menú -->
-        <div class="relative hidden min-w-0 md:block">
+        <div ref="navWrap" class="relative hidden min-w-0 md:block">
           <nav
             class="flex flex-wrap items-center gap-1 rounded-2xl border border-shell-line bg-shell-inset p-1 shadow-inner"
           >
@@ -94,7 +113,7 @@ function activa(cat) {
                   ? 'bg-gradient-to-r from-secondary to-secondary-subtle font-semibold text-white shadow-md shadow-secondary/30'
                   : 'text-emerald-200/80 hover:bg-white/10 hover:text-white'
               "
-              @click="toggle(cat.label)"
+              @click="toggle(cat.label, $event)"
             >
               <Icon :name="cat.icon" :size="16" />
               {{ cat.label }}
@@ -108,10 +127,12 @@ function activa(cat) {
             </button>
           </nav>
 
-          <!-- Panel: sólo el ancho que necesita, anclado bajo la barra -->
+          <!-- Panel: anclado a la categoría abierta, del ancho de su contenido -->
           <div
             v-if="catAbierta"
-            class="absolute left-0 top-full z-50 mt-2 w-max max-w-[calc(100vw-3rem)] rounded-2xl border border-black/5 bg-white p-5 text-on-surface shadow-tier-2"
+            ref="panel"
+            class="absolute top-full z-50 mt-2 w-max max-w-[calc(100vw-3rem)] rounded-2xl border border-brand-200 bg-white p-5 shadow-card-hover"
+            :style="{ left: panelLeft + 'px' }"
           >
             <div
               class="grid gap-x-12 gap-y-6"
@@ -123,9 +144,9 @@ function activa(cat) {
               <div v-for="col in columnas" :key="col.titulo" class="min-w-[11rem]">
                 <p
                   v-if="!col.plano"
-                  class="mb-3 flex items-center gap-2 text-[13px] font-bold text-on-surface"
+                  class="mb-3 flex items-center gap-2 text-[13px] font-bold text-brand-950"
                 >
-                  <Icon :name="col.icon" :size="16" class="text-primary" />
+                  <Icon :name="col.icon" :size="16" class="text-brand-700" />
                   {{ col.titulo }}
                 </p>
                 <ul class="space-y-0.5">
@@ -135,8 +156,8 @@ function activa(cat) {
                       class="block whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-medium transition"
                       :class="
                         esActivo(it.to)
-                          ? 'bg-secondary-light font-semibold text-on-secondary-strong'
-                          : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
+                          ? 'bg-amethyst-100 font-semibold text-amethyst-800'
+                          : 'text-slate-600 hover:bg-brand-50 hover:text-slate-900'
                       "
                       @click="cerrar"
                     >
@@ -175,7 +196,7 @@ function activa(cat) {
     <!-- Cierra el panel al hacer clic fuera -->
     <div v-if="catAbierta" class="fixed inset-0 z-30" @click="cerrar" />
 
-    <main class="flex-1">
+    <main class="ambient-canvas-bg flex-1">
       <RouterView />
     </main>
 

@@ -240,15 +240,21 @@ onMounted(() => {
           variant="crimson"
           :estado="kpi.reposicion ? 'crítico' : 'ok'"
           :estado-tipo="kpi.reposicion ? 'quiebre' : 'ok'"
-        />
+        >
+          <template #icono><Icon name="alert" :size="17" /></template>
+        </KpiTile>
         <KpiTile
           label="Alertas de vencimiento"
           :valor="kpi.vencimiento"
           variant="amber"
           :estado="kpi.vencimiento ? 'revisar' : 'ok'"
           :estado-tipo="kpi.vencimiento ? 'fifo' : 'ok'"
-        />
-        <KpiTile label="Lotes por vencer (7 d)" :valor="kpi.porVencer" variant="amber" />
+        >
+          <template #icono><Icon name="clock" :size="17" /></template>
+        </KpiTile>
+        <KpiTile label="Lotes por vencer (7 d)" :valor="kpi.porVencer" variant="amber">
+          <template #icono><Icon name="cube" :size="17" /></template>
+        </KpiTile>
       </section>
 
       <div class="mb-4 flex gap-1 border-b border-outline-variant">
@@ -289,6 +295,8 @@ onMounted(() => {
 
       <DataTable
         v-if="tab === 'lotes'"
+        titulo="Lotes en stock"
+        subtitulo="Priorizados por fecha de vencimiento más próxima (FEFO)."
         :columns="columnasLotes"
         :rows="rows"
         row-key="lote_id"
@@ -315,6 +323,8 @@ onMounted(() => {
 
       <DataTable
         v-else
+        titulo="Alertas pendientes"
+        subtitulo="Reposición y vencimiento generadas por los jobs diarios."
         :columns="columnasAlertas"
         :rows="rows"
         row-key="alerta_id"
@@ -328,10 +338,8 @@ onMounted(() => {
       >
         <template #cell:tipo="{ value }">
           <SemanticChip :tipo="value === 'reposicion' ? 'quiebre' : 'fifo'">
-{{
-            value
-          }}
-</SemanticChip>
+            {{ value }}
+          </SemanticChip>
         </template>
         <template #cell:estado="{ value }">
           <SemanticChip :tipo="value === 'pendiente' ? 'neutral' : 'ok'">{{ value }}</SemanticChip>

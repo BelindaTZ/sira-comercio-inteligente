@@ -25,6 +25,10 @@ async def test_me_devuelve_rol_y_modulos_visibles(client, escenario_auth):
     nombres = {m["nombre"] for m in cuerpo["modulos"]}
     assert "TI" in nombres  # Jefe_TI ve su módulo
     assert all(m["puede_ver"] for m in cuerpo["modulos"])  # sólo módulos visibles
+    # tablas legibles: permiso de tabla (más fino que el de módulo) para filtrar la nav
+    tablas = cuerpo["tablas"]
+    assert all(t["can_select"] for t in tablas)
+    assert any(t["modulo"] == "TI" for t in tablas)
 
 
 async def test_me_gerente_general_ve_todos_los_modulos(client, escenario_pos, db_session):
@@ -48,6 +52,9 @@ async def test_me_cajero_no_ve_sistema_ni_direccion(client, escenario_auth):
     nombres = {m["nombre"] for m in r.json()["modulos"]}
     assert "Sistema" not in nombres
     assert "Direccion" not in nombres
+    # el Cajero no puede leer `productos` aunque tenga visible el módulo Comercial
+    tablas = {(t["modulo"], t["nombre_tabla"]) for t in r.json()["tablas"]}
+    assert ("Comercial", "productos") not in tablas
 
 
 async def test_me_sin_token_401(client):

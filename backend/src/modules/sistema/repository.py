@@ -114,6 +114,24 @@ class SistemaRepository:
         )
         return [dict(r._mapping) for r in rows]
 
+    async def tablas_legibles_de_rol(self, role_id: int) -> list[dict]:
+        """Tablas que el rol puede leer (con su módulo), para que el frontend
+        oculte ítems de navegación cuyo permiso de tabla es más estrecho que el
+        del módulo. Sólo `can_select = true`."""
+        rows = await self.session.execute(
+            text("""
+                SELECT m.nombre AS modulo, rpt.nombre_tabla,
+                       rpt.can_select,
+                       (rpt.can_insert OR rpt.can_update OR rpt.can_delete) AS can_editar
+                FROM role_permisos_tabla rpt
+                JOIN modulos m ON m.modulo_id = rpt.modulo_id
+                WHERE rpt.role_id = :r AND rpt.can_select
+                ORDER BY m.nombre, rpt.nombre_tabla
+            """),
+            {"r": role_id},
+        )
+        return [dict(r._mapping) for r in rows]
+
     async def modulo_id_existe(self, modulo_id: int) -> bool:
         return (
             await self.session.scalar(
