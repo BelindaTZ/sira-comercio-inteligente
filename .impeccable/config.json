@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "border-accent-on-rounded",
+        "value": "*",
+        "files": [
+          "frontend/src/shared/ui/KpiTile.vue"
+        ],
+        "createdAt": "2026-09-08T21:17:51.991Z",
+        "reason": "Acento de borde superior 4px sobre tarjeta rounded-2xl es el markup literal de docs/diseno-ui/.../sira_inventario_y_alertas_fifo/code.html (KPI cards, lineas 299/327/362); el usuario exigio replicar esa referencia exactamente"
+      }
+    ]
+  }
+}
