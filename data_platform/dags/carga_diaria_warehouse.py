@@ -1,16 +1,22 @@
 """DAG `carga_diaria_warehouse` — carga diaria automática del operativo hacia el
 warehouse (feature 010, US2, FR-002).
 
-Un task por entidad `activa` de `modelo_datos_warehouse` (research.md Decisión 1):
-cada task abre y cierra su propia fila de `corrida_carga` vía
-`dags_utils.pipeline.correr_carga`, de modo que una entidad puede reprocesarse
-sola sin arrastrar a las demás (FR-004). El índice único parcial de PostgreSQL
-garantiza que dos ejecuciones solapadas no corran la misma entidad a la vez
-(FR-005) — sin lock distribuido aparte.
+Grafo (un encadenamiento ELT por entidad `activa` de `modelo_datos_warehouse`,
+research.md Decisión 1):
 
-Airflow sólo se instala dentro del contenedor `airflow` (perfil `data` de
-docker-compose). Este import perezoso deja el módulo importable en tests sin
-Airflow (los tests ejercitan `dags_utils/*` directamente).
+    entidades_activas ─┬─► extract[entidad] ─► load[entidad] ─► transform[entidad]
+                       └─►      (dynamic task mapping: una rama por entidad)
+
+  · extract    Extract PostgreSQL → Load raw a MinIO `landing-zone`. Abre la fila
+               `corrida_carga` (el índice único parcial rechaza dos corridas
+               solapadas sobre la misma entidad, FR-005).
+  · load       Relee el raw del `landing-zone` (hand-off) → INSERT en ClickHouse
+               (`ReplacingMergeTree`, idempotente) + 2 reglas de calidad.
+  · transform  `OPTIMIZE TABLE ... FINAL` in-warehouse → cierra la corrida `exitosa`.
+
+Cada entidad se reprocesa sola sin arrastrar a las demás (FR-004). Airflow sólo
+existe dentro del contenedor `airflow` (perfil `data`); los imports pesados son
+perezosos para que el módulo sea importable en tests sin Airflow.
 """
 
 from __future__ import annotations
@@ -73,30 +79,93 @@ class _ClickHouseAdapter:
         self._c.command(sql)
 
 
-async def _cargar_entidad(entidad_id: int, nombre_entidad: str) -> dict:
-    """Todo dentro de una sola corrutina (un único `asyncio.run` por task) —
-    incluida la disposición del engine, para no dejar conexiones asyncpg atadas
-    a un event loop ya cerrado."""
+async def _claves_dimension(session) -> dict[str, set]:
+    """Para la regla de referencia rota de `fact_venta` (FR-007): PKs válidas de
+    las dimensiones ya presentes en el operativo."""
+    from sqlalchemy import text
+
+    prod = await session.execute(text("SELECT product_id FROM productos"))
+    tienda = await session.execute(text("SELECT tienda_id FROM tiendas"))
+    return {
+        "dim_producto": {r[0] for r in prod},
+        "dim_tienda": {r[0] for r in tienda},
+    }
+
+
+# --------------------------------------------------------------- pasos (async)
+async def _extract(entidad: dict) -> dict:
+    from dags_utils import pipeline
+
+    engine, Session = _async_engine()
+    minio = _minio_client()
+    try:
+        async with Session() as session:
+            res = await pipeline.paso_extract(
+                session,
+                entidad_id=entidad["entidad_id"],
+                nombre_entidad=entidad["nombre_entidad"],
+                cliente_minio=minio,
+                bucket_landing=_BUCKET_LANDING,
+            )
+            await session.commit()
+        return {
+            "corrida_id": res.corrida_id,
+            "nombre_entidad": entidad["nombre_entidad"],
+            "landing_key": res.landing_key,
+            "tipo_carga": res.tipo_carga,
+            "filas_extraidas": res.filas_extraidas,
+        }
+    finally:
+        await engine.dispose()
+
+
+async def _load(ctx: dict) -> dict:
     from dags_utils import pipeline
 
     engine, Session = _async_engine()
     minio, ch = _minio_client(), _ch_client()
-    claves: dict = {}
     try:
         async with Session() as session:
-            if ch is not None and nombre_entidad == "fact_venta":
-                claves = await _claves_dimension(session)
-            res = await pipeline.correr_carga(
+            claves = (
+                await _claves_dimension(session)
+                if ch is not None and ctx["nombre_entidad"] == "fact_venta"
+                else {}
+            )
+            res = await pipeline.paso_load(
                 session,
-                entidad_id=entidad_id,
-                nombre_entidad=nombre_entidad,
+                corrida_id=ctx["corrida_id"],
+                nombre_entidad=ctx["nombre_entidad"],
                 cliente_minio=minio,
                 bucket_landing=_BUCKET_LANDING,
+                landing_key=ctx["landing_key"],
                 cliente_ch=ch,
                 claves_validas=claves,
             )
             await session.commit()
-        return res.__dict__
+        return {
+            **ctx,
+            "filas_cargadas": res.filas_cargadas,
+            "filas_error": res.filas_error,
+        }
+    finally:
+        await engine.dispose()
+
+
+async def _transform(ctx: dict) -> dict:
+    from dags_utils import pipeline
+
+    engine, Session = _async_engine()
+    ch = _ch_client()
+    try:
+        async with Session() as session:
+            estado = await pipeline.paso_transform(
+                session,
+                corrida_id=ctx["corrida_id"],
+                nombre_entidad=ctx["nombre_entidad"],
+                cliente_ch=ch,
+            )
+            await session.commit()
+        return {**ctx, "estado": estado}
     finally:
         await engine.dispose()
 
@@ -118,17 +187,6 @@ async def _entidades_activas() -> list[dict]:
         await engine.dispose()
 
 
-async def _claves_dimension(session) -> dict[str, set]:
-    from sqlalchemy import text
-
-    prod = await session.execute(text("SELECT product_id FROM productos"))
-    tienda = await session.execute(text("SELECT tienda_id FROM tiendas"))
-    return {
-        "dim_producto": {r[0] for r in prod},
-        "dim_tienda": {r[0] for r in tienda},
-    }
-
-
 def _build_dag():
     import asyncio
 
@@ -148,12 +206,20 @@ def _build_dag():
             return asyncio.run(_entidades_activas())
 
         @task
-        def cargar(entidad: dict) -> dict:
-            return asyncio.run(
-                _cargar_entidad(entidad["entidad_id"], entidad["nombre_entidad"])
-            )
+        def extract(entidad: dict) -> dict:
+            return asyncio.run(_extract(entidad))
 
-        cargar.expand(entidad=entidades_activas())
+        @task
+        def load(ctx: dict) -> dict:
+            return asyncio.run(_load(ctx))
+
+        @task
+        def transform(ctx: dict) -> dict:
+            return asyncio.run(_transform(ctx))
+
+        extraidos = extract.expand(entidad=entidades_activas())
+        cargados = load.expand(ctx=extraidos)
+        transform.expand(ctx=cargados)
 
     return carga_diaria_warehouse()
 

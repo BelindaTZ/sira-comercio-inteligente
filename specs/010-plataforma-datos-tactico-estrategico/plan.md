@@ -91,11 +91,12 @@ backend/
 
 data_platform/                              # NUEVO — infraestructura ELT, no request/response
 ├── dags/
-│   ├── carga_diaria_warehouse.py           # DAG, un task por entidad activa de modelo_datos_warehouse
+│   ├── carga_diaria_warehouse.py           # DAG: entidades_activas → extract → load → transform
+│   │                                       #      (los 3 pasos ELT mapeados, una rama por entidad activa)
 │   └── dags_utils/
-│       ├── pipeline.py                     # orquestador de una corrida (compartido con el endpoint dev)
+│       ├── pipeline.py                     # paso_extract / paso_load / paso_transform + correr_carga (endpoint dev)
 │       ├── extract_postgres.py
-│       ├── load_landing_zone_minio.py
+│       ├── load_landing_zone_minio.py      # volcar() + leer() — el landing-zone es el hand-off extract→load
 │       ├── load_clickhouse.py              # INSERT + 2 reglas de calidad
 │       └── transform_in_warehouse.py       # OPTIMIZE ... FINAL
 └── clickhouse/

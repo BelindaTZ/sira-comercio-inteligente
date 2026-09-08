@@ -50,12 +50,29 @@ class FakeClickHouse:
         return list(self.tablas[tabla].values())
 
 
+class _FakeObj:
+    def __init__(self, data: bytes) -> None:
+        self._data = data
+
+    def read(self) -> bytes:
+        return self._data
+
+    def close(self) -> None:
+        pass
+
+    def release_conn(self) -> None:
+        pass
+
+
 class FakeMinio:
     def __init__(self) -> None:
         self.objetos: dict[str, bytes] = {}
 
     def put_object(self, bucket, key, data, length, content_type=None):  # noqa: ARG002
         self.objetos[f"{bucket}/{key}"] = data.read()
+
+    def get_object(self, bucket, key):
+        return _FakeObj(self.objetos[f"{bucket}/{key}"])
 
 
 async def _entidad_id(session, nombre: str) -> int:
@@ -66,9 +83,7 @@ async def _entidad_id(session, nombre: str) -> int:
 
 
 # ------------------------------------------------------------------ T019: carga base
-async def test_carga_base_completa_trae_historico(
-    db_session, escenario_plataforma_datos
-):
+async def test_carga_base_completa_trae_historico(db_session, escenario_plataforma_datos):
     s = db_session
     ent = escenario_plataforma_datos["entidad_fact"]
     ch, minio = FakeClickHouse(), FakeMinio()
@@ -88,9 +103,7 @@ async def test_carga_base_completa_trae_historico(
 
 
 # ------------------------------------------------------------------ T020: incremental
-async def test_incremental_solo_trae_filas_nuevas(
-    db_session, escenario_plataforma_datos
-):
+async def test_incremental_solo_trae_filas_nuevas(db_session, escenario_plataforma_datos):
     s = db_session
     e = escenario_plataforma_datos
     ent = e["entidad_fact"]
@@ -161,9 +174,7 @@ async def test_reprocesar_no_duplica(db_session, escenario_plataforma_datos):
 
 
 # ------------------------------------------------------------------ T022: exclusión mutua
-async def test_dos_corridas_en_progreso_rechazadas(
-    db_session, escenario_plataforma_datos
-):
+async def test_dos_corridas_en_progreso_rechazadas(db_session, escenario_plataforma_datos):
     s = db_session
     ent = escenario_plataforma_datos["entidad_tienda"]
 
@@ -213,9 +224,7 @@ async def test_corrida_fallida_queda_registrada(db_session, escenario_plataforma
 
 
 # ------------------------------------------------------------------ T015 (US1): entidad inactiva
-async def test_entidad_inactiva_no_se_carga_desde_el_dag(
-    db_session, escenario_plataforma_datos
-):
+async def test_entidad_inactiva_no_se_carga_desde_el_dag(db_session, escenario_plataforma_datos):
     s = db_session
     ent = escenario_plataforma_datos["entidad_producto"]
     await s.execute(
@@ -232,9 +241,7 @@ async def test_entidad_inactiva_no_se_carga_desde_el_dag(
 
 
 # ------------------------------------------------------------------ T030/T032 (US3): calidad
-async def test_referencia_rota_se_senala_sin_frenar_el_lote(
-    db_session, escenario_plataforma_datos
-):
+async def test_referencia_rota_se_senala_sin_frenar_el_lote(db_session, escenario_plataforma_datos):
     s = db_session
     e = escenario_plataforma_datos
     ent = e["entidad_fact"]
@@ -287,10 +294,79 @@ async def test_referencia_rota_se_senala_sin_frenar_el_lote(
     assert res.filas_error == 1
     assert res.filas_cargadas == 1
     registros = await s.execute(
-        text(
-            "SELECT descripcion_problema FROM registro_calidad_carga WHERE corrida_id = :c"
-        ),
+        text("SELECT descripcion_problema FROM registro_calidad_carga WHERE corrida_id = :c"),
         {"c": res.corrida_id},
     )
     descripciones = [r[0] for r in registros]
     assert any("referencia rota" in d for d in descripciones)
+
+
+# --------------------------------------------------- pasos ELT como tasks separados (DAG)
+async def test_pasos_elt_encadenados_via_landing_zone(db_session, escenario_plataforma_datos):
+    """extract -> load -> transform como los ejecuta el DAG: `load` NO recibe las
+    filas en memoria, las relee del `landing-zone` (el hand-off real del ELT)."""
+    s = db_session
+    ent = escenario_plataforma_datos["entidad_tienda"]
+    ch, minio = FakeClickHouse(), FakeMinio()
+
+    ex = await pipeline.paso_extract(
+        s,
+        entidad_id=ent,
+        nombre_entidad="dim_tienda",
+        tipo_carga_forzado="completa",
+        cliente_minio=minio,
+    )
+    assert ex.landing_key and f"landing-zone/{ex.landing_key}" in minio.objetos
+
+    estado_tras_extract = await s.scalar(
+        text("SELECT estado FROM corrida_carga WHERE corrida_id = :c"), {"c": ex.corrida_id}
+    )
+    assert estado_tras_extract == "en_progreso"  # la corrida sigue abierta entre tasks
+
+    ld = await pipeline.paso_load(
+        s,
+        corrida_id=ex.corrida_id,
+        nombre_entidad="dim_tienda",
+        cliente_minio=minio,
+        landing_key=ex.landing_key,
+        cliente_ch=ch,
+    )
+    assert ld.filas_cargadas == len(ch.filas("dim_tienda")) > 0
+
+    estado = await pipeline.paso_transform(
+        s, corrida_id=ex.corrida_id, nombre_entidad="dim_tienda", cliente_ch=ch
+    )
+    assert estado == "exitosa"
+    fila = (
+        await s.execute(
+            text("SELECT estado, filas_cargadas FROM corrida_carga WHERE corrida_id = :c"),
+            {"c": ex.corrida_id},
+        )
+    ).one()
+    assert fila.estado == "exitosa" and fila.filas_cargadas == ld.filas_cargadas
+
+
+async def test_fallo_en_load_marca_la_corrida_fallida(db_session, escenario_plataforma_datos):
+    s = db_session
+    ent = escenario_plataforma_datos["entidad_tienda"]
+    ch = FakeClickHouse()
+    ch.fallar_en_insert = True
+
+    ex = await pipeline.paso_extract(
+        s,
+        entidad_id=ent,
+        nombre_entidad="dim_tienda",
+        tipo_carga_forzado="completa",
+    )
+    with pytest.raises(RuntimeError):
+        await pipeline.paso_load(
+            s,
+            corrida_id=ex.corrida_id,
+            nombre_entidad="dim_tienda",
+            filas=ex.filas,
+            cliente_ch=ch,
+        )
+    estado = await s.scalar(
+        text("SELECT estado FROM corrida_carga WHERE corrida_id = :c"), {"c": ex.corrida_id}
+    )
+    assert estado == "fallida"

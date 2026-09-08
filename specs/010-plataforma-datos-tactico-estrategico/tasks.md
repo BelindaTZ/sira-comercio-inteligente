@@ -64,9 +64,9 @@ idempotencia/exclusión mutua no depende del volumen de producción (quickstart.
 ### Implementation
 
 - [X] T024 [US2] `extract_postgres.py` (SELECT por entidad hacia las columnas del schema de ClickHouse; filtro incremental por watermark, `>=` para no perder el borde).
-- [X] T025 [US2] `load_landing_zone_minio.py` (raw del Extract a MinIO `landing-zone`, Principio III).
-- [X] T026 [US2] `load_clickhouse.py` (INSERT a `ReplacingMergeTree` + 2 reglas de calidad) y `transform_in_warehouse.py` (`OPTIMIZE ... FINAL`). Orquestación en `pipeline.py`.
-- [X] T027 [US2] DAG `carga_diaria_warehouse.py`: un task por entidad `activa`, cada uno abriendo/cerrando su propia fila de `corrida_carga` vía `pipeline.correr_carga`.
+- [X] T025 [US2] `load_landing_zone_minio.py` — `volcar()` (raw del Extract a MinIO `landing-zone`, Principio III) y `leer()` (el task `load` del DAG relee el raw de aquí, no recibe filas por XCom).
+- [X] T026 [US2] `load_clickhouse.py` (INSERT a `ReplacingMergeTree` + 2 reglas de calidad) y `transform_in_warehouse.py` (`OPTIMIZE ... FINAL`).
+- [X] T027 [US2] `pipeline.py` expone los 3 pasos ELT (`paso_extract` / `paso_load` / `paso_transform`) + `correr_carga` que los compone en una transacción (endpoint dev). DAG `carga_diaria_warehouse.py`: `entidades_activas → extract → load → transform`, los 3 pasos mapeados dinámicamente (una rama por entidad `activa`); la fila `corrida_carga` se abre en `extract` y se cierra en `transform`, y cada entidad se reprocesa sola (FR-004). El `landing-zone` es el hand-off real entre `extract` y `load` (Principio III). Verificado end-to-end contra ClickHouse/MinIO reales: los 4 tasks `success`.
 - [X] T028 [US2] `GET /corridas` (contracts #2) + `repository.listar_corridas` con la duración derivada.
 - [X] T029 [P] [US2] `MonitoreoCorridasPage.vue` para Jefe_TI (+ botón "forzar corrida" sólo en `import.meta.env.DEV`).
 
