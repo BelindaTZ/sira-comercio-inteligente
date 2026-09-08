@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.alerta_inventario import AlertaInventario
@@ -22,6 +22,25 @@ from src.models.venta import Venta
 from src.models.venta_detalle import VentaDetalle
 from src.models.verificacion_anaquel import VerificacionAnaquel
 from src.shared.repository import BaseRepository
+
+
+def _filtrar_por_producto(stmt: Select, col_product_id, search: str | None) -> Select:
+    """Filtra un `select(...)` por id de producto (si `search` es numérico) o por
+    nombre/tipo/marca del producto (ILIKE). `col_product_id` es la columna
+    `product_id` de la entidad seleccionada (Lote o AlertaInventario)."""
+    if not search or not search.strip():
+        return stmt
+    termino = search.strip()
+    if termino.isdigit():
+        return stmt.where(col_product_id == int(termino))
+    patron = f"%{termino}%"
+    return stmt.join(Producto, Producto.product_id == col_product_id).where(
+        or_(
+            Producto.nombre.ilike(patron),
+            Producto.product_type.ilike(patron),
+            Producto.marca.ilike(patron),
+        )
+    )
 
 
 class InventarioRepository(BaseRepository[Lote]):
@@ -99,6 +118,7 @@ class InventarioRepository(BaseRepository[Lote]):
         product_id: int | None = None,
         tienda_id: int | None = None,
         vence_antes_de: object | None = None,
+        search: str | None = None,
     ) -> Select:
         stmt = select(Lote)
         if product_id is not None:
@@ -107,7 +127,15 @@ class InventarioRepository(BaseRepository[Lote]):
             stmt = stmt.where(Lote.tienda_id == tienda_id)
         if vence_antes_de is not None:
             stmt = stmt.where(Lote.fecha_vencimiento <= vence_antes_de)
-        return stmt
+        return _filtrar_por_producto(stmt, Lote.product_id, search)
+
+    async def nombres_de_productos(self, ids: list[int]) -> dict[int, str | None]:
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            select(Producto.product_id, Producto.nombre).where(Producto.product_id.in_(ids))
+        )
+        return {pid: nombre for pid, nombre in rows}
 
     # --- mermas ---
     async def get_merma_for_update(self, merma_id: int) -> Merma | None:
@@ -176,6 +204,7 @@ class InventarioRepository(BaseRepository[Lote]):
         tipo: str | None = None,
         estado: str | None = None,
         tienda_id: int | None = None,
+        search: str | None = None,
     ) -> Select:
         stmt = select(AlertaInventario)
         if tipo is not None:
@@ -184,7 +213,7 @@ class InventarioRepository(BaseRepository[Lote]):
             stmt = stmt.where(AlertaInventario.estado == estado)
         if tienda_id is not None:
             stmt = stmt.where(AlertaInventario.tienda_id == tienda_id)
-        return stmt
+        return _filtrar_por_producto(stmt, AlertaInventario.product_id, search)
 
     async def lotes_perecederos_venciendo(
         self, umbral: date, tienda_id: int | None = None

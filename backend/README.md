@@ -33,9 +33,16 @@ uvicorn src.main:app --reload
 #    Repetir con --reset para recargar sobre una BD ya poblada.
 python -m scripts.cargar_dataset_inicial
 
-# 2. cuentas de login + competencia sintética + jobs derivados + dashboards 009
+# 2. cuentas de login + enriquecimiento del catálogo + competencia sintética
+#    + inventario/lotes/alertas de demo + jobs derivados + dashboards 009
 python -m scripts.preparar_demo
 ```
+
+`scripts.enriquecer_catalogo` (paso 2 de `preparar_demo`, también ejecutable
+suelto) rellena de forma determinista lo que el dataset Dunnhumby no trae:
+`nombre`/`marca` de producto, `costo`/`precio_base` sintéticos por categoría
+(y normaliza a CLP los precios reales que venían en USD), 8 proveedores genéricos,
+`codigo_lote_proveedor` y vencimientos de lotes frescos relativos a hoy.
 
 `preparar_demo` deja una cuenta por rol RBAC (`demo.gerente`, `demo.ti`,
 `demo.comercial`, `demo.marketing`, `demo.operaciones`, `demo.finanzas`, `demo.rrhh`,

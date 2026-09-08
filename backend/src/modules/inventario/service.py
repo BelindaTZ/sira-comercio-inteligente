@@ -273,19 +273,25 @@ class InventarioService:
         tienda_id: int | None = None,
         proximos_a_vencer: bool = False,
         dias: int = 7,
+        search: str | None = None,
     ):
         vence_antes_de = date.today() + timedelta(days=dias) if proximos_a_vencer else None
         stmt = self.repo.lotes_query(
-            product_id=product_id, tienda_id=tienda_id, vence_antes_de=vence_antes_de
+            product_id=product_id,
+            tienda_id=tienda_id,
+            vence_antes_de=vence_antes_de,
+            search=search,
         )
         page = await self.repo.paginate(
             params, stmt=stmt, order_by=Lote.fecha_vencimiento.asc().nulls_last()
         )
         hoy = date.today()
+        nombres = await self.repo.nombres_de_productos([lo.product_id for lo in page.items])
         items = [
             {
                 "lote_id": lo.lote_id,
                 "product_id": lo.product_id,
+                "producto_nombre": nombres.get(lo.product_id),
                 "tienda_id": lo.tienda_id,
                 "cantidad_recibida": lo.cantidad_recibida,
                 "cantidad_disponible": lo.cantidad_disponible,
@@ -407,11 +413,16 @@ class InventarioService:
         await self.repo.flush()
         return alerta
 
-    async def listar_alertas(self, params, *, tipo=None, estado=None, tienda_id=None):
-        stmt = self.repo.alertas_query(tipo=tipo, estado=estado, tienda_id=tienda_id)
+    async def listar_alertas(self, params, *, tipo=None, estado=None, tienda_id=None, search=None):
+        stmt = self.repo.alertas_query(
+            tipo=tipo, estado=estado, tienda_id=tienda_id, search=search
+        )
         page = await self.repo.paginate(
             params, stmt=stmt, order_by=AlertaInventario.fecha_generada.desc()
         )
+        nombres = await self.repo.nombres_de_productos([a.product_id for a in page.items])
+        for alerta in page.items:
+            alerta.producto_nombre = nombres.get(alerta.product_id)
         return page
 
     # =========================================================== US3: quiebre

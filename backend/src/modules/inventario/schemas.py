@@ -73,6 +73,7 @@ class VerificacionAnaquelIn(BaseModel):
 class LoteOut(BaseModel):
     lote_id: int
     product_id: int
+    producto_nombre: str | None = None
     tienda_id: int
     cantidad_recibida: int
     cantidad_disponible: int
@@ -120,6 +121,7 @@ class AlertaOut(BaseModel):
     alerta_id: int
     tipo: str
     product_id: int
+    producto_nombre: str | None = None
     tienda_id: int
     lote_id: int | None
     estado: str

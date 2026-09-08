@@ -44,7 +44,7 @@ const pills = computed(() => [
   },
 ])
 
-const fmtMoneda = (v) => (v == null ? '—' : `$${Number(v).toLocaleString('es-CL')}`)
+const fmtMoneda = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')}`)
 const margen = (row) =>
   row.costo && row.precio_base && Number(row.precio_base) > 0
     ? `${(((row.precio_base - row.costo) / row.precio_base) * 100).toFixed(1)}%`
@@ -208,7 +208,7 @@ onMounted(() => {
 
     <DataTable
       titulo="Productos"
-      subtitulo="Catálogo maestro de la red — alta, edición de precio/costo y baja lógica."
+      subtitulo="Catálogo maestro de la red. ABC = rotación por ventas (A: alta · B: media · C: baja, regla de Pareto)."
       :columns="columnas"
       :rows="rows"
       row-key="product_id"

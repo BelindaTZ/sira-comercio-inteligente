@@ -56,18 +56,18 @@ const pillsAlertas = computed(() => [
 ])
 
 const columnasLotes = [
-  { key: 'lote_id', label: 'Lote', width: '80px' },
-  { key: 'product_id', label: 'Producto' },
-  { key: 'codigo_lote_proveedor', label: 'Cód. proveedor' },
+  { key: 'lote_id', label: 'Lote', width: '72px' },
+  { key: 'producto', label: 'Producto' },
+  { key: 'codigo_lote_proveedor', label: 'Cód. lote proveedor' },
   { key: 'cantidad_disponible', label: 'Disponible', align: 'right' },
   { key: 'cantidad_recibida', label: 'Recibido', align: 'right' },
-  { key: 'fecha_vencimiento', label: 'Vence' },
-  { key: 'dias_para_vencer', label: 'Días', align: 'right' },
+  { key: 'fecha_vencimiento', label: 'Fecha de vencimiento' },
+  { key: 'dias_para_vencer', label: 'Vence en', align: 'right' },
 ]
 const columnasAlertas = [
-  { key: 'alerta_id', label: 'Alerta', width: '80px' },
+  { key: 'alerta_id', label: 'Alerta', width: '72px' },
   { key: 'tipo', label: 'Tipo' },
-  { key: 'product_id', label: 'Producto' },
+  { key: 'producto', label: 'Producto' },
   { key: 'fecha_generada', label: 'Generada', formatter: (v) => new Date(v).toLocaleString() },
   { key: 'estado', label: 'Estado' },
   { key: 'acciones', label: '' },
@@ -112,14 +112,12 @@ async function cargar() {
   cargando.value = true
   error.value = ''
   try {
-    const productId = /^\d+$/.test(busqueda.value.trim())
-      ? Number(busqueda.value.trim())
-      : undefined
+    const search = busqueda.value.trim() || undefined
     let data
     if (tab.value === 'lotes') {
       data = await inventarioApi.lotes({
         tiendaId: tiendaId.value,
-        productId,
+        search,
         proximosAVencer: pill.value === 'por-vencer',
         dias: 7,
         page: page.value,
@@ -130,6 +128,7 @@ async function cargar() {
         tiendaId: tiendaId.value,
         tipo: pill.value === 'todos' ? undefined : pill.value,
         estado: 'pendiente',
+        search,
         page: page.value,
         size: size.value,
       })
@@ -297,7 +296,7 @@ onMounted(() => {
         :size="size"
         :total="total"
         :search="busqueda"
-        search-placeholder="Filtrar por id de producto…"
+        search-placeholder="Buscar por nombre o ID de producto…"
         :pills="pillsLotes"
         :pill-activa="pill"
         empty-text="Sin lotes para este filtro"
@@ -306,17 +305,28 @@ onMounted(() => {
         @update:search="busqueda = $event"
         @pill="pill = $event"
       >
+        <template #cell:producto="{ row }">
+          <div class="font-medium text-slate-900">
+            {{ row.producto_nombre || 'Producto sin nombre' }}
+          </div>
+          <div class="text-[11px] text-slate-500 tabular-nums">ID {{ row.product_id }}</div>
+        </template>
         <template #cell:fecha_vencimiento="{ value }">
-          {{ value || '—' }}
+          {{ value ? new Date(value).toLocaleDateString('es-CL') : 'No perecedero' }}
         </template>
         <template #cell:dias_para_vencer="{ value }">
-          <SemanticChip v-if="value != null && value <= 7" tipo="fifo">{{ value }} d</SemanticChip>
-          <span v-else-if="value != null" class="tabular-nums text-on-surface-variant"
-            >{{ value }} d</span
+          <SemanticChip v-if="value != null && value < 0" tipo="quiebre">Vencido</SemanticChip>
+          <SemanticChip v-else-if="value != null && value <= 7" tipo="fifo">
+            {{ value }} {{ value === 1 ? 'día' : 'días' }}
+          </SemanticChip>
+          <span v-else-if="value != null" class="tabular-nums text-slate-600"
+            >{{ value }} días</span
           >
-          <span v-else class="text-on-surface-variant">—</span>
+          <span v-else class="text-slate-400">—</span>
         </template>
-        <template #cell:codigo_lote_proveedor="{ value }">{{ value || '—' }}</template>
+        <template #cell:codigo_lote_proveedor="{ value }">
+          <span class="font-mono text-[12px]">{{ value || '—' }}</span>
+        </template>
       </DataTable>
 
       <DataTable
@@ -331,7 +341,7 @@ onMounted(() => {
         :size="size"
         :total="total"
         :search="busqueda"
-        search-placeholder="Filtrar por id de producto…"
+        search-placeholder="Buscar por nombre o ID de producto…"
         :pills="pillsAlertas"
         :pill-activa="pill"
         empty-text="Sin alertas pendientes"
@@ -340,6 +350,12 @@ onMounted(() => {
         @update:search="busqueda = $event"
         @pill="pill = $event"
       >
+        <template #cell:producto="{ row }">
+          <div class="font-medium text-slate-900">
+            {{ row.producto_nombre || 'Producto sin nombre' }}
+          </div>
+          <div class="text-[11px] text-slate-500 tabular-nums">ID {{ row.product_id }}</div>
+        </template>
         <template #cell:tipo="{ value }">
           <SemanticChip :tipo="value === 'reposicion' ? 'quiebre' : 'fifo'">
             {{ value }}

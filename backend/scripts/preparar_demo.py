@@ -142,15 +142,22 @@ async def main() -> None:
 
     await seed_usuarios(reset_password=True)
 
-    log.info("2/4 · precios de competencia sintéticos")
+    log.info("2/5 · enriquecimiento genérico del catálogo (nombre/marca/precio/proveedores)")
+    from scripts.enriquecer_catalogo import main as enriquecer
+
+    await enriquecer()
+
+    log.info("3/5 · precios de competencia sintéticos")
     from scripts.seed_precio_competencia_sintetico import main as seed_competencia
 
     await seed_competencia()
 
-    log.info("3/4 · inventario + lotes + alertas de demo")
+    log.info("4/5 · inventario + lotes + alertas de demo")
     await _inventario_demo()
+    # los lotes recién creados también necesitan código de proveedor
+    await enriquecer()
 
-    log.info("4/4 · jobs derivados + dashboards 009")
+    log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()
 
     log.info("listo — abrí http://localhost:5173/auth/login")

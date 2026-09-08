@@ -2,7 +2,15 @@ import { http } from './http'
 
 /** Capa de servicio del módulo Inventario (US2). Espeja `contracts/inventario.md`. */
 export const inventarioApi = {
-  lotes({ productId, tiendaId, proximosAVencer = false, dias = 7, page = 1, size = 25 } = {}) {
+  lotes({
+    productId,
+    tiendaId,
+    proximosAVencer = false,
+    dias = 7,
+    search,
+    page = 1,
+    size = 25,
+  } = {}) {
     return http
       .get('/api/inventario/lotes', {
         params: {
@@ -10,6 +18,7 @@ export const inventarioApi = {
           tienda_id: tiendaId,
           proximos_a_vencer: proximosAVencer,
           dias,
+          search: search || undefined,
           page,
           size,
         },
@@ -64,10 +73,10 @@ export const inventarioApi = {
   },
 
   // --- US3 ---
-  alertas({ tipo, estado = 'pendiente', tiendaId, page = 1, size = 25 } = {}) {
+  alertas({ tipo, estado = 'pendiente', tiendaId, search, page = 1, size = 25 } = {}) {
     return http
       .get('/api/inventario/alertas', {
-        params: { tipo, estado, tienda_id: tiendaId, page, size },
+        params: { tipo, estado, tienda_id: tiendaId, search: search || undefined, page, size },
       })
       .then((r) => r.data)
   },

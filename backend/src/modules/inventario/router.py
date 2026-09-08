@@ -93,6 +93,7 @@ async def listar_lotes(
     tienda_id: int | None = None,
     proximos_a_vencer: bool = False,
     dias: int = Query(default=7, ge=1),
+    search: str | None = None,
 ) -> Page[LoteOut]:
     res = await svc.listar_lotes(
         params,
@@ -100,6 +101,7 @@ async def listar_lotes(
         tienda_id=tienda_id,
         proximos_a_vencer=proximos_a_vencer,
         dias=dias,
+        search=search,
     )
     return Page[LoteOut](**res)
 
@@ -137,8 +139,11 @@ async def listar_alertas(
     tipo: str | None = None,
     estado: str | None = "pendiente",
     tienda_id: int | None = None,
+    search: str | None = None,
 ) -> Page[AlertaOut]:
-    page = await svc.listar_alertas(params, tipo=tipo, estado=estado, tienda_id=tienda_id)
+    page = await svc.listar_alertas(
+        params, tipo=tipo, estado=estado, tienda_id=tienda_id, search=search
+    )
     return Page[AlertaOut](
         items=[AlertaOut.model_validate(a) for a in page.items],
         total=page.total,
