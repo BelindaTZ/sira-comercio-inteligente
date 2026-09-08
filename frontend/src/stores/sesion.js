@@ -29,6 +29,13 @@ export const useSesion = defineStore('sesion', {
     _modulos: (s) => Object.fromEntries((s.perfil?.modulos ?? []).map((m) => [m.nombre, m])),
     /** Set de `"Modulo/tabla"` que el rol puede leer (permiso de tabla, más fino que el de módulo). */
     _tablas: (s) => new Set((s.perfil?.tablas ?? []).map((t) => `${t.modulo}/${t.nombre_tabla}`)),
+    /** Set de `"Modulo/tabla"` que el rol puede editar (insert/update/delete sobre esa tabla). */
+    _tablasEditables: (s) =>
+      new Set(
+        (s.perfil?.tablas ?? [])
+          .filter((t) => t.can_editar)
+          .map((t) => `${t.modulo}/${t.nombre_tabla}`)
+      ),
   },
 
   actions: {
@@ -65,6 +72,13 @@ export const useSesion = defineStore('sesion', {
 
     puedeEditar(modulo) {
       return Boolean(this._modulos[modulo]?.puede_editar)
+    },
+
+    /** ¿El rol puede editar esta tabla concreta? Más fino que `puedeEditar(modulo)`. */
+    puedeEditarTabla(modulo, tabla) {
+      if (!this.perfil) return false
+      if (this.esGerente) return true
+      return this._tablasEditables.has(`${modulo}/${tabla}`)
     },
 
     /**

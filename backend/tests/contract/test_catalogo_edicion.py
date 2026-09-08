@@ -77,3 +77,19 @@ async def test_cajero_no_puede_editar_catalogo(client, escenario_pos, auth_cajer
         headers=auth_cajero,
     )
     assert resp.status_code == 403, resp.text
+
+
+async def test_encargado_tienda_lee_catalogo_pero_no_lo_edita(
+    client, escenario_pos, auth_encargado
+):
+    """Migración 0020: el Encargado de Tienda consulta el catálogo maestro
+    (solo lectura); insert/update/delete siguen siendo 403."""
+    lista = await client.get("/api/catalogo/productos", headers=auth_encargado)
+    assert lista.status_code == 200, lista.text
+
+    patch = await client.patch(
+        f"/api/catalogo/productos/{escenario_pos['product_id']}",
+        json={"precio_base": "1.00"},
+        headers=auth_encargado,
+    )
+    assert patch.status_code == 403, patch.text

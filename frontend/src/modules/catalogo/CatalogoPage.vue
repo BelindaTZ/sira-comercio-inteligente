@@ -6,6 +6,7 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { catalogoApi } from '@/services/catalogoApi'
+import { useSesion } from '@/stores/sesion'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import FilterBar from '@/shared/ui/FilterBar.vue'
@@ -14,6 +15,9 @@ import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
 import DataTable from '@/shared/DataTable.vue'
 import FormularioProducto from './components/FormularioProducto.vue'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.puedeEditarTabla('Comercial', 'productos'))
 
 const busqueda = ref('')
 const pill = ref('activos') // 'todos' | 'activos' | 'baja'
@@ -153,12 +157,19 @@ onMounted(() => {
     >
       <template #acciones>
         <button
+          v-if="puedeEditar"
           type="button"
           class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover"
           @click="modal = 'nuevo'"
         >
           <Icon name="plus" :size="16" /> Nuevo producto
         </button>
+        <span
+          v-else
+          class="rounded-full border border-surface-border bg-surface-canvas px-3 py-1 text-[11px] font-semibold text-on-surface-variant"
+        >
+          Solo lectura
+        </span>
       </template>
     </PageHeader>
 
@@ -208,7 +219,7 @@ onMounted(() => {
       empty-text="Sin productos para este filtro"
       @update:page="page = $event"
       @update:size="((size = $event), (page = 1))"
-      @row-click="abrirEdicion"
+      @row-click="puedeEditar && abrirEdicion($event)"
     >
       <template #cell:nombre="{ row }">
         <span class="font-medium text-on-surface">{{ row.nombre || '(sin nombre)' }}</span>
@@ -232,7 +243,7 @@ onMounted(() => {
             {{ row.activo ? 'Activo' : 'Baja' }}
           </SemanticChip>
           <button
-            v-if="row.activo"
+            v-if="row.activo && puedeEditar"
             type="button"
             class="rounded-md border border-crimson-ruby/30 px-2 py-0.5 text-[11px] font-semibold text-crimson-ruby hover:bg-[#ffe4e6]"
             @click.stop="darDeBaja(row)"
