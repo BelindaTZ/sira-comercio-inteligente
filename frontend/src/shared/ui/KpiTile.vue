@@ -127,18 +127,21 @@ const hayPie = () => props.pieLabel || props.pieValor
       </div>
       <p v-if="microcopy" class="mt-0.5 text-[10px] font-medium text-slate-500">{{ microcopy }}</p>
     </div>
+    <!-- Cuerpo opcional: barra graduada, gauge, etc. -->
+    <div v-if="$slots.cuerpo" class="mb-1"><slot name="cuerpo" /></div>
     <div
-      v-if="hayPie() || $slots.pie || $slots.sparkline"
-      class="flex items-center justify-between border-t border-brand-200/80 pt-2"
+      v-if="hayPie() || $slots.pie || $slots.sparkline || $slots.cta"
+      class="flex items-center justify-between gap-2 border-t border-brand-200/80 pt-2"
     >
-      <div v-if="hayPie()" class="flex flex-col leading-tight">
+      <div v-if="hayPie()" class="flex min-w-0 flex-col leading-tight">
         <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">{{
           pieLabel
         }}</span>
-        <span class="text-[11px] font-bold text-brand-900">{{ pieValor }}</span>
+        <span class="truncate text-[11px] font-bold text-brand-900">{{ pieValor }}</span>
       </div>
       <slot name="pie" />
       <slot name="sparkline" />
+      <slot name="cta" />
     </div>
   </div>
 </template>

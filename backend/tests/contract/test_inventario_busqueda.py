@@ -127,6 +127,38 @@ async def test_stock_por_sku_con_ubicacion_y_estado(
     assert all(x["estado"] == "quiebre" for x in solo_quiebre.json()["items"])
 
 
+async def test_resumen_stock_kpis(client, escenario_pos, auth_encargado, db_session):
+    e = escenario_pos
+    await db_session.execute(
+        text(
+            "INSERT INTO inventario (product_id, tienda_id, cantidad_disponible, cantidad_minima) "
+            "VALUES (:p, :t, 5, 30) "
+            "ON CONFLICT (product_id, tienda_id) DO UPDATE "
+            "SET cantidad_disponible = 5, cantidad_minima = 30"
+        ),
+        {"p": e["product_id"], "t": e["tienda_id"]},
+    )
+    await db_session.flush()
+
+    r = await client.get(
+        "/api/inventario/stock/resumen",
+        params={"tienda_id": e["tienda_id"]},
+        headers=auth_encargado,
+    )
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert set(d) >= {
+        "skus",
+        "quiebre",
+        "por_vencer",
+        "sobre_stock",
+        "normal",
+        "unidades_transito",
+        "tasa_merma_pct",
+    }
+    assert d["quiebre"] >= 1
+
+
 async def test_categorias_del_catalogo(client, escenario_pos, auth_jefe_comercial):
     r = await client.get("/api/catalogo/categorias", headers=auth_jefe_comercial)
     assert r.status_code == 200, r.text

@@ -140,6 +140,17 @@ async def listar_stock(
     return Page[StockItemOut](**res)
 
 
+@router.get("/stock/resumen", response_model=dict)
+async def resumen_stock(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    tienda_id: Annotated[int, Query()],
+) -> dict:
+    """Contadores por estado + unidades en tránsito + tasa de merma del mes,
+    para la fila de KPIs de la pantalla de Inventario."""
+    return await svc.resumen_stock(tienda_id)
+
+
 @router.put("/ubicacion", response_model=dict)
 async def definir_ubicacion(
     data: UbicacionIn, svc: ServiceDep, _: Annotated[Principal, Depends(_ubicacion)]

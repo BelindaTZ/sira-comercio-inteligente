@@ -216,9 +216,71 @@ async def main() -> None:
         )
         log.info("ubicaciones sembradas: %s", r.rowcount)
 
+        # 8 · órdenes de compra "en tránsito" (aprobadas, sin recibir) para que
+        #     la columna En tránsito / el filtro tengan datos.
+        if not await s.scalar(
+            text("SELECT 1 FROM ordenes_compra WHERE estado = 'aprobada' LIMIT 1")
+        ):
+            await s.execute(
+                text("""
+                WITH tiendas_top AS (
+                    SELECT tienda_id FROM tiendas WHERE codigo <> 'DEMO' ORDER BY tienda_id LIMIT 6
+                ), emp AS (
+                    SELECT e.empleado_id, e.tienda_id,
+                           row_number() OVER (PARTITION BY e.tienda_id ORDER BY e.empleado_id) rn
+                    FROM empleados e
+                ), nueva AS (
+                    INSERT INTO ordenes_compra (proveedor_id, tienda_id, empleado_id, estado)
+                    SELECT (SELECT min(proveedor_id) FROM proveedores), t.tienda_id,
+                           (SELECT empleado_id FROM emp WHERE emp.tienda_id = t.tienda_id AND rn = 1),
+                           'aprobada'
+                    FROM tiendas_top t
+                    WHERE EXISTS (SELECT 1 FROM emp WHERE emp.tienda_id = t.tienda_id)
+                    RETURNING orden_id, tienda_id
+                )
+                INSERT INTO orden_compra_detalle (orden_id, product_id, cantidad, costo_unitario)
+                SELECT n.orden_id, x.product_id,
+                       40 + (abs(hashtext(x.product_id::text)) % 160),
+                       COALESCE(p.costo, 100)
+                FROM nueva n
+                JOIN LATERAL (
+                    SELECT i.product_id FROM inventario i
+                    WHERE i.tienda_id = n.tienda_id AND i.cantidad_disponible <= i.cantidad_minima
+                    ORDER BY i.product_id LIMIT 12
+                ) x ON true
+                JOIN productos p ON p.product_id = x.product_id
+            """)
+            )
+            log.info("órdenes de compra en tránsito sembradas")
+
+        # 9 · mermas validadas del mes para la KPI "Tasa merma mensual"
+        if not await s.scalar(
+            text("SELECT 1 FROM mermas WHERE fecha >= date_trunc('month', CURRENT_DATE) LIMIT 1")
+        ):
+            await s.execute(
+                text("""
+                INSERT INTO mermas (product_id, tienda_id, cantidad, causa, valor,
+                                    empleado_id, fecha, estado_validacion)
+                SELECT i.product_id, i.tienda_id,
+                       1 + (abs(hashtext(i.product_id::text)) % 6),
+                       (ARRAY['caducidad','rotura','robo','error_humano'])[1 + (i.product_id % 4)],
+                       COALESCE(p.costo, 100) * (1 + (abs(hashtext(i.product_id::text)) % 6)),
+                       (SELECT empleado_id FROM empleados e WHERE e.tienda_id = i.tienda_id
+                        ORDER BY e.empleado_id LIMIT 1),
+                       CURRENT_DATE - (abs(hashtext(i.product_id::text)) % 25),
+                       'validada'
+                FROM inventario i
+                JOIN productos p ON p.product_id = i.product_id
+                WHERE p.es_perecedero
+                ORDER BY i.product_id
+                LIMIT 40
+            """)
+            )
+            log.info("mermas validadas del mes sembradas")
+
         await s.commit()
 
-    await _imagenes_unsplash(limite=40)
+    await _imagenes_unsplash(limite=90)
     log.info("catálogo enriquecido")
 
 

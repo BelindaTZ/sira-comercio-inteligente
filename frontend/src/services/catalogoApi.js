@@ -46,6 +46,17 @@ export const catalogoApi = {
     return http.post(`/api/catalogo/productos/${productId}/imagen-auto`).then((r) => r.data)
   },
 
+  /** Sube una imagen propia (File) al bucket y la fija como imagen del producto. */
+  subirImagen(productId, file) {
+    const fd = new FormData()
+    fd.append('archivo', file)
+    return http
+      .post(`/api/catalogo/productos/${productId}/imagen`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data)
+  },
+
   darDeBaja(productId) {
     return http.delete(`/api/catalogo/productos/${productId}`).then((r) => r.data)
   },

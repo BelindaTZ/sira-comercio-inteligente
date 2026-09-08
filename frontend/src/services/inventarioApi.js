@@ -47,6 +47,13 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
+  /** Contadores + tasa de merma + unidades en tránsito para la fila de KPIs. */
+  stockResumen(tiendaId) {
+    return http
+      .get('/api/inventario/stock/resumen', { params: { tienda_id: tiendaId } })
+      .then((r) => r.data)
+  },
+
   definirUbicacion({ productId, tiendaId, pasillo, gondola, nivel, empleadoId }) {
     return http
       .put('/api/inventario/ubicacion', {

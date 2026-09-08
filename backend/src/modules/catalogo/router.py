@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
 from src.core.security import Principal, require_permission
+from src.integrations import minio_client
 from src.modules.catalogo.repository import CatalogoRepository
 from src.modules.catalogo.schemas import ProductoIn, ProductoOut, ProductoPatch
 from src.modules.catalogo.service import CatalogoService
@@ -66,11 +67,30 @@ async def dar_de_baja(
 
 @router.post("/productos/{product_id}/imagen-auto", response_model=ProductoOut)
 async def imagen_automatica(
-    product_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_editar)]
+    product_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
 ) -> ProductoOut:
-    """Asigna una foto genérica de Unsplash por el nombre del producto. Para
-    una imagen propia se usa `PATCH /productos/{id}` con `imagen_url`."""
+    """Asigna una foto genérica de Unsplash por el nombre del producto. Gestión
+    de imagen — basta con poder ver el catálogo (la usan también Operaciones)."""
     return _out(await svc.imagen_automatica(product_id))
+
+
+@router.post("/productos/{product_id}/imagen", response_model=ProductoOut)
+async def subir_imagen(
+    product_id: int,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    archivo: Annotated[UploadFile, File(alias="archivo")],
+) -> ProductoOut:
+    """Sube una imagen propia (JPG/PNG/WEBP ≤ 5 MB) al bucket de MinIO y la fija
+    como `imagen_url` del producto."""
+    datos = await archivo.read()
+    try:
+        url = minio_client.subir_imagen_producto(
+            product_id, datos, archivo.content_type or ""
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc)) from exc
+    return _out(await svc.actualizar_producto(product_id, ProductoPatch(imagen_url=url)))
 
 
 @router.get("/categorias", response_model=list[str])

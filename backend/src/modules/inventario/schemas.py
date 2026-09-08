@@ -121,6 +121,7 @@ class StockItemOut(BaseModel):
     cantidad_disponible: int
     cantidad_minima: int
     cantidad_maxima: int | None
+    en_transito: int = 0
     pasillo: str | None
     gondola: str | None
     lote_urgente: str | None

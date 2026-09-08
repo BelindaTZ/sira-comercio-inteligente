@@ -180,6 +180,13 @@ class InventarioRepository(BaseRepository[Lote]):
                 ORDER BY l.fecha_vencimiento ASC NULLS LAST, l.lote_id ASC
                 LIMIT 1
             ) lote ON true
+            LEFT JOIN LATERAL (
+                SELECT COALESCE(SUM(ocd.cantidad), 0) AS unidades
+                FROM orden_compra_detalle ocd
+                JOIN ordenes_compra oc ON oc.orden_id = ocd.orden_id
+                WHERE ocd.product_id = i.product_id AND oc.tienda_id = i.tienda_id
+                  AND oc.estado IN ('pendiente', 'aprobada')
+            ) transito ON true
             WHERE {where}
         """
         estado_expr = """
@@ -192,11 +199,11 @@ class InventarioRepository(BaseRepository[Lote]):
                 ELSE 'normal'
             END
         """
-        having = ""
         if estado in {"quiebre", "por_vencer", "sobre_stock", "normal"}:
-            having = f" AND {estado_expr.strip()} = :estado"
             params["estado"] = estado
-            base = base + having
+            base = base + f" AND {estado_expr.strip()} = :estado"
+        elif estado == "en_transito":
+            base = base + " AND transito.unidades > 0"
 
         total = await self.session.scalar(text(f"SELECT count(*) {base}"), params) or 0
         filas = await self.session.execute(
@@ -208,6 +215,7 @@ class InventarioRepository(BaseRepository[Lote]):
                         THEN round((p.precio_base - COALESCE(p.costo, 0)) / p.precio_base * 100, 1)
                         END AS margen_pct,
                    i.cantidad_disponible, i.cantidad_minima, i.cantidad_maxima,
+                   transito.unidades AS en_transito,
                    u.pasillo, u.gondola,
                    lote.codigo_lote_proveedor AS lote_urgente,
                    lote.fecha_vencimiento,
@@ -225,6 +233,60 @@ class InventarioRepository(BaseRepository[Lote]):
             params,
         )
         return [dict(r._mapping) for r in filas], int(total)
+
+    async def resumen_stock(self, tienda_id: int) -> dict:
+        """Contadores + tasa de merma del mes para la fila de KPIs."""
+        row = await self.session.execute(
+            text("""
+            WITH s AS (
+                SELECT
+                    CASE
+                        WHEN i.cantidad_disponible <= i.cantidad_minima THEN 'quiebre'
+                        WHEN lote.fv IS NOT NULL AND lote.fv <= CURRENT_DATE + 7 THEN 'por_vencer'
+                        WHEN i.cantidad_maxima IS NOT NULL
+                             AND i.cantidad_disponible > i.cantidad_maxima THEN 'sobre_stock'
+                        ELSE 'normal'
+                    END AS estado
+                FROM inventario i
+                LEFT JOIN LATERAL (
+                    SELECT min(l.fecha_vencimiento) AS fv FROM lotes l
+                    WHERE l.product_id = i.product_id AND l.tienda_id = i.tienda_id
+                      AND l.cantidad_disponible > 0
+                ) lote ON true
+                WHERE i.tienda_id = :t
+            ),
+            tr AS (
+                SELECT COALESCE(SUM(ocd.cantidad), 0) AS unidades,
+                       COUNT(DISTINCT oc.orden_id) AS ordenes
+                FROM ordenes_compra oc
+                JOIN orden_compra_detalle ocd ON ocd.orden_id = oc.orden_id
+                WHERE oc.tienda_id = :t AND oc.estado IN ('pendiente', 'aprobada')
+            ),
+            mm AS (
+                SELECT COALESCE(SUM(cantidad), 0) AS merma_uni
+                FROM mermas
+                WHERE tienda_id = :t AND estado_validacion = 'validada'
+                  AND fecha >= date_trunc('month', CURRENT_DATE)
+            ),
+            oh AS (
+                SELECT COALESCE(SUM(cantidad_disponible), 0) AS disponible
+                FROM inventario WHERE tienda_id = :t
+            )
+            SELECT
+                (SELECT count(*) FROM s) AS skus,
+                (SELECT count(*) FROM s WHERE estado = 'quiebre') AS quiebre,
+                (SELECT count(*) FROM s WHERE estado = 'por_vencer') AS por_vencer,
+                (SELECT count(*) FROM s WHERE estado = 'sobre_stock') AS sobre_stock,
+                (SELECT count(*) FROM s WHERE estado = 'normal') AS normal,
+                tr.unidades AS unidades_transito, tr.ordenes AS ordenes_transito,
+                CASE WHEN oh.disponible > 0
+                     THEN round(mm.merma_uni::numeric / (oh.disponible + mm.merma_uni) * 100, 2)
+                     ELSE 0 END AS tasa_merma_pct
+            FROM tr, mm, oh
+            """),
+            {"t": tienda_id},
+        )
+        return dict(row.first()._mapping)
 
     async def upsert_ubicacion(
         self, *, product_id: int, tienda_id: int, pasillo: str, gondola, nivel, empleado_id: int

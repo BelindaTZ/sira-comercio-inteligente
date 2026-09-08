@@ -53,7 +53,7 @@ export const sistemaApi = {
           can_insert: !!permisos.canInsert,
           can_update: !!permisos.canUpdate,
           can_delete: !!permisos.canDelete,
-        },
+        }
       )
       .then((r) => r.data)
   },

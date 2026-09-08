@@ -11,7 +11,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useSesion } from '@/stores/sesion'
 import { inventarioApi } from '@/services/inventarioApi'
-import { catalogoApi } from '@/services/catalogoApi'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -25,12 +24,14 @@ import FormularioMerma from './components/FormularioMerma.vue'
 import FormularioStockMaximo from './components/FormularioStockMaximo.vue'
 import FormularioVerificacionAnaquel from './components/FormularioVerificacionAnaquel.vue'
 import FormularioUbicacion from './components/FormularioUbicacion.vue'
+import ImagenProductoModal from './components/ImagenProductoModal.vue'
 
 const sesion = useSesion()
 const tiendaManual = ref(null)
 const tiendaId = computed(() => sesion.tiendaId ?? tiendaManual.value ?? null)
 const empleadoId = computed(() => sesion.empleadoId ?? 1)
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Operaciones', 'ubicacion_producto'))
+const puedeImagen = computed(() => sesion.puedeLeerTabla('Comercial', 'productos'))
 
 const tab = ref('stock') // 'stock' | 'alertas'
 const busqueda = ref('')
@@ -44,20 +45,31 @@ const total = ref(0)
 const cargando = ref(false)
 const error = ref('')
 const modal = ref(null) // 'ajuste' | 'merma' | 'stock-max' | 'anaquel' | fila-de-ubicacion
+const imgModal = ref(null) // fila cuya imagen se está viendo/cambiando
 
-const kpi = ref({ skus: 0, quiebre: 0, porVencer: 0, sobreStock: 0 })
+const kpi = ref({
+  skus: 0,
+  quiebre: 0,
+  por_vencer: 0,
+  sobre_stock: 0,
+  normal: 0,
+  unidades_transito: 0,
+  ordenes_transito: 0,
+  tasa_merma_pct: 0,
+})
 
 const pillsStock = computed(() => [
   { value: 'todos', label: 'Todos', count: kpi.value.skus },
   { value: 'quiebre', label: 'Quiebre de stock', count: kpi.value.quiebre },
-  { value: 'por_vencer', label: 'Próximos a vencer FIFO', count: kpi.value.porVencer },
-  { value: 'sobre_stock', label: 'Sobre stock', count: kpi.value.sobreStock },
-  { value: 'normal', label: 'Stock normal' },
+  { value: 'por_vencer', label: 'Próximos a vencer FIFO', count: kpi.value.por_vencer },
+  { value: 'sobre_stock', label: 'Sobre stock', count: kpi.value.sobre_stock },
+  { value: 'en_transito', label: 'En tránsito', count: kpi.value.ordenes_transito },
+  { value: 'normal', label: 'Stock normal', count: kpi.value.normal },
 ])
 const pillsAlertas = computed(() => [
-  { value: 'todos', label: 'Todas', count: kpi.value.quiebre + kpi.value.porVencer },
+  { value: 'todos', label: 'Todas', count: kpi.value.quiebre + kpi.value.por_vencer },
   { value: 'reposicion', label: 'Reposición', count: kpi.value.quiebre },
-  { value: 'vencimiento', label: 'Vencimiento', count: kpi.value.porVencer },
+  { value: 'vencimiento', label: 'Vencimiento', count: kpi.value.por_vencer },
 ])
 
 const columnasStock = [
@@ -65,6 +77,7 @@ const columnasStock = [
   { key: 'product_category', label: 'Categoría' },
   { key: 'ubicacion', label: 'Ubicación' },
   { key: 'stock', label: 'Stock físico vs. mín', align: 'center' },
+  { key: 'en_transito', label: 'En tránsito', align: 'center' },
   { key: 'lote', label: 'Lote & vencimiento FIFO' },
   { key: 'precio', label: 'Costo / PVP (Mg %)', align: 'right' },
   { key: 'estado', label: 'Estado', align: 'center' },
@@ -84,19 +97,7 @@ const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleStri
 async function cargarKpis() {
   if (!tiendaId.value) return
   try {
-    const q = { tiendaId: tiendaId.value, size: 1 }
-    const [t, quiebre, pv, sobre] = await Promise.all([
-      inventarioApi.stock(q),
-      inventarioApi.stock({ ...q, estado: 'quiebre' }),
-      inventarioApi.stock({ ...q, estado: 'por_vencer' }),
-      inventarioApi.stock({ ...q, estado: 'sobre_stock' }),
-    ])
-    kpi.value = {
-      skus: t.total,
-      quiebre: quiebre.total,
-      porVencer: pv.total,
-      sobreStock: sobre.total,
-    }
+    kpi.value = await inventarioApi.stockResumen(tiendaId.value)
   } catch {
     /* KPIs informativos; no bloquean la tabla */
   }
@@ -150,13 +151,9 @@ async function atender(alerta) {
   }
 }
 
-async function buscarImagen(row) {
-  try {
-    const p = await catalogoApi.imagenAuto(row.product_id)
-    row.imagen_url = p.imagen_url
-  } catch (e) {
-    error.value = e.message
-  }
+function imagenActualizada(url) {
+  if (imgModal.value) imgModal.value.imagen_url = url
+  cargar()
 }
 
 function tras() {
@@ -224,41 +221,102 @@ onMounted(() => {
     </p>
 
     <template v-else>
-      <section class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KpiTile
           label="SKUs en catálogo activo"
           :valor="kpi.skus"
           variant="emerald"
           microcopy="Productos con stock en esta tienda"
           pie-label="Rotación"
-          pie-valor="FEFO activo"
+          pie-valor="FEFO activo · 100% sincronizado"
         />
+
         <KpiTile
           label="Reposición inmediata"
           :valor="kpi.quiebre"
           :estado="kpi.quiebre ? 'crítico' : 'al día'"
           :estado-tipo="kpi.quiebre ? 'quiebre' : 'ok'"
           microcopy="Disponible ≤ stock de seguridad"
+          pie-label="Bajo umbral"
+          :pie-valor="`${kpi.quiebre} de ${kpi.skus} SKUs`"
         >
           <template #icono><Icon name="alert" :size="16" /></template>
+          <template #sparkline>
+            <svg viewBox="0 0 72 22" class="h-6 w-16 overflow-visible">
+              <path
+                d="M2 18 L14 15 L26 17 L38 9 L50 12 L62 4 L70 6"
+                fill="none"
+                stroke="#e11d48"
+                stroke-width="2.2"
+                stroke-linecap="round"
+              />
+              <circle cx="70" cy="6" r="2.6" fill="#e11d48" />
+            </svg>
+          </template>
         </KpiTile>
+
         <KpiTile
           label="Vencimiento FIFO < 7 d"
-          :valor="kpi.porVencer"
-          :estado="kpi.porVencer ? 'revisar' : 'al día'"
-          :estado-tipo="kpi.porVencer ? 'fifo' : 'ok'"
-          microcopy="Lote más próximo a vencer"
+          :valor="kpi.por_vencer"
+          unidad="SKUs"
+          :estado="kpi.por_vencer ? 'alerta' : 'al día'"
+          :estado-tipo="kpi.por_vencer ? 'fifo' : 'ok'"
+          microcopy="Lote más próximo dentro de 7 días"
         >
           <template #icono><Icon name="clock" :size="16" /></template>
+          <template #cuerpo>
+            <div class="flex h-2 overflow-hidden rounded-full bg-amber-100">
+              <div class="h-full bg-crimson-ruby" style="width: 35%" />
+              <div class="h-full bg-damask-amber" style="width: 45%" />
+              <div class="h-full bg-amber-300" style="width: 20%" />
+            </div>
+            <div class="mt-1 flex justify-between text-[10px] font-bold">
+              <span class="text-crimson-ruby">críticas &lt; 3 d</span>
+              <span class="text-damask-amber">4–7 d</span>
+            </div>
+          </template>
+          <template #cta>
+            <RouterLink
+              to="/promociones/liquidacion"
+              class="inline-flex items-center gap-1 rounded-lg bg-secondary px-2.5 py-1 text-[11px] font-bold text-white hover:bg-secondary-dark"
+            >
+              Ejecutar POS <Icon name="chevron" :size="12" class="-rotate-90" />
+            </RouterLink>
+          </template>
         </KpiTile>
+
         <KpiTile
-          label="Sobre stock"
-          :valor="kpi.sobreStock"
-          :estado="kpi.sobreStock ? 'exceso' : 'ok'"
-          :estado-tipo="kpi.sobreStock ? 'fifo' : 'ok'"
-          microcopy="Disponible > máximo de categoría"
+          label="En tránsito"
+          :valor="kpi.unidades_transito"
+          unidad="un."
+          :estado="kpi.ordenes_transito ? `${kpi.ordenes_transito} órdenes` : 'sin pedidos'"
+          :estado-tipo="kpi.ordenes_transito ? 'ia' : 'ok'"
+          microcopy="Órdenes de compra aprobadas sin recibir"
+          pie-label="Estado"
+          pie-valor="Reponer al recibir"
         >
-          <template #icono><Icon name="cube" :size="16" /></template>
+          <template #icono><Icon name="truck" :size="16" /></template>
+        </KpiTile>
+
+        <KpiTile
+          label="Tasa de merma mensual"
+          :valor="kpi.tasa_merma_pct"
+          unidad="%"
+          :estado="Number(kpi.tasa_merma_pct) < 1 ? 'óptimo' : 'revisar'"
+          :estado-tipo="Number(kpi.tasa_merma_pct) < 1 ? 'ok' : 'quiebre'"
+          microcopy="Unidades mermadas validadas / stock"
+          pie-label="Tolerancia"
+          pie-valor="< 1.0% meta"
+        >
+          <template #icono><Icon name="alert" :size="16" /></template>
+          <template #cuerpo>
+            <div class="h-2 overflow-hidden rounded-full bg-emerald-100">
+              <div
+                class="h-full rounded-full bg-emerald-500"
+                :style="{ width: Math.min(100, Number(kpi.tasa_merma_pct) * 60) + '%' }"
+              />
+            </div>
+          </template>
         </KpiTile>
       </section>
 
@@ -320,18 +378,25 @@ onMounted(() => {
 
         <template #cell:producto="{ row }">
           <div class="flex items-center gap-3">
-            <img
-              v-if="row.imagen_url && row.imagen_url.startsWith('http')"
-              :src="row.imagen_url"
-              alt=""
-              class="h-10 w-10 shrink-0 rounded-xl border border-brand-200 object-cover"
-            />
-            <span
-              v-else
-              class="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-brand-200 bg-brand-50 text-brand-400"
+            <button
+              type="button"
+              class="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-brand-200 transition hover:ring-2 hover:ring-brand-400/40"
+              :class="
+                row.imagen_url && row.imagen_url.startsWith('http')
+                  ? ''
+                  : 'grid place-items-center bg-brand-50 text-brand-400'
+              "
+              title="Ver / cambiar imagen"
+              @click.stop="imgModal = row"
             >
-              <Icon name="image" :size="18" />
-            </span>
+              <img
+                v-if="row.imagen_url && row.imagen_url.startsWith('http')"
+                :src="row.imagen_url"
+                alt=""
+                class="h-full w-full object-cover"
+              />
+              <Icon v-else name="image" :size="18" />
+            </button>
             <div class="min-w-0">
               <div class="truncate font-semibold text-slate-900">
                 {{ row.nombre || 'Producto sin nombre' }}
@@ -418,6 +483,16 @@ onMounted(() => {
           </div>
         </template>
 
+        <template #cell:en_transito="{ row }">
+          <span
+            v-if="row.en_transito"
+            class="inline-flex items-center gap-1 rounded-full border border-amethyst-300 bg-amethyst-50 px-2 py-0.5 text-[11px] font-bold text-amethyst-800"
+          >
+            <Icon name="truck" :size="12" /> {{ row.en_transito }} un.
+          </span>
+          <span v-else class="text-slate-400">—</span>
+        </template>
+
         <template #cell:lote="{ row }">
           <div v-if="row.lote_urgente" class="flex flex-col gap-1">
             <span class="font-mono text-[11px] text-slate-700">{{ row.lote_urgente }}</span>
@@ -475,13 +550,12 @@ onMounted(() => {
 
         <template #cell:acciones="{ row }">
           <button
-            v-if="puedeEditar && !(row.imagen_url && row.imagen_url.startsWith('http'))"
             type="button"
-            title="Buscar imagen genérica"
-            class="rounded-lg border border-brand-200 p-1.5 text-brand-600 hover:bg-brand-50"
-            @click.stop="buscarImagen(row)"
+            title="Ver detalle"
+            class="rounded-lg border border-brand-200 p-1.5 text-slate-500 hover:bg-brand-50 hover:text-brand-800"
+            @click.stop="imgModal = row"
           >
-            <Icon name="image" :size="15" />
+            <Icon name="dots" :size="15" />
           </button>
         </template>
       </DataTable>
@@ -560,6 +634,13 @@ onMounted(() => {
         :tienda-id="tiendaId"
         :empleado-id="empleadoId"
         @guardada="tras"
+      />
+    </Modal>
+    <Modal v-if="imgModal" titulo="Imagen del producto" @cerrar="imgModal = null">
+      <ImagenProductoModal
+        :producto="imgModal"
+        :puede-editar="puedeImagen"
+        @actualizada="imagenActualizada"
       />
     </Modal>
   </div>

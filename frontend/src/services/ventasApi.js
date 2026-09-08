@@ -39,7 +39,11 @@ export const ventasApi = {
    * de un Encargado_Tienda (o superior) distinto del cajero, sin excepción por
    * monto. `empleadoAutorizaId` se obtiene re-autenticando al encargado.
    */
-  aplicarDescuento(ventaId, lineaId, { tipo, valor, motivo, empleadoAplicaId, empleadoAutorizaId }) {
+  aplicarDescuento(
+    ventaId,
+    lineaId,
+    { tipo, valor, motivo, empleadoAplicaId, empleadoAutorizaId }
+  ) {
     return http
       .post(`/api/ventas/${ventaId}/lineas/${lineaId}/descuento`, {
         tipo,

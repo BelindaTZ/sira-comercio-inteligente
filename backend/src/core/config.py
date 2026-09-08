@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     minio_bucket_landing_zone: str = Field(
         default="landing-zone", alias="MINIO_BUCKET_LANDING_ZONE"
     )
+    # URL con la que el navegador resuelve los objetos públicos (imágenes de
+    # producto). En local es el mismo endpoint; detrás de un proxy/CDN cambia.
+    minio_public_url: str = Field(default="http://localhost:9000", alias="MINIO_PUBLIC_URL")
 
     # --- ClickHouse (warehouse, feature 010). Vacío = pipeline ELT no configurado:
     #     el endpoint dev de forzar corrida usa un cargador no-op (tests con mocks). ---

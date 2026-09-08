@@ -498,6 +498,9 @@ class InventarioService:
         )
         return {"items": filas, "total": total, "page": params.page, "size": params.size}
 
+    async def resumen_stock(self, tienda_id: int) -> dict:
+        return await self.repo.resumen_stock(tienda_id)
+
     async def definir_ubicacion(self, data) -> dict:
         if await self.repo.get_producto(data.product_id) is None:
             raise NotFoundError(f"El producto {data.product_id} no existe")

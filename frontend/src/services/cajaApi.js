@@ -56,9 +56,7 @@ export const cajaApi = {
 
   // --- reporte mensual de patrones y escalamiento (FR-009 a FR-011) ---
   reporteDiferencias({ mes, anio }) {
-    return http
-      .get('/api/caja/reporte-diferencias', { params: { mes, anio } })
-      .then((r) => r.data)
+    return http.get('/api/caja/reporte-diferencias', { params: { mes, anio } }).then((r) => r.data)
   },
 
   abrirIncidente({ empleadoId, cierreId, ajusteId, descripcion }) {
