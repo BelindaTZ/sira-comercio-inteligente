@@ -24,6 +24,7 @@ dependencies = [
     "pandas>=2.2",
     "numpy>=1.26",
     "mlxtend>=0.23",
+    "pyarrow>=17",   # lectura de los parquet de promociones (carga inicial del dataset)
 ]
 
 [project.optional-dependencies]
