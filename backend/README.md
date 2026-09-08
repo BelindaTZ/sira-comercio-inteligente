@@ -26,6 +26,22 @@ uvicorn src.main:app --reload
 - Salud: `GET http://localhost:8000/api/health`
 - Docs: `http://localhost:8000/docs`
 
+### Datos de demo (para probar la app end-to-end)
+
+```bash
+# 1. dataset Dunnhumby completo (8 tiendas, 52 semanas, ~1-2 min). --muestra = 3 tiendas / 4 semanas.
+#    Repetir con --reset para recargar sobre una BD ya poblada.
+python -m scripts.cargar_dataset_inicial
+
+# 2. cuentas de login + competencia sintética + jobs derivados + dashboards 009
+python -m scripts.preparar_demo
+```
+
+`preparar_demo` deja una cuenta por rol RBAC (`gerente.general`, `jefe.ti`,
+`jefe.comercial`, …, `cajero`), todas con contraseña **`Sira2026!`**. Login en
+`http://localhost:5173/auth/login`. Sólo `scripts.seed_usuarios_demo` (idempotente,
+`--reset-password` para re-hashear) si sólo hacen falta las cuentas.
+
 ## Convenciones
 
 - Capas: `router → service → repository` (Principio XI). Sin lógica de negocio en routers.
