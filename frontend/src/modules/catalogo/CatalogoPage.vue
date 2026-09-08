@@ -167,13 +167,18 @@ onMounted(() => {
         label="Productos en catálogo"
         :valor="kpi.total.toLocaleString('es-CL')"
         variant="emerald"
+        microcopy="Catálogo maestro sincronizado con la red"
       />
-      <KpiTile label="Activos" :valor="kpi.activos.toLocaleString('es-CL')" variant="mint" />
+      <KpiTile label="Activos" :valor="kpi.activos.toLocaleString('es-CL')" variant="mint">
+        <template #icono><Icon name="check" :size="17" /></template>
+      </KpiTile>
       <KpiTile
         label="Dados de baja"
         :valor="(kpi.total - kpi.activos).toLocaleString('es-CL')"
-        variant="plain"
-      />
+        :variant="kpi.total - kpi.activos > 0 ? 'crimson' : 'default'"
+      >
+        <template #icono><Icon name="trash" :size="17" /></template>
+      </KpiTile>
     </section>
 
     <FilterBar
@@ -193,8 +198,6 @@ onMounted(() => {
     </p>
 
     <DataTable
-      titulo="Productos"
-      subtitulo="Catálogo maestro de la red — alta, edición de precio/costo y baja lógica."
       :columns="columnas"
       :rows="rows"
       row-key="product_id"

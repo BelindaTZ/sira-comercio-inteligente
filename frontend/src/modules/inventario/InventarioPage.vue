@@ -233,13 +233,19 @@ onMounted(() => {
 
     <template v-else>
       <section class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiTile label="Lotes en stock" :valor="kpi.lotes" variant="emerald" />
+        <KpiTile
+          label="Lotes en stock"
+          :valor="kpi.lotes"
+          variant="emerald"
+          microcopy="Inventario por lote de la tienda"
+        />
         <KpiTile
           label="Reposición inmediata"
           :valor="kpi.reposicion"
           variant="crimson"
           :estado="kpi.reposicion ? 'crítico' : 'ok'"
           :estado-tipo="kpi.reposicion ? 'quiebre' : 'ok'"
+          microcopy="Bajo stock de seguridad"
         >
           <template #icono><Icon name="alert" :size="17" /></template>
         </KpiTile>
@@ -249,10 +255,16 @@ onMounted(() => {
           variant="amber"
           :estado="kpi.vencimiento ? 'revisar' : 'ok'"
           :estado-tipo="kpi.vencimiento ? 'fifo' : 'ok'"
+          microcopy="Pendientes de atención"
         >
           <template #icono><Icon name="clock" :size="17" /></template>
         </KpiTile>
-        <KpiTile label="Lotes por vencer (7 d)" :valor="kpi.porVencer" variant="amber">
+        <KpiTile
+          label="Lotes por vencer (7 d)"
+          :valor="kpi.porVencer"
+          variant="amber"
+          microcopy="Ventana FEFO de 7 días"
+        >
           <template #icono><Icon name="cube" :size="17" /></template>
         </KpiTile>
       </section>
@@ -295,8 +307,6 @@ onMounted(() => {
 
       <DataTable
         v-if="tab === 'lotes'"
-        titulo="Lotes en stock"
-        subtitulo="Priorizados por fecha de vencimiento más próxima (FEFO)."
         :columns="columnasLotes"
         :rows="rows"
         row-key="lote_id"
@@ -323,8 +333,6 @@ onMounted(() => {
 
       <DataTable
         v-else
-        titulo="Alertas pendientes"
-        subtitulo="Reposición y vencimiento generadas por los jobs diarios."
         :columns="columnasAlertas"
         :rows="rows"
         row-key="alerta_id"

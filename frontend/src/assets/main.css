@@ -16,6 +16,14 @@ body {
   font-feature-settings: 'tnum' 1;
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 /* --- Clases exactas de docs/diseno-ui/.../sira_dashboard_ejecutivo/code.html --- */
 
 /* Fondo de la superficie de trabajo: canvas con difusión ambiental teal + amatista */
@@ -29,39 +37,67 @@ body {
     radial-gradient(at 15% 90%, rgba(31, 131, 122, 0.12) 0px, transparent 45%);
 }
 
-/* Tarjeta / panel base */
-.satin-card {
-  background: linear-gradient(175deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 246, 243, 0.92) 100%);
-  border: 1px solid #cbded8;
-  box-shadow:
-    0 1px 3px rgba(10, 54, 50, 0.04),
-    0 8px 22px -4px rgba(10, 54, 50, 0.06);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.satin-card:hover {
-  background: linear-gradient(175deg, #ffffff 0%, #f4f9f7 100%);
-  box-shadow:
-    0 8px 26px -4px rgba(10, 54, 50, 0.1),
-    0 2px 8px -1px rgba(10, 54, 50, 0.04);
-  border-color: #b3cdc5;
-}
+/* Tarjeta / panel base y tarjeta KPI — en @layer components para que las
+   utilidades de Tailwind (border-t-4, border-l-[6px], border-t-rose-500…) que
+   una tarjeta concreta añada encima ganen el override del borde semántico. */
+@layer components {
+  .satin-card {
+    background: linear-gradient(
+      175deg,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(239, 246, 243, 0.92) 100%
+    );
+    border: 1px solid #cbded8;
+    box-shadow:
+      0 1px 3px rgba(10, 54, 50, 0.04),
+      0 8px 22px -4px rgba(10, 54, 50, 0.06);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .satin-card:hover {
+    background: linear-gradient(175deg, #ffffff 0%, #f4f9f7 100%);
+    box-shadow:
+      0 8px 26px -4px rgba(10, 54, 50, 0.1),
+      0 2px 8px -1px rgba(10, 54, 50, 0.04);
+    border-color: #b3cdc5;
+  }
 
-/* Tarjeta KPI */
-.kpi-tinted {
-  background: linear-gradient(175deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 244, 241, 0.9) 100%);
-  border: 1px solid #cbded8;
-  box-shadow:
-    0 1px 3px rgba(10, 54, 50, 0.04),
-    0 6px 18px -3px rgba(10, 54, 50, 0.06);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    border-color 0.2s ease;
-}
-.kpi-tinted:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 24px -4px rgba(10, 54, 50, 0.11);
-  border-color: #9fbfb6;
+  .kpi-tinted {
+    background: linear-gradient(
+      175deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(236, 244, 241, 0.9) 100%
+    );
+    border: 1px solid #cbded8;
+    box-shadow:
+      0 1px 3px rgba(10, 54, 50, 0.04),
+      0 6px 18px -3px rgba(10, 54, 50, 0.06);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .kpi-tinted:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -4px rgba(10, 54, 50, 0.11);
+    border-color: #9fbfb6;
+  }
+
+  /* Tinte cálido para el KPI de alerta/vencimiento (referencia inventario FIFO) */
+  .kpi-amber {
+    background: linear-gradient(135deg, #fffdf5 0%, #fefbf0 55%, #fbf8ff 100%);
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    box-shadow:
+      0 1px 3px rgba(10, 54, 50, 0.04),
+      0 6px 18px -3px rgba(10, 54, 50, 0.06);
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+  .kpi-amber:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -4px rgba(180, 83, 9, 0.14);
+  }
 }
 
 .live-indicator {
