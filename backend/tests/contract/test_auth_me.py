@@ -20,6 +20,8 @@ async def test_me_devuelve_rol_y_modulos_visibles(client, escenario_auth):
     assert cuerpo["rol"] == "Jefe_TI"
     assert cuerpo["usuario_id"] == escenario_auth["ti"]["usuario_id"]
     assert cuerpo["empleado_id"] == escenario_auth["ti"]["empleado_id"]
+    assert cuerpo["username"] == escenario_auth["ti"]["username"]
+    assert cuerpo["nombre"]  # nombre del empleado, para el menú de usuario
     nombres = {m["nombre"] for m in cuerpo["modulos"]}
     assert "TI" in nombres  # Jefe_TI ve su módulo
     assert all(m["puede_ver"] for m in cuerpo["modulos"])  # sólo módulos visibles

@@ -13,6 +13,16 @@
 
 const TACTICOS = ['Comercial', 'Marketing_CRM', 'Operaciones', 'Finanzas', 'TI', 'RRHH']
 
+/** Rol de Jefe → su módulo RBAC (para el dashboard táctico propio). */
+export const ROL_A_MODULO = {
+  Jefe_Comercial: 'Comercial',
+  Jefe_Marketing: 'Marketing_CRM',
+  Jefe_Operaciones: 'Operaciones',
+  Jefe_Finanzas: 'Finanzas',
+  Jefe_TI: 'TI',
+  Jefe_RRHH: 'RRHH',
+}
+
 export const CATEGORIAS = [
   {
     label: 'Dashboard',

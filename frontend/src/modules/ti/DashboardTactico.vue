@@ -9,10 +9,13 @@
  */
 import { onMounted, ref, watch } from 'vue'
 import { tiDashboardsApi } from '@/services/tiDashboardsApi'
+import { useSesion } from '@/stores/sesion'
 
 const MODULOS = ['Comercial', 'Marketing_CRM', 'Operaciones', 'Finanzas', 'TI', 'RRHH']
 
-const modulo = ref(MODULOS[0])
+const sesion = useSesion()
+// El Jefe aterriza en su propio módulo; el Gerente puede cambiar de departamento.
+const modulo = ref(sesion.miModulo || MODULOS[0])
 const dashboard = ref(null)
 const error = ref('')
 const aviso = ref('')
@@ -47,7 +50,7 @@ onMounted(cargar)
           Última actualización: {{ fmtFecha(dashboard.fecha_publicacion) }}
         </p>
       </div>
-      <label class="text-xs text-on-surface-variant">
+      <label v-if="sesion.esGerente" class="text-xs text-on-surface-variant">
         Departamento
         <select
           v-model="modulo"
@@ -56,6 +59,12 @@ onMounted(cargar)
           <option v-for="m in MODULOS" :key="m" :value="m">{{ m }}</option>
         </select>
       </label>
+      <span
+        v-else
+        class="rounded-full bg-surface-container px-3 py-1 text-xs font-semibold text-on-surface-variant"
+      >
+        {{ modulo }}
+      </span>
     </header>
 
     <p v-if="error" class="rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container">

@@ -42,6 +42,8 @@ class PerfilOut(BaseModel):
     role_id: int
     rol: str | None
     tienda_id: int | None
+    nombre: str | None
+    username: str | None
     modulos: list[PerfilModuloOut]
 
 

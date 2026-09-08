@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { authApi } from '@/services/authApi'
+import { ROL_A_MODULO } from '@/shared/navegacion'
 
 /**
  * Sesión del usuario autenticado (feature 013). Primer store Pinia del proyecto.
@@ -18,9 +19,13 @@ export const useSesion = defineStore('sesion', {
   getters: {
     autenticado: () => authApi.estaAutenticado(),
     rol: (s) => s.perfil?.rol ?? null,
+    nombre: (s) => s.perfil?.nombre ?? null,
+    username: (s) => s.perfil?.username ?? null,
     tiendaId: (s) => s.perfil?.tienda_id ?? null,
     empleadoId: (s) => s.perfil?.empleado_id ?? null,
     esGerente: (s) => s.perfil?.rol === 'Gerente_General',
+    /** Módulo propio del Jefe (para su dashboard táctico); null para otros roles. */
+    miModulo: (s) => ROL_A_MODULO[s.perfil?.rol] ?? null,
     _modulos: (s) => Object.fromEntries((s.perfil?.modulos ?? []).map((m) => [m.nombre, m])),
   },
 

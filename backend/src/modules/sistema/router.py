@@ -113,6 +113,8 @@ async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
         role_id=principal.role_id,
         rol=principal.rol,
         tienda_id=principal.tienda_id,
+        nombre=principal.nombre,
+        username=principal.username,
         modulos=[m for m in modulos if m["puede_ver"]],
     )
 

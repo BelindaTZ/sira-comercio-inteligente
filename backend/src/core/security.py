@@ -47,6 +47,8 @@ class Principal(BaseModel):
     role_id: int
     rol: str | None = None
     tienda_id: int | None = None
+    nombre: str | None = None
+    username: str | None = None
 
 
 # --------------------------------------------------------------------- emisión
@@ -81,8 +83,8 @@ async def _resolver_principal(db: AsyncSession, usuario_id: int) -> Principal:
     row = (
         await db.execute(
             text("""
-                SELECT u.usuario_id, u.empleado_id, u.role_id, u.activo,
-                       r.nombre AS rol, e.tienda_id
+                SELECT u.usuario_id, u.empleado_id, u.role_id, u.activo, u.username,
+                       r.nombre AS rol, e.tienda_id, e.nombre AS empleado_nombre
                 FROM usuarios u
                 JOIN roles r ON r.role_id = u.role_id
                 JOIN empleados e ON e.empleado_id = u.empleado_id
@@ -99,6 +101,8 @@ async def _resolver_principal(db: AsyncSession, usuario_id: int) -> Principal:
         role_id=row.role_id,
         rol=row.rol,
         tienda_id=row.tienda_id,
+        nombre=row.empleado_nombre,
+        username=row.username,
     )
 
 

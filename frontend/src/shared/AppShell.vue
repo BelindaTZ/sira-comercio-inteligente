@@ -11,15 +11,15 @@
  * `docs/diseno-ui/.../sira_inventario_y_alertas_fifo_header_verde_abisal/code.html`.
  */
 import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { categoriasVisibles } from './navegacion'
 import AppFooter from './ui/AppFooter.vue'
+import UserMenu from './UserMenu.vue'
 import logoUrl from '@/assets/branding/logo.svg'
 
 const sesion = useSesion()
 const route = useRoute()
-const router = useRouter()
 
 const categorias = computed(() => categoriasVisibles(sesion))
 const abierta = ref(null) // label de la categoría con el panel abierto
@@ -33,11 +33,6 @@ function cerrar() {
 }
 function activa(cat) {
   return cat.items.some((it) => route.path === it.to || route.path.startsWith(it.to + '/'))
-}
-
-function salir() {
-  sesion.logout()
-  router.push({ name: 'auth-login' })
 }
 </script>
 
@@ -92,21 +87,9 @@ function salir() {
           </button>
         </nav>
 
-        <!-- Contexto: rol + salir -->
-        <div class="flex shrink-0 items-center gap-3">
-          <span
-            v-if="sesion.rol"
-            class="hidden rounded-full bg-[#0e4540] px-3 py-1 text-[11px] font-bold text-primary-fixed ring-1 ring-primary-fixed/20 sm:inline"
-          >
-            {{ sesion.rol }}
-          </span>
-          <button
-            type="button"
-            class="rounded-lg px-3 py-1.5 text-[13px] font-medium text-white/80 transition hover:bg-white/15 hover:text-white"
-            @click="salir"
-          >
-            Salir
-          </button>
+        <!-- Menú de usuario -->
+        <div class="shrink-0">
+          <UserMenu />
         </div>
       </div>
 

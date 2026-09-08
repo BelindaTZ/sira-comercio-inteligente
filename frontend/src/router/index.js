@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authApi } from '@/services/authApi'
 import { useSesion } from '@/stores/sesion'
+import { homeDe } from '@/shared/portales'
 
 // Las rutas de cada módulo (pos, inventario, catalogo, compras) se agregan en
 // sus fases respectivas de tasks.md. Este archivo solo define el router base.
@@ -254,14 +255,21 @@ router.beforeEach(async (to) => {
   if (!authApi.estaAutenticado()) {
     return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
   }
+  let sesion
   try {
-    await useSesion().cargar()
+    sesion = useSesion()
+    await sesion.cargar()
   } catch (e) {
     if (e?.status === 401) {
       authApi.logout()
       return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
     }
     /* otro error (red, 500): no bloquear la navegación */
+  }
+  // `/` aterriza en el home del rol (su dashboard), no en un menú.
+  if (to.path === '/' && sesion?.rol) {
+    const home = homeDe(sesion.rol)
+    if (home && home !== '/') return home
   }
   return true
 })
