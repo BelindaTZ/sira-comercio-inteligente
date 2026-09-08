@@ -46,6 +46,27 @@ async def test_remover_linea_autorizada_por_el_cajero_devuelve_403(
     assert resp.status_code == 403, resp.text
 
 
+async def test_remover_linea_nombrando_a_un_tercero_ausente_devuelve_403(
+    client, escenario_pos, auth_cajero
+):
+    """checklists/security.md:12 (T073) — doble persona entre requests separados:
+    el cajero autenticado no puede nombrar a otro empleado como autorizador si ese
+    empleado no firma el request con su propio JWT."""
+    venta = await _venta_con_linea(client, escenario_pos, auth_cajero)
+    linea_id = venta["lineas"][0]["venta_detalle_id"]
+
+    resp = await client.request(
+        "DELETE",
+        f"/api/ventas/{venta['venta_id']}/lineas/{linea_id}",
+        json={
+            "autoriza_empleado_id": escenario_pos["encargado_id"],  # un empleado real, pero ausente
+            "motivo": "intento de auto-autorización en dos pasos",
+        },
+        headers=auth_cajero,  # el cajero, no el encargado
+    )
+    assert resp.status_code == 403, resp.text
+
+
 async def test_remover_linea_autorizada_por_encargado_devuelve_200_y_audita(
     client, escenario_pos, auth_encargado, db_session
 ):

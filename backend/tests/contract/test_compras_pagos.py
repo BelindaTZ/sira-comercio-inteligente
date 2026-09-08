@@ -54,6 +54,28 @@ async def test_pago_con_mismo_empleado_registra_y_autoriza_da_403(
     assert resp.status_code == 403, resp.text
 
 
+async def test_pago_autorizado_en_nombre_de_un_ausente_da_403(
+    client, escenario_compras, auth_jefe_fin, db_session
+):
+    """checklists/security.md:12 (T073) — doble persona entre requests separados:
+    quien REGISTRÓ el pago (paso 1) no puede confirmarlo declarando a otro como
+    autorizador si ese otro no firma el request con su propio JWT. El payload pasa
+    el CHECK `registra != autoriza`; lo corta el guard de sesión del endpoint."""
+    e = escenario_compras
+    factura = await _orden_recibida_con_factura(client, db_session, e, auth_jefe_fin)
+    resp = await client.post(
+        f"/api/compras/facturas/{factura['factura_id']}/pagos",
+        json={
+            "monto": "50.00",
+            "medio_pago_id": e["medio_efectivo"],
+            "empleado_registra_id": e["jefe_fin_id"],
+            "empleado_autoriza_id": e["jefe_ops_id"],  # distinto, pero ausente
+        },
+        headers=auth_jefe_fin,  # el registrante, no el autorizador
+    )
+    assert resp.status_code == 403, resp.text
+
+
 async def test_pagos_parciales_recalculan_el_estado(
     client, escenario_compras, auth_jefe_fin, auth_jefe_ops, db_session
 ):
