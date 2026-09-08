@@ -2,6 +2,7 @@
 /** Verificación diaria de anaquel de un producto clasificación A (FR-042, Reponedor). */
 import { reactive, ref } from 'vue'
 import { inventarioApi } from '@/services/inventarioApi'
+import ProductoPicker from '@/shared/ui/ProductoPicker.vue'
 
 const props = defineProps({
   tiendaId: { type: Number, required: true },
@@ -36,18 +37,8 @@ async function enviar() {
 </script>
 
 <template>
-  <form
-    class="space-y-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-    @submit.prevent="enviar"
-  >
-    <h3 class="text-sm font-semibold text-on-surface">Verificación de anaquel (clase A)</h3>
-    <input
-      v-model.number="form.productId"
-      type="number"
-      placeholder="ID de producto"
-      required
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
+  <form class="space-y-3" @submit.prevent="enviar">
+    <ProductoPicker v-model="form.productId" label="Producto a verificar" required />
     <label class="flex items-center gap-2 text-sm text-on-surface-variant">
       <input v-model="form.disponible" type="checkbox" />
       Producto disponible en anaquel

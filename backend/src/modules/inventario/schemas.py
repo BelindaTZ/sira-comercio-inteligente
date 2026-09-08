@@ -82,6 +82,19 @@ class LoteOut(BaseModel):
     dias_para_vencer: int | None
 
 
+class ProductoBusquedaOut(BaseModel):
+    """Item de autocompletado para los formularios de operación."""
+
+    product_id: int
+    nombre: str | None
+    marca: str | None
+    product_category: str | None
+    clasificacion_abc: str | None
+    imagen_url: str | None
+
+    model_config = {"from_attributes": True}
+
+
 class RecepcionOut(BaseModel):
     recepcion_id: int
     lote_id: int

@@ -6,6 +6,11 @@ export const catalogoApi = {
     return http.get('/api/catalogo/productos', { params }).then((r) => r.data)
   },
 
+  /** Categorías existentes (valores distintos de `product_category`). */
+  categorias() {
+    return http.get('/api/catalogo/categorias').then((r) => r.data)
+  },
+
   crear({
     codigoBarras,
     nombre,

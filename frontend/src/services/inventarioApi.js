@@ -26,6 +26,11 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
+  /** Autocompletado de producto (nombre o id) para los formularios de operación. */
+  buscarProductos(q) {
+    return http.get('/api/inventario/productos', { params: { q } }).then((r) => r.data)
+  },
+
   recepcion({ ordenId, productId, tiendaId, cantidad, fechaVencimiento, codigoLoteProveedor }) {
     return http
       .post('/api/inventario/recepciones', {

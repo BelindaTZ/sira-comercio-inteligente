@@ -2,6 +2,7 @@
 /** Ajuste de inventario tras conteo físico (FR-017). La diferencia la calcula el backend. */
 import { reactive, ref } from 'vue'
 import { inventarioApi } from '@/services/inventarioApi'
+import ProductoPicker from '@/shared/ui/ProductoPicker.vue'
 
 const props = defineProps({
   tiendaId: { type: Number, required: true },
@@ -34,26 +35,18 @@ async function enviar() {
 </script>
 
 <template>
-  <form
-    class="space-y-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-    @submit.prevent="enviar"
-  >
-    <h3 class="text-sm font-semibold text-on-surface">Ajuste por conteo físico</h3>
-    <input
-      v-model.number="form.productId"
-      type="number"
-      placeholder="ID de producto"
-      required
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
-    <input
-      v-model.number="form.cantidadFisica"
-      type="number"
-      min="0"
-      placeholder="Cantidad física contada"
-      required
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
+  <form class="space-y-3" @submit.prevent="enviar">
+    <ProductoPicker v-model="form.productId" label="Producto contado" required />
+    <label class="block text-[12px] font-semibold text-slate-600">
+      Cantidad física contada
+      <input
+        v-model.number="form.cantidadFisica"
+        type="number"
+        min="0"
+        required
+        class="mt-1 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
+      />
+    </label>
     <button
       type="submit"
       :disabled="enviando"

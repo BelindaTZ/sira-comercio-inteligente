@@ -64,6 +64,16 @@ async def dar_de_baja(
     return _out(await svc.dar_de_baja(product_id))
 
 
+@router.get("/categorias", response_model=list[str])
+async def listar_categorias(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+) -> list[str]:
+    """Categorías existentes (valores distintos de `product_category`). Alimenta
+    los selectores de categoría (p. ej. stock máximo). No hay alta de categoría
+    suelta: una categoría "existe" cuando un producto la usa."""
+    return await svc.categorias()
+
+
 @router.get("/productos", response_model=Page[ProductoOut])
 async def listar_productos(
     svc: ServiceDep,

@@ -482,6 +482,9 @@ class InventarioService:
         await self.repo.flush()
         return existente
 
+    async def buscar_productos(self, termino: str):
+        return await self.repo.buscar_productos(termino)
+
     async def listar_stock_maximo(self, params, *, tienda_id: int, product_category=None):
         stmt = self.repo.stock_maximo_query(tienda_id=tienda_id, product_category=product_category)
         return await self.repo.paginate(

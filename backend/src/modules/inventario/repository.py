@@ -137,6 +137,27 @@ class InventarioRepository(BaseRepository[Lote]):
         )
         return {pid: nombre for pid, nombre in rows}
 
+    async def buscar_productos(self, termino: str, limite: int = 12) -> list[Producto]:
+        """Autocompletado para los formularios de operación (ajuste, merma,
+        anaquel): por id exacto si es numérico, si no por nombre/tipo/marca."""
+        t = (termino or "").strip()
+        if not t:
+            return []
+        stmt = select(Producto).where(Producto.activo.is_(True))
+        if t.isdigit():
+            stmt = stmt.where(Producto.product_id == int(t))
+        else:
+            patron = f"%{t}%"
+            stmt = stmt.where(
+                or_(
+                    Producto.nombre.ilike(patron),
+                    Producto.product_type.ilike(patron),
+                    Producto.marca.ilike(patron),
+                )
+            )
+        stmt = stmt.order_by(Producto.nombre).limit(limite)
+        return list((await self.session.scalars(stmt)).all())
+
     # --- mermas ---
     async def get_merma_for_update(self, merma_id: int) -> Merma | None:
         stmt = select(Merma).where(Merma.merma_id == merma_id).with_for_update()

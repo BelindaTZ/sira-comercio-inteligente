@@ -22,6 +22,7 @@ from src.modules.inventario.schemas import (
     LoteOut,
     MermaIn,
     MermaOut,
+    ProductoBusquedaOut,
     QuiebreIn,
     QuiebreOut,
     RecepcionIn,
@@ -104,6 +105,17 @@ async def listar_lotes(
         search=search,
     )
     return Page[LoteOut](**res)
+
+
+@router.get("/productos", response_model=list[ProductoBusquedaOut])
+async def buscar_productos(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    q: Annotated[str, Query(min_length=1)],
+) -> list[ProductoBusquedaOut]:
+    """Autocompletado de producto para los formularios de operación (ajuste,
+    merma, verificación de anaquel): acepta nombre o id."""
+    return [ProductoBusquedaOut.model_validate(p) for p in await svc.buscar_productos(q)]
 
 
 @router.post("/ajustes", status_code=status.HTTP_201_CREATED, response_model=AjusteOut)

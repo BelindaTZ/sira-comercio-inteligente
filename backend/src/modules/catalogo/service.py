@@ -124,3 +124,6 @@ class CatalogoService:
     async def listar(self, params, **filtros):
         stmt = self.repo.productos_query(**filtros)
         return await self.repo.paginate(params, stmt=stmt, order_by=Producto.product_id.desc())
+
+    async def categorias(self) -> list[str]:
+        return await self.repo.categorias()

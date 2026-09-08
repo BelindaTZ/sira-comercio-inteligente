@@ -2,6 +2,7 @@
 /** Registro de merma (FR-018). Queda 'pendiente' hasta que el Encargado la valide (FR-019). */
 import { reactive, ref } from 'vue'
 import { inventarioApi } from '@/services/inventarioApi'
+import ProductoPicker from '@/shared/ui/ProductoPicker.vue'
 
 const props = defineProps({
   tiendaId: { type: Number, required: true },
@@ -39,18 +40,8 @@ async function enviar() {
 </script>
 
 <template>
-  <form
-    class="space-y-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-    @submit.prevent="enviar"
-  >
-    <h3 class="text-sm font-semibold text-on-surface">Registrar merma</h3>
-    <input
-      v-model.number="form.productId"
-      type="number"
-      placeholder="ID de producto"
-      required
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
+  <form class="space-y-3" @submit.prevent="enviar">
+    <ProductoPicker v-model="form.productId" label="Producto" required />
     <div class="flex gap-3">
       <input
         v-model.number="form.cantidad"

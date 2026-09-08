@@ -55,6 +55,37 @@ async def test_lotes_search_numerico_es_product_id(client, escenario_pos, auth_e
     assert all(x["product_id"] == e["product_id"] for x in r.json()["items"])
 
 
+async def test_autocompletado_productos_por_nombre_e_id(
+    client, escenario_pos, auth_encargado, db_session
+):
+    e = escenario_pos
+    await _nombrar_producto(db_session, e["product_id"], "Leche Entera 1L", "Del Campo")
+
+    por_nombre = await client.get(
+        "/api/inventario/productos", params={"q": "leche"}, headers=auth_encargado
+    )
+    assert por_nombre.status_code == 200, por_nombre.text
+    ids = {p["product_id"] for p in por_nombre.json()}
+    assert e["product_id"] in ids
+
+    por_id = await client.get(
+        "/api/inventario/productos",
+        params={"q": str(e["product_id"])},
+        headers=auth_encargado,
+    )
+    assert por_id.status_code == 200
+    assert [p["product_id"] for p in por_id.json()] == [e["product_id"]]
+
+
+async def test_categorias_del_catalogo(client, escenario_pos, auth_jefe_comercial):
+    r = await client.get("/api/catalogo/categorias", headers=auth_jefe_comercial)
+    assert r.status_code == 200, r.text
+    cats = r.json()
+    assert isinstance(cats, list)
+    assert "TEST CAT" in cats  # la categoría del producto de escenario_pos
+    assert cats == sorted(cats)
+
+
 async def test_alertas_search_por_nombre(client, escenario_pos, auth_encargado, db_session):
     e = escenario_pos
     await _nombrar_producto(db_session, e["product_id"], "Aceite Oliva Extra", "Valle")

@@ -27,6 +27,17 @@ class CatalogoRepository(BaseRepository[Producto]):
     async def get_producto(self, product_id: int) -> Producto | None:
         return await self.session.get(Producto, product_id)
 
+    async def categorias(self) -> list[str]:
+        """Valores distintos de `product_category` — no hay tabla maestra de
+        categorías; nacen de los productos del catálogo."""
+        rows = await self.session.execute(
+            select(Producto.product_category)
+            .where(Producto.product_category.isnot(None))
+            .distinct()
+            .order_by(Producto.product_category)
+        )
+        return [c for (c,) in rows]
+
     async def existe_barcode(self, codigo_barras: str) -> bool:
         stmt = select(Producto.product_id).where(Producto.codigo_barras == codigo_barras)
         return (await self.session.scalars(stmt)).first() is not None
