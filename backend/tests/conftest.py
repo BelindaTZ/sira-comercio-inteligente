@@ -897,3 +897,85 @@ def auth_jefe_rrhh(escenario_rrhh: dict) -> dict[str, str]:
 @pytest.fixture
 def auth_encargado_rrhh(escenario_rrhh: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_rrhh['token_encargado_a']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_traslados(db_session: AsyncSession) -> dict:
+    """Feature 012: dos tiendas, un Jefe_Operaciones (toda la red), un Encargado
+    por tienda, y un producto perecedero con inventario + lote en ambas tiendas
+    (tienda A con exceso; tienda B por debajo de su punto de reposición para
+    probar la sugerencia de compra extendida)."""
+    s = db_session
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    rol_ops = await _rol("Jefe_Operaciones")
+    rol_encargado = await _rol("Encargado_Tienda")
+
+    async def _tienda(nombre: str) -> int:
+        return await s.scalar(
+            text(
+                "INSERT INTO tiendas (codigo, nombre) VALUES "
+                "(substr(md5(random()::text), 1, 8), :n) RETURNING tienda_id"
+            ),
+            {"n": nombre},
+        )
+
+    tienda_a = await _tienda("Traslados A")
+    tienda_b = await _tienda("Traslados B")
+
+    product_id = await s.scalar(text("SELECT COALESCE(MAX(product_id), 0) + 1 FROM productos"))
+    await s.execute(
+        text(
+            "INSERT INTO productos (product_id, product_category, product_type, costo, "
+            "precio_base, es_perecedero, codigo_barras) "
+            "VALUES (:pid, 'CAT TRASLADO', 'PROD TRASLADO', 2.00, 5.00, true, :bc)"
+        ),
+        {"pid": product_id, "bc": f"BCT{product_id}"},
+    )
+    venc = date.today() + timedelta(days=20)
+
+    async def _stock(tienda_id: int, cantidad: int, minima: int) -> None:
+        await s.execute(
+            text(
+                "INSERT INTO inventario (product_id, tienda_id, cantidad_disponible, "
+                "cantidad_minima) VALUES (:p, :t, :c, :m)"
+            ),
+            {"p": product_id, "t": tienda_id, "c": cantidad, "m": minima},
+        )
+        await s.execute(
+            text(
+                "INSERT INTO lotes (product_id, tienda_id, cantidad_recibida, cantidad_disponible, "
+                "fecha_vencimiento) VALUES (:p, :t, :c, :c, :fv)"
+            ),
+            {"p": product_id, "t": tienda_id, "c": cantidad, "fv": venc},
+        )
+
+    await _stock(tienda_a, cantidad=200, minima=0)
+    await _stock(tienda_b, cantidad=10, minima=50)
+
+    enc_a = await _mk_empleado(s, tienda_a)
+    enc_b = await _mk_empleado(s, tienda_b)
+    await s.flush()
+
+    return {
+        "tienda_a": tienda_a,
+        "tienda_b": tienda_b,
+        "product_id": product_id,
+        "fecha_vencimiento": venc.isoformat(),
+        "encargado_a_id": enc_a,
+        "encargado_b_id": enc_b,
+        "token_ops": await _token(s, role_id=rol_ops, tienda_id=tienda_a),
+        "token_encargado_a": await _token(
+            s, empleado_id=enc_a, role_id=rol_encargado, tienda_id=tienda_a
+        ),
+        "token_encargado_b": await _token(
+            s, empleado_id=enc_b, role_id=rol_encargado, tienda_id=tienda_b
+        ),
+    }
+
+
+@pytest.fixture
+def auth_traslados_ops(escenario_traslados: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_traslados['token_ops']}"}

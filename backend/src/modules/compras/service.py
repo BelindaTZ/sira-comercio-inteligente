@@ -97,6 +97,19 @@ class ComprasService:
                     "origen_calculo": origen,
                 }
             )
+
+        # feature 012 (FR-002): disponibilidad del producto en las OTRAS tiendas de
+        # la red, embebida en la misma respuesta (research.md Decisión 5).
+        if sugerencias:
+            from src.modules.traslados.repository import TrasladosRepository
+
+            por_producto = await TrasladosRepository(self.repo.session).disponibilidad_por_producto(
+                [s["product_id"] for s in sugerencias]
+            )
+            for s in sugerencias:
+                s["disponibilidad_otras_tiendas"] = [
+                    d for d in por_producto.get(s["product_id"], []) if d["tienda_id"] != tienda_id
+                ]
         return sugerencias
 
     # -------------------------------------------------------- órdenes (FR-024)

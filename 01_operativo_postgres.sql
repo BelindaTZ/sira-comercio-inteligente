@@ -1775,3 +1775,48 @@ SELECT r.role_id, m.modulo_id, 'empleado_capacitacion', true, false, false, fals
 FROM roles r JOIN modulos m ON m.nombre = 'RRHH'
 WHERE r.nombre = 'Encargado_Tienda'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 012-traslados-stock-entre-tiendas (spec.md, plan.md, research.md, data-model.md)
+-- Cierra OT-2.5 (OE-2 Operaciones/Compras): visibilidad de stock entre sucursales
+-- y flujo completo solicitud -> aprobacion/rechazo -> despacho -> recepcion de
+-- traslados entre tiendas, con trazabilidad de responsable y fecha por transicion.
+-- Primer y unico consumidor de `traslados_stock` (reservada desde el diseno base).
+-- Sin tabla nueva: extension aditiva del CHECK de estado + columnas de trazabilidad.
+-- RBAC: sin rol ni modulo nuevo; nivel de tabla para `traslados_stock` bajo el
+-- modulo `Operaciones` ya reservado (Jefe_Operaciones toda la red; Encargado_Tienda
+-- con alcance a su tienda, validado en la capa de servicio).
+-- ============================================================================
+
+-- 1. estado: + 'rechazado' (research.md Decision 1).
+ALTER TABLE traslados_stock DROP CONSTRAINT IF EXISTS traslados_stock_estado_check;
+ALTER TABLE traslados_stock ADD CONSTRAINT traslados_stock_estado_check
+    CHECK (estado IN ('solicitado','en_transito','recibido','cancelado','rechazado'));
+
+-- 2. Columnas de trazabilidad por transicion (research.md Decision 2, FR-011).
+ALTER TABLE traslados_stock ADD COLUMN IF NOT EXISTS resuelto_por INTEGER REFERENCES empleados(empleado_id);
+ALTER TABLE traslados_stock ADD COLUMN IF NOT EXISTS fecha_resolucion TIMESTAMP;
+ALTER TABLE traslados_stock ADD COLUMN IF NOT EXISTS recibido_por INTEGER REFERENCES empleados(empleado_id);
+ALTER TABLE traslados_stock ADD COLUMN IF NOT EXISTS fecha_recepcion TIMESTAMP;
+ALTER TABLE traslados_stock ADD COLUMN IF NOT EXISTS fecha_cancelacion TIMESTAMP;
+ALTER TABLE traslados_stock DROP CONSTRAINT IF EXISTS chk_traslados_stock_resolucion;
+ALTER TABLE traslados_stock ADD CONSTRAINT chk_traslados_stock_resolucion
+    CHECK (estado NOT IN ('en_transito','recibido','rechazado')
+           OR (resuelto_por IS NOT NULL AND fecha_resolucion IS NOT NULL));
+ALTER TABLE traslados_stock DROP CONSTRAINT IF EXISTS chk_traslados_stock_recepcion;
+ALTER TABLE traslados_stock ADD CONSTRAINT chk_traslados_stock_recepcion
+    CHECK (estado <> 'recibido' OR (recibido_por IS NOT NULL AND fecha_recepcion IS NOT NULL));
+
+-- 3. Indices de apoyo (listado semanal FR-012 + filtro por tienda).
+CREATE INDEX IF NOT EXISTS idx_traslados_stock_estado ON traslados_stock(estado) WHERE estado IN ('solicitado','en_transito');
+CREATE INDEX IF NOT EXISTS idx_traslados_stock_tienda_origen ON traslados_stock(tienda_origen_id, estado);
+CREATE INDEX IF NOT EXISTS idx_traslados_stock_tienda_destino ON traslados_stock(tienda_destino_id, estado);
+
+-- 4. RBAC — traslados_stock bajo el modulo Operaciones (data-model.md).
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'traslados_stock', true, true, true, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Operaciones'
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+WHERE r.nombre IN ('Jefe_Operaciones','Encargado_Tienda')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

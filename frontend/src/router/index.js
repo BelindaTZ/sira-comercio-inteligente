@@ -196,6 +196,11 @@ const routes = [
     name: 'ventas-tiempo-cobro',
     component: () => import('@/modules/ventas/pages/TiempoCobroPage.vue'),
   },
+  {
+    path: '/operaciones/traslados',
+    name: 'operaciones-traslados',
+    component: () => import('@/modules/operaciones/TrasladosPage.vue'),
+  },
 ]
 
 const router = createRouter({

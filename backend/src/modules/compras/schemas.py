@@ -82,6 +82,12 @@ class OrdenOut(BaseModel):
     lineas: list[OrdenLineaOut] = []
 
 
+class DisponibilidadOtraTienda(BaseModel):
+    tienda_id: int
+    nombre_tienda: str
+    cantidad_disponible: int
+
+
 class SugerenciaLinea(BaseModel):
     product_id: int
     tienda_id: int
@@ -91,6 +97,9 @@ class SugerenciaLinea(BaseModel):
     cantidad_sugerida: int
     # feature 004 (FR-010): 'modelo_pronostico' o 'rotacion_reciente'
     origen_calculo: str = "rotacion_reciente"
+    # feature 012 (FR-002): stock del mismo producto en las otras tiendas de la red,
+    # embebido para decidir un traslado en vez de comprar — sin request adicional.
+    disponibilidad_otras_tiendas: list[DisponibilidadOtraTienda] = []
 
 
 # --- facturas y pagos ---

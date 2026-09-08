@@ -74,6 +74,7 @@ from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.rol_puesto import RolPuesto
 from src.models.role_permiso import RolePermisoModulo, RolePermisoTabla
 from src.models.stock_maximo_categoria import StockMaximoCategoria
+from src.models.traslado_stock import TrasladoStock
 from src.models.umbral_merma_categoria import UmbralMermaCategoria
 from src.models.usuario import Usuario
 from src.models.venta import Venta
@@ -149,6 +150,7 @@ __all__ = [
     "RolePermisoModulo",
     "RolePermisoTabla",
     "StockMaximoCategoria",
+    "TrasladoStock",
     "UmbralMermaCategoria",
     "Usuario",
     "Venta",
