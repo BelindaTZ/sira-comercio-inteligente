@@ -1,13 +1,20 @@
-"""Autenticación JWT + RBAC de dos niveles (T008).
+"""Autenticación JWT + RBAC de dos niveles.
 
-La *emisión* del token (login) la entrega la feature 008; aquí solo se **consume**:
-se decodifica, se extrae el rol y se valida contra `role_permisos_modulo` /
-`role_permisos_tabla` ya existentes en el esquema (Principio IV). Mientras 008 no
-exista, un token de prueba firmado con `JWT_SECRET` y estos claims es suficiente.
+Feature 008 convierte esto de "token de prueba" a mecanismo real:
+
+- El JWT emitido al iniciar sesión transporta **sólo** `usuario_id` (+ expiración)
+  — nunca el rol ni los permisos (research.md Decisión 1). En cada request el
+  backend resuelve el rol vigente y los permisos consultando PostgreSQL, de modo
+  que un cambio de rol/permiso o una baja de cuenta tienen efecto inmediato sin
+  nuevo login ni lista de revocación.
+- `role_permisos_modulo` / `role_permisos_tabla` gobiernan el acceso a datos
+  (Principio IV). Los únicos endpoints sin RBAC son `POST /api/auth/login` y
+  `POST /api/auth/recuperar-password` (públicos por definición).
 """
 
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
 import jwt
@@ -28,49 +35,83 @@ _CAN_COLUMN: dict[Action, str] = {
     "delete": "can_delete",
 }
 
+# 401 idéntico para credenciales incorrectas y cuenta inactiva (FR-002/FR-003).
+_GENERIC_401 = "Credenciales inválidas o cuenta inactiva"
+
 
 class Principal(BaseModel):
-    """Identidad autenticada extraída del JWT."""
+    """Identidad autenticada, resuelta contra la BD en cada request."""
 
-    usuario_id: int | None = None
+    usuario_id: int
     empleado_id: int
     role_id: int
     rol: str | None = None
     tienda_id: int | None = None
 
 
-def decode_token(token: str) -> Principal:
+# --------------------------------------------------------------------- emisión
+def crear_access_token(usuario_id: int) -> tuple[str, int]:
+    """Devuelve `(jwt, segundos_de_vigencia)`. El único claim de negocio es
+    `usuario_id` (research.md Decisión 1)."""
+    ttl = settings.jwt_expiration_minutes * 60
+    payload = {
+        "usuario_id": usuario_id,
+        "exp": datetime.now(UTC) + timedelta(seconds=ttl),
+        "iat": datetime.now(UTC),
+    }
+    token = jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return token, ttl
+
+
+# ------------------------------------------------------------------- consumo
+def decode_usuario_id(token: str) -> int:
     try:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     except jwt.ExpiredSignatureError as exc:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token expirado") from exc
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Sesión expirada") from exc
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token inválido") from exc
-
     try:
-        return Principal(
-            usuario_id=payload.get("usuario_id"),
-            empleado_id=payload["empleado_id"],
-            role_id=payload["role_id"],
-            rol=payload.get("rol"),
-            tienda_id=payload.get("tienda_id"),
+        return int(payload["usuario_id"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Token inválido") from exc
+
+
+async def _resolver_principal(db: AsyncSession, usuario_id: int) -> Principal:
+    row = (
+        await db.execute(
+            text("""
+                SELECT u.usuario_id, u.empleado_id, u.role_id, u.activo,
+                       r.nombre AS rol, e.tienda_id
+                FROM usuarios u
+                JOIN roles r ON r.role_id = u.role_id
+                JOIN empleados e ON e.empleado_id = u.empleado_id
+                WHERE u.usuario_id = :uid
+            """),
+            {"uid": usuario_id},
         )
-    except KeyError as exc:
-        raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED,
-            f"Claim obligatorio ausente en el token: {exc}",
-        ) from exc
+    ).first()
+    if row is None or not row.activo:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, _GENERIC_401)
+    return Principal(
+        usuario_id=row.usuario_id,
+        empleado_id=row.empleado_id,
+        role_id=row.role_id,
+        rol=row.rol,
+        tienda_id=row.tienda_id,
+    )
 
 
 async def get_current_principal(
+    db: Annotated[AsyncSession, Depends(get_session)],
     authorization: Annotated[str | None, Header()] = None,
 ) -> Principal:
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(
-            status.HTTP_401_UNAUTHORIZED,
-            "Falta el header Authorization: Bearer <token>",
+            status.HTTP_401_UNAUTHORIZED, "Falta el header Authorization: Bearer <token>"
         )
-    return decode_token(authorization.split(" ", 1)[1].strip())
+    usuario_id = decode_usuario_id(authorization.split(" ", 1)[1].strip())
+    return await _resolver_principal(db, usuario_id)
 
 
 CurrentPrincipal = Annotated[Principal, Depends(get_current_principal)]
@@ -80,8 +121,6 @@ async def _has_permission(
     db: AsyncSession, role_id: int, modulo: str, tabla: str, action: Action
 ) -> bool:
     can_col = _CAN_COLUMN[action]
-    # La FK compuesta de role_permisos_tabla ya obliga a tener la fila de módulo;
-    # el JOIN a modulos aquí solo traduce el nombre a id.
     modulo_ok = "puede_ver" if action == "select" else "puede_editar"
     row = await db.execute(
         text(f"""
@@ -102,7 +141,7 @@ async def _has_permission(
 
 
 def require_permission(modulo: str, tabla: str, action: Action):
-    """Devuelve una dependencia de FastAPI que exige `action` sobre `modulo`→`tabla`."""
+    """Dependencia de FastAPI que exige `action` sobre `modulo`→`tabla`."""
 
     async def _dependency(
         principal: CurrentPrincipal,

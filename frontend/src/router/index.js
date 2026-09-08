@@ -1,8 +1,41 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { authApi } from '@/services/authApi'
 
 // Las rutas de cada módulo (pos, inventario, catalogo, compras) se agregan en
 // sus fases respectivas de tasks.md. Este archivo solo define el router base.
 const routes = [
+  {
+    path: '/auth/login',
+    name: 'auth-login',
+    component: () => import('@/modules/auth/pages/LoginPage.vue'),
+    meta: { publica: true },
+  },
+  {
+    path: '/auth/recuperar',
+    name: 'auth-recuperar',
+    component: () => import('@/modules/auth/pages/RecuperarPasswordPage.vue'),
+    meta: { publica: true },
+  },
+  {
+    path: '/sistema/usuarios',
+    name: 'sistema-usuarios',
+    component: () => import('@/modules/sistema/pages/UsuariosPage.vue'),
+  },
+  {
+    path: '/sistema/roles-permisos',
+    name: 'sistema-roles-permisos',
+    component: () => import('@/modules/sistema/pages/RolesPermisosPage.vue'),
+  },
+  {
+    path: '/sistema/auditoria',
+    name: 'sistema-auditoria',
+    component: () => import('@/modules/sistema/pages/AuditoriaPage.vue'),
+  },
+  {
+    path: '/rrhh/empleados',
+    name: 'rrhh-empleados',
+    component: () => import('@/modules/rrhh/pages/EmpleadosPage.vue'),
+  },
   {
     path: '/',
     name: 'home',
@@ -143,6 +176,15 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+// Guard de navegación (feature 008): toda ruta fuera de `/auth` exige un JWT
+// válido en localStorage. La validez real la comprueba el backend en cada
+// request; aquí sólo se evita mostrar vistas autenticadas sin sesión.
+router.beforeEach((to) => {
+  if (to.meta.publica) return true
+  if (authApi.estaAutenticado()) return true
+  return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
 })
 
 export default router

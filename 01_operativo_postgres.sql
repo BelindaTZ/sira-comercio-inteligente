@@ -1641,3 +1641,81 @@ JOIN modulos m ON m.nombre = 'Finanzas'
 CROSS JOIN (VALUES ('incidente_seguridad_pago'), ('politica_seguridad_pagos')) AS t(tabla)
 WHERE r.nombre = 'Jefe_Finanzas'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 008-auth-administracion-sistema (spec.md, plan.md, research.md, data-model.md)
+-- Login con JWT real (transporta sólo usuario_id — permisos resueltos en caliente
+-- contra PostgreSQL, research.md Decisión 1), alta de empleado y de cuenta,
+-- recuperación de contraseña de un solo uso, administración de RBAC, e
+-- inhabilitación automática de cuenta al dar de baja al empleado (trigger).
+-- Primeros usos de los módulos RBAC `Sistema` (Jefe_TI) y `RRHH` (Jefe_RRHH).
+-- A partir de esta feature, todos los endpoints de 001-007 exigen JWT real.
+-- ============================================================================
+
+-- 1. Enlace de recuperación de contraseña de un solo uso (research.md Decisión 2).
+CREATE TABLE recuperacion_password (
+    token_id BIGSERIAL PRIMARY KEY,
+    usuario_id INTEGER NOT NULL REFERENCES usuarios(usuario_id) ON DELETE CASCADE,
+    token VARCHAR(128) UNIQUE NOT NULL,
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_expiracion TIMESTAMP NOT NULL,
+    usado BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX idx_recuperacion_password_usuario_id ON recuperacion_password(usuario_id);
+
+-- 2. Intentos de login, exitosos o no (research.md Decisión 3 — distinta de auditoria_log).
+CREATE TABLE intentos_login (
+    intento_id BIGSERIAL PRIMARY KEY,
+    usuario_id INTEGER REFERENCES usuarios(usuario_id) ON DELETE SET NULL,
+    username_intentado VARCHAR(50) NOT NULL,
+    exitoso BOOLEAN NOT NULL,
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_intentos_login_usuario_id ON intentos_login(usuario_id);
+CREATE INDEX idx_intentos_login_fecha_hora ON intentos_login(fecha_hora);
+
+-- 3. Inhabilitación automática de cuenta al dar de baja al empleado (research.md
+-- Decisión 4) — garantía a nivel de BD, no bypasseable por ningún llamador. No
+-- actúa en la dirección inversa: reactivar al empleado NO reactiva la cuenta (FR-015).
+CREATE OR REPLACE FUNCTION fn_inhabilitar_cuenta_usuario()
+RETURNS TRIGGER AS $fn$
+BEGIN
+    UPDATE usuarios SET activo = false WHERE empleado_id = NEW.empleado_id;
+    RETURN NEW;
+END;
+$fn$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_inhabilitar_cuenta_baja_empleado
+AFTER UPDATE ON empleados
+FOR EACH ROW
+WHEN (NEW.activo = false AND OLD.activo = true)
+EXECUTE FUNCTION fn_inhabilitar_cuenta_usuario();
+
+-- 4. RBAC feature 008 — primer uso de `Sistema` (Jefe_TI) y `RRHH` (Jefe_RRHH).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE (m.nombre = 'Sistema' AND r.nombre = 'Jefe_TI')
+   OR (m.nombre = 'RRHH' AND r.nombre = 'Jefe_RRHH')
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, t.w, t.w, false
+FROM roles r
+JOIN modulos m ON m.nombre = 'Sistema'
+CROSS JOIN (VALUES
+     ('usuarios', true),
+     ('role_permisos_modulo', true),
+     ('role_permisos_tabla', true),
+     ('recuperacion_password', false),
+     ('intentos_login', false),
+     ('auditoria_log', false)
+) AS t(tabla, w)
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'empleados', true, true, true, false
+FROM roles r JOIN modulos m ON m.nombre = 'RRHH'
+WHERE r.nombre = 'Jefe_RRHH'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

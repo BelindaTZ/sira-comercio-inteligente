@@ -63,16 +63,55 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides.pop(get_session, None)
 
 
-def _token(*, empleado_id: int, role_id: int, rol: str, tienda_id: int | None = None) -> str:
-    return jwt.encode(
+async def _mk_empleado(session: AsyncSession, tienda_id: int | None = None) -> int:
+    """Crea un empleado dedicado (con su propio puesto) para un token de prueba."""
+    puesto_id = await session.scalar(
+        text(
+            "INSERT INTO roles_puesto (nombre) VALUES "
+            "('Puesto ' || gen_random_uuid()::text) RETURNING puesto_id"
+        )
+    )
+    return await session.scalar(
+        text(
+            "INSERT INTO empleados (tienda_id, puesto_id, nombre, fecha_contratacion) "
+            "VALUES (:t, :p, 'Actor Test', CURRENT_DATE) RETURNING empleado_id"
+        ),
+        {"t": tienda_id, "p": puesto_id},
+    )
+
+
+async def _token(
+    session: AsyncSession,
+    *,
+    role_id: int,
+    empleado_id: int | None = None,
+    tienda_id: int | None = None,
+    activo: bool = True,
+    rol: str | None = None,  # aceptado por compatibilidad, el rol se resuelve de la BD
+) -> str:
+    """Feature 008: el JWT sólo transporta `usuario_id`. Crea (o actualiza) la
+    cuenta `usuarios` real y devuelve un token que el backend resuelve contra la BD."""
+    import uuid
+
+    if empleado_id is None:
+        empleado_id = await _mk_empleado(session, tienda_id)
+    usuario_id = await session.scalar(
+        text(
+            "INSERT INTO usuarios (empleado_id, role_id, username, password_hash, activo) "
+            "VALUES (:e, :r, :u, 'x', :a) "
+            "ON CONFLICT (empleado_id) DO UPDATE SET role_id = EXCLUDED.role_id, "
+            "activo = EXCLUDED.activo RETURNING usuario_id"
+        ),
         {
-            "empleado_id": empleado_id,
-            "role_id": role_id,
-            "rol": rol,
-            "tienda_id": tienda_id,
+            "e": empleado_id,
+            "r": role_id,
+            "u": f"u{empleado_id}-{uuid.uuid4().hex[:8]}",
+            "a": activo,
         },
-        settings.jwt_secret,
-        algorithm=settings.jwt_algorithm,
+    )
+    await session.flush()
+    return jwt.encode(
+        {"usuario_id": usuario_id}, settings.jwt_secret, algorithm=settings.jwt_algorithm
     )
 
 
@@ -173,14 +212,11 @@ async def escenario_pos(db_session: AsyncSession) -> dict:
         "medio_tarjeta": mp_tarjeta,
         "lote_a": lote_a,
         "lote_b": lote_b,
-        "token_cajero": _token(
-            empleado_id=cajero_id, role_id=role_cajero, rol="Cajero", tienda_id=tienda_id
+        "token_cajero": await _token(
+            s, empleado_id=cajero_id, role_id=role_cajero, tienda_id=tienda_id
         ),
-        "token_encargado": _token(
-            empleado_id=encargado_id,
-            role_id=role_encargado,
-            rol="Encargado_Tienda",
-            tienda_id=tienda_id,
+        "token_encargado": await _token(
+            s, empleado_id=encargado_id, role_id=role_encargado, tienda_id=tienda_id
         ),
     }
 
@@ -255,15 +291,8 @@ async def escenario_forecasting(db_session: AsyncSession, escenario_pos: dict) -
         "anio_historial": anio,
         "product_cold": cold_id,
         "semana_pronostico": 17,  # primera semana del horizonte tras 16 semanas
-        "token_jefe_ti": _token(
-            empleado_id=e["encargado_id"], role_id=rol_ti, rol="Jefe_TI", tienda_id=e["tienda_id"]
-        ),
-        "token_jefe_ops": _token(
-            empleado_id=e["encargado_id"],
-            role_id=rol_ops,
-            rol="Jefe_Operaciones",
-            tienda_id=e["tienda_id"],
-        ),
+        "token_jefe_ti": await _token(s, role_id=rol_ti, tienda_id=e["tienda_id"]),
+        "token_jefe_ops": await _token(s, role_id=rol_ops, tienda_id=e["tienda_id"]),
     }
 
 
@@ -368,18 +397,8 @@ async def escenario_promociones(db_session: AsyncSession, escenario_pos: dict) -
         "product_b": prod_b,
         "product_c": prod_c,
         "household_afin": household_id,
-        "token_jefe_marketing": _token(
-            empleado_id=e["encargado_id"],
-            role_id=rol_mkt,
-            rol="Jefe_Marketing",
-            tienda_id=e["tienda_id"],
-        ),
-        "token_jefe_ops": _token(
-            empleado_id=e["encargado_id"],
-            role_id=rol_ops,
-            rol="Jefe_Operaciones",
-            tienda_id=e["tienda_id"],
-        ),
+        "token_jefe_marketing": await _token(s, role_id=rol_mkt, tienda_id=e["tienda_id"]),
+        "token_jefe_ops": await _token(s, role_id=rol_ops, tienda_id=e["tienda_id"]),
     }
 
 
@@ -398,12 +417,7 @@ async def auth_jefe_comercial(db_session: AsyncSession, escenario_pos: dict) -> 
     role_id = await db_session.scalar(
         text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Comercial'")
     )
-    token = _token(
-        empleado_id=escenario_pos["encargado_id"],
-        role_id=role_id,
-        rol="Jefe_Comercial",
-        tienda_id=escenario_pos["tienda_id"],
-    )
+    token = await _token(db_session, role_id=role_id, tienda_id=escenario_pos["tienda_id"])
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -434,43 +448,22 @@ async def escenario_pricing(db_session: AsyncSession, escenario_pos: dict) -> di
             {"t": tienda_id, "p": puesto_id, "n": nombre},
         )
 
-    async def _usuario(empleado_id: int, role_id: int) -> None:
-        import uuid
-
-        await s.execute(
-            text(
-                "INSERT INTO usuarios (empleado_id, role_id, username, password_hash) "
-                "VALUES (:e, :r, :u, 'x')"
-            ),
-            {"e": empleado_id, "r": role_id, "u": f"u{empleado_id}-{uuid.uuid4().hex[:6]}"},
-        )
-
-    rol_cajero = await _rol("Cajero")
-    rol_encargado = await _rol("Encargado_Tienda")
     rol_jefe_comercial = await _rol("Jefe_Comercial")
     rol_jefe_ti = await _rol("Jefe_TI")
 
-    await _usuario(e["cajero_id"], rol_cajero)
-    await _usuario(e["encargado_id"], rol_encargado)
-
     jefe_comercial_id = await _empleado("Jefe Comercial Test")
-    await _usuario(jefe_comercial_id, rol_jefe_comercial)
     jefe_ti_id = await _empleado("Jefe TI Test")
-    await _usuario(jefe_ti_id, rol_jefe_ti)
     await s.flush()
 
     return {
         **e,
         "jefe_comercial_id": jefe_comercial_id,
         "jefe_ti_id": jefe_ti_id,
-        "token_jefe_comercial": _token(
-            empleado_id=jefe_comercial_id,
-            role_id=rol_jefe_comercial,
-            rol="Jefe_Comercial",
-            tienda_id=tienda_id,
+        "token_jefe_comercial": await _token(
+            s, empleado_id=jefe_comercial_id, role_id=rol_jefe_comercial, tienda_id=tienda_id
         ),
-        "token_jefe_ti": _token(
-            empleado_id=jefe_ti_id, role_id=rol_jefe_ti, rol="Jefe_TI", tienda_id=tienda_id
+        "token_jefe_ti": await _token(
+            s, empleado_id=jefe_ti_id, role_id=rol_jefe_ti, tienda_id=tienda_id
         ),
     }
 
@@ -485,12 +478,7 @@ async def auth_jefe_marketing(db_session: AsyncSession, escenario_pos: dict) -> 
     role_id = await db_session.scalar(
         text("SELECT role_id FROM roles WHERE nombre = 'Jefe_Marketing'")
     )
-    token = _token(
-        empleado_id=escenario_pos["encargado_id"],
-        role_id=role_id,
-        rol="Jefe_Marketing",
-        tienda_id=escenario_pos["tienda_id"],
-    )
+    token = await _token(db_session, role_id=role_id, tienda_id=escenario_pos["tienda_id"])
     return {"Authorization": f"Bearer {token}"}
 
 
@@ -549,11 +537,8 @@ async def escenario_inventario(db_session: AsyncSession, escenario_pos: dict) ->
         "proveedor_id": proveedor_id,
         "orden_id": orden_id,
         "product_us2": product_id,
-        "token_reponedor": _token(
-            empleado_id=reponedor_id,
-            role_id=role_reponedor,
-            rol="Reponedor",
-            tienda_id=tienda_id,
+        "token_reponedor": await _token(
+            s, empleado_id=reponedor_id, role_id=role_reponedor, tienda_id=tienda_id
         ),
     }
 
@@ -599,17 +584,11 @@ async def escenario_compras(db_session: AsyncSession, escenario_inventario: dict
         **escenario_inventario,
         "jefe_ops_id": jefe_ops_id,
         "jefe_fin_id": jefe_fin_id,
-        "token_jefe_ops": _token(
-            empleado_id=jefe_ops_id,
-            role_id=role_jefe_ops,
-            rol="Jefe_Operaciones",
-            tienda_id=tienda_id,
+        "token_jefe_ops": await _token(
+            s, empleado_id=jefe_ops_id, role_id=role_jefe_ops, tienda_id=tienda_id
         ),
-        "token_jefe_fin": _token(
-            empleado_id=jefe_fin_id,
-            role_id=role_jefe_fin,
-            rol="Jefe_Finanzas",
-            tienda_id=tienda_id,
+        "token_jefe_fin": await _token(
+            s, empleado_id=jefe_fin_id, role_id=role_jefe_fin, tienda_id=tienda_id
         ),
     }
 
@@ -640,15 +619,11 @@ async def escenario_caja(db_session: AsyncSession, escenario_pos: dict) -> dict:
     rol_ops = await _rol("Jefe_Operaciones")
 
     caja_1 = await s.scalar(
-        text(
-            "INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 1') RETURNING caja_id"
-        ),
+        text("INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 1') RETURNING caja_id"),
         {"t": e["tienda_id"]},
     )
     caja_2 = await s.scalar(
-        text(
-            "INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 2') RETURNING caja_id"
-        ),
+        text("INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja 2') RETURNING caja_id"),
         {"t": e["tienda_id"]},
     )
     datafono_viejo = await s.scalar(
@@ -667,10 +642,9 @@ async def escenario_caja(db_session: AsyncSession, escenario_pos: dict) -> dict:
     )
     await s.flush()
 
-    def _tok(role_id: int, rol: str) -> str:
-        return _token(
-            empleado_id=e["encargado_id"], role_id=role_id, rol=rol, tienda_id=e["tienda_id"]
-        )
+    jefe_finanzas_id = await _mk_empleado(s, e["tienda_id"])
+    jefe_ti_id = await _mk_empleado(s, e["tienda_id"])
+    jefe_ops_id = await _mk_empleado(s, e["tienda_id"])
 
     return {
         **e,
@@ -678,9 +652,18 @@ async def escenario_caja(db_session: AsyncSession, escenario_pos: dict) -> dict:
         "caja_2": caja_2,
         "datafono_viejo": datafono_viejo,
         "datafono_nuevo": datafono_nuevo,
-        "token_jefe_finanzas": _tok(rol_fin, "Jefe_Finanzas"),
-        "token_jefe_ti": _tok(rol_ti, "Jefe_TI"),
-        "token_jefe_operaciones": _tok(rol_ops, "Jefe_Operaciones"),
+        "jefe_finanzas_id": jefe_finanzas_id,
+        "jefe_ti_id": jefe_ti_id,
+        "jefe_ops_id": jefe_ops_id,
+        "token_jefe_finanzas": await _token(
+            s, empleado_id=jefe_finanzas_id, role_id=rol_fin, tienda_id=e["tienda_id"]
+        ),
+        "token_jefe_ti": await _token(
+            s, empleado_id=jefe_ti_id, role_id=rol_ti, tienda_id=e["tienda_id"]
+        ),
+        "token_jefe_operaciones": await _token(
+            s, empleado_id=jefe_ops_id, role_id=rol_ops, tienda_id=e["tienda_id"]
+        ),
     }
 
 
@@ -729,15 +712,88 @@ async def escenario_pagos(db_session: AsyncSession, escenario_caja: dict) -> dic
 
     return {
         **e,
-        "token_jefe_comercial": _token(
-            empleado_id=e["encargado_id"],
-            role_id=rol_comercial,
-            rol="Jefe_Comercial",
-            tienda_id=e["tienda_id"],
-        ),
+        "token_jefe_comercial": await _token(s, role_id=rol_comercial, tienda_id=e["tienda_id"]),
     }
 
 
 @pytest.fixture
 def auth_pagos_comercial(escenario_pagos: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_pagos['token_jefe_comercial']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_auth(db_session: AsyncSession) -> dict:
+    """Feature 008: cuentas reales con contraseña bcrypt conocida para probar el
+    login. Un Jefe_TI (administra Sistema), un Jefe_RRHH (empleados) y un Cajero
+    corriente."""
+    from src.shared.passwords import hash_password
+
+    s = db_session
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    tienda_id = await s.scalar(
+        text(
+            "INSERT INTO tiendas (codigo, nombre) VALUES "
+            "(substr(md5(random()::text), 1, 8), 'Tienda Auth') RETURNING tienda_id"
+        )
+    )
+    puesto_id = await s.scalar(
+        text(
+            "INSERT INTO roles_puesto (nombre) VALUES ('P-'||gen_random_uuid()) RETURNING puesto_id"
+        )
+    )
+
+    async def _cuenta(nombre_rol: str, username: str, password: str) -> dict:
+        emp = await s.scalar(
+            text(
+                "INSERT INTO empleados (tienda_id, puesto_id, nombre, email, fecha_contratacion) "
+                "VALUES (:t, :p, :n, :em, CURRENT_DATE) RETURNING empleado_id"
+            ),
+            {"t": tienda_id, "p": puesto_id, "n": username, "em": f"{username}@sira.test"},
+        )
+        uid = await s.scalar(
+            text(
+                "INSERT INTO usuarios (empleado_id, role_id, username, password_hash) "
+                "VALUES (:e, :r, :u, :h) RETURNING usuario_id"
+            ),
+            {"e": emp, "r": await _rol(nombre_rol), "u": username, "h": hash_password(password)},
+        )
+        token = jwt.encode(
+            {"usuario_id": uid}, settings.jwt_secret, algorithm=settings.jwt_algorithm
+        )
+        return {
+            "empleado_id": emp,
+            "usuario_id": uid,
+            "username": username,
+            "password": password,
+            "email": f"{username}@sira.test",
+            "token": token,
+        }
+
+    await s.flush()
+    ti = await _cuenta("Jefe_TI", "jefe.ti", "Password-TI-2026")
+    rrhh = await _cuenta("Jefe_RRHH", "jefe.rrhh", "Password-RRHH-2026")
+    cajero = await _cuenta("Cajero", "cajero.uno", "Password-Cajero-2026")
+    await s.flush()
+
+    return {
+        "tienda_id": tienda_id,
+        "puesto_id": puesto_id,
+        "rol_cajero_id": await _rol("Cajero"),
+        "rol_encargado_id": await _rol("Encargado_Tienda"),
+        "ti": ti,
+        "rrhh": rrhh,
+        "cajero": cajero,
+    }
+
+
+@pytest.fixture
+def auth_admin_ti(escenario_auth: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_auth['ti']['token']}"}
+
+
+@pytest.fixture
+def auth_rrhh(escenario_auth: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_auth['rrhh']['token']}"}

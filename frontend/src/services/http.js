@@ -9,8 +9,8 @@ export const http = axios.create({
   timeout: 15000,
 })
 
-// El JWT lo emite la feature 008; mientras tanto se guarda en localStorage
-// (un token de prueba con rol Cajero/Encargado — ver quickstart.md).
+// El JWT (feature 008) se guarda en localStorage al iniciar sesión; transporta
+// sólo `usuario_id` — el backend resuelve rol y permisos en cada request.
 http.interceptors.request.use((config) => {
   let token = null
   try {
@@ -32,6 +32,18 @@ http.interceptors.response.use(
     err.code = payload?.code
     err.status = error.response?.status
     err.details = payload?.details
+    // Sesión inválida/expirada: limpia el token y manda al login (fuera de /auth).
+    if (err.status === 401 && !String(error.config?.url || '').includes('/api/auth/')) {
+      try {
+        localStorage.removeItem('sira_token')
+        localStorage.removeItem('sira_usuario_id')
+      } catch {
+        /* noop */
+      }
+      if (!window.location.pathname.startsWith('/auth')) {
+        window.location.assign('/auth/login')
+      }
+    }
     return Promise.reject(err)
   }
 )

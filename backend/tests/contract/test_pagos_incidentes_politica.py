@@ -32,7 +32,7 @@ async def test_ciclo_incidente_y_conteo(
         headers=auth_caja_ti,
     )
     assert a_invest.status_code == 200 and a_invest.json()["estado"] == "en_investigacion"
-    assert a_invest.json()["actualizado_por"] == e["encargado_id"]
+    assert a_invest.json()["actualizado_por"] == e["jefe_ti_id"]
 
     cerrar = await client.patch(
         f"/api/caja/incidentes-seguridad-pago/{inc}/transicionar",

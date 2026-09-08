@@ -33,12 +33,14 @@ from src.models.cupon_enviado import CuponEnviado
 from src.models.cupon_redimido import CuponRedimido
 from src.models.datafono import Datafono
 from src.models.devolucion import Devolucion
+from src.models.empleado import Empleado
 from src.models.evento_cliente import EventoCliente
 from src.models.evento_quiebre_stock import EventoQuiebreStock
 from src.models.factura_proveedor import FacturaProveedor
 from src.models.historial_precio import HistorialPrecio
 from src.models.incidente_fraude import IncidenteFraude
 from src.models.incidente_seguridad_pago import IncidenteSeguridadPago
+from src.models.intento_login import IntentoLogin
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
 from src.models.inventario import Inventario
 from src.models.linea_venta_removida import LineaVentaRemovida
@@ -61,10 +63,13 @@ from src.models.propuesta_ajuste_precio import PropuestaAjustePrecio
 from src.models.protocolo_escalamiento import ProtocoloEscalamiento
 from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
+from src.models.recuperacion_password import RecuperacionPassword
 from src.models.regla_afinidad import ReglaAfinidad
 from src.models.revision_margen_bajo import RevisionMargenBajo
+from src.models.role_permiso import RolePermisoModulo, RolePermisoTabla
 from src.models.stock_maximo_categoria import StockMaximoCategoria
 from src.models.umbral_merma_categoria import UmbralMermaCategoria
+from src.models.usuario import Usuario
 from src.models.venta import Venta
 from src.models.venta_detalle import VentaDetalle
 from src.models.verificacion_anaquel import VerificacionAnaquel
@@ -96,12 +101,14 @@ __all__ = [
     "CuponRedimido",
     "Datafono",
     "Devolucion",
+    "Empleado",
     "EventoCliente",
     "EventoQuiebreStock",
     "FacturaProveedor",
     "HistorialPrecio",
     "IncidenteFraude",
     "IncidenteSeguridadPago",
+    "IntentoLogin",
     "IntentoPagoTarjeta",
     "Inventario",
     "LineaVentaRemovida",
@@ -124,10 +131,14 @@ __all__ = [
     "ProtocoloEscalamiento",
     "Proveedor",
     "RecepcionMercaderia",
+    "RecuperacionPassword",
     "ReglaAfinidad",
     "RevisionMargenBajo",
+    "RolePermisoModulo",
+    "RolePermisoTabla",
     "StockMaximoCategoria",
     "UmbralMermaCategoria",
+    "Usuario",
     "Venta",
     "VentaDetalle",
     "VerificacionAnaquel",

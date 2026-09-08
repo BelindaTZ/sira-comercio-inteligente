@@ -9,7 +9,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import text
 from src.core.config import settings
-from src.core.security import _has_permission, decode_token
+from src.core.security import _has_permission, crear_access_token, decode_usuario_id
 
 # asyncio_mode = "auto" en pyproject: las pruebas async no necesitan marca; las
 # de decodificado de token son síncronas y no deben llevarla.
@@ -21,31 +21,25 @@ async def _role_id(db_session, nombre: str) -> int:
     )
 
 
-# --- decodificado del token ---
+# --- decodificado del token (feature 008: sólo transporta usuario_id) ---
 def test_decode_token_rechaza_firma_invalida():
-    malo = jwt.encode({"empleado_id": 1, "role_id": 1}, "otra-clave", algorithm="HS256")
+    malo = jwt.encode({"usuario_id": 1}, "otra-clave", algorithm="HS256")
     with pytest.raises(HTTPException) as exc:
-        decode_token(malo)
+        decode_usuario_id(malo)
     assert exc.value.status_code == 401
 
 
-def test_decode_token_exige_claims_obligatorios():
-    incompleto = jwt.encode(
-        {"empleado_id": 1}, settings.jwt_secret, algorithm=settings.jwt_algorithm
-    )
+def test_decode_token_exige_usuario_id():
+    incompleto = jwt.encode({"foo": 1}, settings.jwt_secret, algorithm=settings.jwt_algorithm)
     with pytest.raises(HTTPException) as exc:
-        decode_token(incompleto)
+        decode_usuario_id(incompleto)
     assert exc.value.status_code == 401
 
 
-def test_decode_token_valido_extrae_principal():
-    token = jwt.encode(
-        {"empleado_id": 7, "role_id": 3, "rol": "Cajero", "tienda_id": 2},
-        settings.jwt_secret,
-        algorithm=settings.jwt_algorithm,
-    )
-    p = decode_token(token)
-    assert p.empleado_id == 7 and p.role_id == 3 and p.tienda_id == 2
+def test_token_emitido_se_decodifica_al_mismo_usuario_id():
+    token, ttl = crear_access_token(42)
+    assert decode_usuario_id(token) == 42
+    assert ttl > 0
 
 
 # --- rol → módulo → tabla ---

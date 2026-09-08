@@ -65,6 +65,30 @@ class Settings(BaseSettings):
         return v
 
 
+def _ensure_jwt_secret() -> None:
+    """Feature 008 (T005): `JWT_SECRET` es un secreto propio del proyecto (como las
+    credenciales de MinIO), no de un tercero — se genera solo en `backend/.env` si
+    aún no existe, nunca se le pide al desarrollador que lo invente a mano."""
+    import secrets
+    from pathlib import Path
+
+    if "JWT_SECRET" in __import__("os").environ:
+        return
+    env_path = Path(__file__).resolve().parents[2] / ".env"
+    try:
+        contenido = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+        if "JWT_SECRET=" in contenido:
+            return
+        linea = f"JWT_SECRET={secrets.token_urlsafe(48)}\n"
+        with env_path.open("a", encoding="utf-8") as fh:
+            fh.write(("\n" if contenido and not contenido.endswith("\n") else "") + linea)
+    except OSError:
+        pass  # entorno de solo lectura (CI/tests): se usa el default
+
+
+_ensure_jwt_secret()
+
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
