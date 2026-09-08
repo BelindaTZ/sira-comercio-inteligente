@@ -54,3 +54,7 @@
 
 **T045** — los 5 escenarios de `quickstart.md` cubiertos por `tests/integration/test_us{1..5}_*.py`, en verde.
 **T046** — cobertura de Principio X confirmada: reevaluación de conformidad al restablecer (`test_datafono_restablecer.py`), exclusión de medios de pago no aprobados (`test_medio_pago_disponible.py`), independencia incidente seguridad/fraude (`test_incidente_seguridad_estado.py`), cálculo de duración de cobro sin anuladas ni ventas sin inicio (`test_tiempo_cobro.py`). 44 tests de la feature en verde (4 unit + 3 contrato + 5 integración).
+
+## Corrección post-implementación (no es una Ronda — solo exactitud documental, sin cambio de alcance/FR)
+
+`data-model.md` documentaba `datafonos.estado` como `VARCHAR(20)` (heredado de 001); en realidad 006 ya lo había ensanchado a `VARCHAR(30)` antes de que esta feature se redactara, porque `'requiere_actualizacion'` (22 caracteres) nunca cupo en el ancho original. Corregido para reflejar el esquema real — sin impacto en la implementación de 007, que ya usa la columna tal cual está en `01_operativo_postgres.sql`.
