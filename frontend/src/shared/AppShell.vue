@@ -47,7 +47,7 @@ function activa(cat) {
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col overflow-x-hidden bg-background">
+  <div class="flex min-h-screen flex-col bg-background">
     <header
       class="relative sticky top-0 z-40 w-full border-b border-shell-line bg-shell-bar text-white shadow-lg shadow-black/20"
       @mouseleave="cerrar"
@@ -79,59 +79,48 @@ function activa(cat) {
           </span>
         </RouterLink>
 
-        <!-- Navegación (pill embebido) -->
-        <nav
-          class="hidden min-w-0 flex-wrap items-center gap-1 rounded-2xl border border-shell-line bg-shell-inset p-1 shadow-inner md:flex"
-        >
-          <button
-            v-for="cat in categorias"
-            :key="cat.label"
-            type="button"
-            class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-[13px] font-medium transition-all"
-            :class="
-              activa(cat) || abierta === cat.label
-                ? 'bg-gradient-to-r from-secondary to-secondary-subtle font-semibold text-white shadow-md shadow-secondary/30'
-                : 'text-emerald-200/80 hover:bg-white/10 hover:text-white'
-            "
-            @click="toggle(cat.label)"
+        <!-- Navegación + mega-menú -->
+        <div class="relative hidden min-w-0 md:block">
+          <nav
+            class="flex flex-wrap items-center gap-1 rounded-2xl border border-shell-line bg-shell-inset p-1 shadow-inner"
           >
-            <Icon :name="cat.icon" :size="16" />
-            {{ cat.label }}
-            <Icon
-              v-if="cat.items.length > 1"
-              name="chevron"
-              :size="12"
-              class="opacity-60 transition-transform"
-              :class="abierta === cat.label ? '-rotate-180' : ''"
-            />
-          </button>
-        </nav>
+            <button
+              v-for="cat in categorias"
+              :key="cat.label"
+              type="button"
+              class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-[13px] font-medium transition-all"
+              :class="
+                activa(cat) || abierta === cat.label
+                  ? 'bg-gradient-to-r from-secondary to-secondary-subtle font-semibold text-white shadow-md shadow-secondary/30'
+                  : 'text-emerald-200/80 hover:bg-white/10 hover:text-white'
+              "
+              @click="toggle(cat.label)"
+            >
+              <Icon :name="cat.icon" :size="16" />
+              {{ cat.label }}
+              <Icon
+                v-if="cat.items.length > 1"
+                name="chevron"
+                :size="12"
+                class="opacity-60 transition-transform"
+                :class="abierta === cat.label ? '-rotate-180' : ''"
+              />
+            </button>
+          </nav>
 
-        <!-- Menú de usuario -->
-        <div class="shrink-0">
-          <UserMenu />
-        </div>
-      </div>
-
-      <!-- Mega-menú: panel blanco redondeado, columnas temáticas -->
-      <div
-        v-if="catAbierta"
-        class="absolute left-0 right-0 top-full z-50 hidden px-4 pt-2 md:block lg:px-6"
-        @mouseleave="cerrar"
-      >
-        <div class="mx-auto w-full max-w-[1840px]">
+          <!-- Panel: sólo el ancho que necesita, anclado bajo la barra -->
           <div
-            class="rounded-2xl border border-black/5 bg-white p-5 text-on-surface shadow-tier-2"
-            :class="columnas.length === 1 ? 'inline-block min-w-[15rem]' : 'w-full'"
+            v-if="catAbierta"
+            class="absolute left-0 top-full z-50 mt-2 w-max max-w-[calc(100vw-3rem)] rounded-2xl border border-black/5 bg-white p-5 text-on-surface shadow-tier-2"
           >
             <div
-              class="grid gap-x-10 gap-y-6"
+              class="grid gap-x-12 gap-y-6"
               :class="{
-                'sm:grid-cols-2': columnas.length === 2,
-                'sm:grid-cols-2 lg:grid-cols-3': columnas.length >= 3,
+                'grid-cols-2': columnas.length === 2,
+                'grid-cols-2 lg:grid-cols-3': columnas.length >= 3,
               }"
             >
-              <div v-for="col in columnas" :key="col.titulo">
+              <div v-for="col in columnas" :key="col.titulo" class="min-w-[11rem]">
                 <p
                   v-if="!col.plano"
                   class="mb-3 flex items-center gap-2 text-[13px] font-bold text-on-surface"
@@ -143,7 +132,7 @@ function activa(cat) {
                   <li v-for="it in col.items" :key="it.to">
                     <RouterLink
                       :to="it.to"
-                      class="block rounded-lg px-3 py-2 text-[13px] font-medium transition"
+                      class="block whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-medium transition"
                       :class="
                         esActivo(it.to)
                           ? 'bg-secondary-light font-semibold text-on-secondary-strong'
@@ -158,6 +147,11 @@ function activa(cat) {
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Menú de usuario -->
+        <div class="shrink-0">
+          <UserMenu />
         </div>
       </div>
 
