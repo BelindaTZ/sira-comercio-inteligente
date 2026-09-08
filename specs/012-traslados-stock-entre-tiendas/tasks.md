@@ -7,9 +7,9 @@
 ## Phase 1: Setup
 
 - [X] T001 Crear rama `012-traslados-stock-entre-tiendas` y confirmar que `.specify/feature.json` apunta a esta feature.
-- [X] T002 [P] Crear paquete `backend/modules/operaciones/traslados/` con `__init__.py`, `router.py`, `service.py`, `repository.py`, `schemas.py` vacíos.
+- [X] T002 [P] Crear paquete `backend/src/modules/traslados/` con `__init__.py`, `router.py`, `service.py`, `repository.py`, `schemas.py` vacíos. *(Ronda 1: módulo plano, no anidado bajo `operaciones/` — mismo patrón que 002-011.)*
 - [X] T003 [P] Crear stub de tests `backend/tests/contract/test_traslados_stock.py` y `backend/tests/integration/test_ciclo_traslado.py`.
-- [X] T004 [P] Crear `frontend/src/stores/traslados.ts` (Pinia store vacío) y carpeta `frontend/src/modules/operaciones/` para los 4 componentes nuevos (data-model.md, plan.md §Project Structure).
+- [X] T004 [P] Crear `frontend/src/services/trasladosApi.js` (capa de servicio, funciones async — sin Pinia/TypeScript, mismo patrón que el resto del proyecto) y carpeta `frontend/src/modules/operaciones/` para los 4 componentes nuevos (data-model.md, plan.md §Project Structure). *(Ronda 1.)*
 
 ## Phase 2: Foundational (bloqueante para todas las historias)
 
@@ -35,7 +35,7 @@
 - [X] T014 [US1] Implementar `service.py` y `router.py` para `GET /productos/{product_id}/disponibilidad-sucursales` (contracts/traslados-stock-entre-tiendas.md #1).
 - [X] T015 [US1] Extender el endpoint ya existente de sugerencias de compra (001) para incluir `disponibilidad_otras_tiendas` (contracts #2, research.md Decisión 5).
 - [X] T016 [P] [US1] Componente `DisponibilidadSucursales.vue` (tabla por tienda) y su integración en la pantalla de sugerencias de compra existente.
-- [X] T017 [US1] Acción Pinia `fetchDisponibilidad(productId)` en `stores/traslados.ts`.
+- [X] T017 [US1] Función `disponibilidadSucursales(productId)` en `services/trasladosApi.js`. *(Ronda 1.)*
 
 **Checkpoint**: US1 funciona de forma independiente y es demostrable — MVP entregable.
 
@@ -57,7 +57,7 @@
 - [X] T026 [US2] Implementar resolución (aprobar/rechazar) en `service.py`: revalidación autoritativa de stock disponible dentro de la misma transacción, descuento de `inventario`, decremento FIFO de `lotes` de origen, inserción en `movimientos_inventario` (`traslado_salida`) — research.md Decisión 3, contracts #5.
 - [X] T027 [US2] Validar en capa de servicio que solo el `Encargado_Tienda` de la tienda origen (o `Jefe_Operaciones`) puede resolver la solicitud.
 - [X] T028 [P] [US2] Componentes `SolicitarTraslado.vue` y `AprobarTraslados.vue`.
-- [X] T029 [P] [US2] Acciones Pinia `solicitarTraslado`, `listarPendientes`, `resolverTraslado` en `stores/traslados.ts`.
+- [X] T029 [P] [US2] Funciones `solicitar`, `listar`, `resolver` en `services/trasladosApi.js`. *(Ronda 1.)*
 
 **Checkpoint**: US2 funciona sobre la base de US1 (o de forma independiente si US1 no está desplegado) — el flujo de coordinación de stock es real y auditable.
 
@@ -78,7 +78,7 @@
 - [X] T037 [US3] Implementar cancelación en `service.py`, restringida al empleado solicitante o `Jefe_Operaciones` — contracts #7.
 - [X] T038 [US3] Implementar `GET /traslados/reporte-semanal` con bandera `pendiente_confirmacion` — contracts #8, FR-012.
 - [X] T039 [P] [US3] Componente `ConfirmarRecepcion.vue` y vista de listado semanal para `Jefe_Operaciones`.
-- [X] T040 [P] [US3] Acciones Pinia `confirmarRecepcion`, `cancelarTraslado`, `fetchReporteSemanal` en `stores/traslados.ts`.
+- [X] T040 [P] [US3] Funciones `confirmarRecepcion`, `cancelarTraslado`, `reporteSemanal` en `services/trasladosApi.js`. *(Ronda 1.)*
 
 **Checkpoint**: el ciclo completo (solicitado → en_transito → recibido, o rechazado/cancelado) queda cerrado y auditable de punta a punta.
 

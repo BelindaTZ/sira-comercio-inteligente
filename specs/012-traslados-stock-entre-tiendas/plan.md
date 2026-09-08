@@ -30,7 +30,7 @@ Cierra OT-2.5 (OE-2 Operaciones/Compras): visibilidad de stock entre sucursales 
 | III | Separación de Motores | PASS — todo el flujo es OLTP puro (PostgreSQL); no participa ClickHouse ni Airflow (sin dependencia de 009/010). |
 | IV | RBAC de Dos Niveles Obligatorio | PASS — módulo `Operaciones` (ya reservado por 001); nivel de tabla nuevo para `traslados_stock` (Jefe_Operaciones: CRUD completo a nivel de red; Encargado_Tienda: alta/lectura/actualización limitada a su propia tienda, validado en capa de servicio igual que `empleado_autoriza_id` en pagos_proveedor/venta_detalle). |
 | V | Backend/Frontend Desacoplados | PASS — nueva sub-ruta REST bajo `modules/operaciones/` (backend) y vista Vue correspondiente (frontend), mismo patrón que toda feature anterior. |
-| VI | Features Autocontenidas | PASS — vive en `modules/operaciones/traslados/`; no crea un módulo nuevo, extiende el ya usado por 001 para compras/inventario. |
+| VI | Features Autocontenidas | PASS — vive en `backend/src/modules/traslados/` (módulo plano, mismo patrón que 002-011 — ver Ronda 1); reutiliza `InventarioRepository` de 001 para el movimiento de stock, sin duplicar modelos. |
 | VII | Anclaje al Dataset Real | PASS — usa las 5 tiendas y el catálogo de productos ya sembrados; sin datos sintéticos nuevos. |
 | VIII | Simplicidad Justificada / DRY-KISS | PASS — cero tablas nuevas (reutiliza `traslados_stock` ya reservada); único cambio de schema es aditivo (columnas de trazabilidad + extensión del CHECK de `estado`), justificado en research.md. |
 | IX | Guardrails de la IA sobre Specs (NON-NEGOTIABLE) | PASS — este plan no modifica `constitution.md`; la única corrección fue documentada explícitamente en spec.md (Assumptions), no silenciosa. |

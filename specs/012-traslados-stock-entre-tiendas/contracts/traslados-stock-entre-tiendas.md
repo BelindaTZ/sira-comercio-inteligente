@@ -1,8 +1,8 @@
 # API Contracts: Traslados de Stock entre Tiendas
 
-**Feature**: 012-traslados-stock-entre-tiendas | **Base path**: `/api/v1/operaciones`
+**Feature**: 012-traslados-stock-entre-tiendas | **Base path**: `/api/traslados` (además, `/api/compras/sugerencias` ya existente de 001/003 embebe `disponibilidad_otras_tiendas` — ver Ronda 1)
 
-Todos los endpoints requieren JWT válido (008) y RBAC de módulo `Operaciones` (data-model.md §RBAC). Formato de error estándar del proyecto (`{"detail": "..."}`) en todos los 4xx/5xx.
+Todos los endpoints requieren JWT válido (008) y RBAC de módulo `Operaciones` (data-model.md §RBAC). Formato de error estándar del proyecto (`{"error": {"code", "message", "details"?}}`) en todos los 4xx/5xx.
 
 ## 1. Disponibilidad de stock por sucursal (US1, FR-001)
 
