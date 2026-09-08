@@ -29,6 +29,11 @@ from src.jobs import (
     generar_propuestas_ajuste_job,
     monitorear_precision_job,
 )
+from src.modules.direccion.jobs import publicar_dashboard_estrategico
+from src.modules.ti.dashboards.jobs import (
+    publicar_dashboards_tacticos,
+    verificar_dashboards_operativos,
+)
 
 logger = logging.getLogger("sira.jobs")
 
@@ -46,6 +51,10 @@ JOBS = {
     calcular_afinidad_job.NOMBRE: calcular_afinidad_job,
     clasificar_abc_job.NOMBRE: clasificar_abc_job,
     generar_candidatos_liquidacion_job.NOMBRE: generar_candidatos_liquidacion_job,
+    # Feature 009 — dashboards multinivel (publicación diaria de snapshots).
+    publicar_dashboard_estrategico.NOMBRE: publicar_dashboard_estrategico,
+    publicar_dashboards_tacticos.NOMBRE: publicar_dashboards_tacticos,
+    verificar_dashboards_operativos.NOMBRE: verificar_dashboards_operativos,
 }
 
 
@@ -141,6 +150,16 @@ def start() -> None:
         id=generar_candidatos_liquidacion_job.NOMBRE,
         replace_existing=True,
     )
+    # Feature 009: publicación diaria de dashboards (fuera de horario pico, FR-009).
+    #   estratégico 04:00, tácticos 04:15, verificación operativa 05:00.
+    for job, trigger in (
+        (publicar_dashboard_estrategico, CronTrigger(hour=4, minute=0)),
+        (publicar_dashboards_tacticos, CronTrigger(hour=4, minute=15)),
+        (verificar_dashboards_operativos, CronTrigger(hour=5, minute=0)),
+    ):
+        _scheduler.add_job(
+            _run, trigger, args=[job.NOMBRE], id=job.NOMBRE, replace_existing=True
+        )
     _scheduler.start()
     logger.info("Scheduler arrancado con jobs: %s", list(JOBS))
 

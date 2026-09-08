@@ -1024,3 +1024,112 @@ async def escenario_plataforma_datos(
 @pytest.fixture
 def auth_plataforma_ti(escenario_plataforma_datos: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_plataforma_datos['token_ti']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_dashboards(db_session: AsyncSession, escenario_pos: dict) -> dict:
+    """Feature 009: datos fuente reales para que los jobs de publicación produzcan
+    un snapshot con valores (no ClickHouse — modo fixture, quickstart.md).
+
+    - `Gerente_General` + `Jefe_Comercial` + `Jefe_Finanzas` + `Jefe_TI` con token.
+    - una venta confirmada (OE-1/OE-2), dos encuestas de clima laboral (OE-8, AVG=8.0),
+      una merma validada (OE-3).
+    - dashboards operativos de la tienda: `alertas_reposicion` y `cuadre_caja` frescos
+      (hoy), `seguimiento_merma` con más de un día de antigüedad (US3, FR-007).
+    """
+    from datetime import UTC, datetime, timedelta
+
+    s = db_session
+    e = escenario_pos
+    tienda_id = e["tienda_id"]
+    ahora = datetime.now(UTC).replace(tzinfo=None)
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    _roles = ("Gerente_General", "Jefe_Comercial", "Jefe_Finanzas", "Jefe_TI", "Jefe_Marketing")
+    tokens = {
+        rol: await _token(s, role_id=await _rol(rol), tienda_id=tienda_id) for rol in _roles
+    }
+
+    # --- OE-1/OE-2: una venta confirmada
+    venta_id = await s.scalar(
+        text(
+            "INSERT INTO ventas (tienda_id, cajero_id, fecha_hora, semana, total, estado) "
+            "VALUES (:t, :c, :f, 1, 20, 'confirmada') RETURNING venta_id"
+        ),
+        {"t": tienda_id, "c": e["cajero_id"], "f": ahora},
+    )
+    await s.execute(
+        text(
+            "INSERT INTO venta_detalle (venta_id, product_id, cantidad, sales_value) "
+            "VALUES (:v, :p, 8, 20.00)"
+        ),
+        {"v": venta_id, "p": e["product_id"]},
+    )
+
+    # --- OE-8: clima laboral (AVG de 7.5 y 8.5 = 8.0)
+    for res in ("7.50", "8.50"):
+        await s.execute(
+            text(
+                "INSERT INTO clima_laboral (tienda_id, periodo, resultado_promedio) "
+                "VALUES (:t, '2026-S1', :r)"
+            ),
+            {"t": tienda_id, "r": res},
+        )
+
+    # --- OE-3: una merma validada + (misma fila) fuente 'seguimiento_merma' ANTIGUA
+    await s.execute(
+        text(
+            "INSERT INTO mermas "
+            "(product_id, tienda_id, cantidad, causa, valor, empleado_id, fecha) "
+            "VALUES (:p, :t, 3, 'caducidad', 12.00, :emp, :f)"
+        ),
+        {"p": e["product_id"], "t": tienda_id, "emp": e["encargado_id"],
+         "f": (ahora - timedelta(days=3)).date()},
+    )
+
+    # --- operativo fresco: alertas_reposicion (hoy)
+    await s.execute(
+        text(
+            "INSERT INTO alertas_inventario (tipo, product_id, tienda_id, estado, fecha_generada) "
+            "VALUES ('reposicion', :p, :t, 'pendiente', :f)"
+        ),
+        {"p": e["product_id"], "t": tienda_id, "f": ahora},
+    )
+    # --- operativo fresco: cuadre_caja (hoy)
+    caja_id = await s.scalar(
+        text("INSERT INTO cajas (tienda_id, nombre) VALUES (:t, 'Caja DASH') RETURNING caja_id"),
+        {"t": tienda_id},
+    )
+    await s.execute(
+        text(
+            "INSERT INTO cierre_caja "
+            "(caja_id, cajero_id, total_esperado, total_registrado, fecha_hora) "
+            "VALUES (:c, :caj, 100.00, 100.00, :f)"
+        ),
+        {"c": caja_id, "caj": e["cajero_id"], "f": ahora},
+    )
+    await s.flush()
+
+    return {
+        **e,
+        "tokens": tokens,
+        "venta_id": venta_id,
+        "caja_id": caja_id,
+    }
+
+
+@pytest.fixture
+def auth_gerente_general(escenario_dashboards: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_dashboards['tokens']['Gerente_General']}"}
+
+
+@pytest.fixture
+def auth_dash_comercial(escenario_dashboards: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_dashboards['tokens']['Jefe_Comercial']}"}
+
+
+@pytest.fixture
+def auth_dash_ti(escenario_dashboards: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_dashboards['tokens']['Jefe_TI']}"}

@@ -58,6 +58,7 @@ from src.modules.caja.router import router as caja_router  # noqa: E402
 from src.modules.catalogo.router import router as catalogo_router  # noqa: E402
 from src.modules.clientes.router import router as clientes_router  # noqa: E402
 from src.modules.compras.router import router as compras_router  # noqa: E402
+from src.modules.direccion.router import router as direccion_router  # noqa: E402
 from src.modules.forecasting.router import router as forecasting_router  # noqa: E402
 from src.modules.inventario.router import router as inventario_router  # noqa: E402
 from src.modules.plataforma_datos.router import router as plataforma_datos_router  # noqa: E402
@@ -65,6 +66,7 @@ from src.modules.pricing.router import router as pricing_router  # noqa: E402
 from src.modules.promociones.router import router as promociones_router  # noqa: E402
 from src.modules.rrhh.router import router as rrhh_router  # noqa: E402
 from src.modules.sistema.router import auth_router, sistema_router  # noqa: E402
+from src.modules.ti.dashboards.router import router as ti_dashboards_router  # noqa: E402
 from src.modules.traslados.router import router as traslados_router  # noqa: E402
 from src.modules.ventas.router import router as ventas_router  # noqa: E402
 
@@ -82,6 +84,8 @@ api.include_router(sistema_router)
 api.include_router(rrhh_router)
 api.include_router(traslados_router)
 api.include_router(plataforma_datos_router)
+api.include_router(direccion_router)
+api.include_router(ti_dashboards_router)
 
 
 # --- Endpoints de desarrollo (T005) — fuerzan un job periódico a mano.

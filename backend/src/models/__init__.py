@@ -35,6 +35,8 @@ from src.models.corrida_carga import CorridaCarga
 from src.models.cupon import Cupon
 from src.models.cupon_enviado import CuponEnviado
 from src.models.cupon_redimido import CuponRedimido
+from src.models.dashboard_kpi import DashboardKpi
+from src.models.dashboard_operativo_estado import DashboardOperativoEstado
 from src.models.datafono import Datafono
 from src.models.devolucion import Devolucion
 from src.models.empleado import Empleado
@@ -73,6 +75,7 @@ from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
 from src.models.recuperacion_password import RecuperacionPassword
 from src.models.registro_calidad_carga import RegistroCalidadCarga
+from src.models.registro_publicacion_dashboard import RegistroPublicacionDashboard
 from src.models.regla_afinidad import ReglaAfinidad
 from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.rol_puesto import RolPuesto
@@ -114,6 +117,8 @@ __all__ = [
     "Cupon",
     "CuponEnviado",
     "CuponRedimido",
+    "DashboardKpi",
+    "DashboardOperativoEstado",
     "Datafono",
     "Devolucion",
     "Empleado",
@@ -152,6 +157,7 @@ __all__ = [
     "RecepcionMercaderia",
     "RecuperacionPassword",
     "RegistroCalidadCarga",
+    "RegistroPublicacionDashboard",
     "ReglaAfinidad",
     "RevisionMargenBajo",
     "RolPuesto",

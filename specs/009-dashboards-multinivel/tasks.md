@@ -6,82 +6,82 @@
 
 **Tests**: contract e integration antes de la implementación (Principio X, TDD por historia de usuario).
 
+**Estado de implementación (2026-09-08)**: completada con fixtures. Ronda 1 de alineación a las convenciones reales del código (mismo criterio que 010/012):
+- base path real `/api/...` (el contrato decía `/api/v1/...`);
+- los paquetes viven bajo `backend/src/modules/` (`direccion/`, `ti/dashboards/`), no `backend/modules/`;
+- los 3 jobs se registran en el scheduler APScheduler embebido (`src/jobs/scheduler.py`, cron 04:00 / 04:15 / 05:00) y el trigger manual de FR-010 los invoca directamente — en producción los orquesta Airflow (010);
+- lógica de KPIs / verificación compartida en `src/shared/dashboards.py`; sin ClickHouse configurado lee de PostgreSQL en modo solo lectura (fallback documentado, igual que el cargador no-op de 010).
+
 ## Phase 1: Setup
 
-- T001 Crear rama `009-dashboards-multinivel` y confirmar que `.specify/feature.json` apunta a esta feature.
-- T002 [P] Crear paquete `backend/modules/direccion/` (router, service, repository, jobs/) — primer uso real del módulo.
-- T003 [P] Crear subpaquete `backend/modules/ti/dashboards/` (router, service, repository, jobs/) dentro del módulo TI ya existente.
-- T004 [P] Crear stubs de tests `backend/tests/contract/test_dashboards_multinivel.py` y `backend/tests/integration/test_publicacion_dashboards.py`.
-- T005 [P] Crear componentes frontend vacíos: `DashboardEstrategico.vue`, `DashboardTactico.vue`, `VerificacionDashboardsOperativos.vue`.
+- [X] T001 Crear rama `009-dashboards-multinivel` y confirmar que `.specify/feature.json` apunta a esta feature.
+- [X] T002 [P] Crear paquete `backend/src/modules/direccion/` (router, service, repository, schemas, jobs/) — primer uso real del módulo.
+- [X] T003 [P] Crear subpaquete `backend/src/modules/ti/dashboards/` (router, service, repository, schemas, jobs/) dentro del módulo TI ya existente.
+- [X] T004 [P] Crear tests `backend/tests/contract/test_dashboards_multinivel.py` y `backend/tests/integration/test_publicacion_dashboards.py` (+ fixture `escenario_dashboards` en `conftest.py`).
+- [X] T005 [P] Crear componentes frontend `DashboardEstrategico.vue`, `DashboardTactico.vue`, `VerificacionDashboardsOperativos.vue` (+ servicios `direccionApi.js`, `tiDashboardsApi.js`, rutas).
 
 ## Phase 2: Foundational (bloqueante para todas las historias)
 
-- T006 Migración Alembic: crear `registro_publicacion_dashboard` (data-model.md).
-- T007 Migración Alembic: crear `dashboard_kpi` con sus índices.
-- T008 Migración Alembic: crear `dashboard_operativo_estado` con sus índices, incluido el parcial sobre `disponible = false`.
-- T009 Seed: agregar filas de `role_permisos_tabla` para las 3 tablas nuevas, por cada rol de data-model.md §RBAC (`Gerente_General`, los 6 `Jefe_*`, con alcance validado en capa de servicio por `dimension`/módulo propio).
-- T010 [P] Definir schemas Pydantic base (`DashboardKpiOut`, `PublicacionOut`, `DashboardOperativoEstadoOut`) en ambos módulos.
-- T011 Implementar la consulta de solo lectura `MAX(fecha_hora)` por tienda contra las tablas fuente de 001-007 usadas por `dashboard_operativo_estado` (research.md Decisión 3) — sin escribir en ninguna de esas tablas.
+- [X] T006 Migración Alembic `0019`: crear `registro_publicacion_dashboard` con sus CHECKs (data-model.md).
+- [X] T007 Migración Alembic `0019`: crear `dashboard_kpi` con sus índices.
+- [X] T008 Migración Alembic `0019`: crear `dashboard_operativo_estado` con sus índices, incluido el parcial sobre `disponible = false`.
+- [X] T009 Migración `0019` + bloque "EXTENSIÓN — Feature 009" en `01_operativo_postgres.sql`: `role_permisos_modulo`/`role_permisos_tabla` para `Gerente_General` (módulo `Direccion` + los 6 tácticos), cada `Jefe_*` (su módulo) y `Jefe_TI` (`dashboard_operativo_estado` + insert en `registro_publicacion_dashboard`). Alcance fino revalidado en `TiDashboardsService._verificar_alcance`.
+- [X] T010 [P] Schemas Pydantic base: `DashboardKpiOut` + `DashboardConsolidadoOut` (`modules/direccion/schemas.py`, reutilizados por el táctico), `DashboardOperativoEstadoOut` + `VerificacionOperativosOut` + `ForzarPublicacionOut` (`modules/ti/dashboards/schemas.py`).
+- [X] T011 Consulta de solo lectura `MAX(fecha_hora)` por tienda contra las tablas fuente (`alertas_inventario`, `cierre_caja`+`cajas`, `mermas`) en `src/shared/dashboards.py::estado_operativo` — sin escribir en ninguna.
 
-**Checkpoint**: schema y RBAC listos; cualquier historia de usuario puede implementarse desde aquí en cualquier orden (todas dependen del mismo par registro/kpi, pero no entre sí).
+**Checkpoint**: schema y RBAC listos.
 
 ## Phase 3: User Story 1 - Dashboard estratégico consolidado (P1) 🎯 MVP
 
 ### Tests
 
-- T012 [P] [US1] Contract test `GET /direccion/dashboard-estrategico` (200 con KPIs y fecha de publicación).
-- T013 [US1] Integration test: KPI de OE-4 siempre `disponible: false, valor: null`; KPI de OE-8 (fixture con fuente 011) siempre `disponible: true` con valor real (Acceptance Scenario 2, corrección de esta ronda).
-- T014 [US1] Integration test: dos publicaciones sucesivas — el endpoint siempre devuelve la más reciente con su `fecha_publicacion` correcta (Acceptance Scenario 3).
+- [X] T012 [P] [US1] Contract test `GET /api/direccion/dashboard-estrategico` (200 con KPIs y fecha; 404 sin publicación; 403 sin RBAC).
+- [X] T013 [US1] Integration test: OE-4 siempre `disponible: false, valor: null`; OE-8 (fixture con fuente 011) `disponible: true` con valor real.
+- [X] T014 [US1] Integration test: dos publicaciones sucesivas — el endpoint devuelve la más reciente.
 
 ### Implementation
 
-- T015 [US1] Implementar `repository.py`/`service.py` de `modules/direccion` para leer la última publicación exitosa y sus KPIs.
-- T016 [US1] Implementar `GET /direccion/dashboard-estrategico` (contracts #1).
-- T017 [US1] Implementar el job `publicar_dashboard_estrategico.py`: lee agregaciones de ClickHouse (010, vía Airflow), inserta una fila en `registro_publicacion_dashboard` y sus `dashboard_kpi` asociados, marcando OE-4 como no disponible y OE-8 con el valor real de 011.
-- T018 [P] [US1] Componente `DashboardEstrategico.vue` con fecha de última actualización visible junto a los valores (Principio XII).
-
-**Checkpoint**: US1 funciona de forma independiente con fixtures — MVP entregable en cuanto 010 esté lista para producción.
+- [X] T015 [US1] `DireccionRepository` / `DireccionService` — lee la última publicación exitosa y sus KPIs.
+- [X] T016 [US1] `GET /api/direccion/dashboard-estrategico` (contracts #1).
+- [X] T017 [US1] Job `publicar_dashboard_estrategico.py`: inserta una fila en `registro_publicacion_dashboard` y sus `dashboard_kpi`, OE-4 no disponible, OE-8 con el valor real de 011.
+- [X] T018 [P] [US1] `DashboardEstrategico.vue` con la fecha de última actualización junto a los valores y los KPIs no disponibles atenuados (Principio XII).
 
 ## Phase 4: User Story 2 - Dashboards tácticos por departamento (P2)
 
 ### Tests
 
-- T019 [P] [US2] Contract test `GET /ti/dashboards/tactico/{modulo_nombre}` (200 filtrado a la dimensión correcta).
-- T020 [US2] Integration test: un `Jefe_Comercial` no puede leer el dashboard de `Finanzas` (403); `Gerente_General` sí puede leer cualquiera (Acceptance Scenario 2).
-- T021 [US2] Integration test: un KPI marcado `disponible: false` por datos insuficientes no bloquea el resto del dashboard del mismo módulo (Acceptance Scenario 3).
+- [X] T019 [P] [US2] Contract test `GET /api/ti/dashboards/tactico/{modulo_nombre}` (200 filtrado a la dimensión; 404 módulo desconocido / sin publicación).
+- [X] T020 [US2] Integration test: `Jefe_Comercial` no lee `Finanzas` (403); `Gerente_General` sí (200).
+- [X] T021 [US2] Integration test: un KPI `disponible: false` convive con los que sí tienen valor en el mismo módulo.
 
 ### Implementation
 
-- T022 [US2] Implementar `repository.py`/`service.py` de `modules/ti/dashboards` con el filtro de alcance por `dimension`/módulo propio del rol autenticado.
-- T023 [US2] Implementar `GET /ti/dashboards/tactico/{modulo_nombre}` (contracts #2).
-- T024 [US2] Implementar el job `publicar_dashboards_tacticos.py`: una corrida por cada uno de los 6 módulos de research.md Decisión 4, cada una con su propia fila en `registro_publicacion_dashboard`.
-- T025 [P] [US2] Componente `DashboardTactico.vue`, reutilizado por los 6 roles de Jefe, parametrizado por su propio módulo.
-
-**Checkpoint**: US2 funciona de forma independiente — cada Jefe consulta su propio dashboard sin depender de que otro departamento ya tenga el suyo publicado.
+- [X] T022 [US2] `TiDashboardsRepository` / `TiDashboardsService` con el filtro de alcance por módulo propio del rol autenticado.
+- [X] T023 [US2] `GET /api/ti/dashboards/tactico/{modulo_nombre}` (contracts #2) + dependencia RBAC dinámica `_puede_ver_tactico`.
+- [X] T024 [US2] Job `publicar_dashboards_tacticos.py`: una corrida por cada uno de los 6 módulos, cada una con su fila en `registro_publicacion_dashboard`.
+- [X] T025 [P] [US2] `DashboardTactico.vue`, un componente para los 6 roles, parametrizado por su módulo.
 
 ## Phase 5: User Story 3 - Verificación de disponibilidad de dashboards operativos (P3)
 
 ### Tests
 
-- T026 [P] [US3] Contract test `GET /ti/dashboards/operativos/verificacion` (200 con estado por tienda/dashboard).
-- T027 [P] [US3] Contract test `GET /ti/dashboards/operativos/alertas` (200, solo filas `disponible: false`).
-- T028 [US3] Integration test: un dashboard operativo sin actualizarse por más de un día aparece señalado (Acceptance Scenario 2).
+- [X] T026 [P] [US3] Contract test `GET /api/ti/dashboards/operativos/verificacion` (200 con estado por tienda/dashboard).
+- [X] T027 [P] [US3] Contract test `GET /api/ti/dashboards/operativos/alertas` (200, solo filas `disponible: false`).
+- [X] T028 [US3] Integration test: un dashboard operativo con más de un día de antigüedad aparece señalado y en las alertas.
 
 ### Implementation
 
-- T029 [US3] Implementar el job `verificar_dashboards_operativos.py`: `MAX(fecha_hora)` por tienda contra cada tabla fuente de 001-007 (T011), inserta filas en `dashboard_operativo_estado` y una fila en `registro_publicacion_dashboard` (`tipo_dashboard='operativo'`).
-- T030 [US3] Implementar `GET /ti/dashboards/operativos/verificacion` y `GET /ti/dashboards/operativos/alertas` (contracts #3, #4).
-- T031 [P] [US3] Componente `VerificacionDashboardsOperativos.vue` con las alertas resaltadas para `Jefe_TI`.
-
-**Checkpoint**: el Jefe de TI puede revisar diariamente el estado de toda la red sin visitar cada tienda.
+- [X] T029 [US3] Job `verificar_dashboards_operativos.py`: `MAX(fecha_hora)` por tienda contra cada tabla fuente (T011), inserta `dashboard_operativo_estado` + una fila `registro_publicacion_dashboard` (`tipo_dashboard='operativo'`).
+- [X] T030 [US3] `GET /api/ti/dashboards/operativos/verificacion` y `.../alertas` (contracts #3, #4).
+- [X] T031 [P] [US3] `VerificacionDashboardsOperativos.vue` con las filas no disponibles resaltadas y filtro "sólo alertas".
 
 ## Phase 6: Polish
 
-- T032 Implementar el trigger manual de desarrollo `POST /ti/dashboards/{tipo}/forzar-publicacion` (contracts #5, FR-010) y su bloqueo en producción.
-- T033 [P] Revisar que los 10 FR de spec.md tengan al menos un test de contrato o integración que los cubra (tabla de trazabilidad, data-model.md).
-- T034 [P] Confirmar que ningún endpoint de lectura de esta feature consulta ClickHouse directamente (Principio III) — revisión de código dirigida.
-- T035 Ejecutar quickstart.md end-to-end (4 escenarios) contra un entorno con fixtures.
-- T036 Re-chequeo de la tabla de Constitution Check de plan.md tras la implementación completa.
+- [X] T032 Trigger manual de desarrollo `POST /api/ti/dashboards/{tipo}/forzar-publicacion` (contracts #5, FR-010) — sólo se monta cuando `app_env != "production"`.
+- [X] T033 [P] Trazabilidad FR → test: FR-001/002/003/008 (contract+integration US1), FR-004/005 (US2), FR-006/007 (US3), FR-009 (job batch nocturno, snapshot pequeño — sin degradar OLTP), FR-010 (`test_forzar_publicacion_rbac_403_cajero` + los `_forzar` de cada test).
+- [X] T034 [P] Ningún endpoint de lectura consulta ClickHouse: los repos sólo usan `RegistroPublicacionDashboard` / `DashboardKpi` / `DashboardOperativoEstado` (PostgreSQL). Sólo los jobs tocarían ClickHouse en producción (Principio III).
+- [X] T035 Escenarios de quickstart.md cubiertos por los tests de integración (US1 esc. 1-3, US2 esc. 1-4, US3 esc. 1-2, FR-010 esc. 1).
+- [X] T036 Constitution Check re-verificada: sin violaciones nuevas — 3 tablas nuevas justificadas, RBAC de dos niveles, backend/frontend desacoplados, KPIs no recalculados (OE-4 explícitamente no disponible).
 
 ## Dependencias clave
 

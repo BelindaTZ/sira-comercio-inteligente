@@ -216,6 +216,21 @@ const routes = [
     name: 'plataforma-datos-politica',
     component: () => import('@/modules/plataforma-datos/pages/PoliticaGobiernoDatosPage.vue'),
   },
+  {
+    path: '/direccion/dashboard-estrategico',
+    name: 'direccion-dashboard-estrategico',
+    component: () => import('@/modules/direccion/DashboardEstrategico.vue'),
+  },
+  {
+    path: '/ti/dashboards/tactico',
+    name: 'ti-dashboard-tactico',
+    component: () => import('@/modules/ti/DashboardTactico.vue'),
+  },
+  {
+    path: '/ti/dashboards/operativos',
+    name: 'ti-dashboards-operativos',
+    component: () => import('@/modules/ti/VerificacionDashboardsOperativos.vue'),
+  },
 ]
 
 const router = createRouter({
