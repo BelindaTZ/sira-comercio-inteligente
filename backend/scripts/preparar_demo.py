@@ -73,20 +73,84 @@ async def _correr_jobs() -> None:
             log.exception("  ✗ %s falló", job.NOMBRE)
 
 
+async def _inventario_demo() -> None:
+    """Siembra stock por tienda + lotes con vencimientos variados + algunas
+    alertas — el dataset Dunnhumby no trae inventario (nace de operar 001)."""
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        if await s.scalar(text("SELECT count(*) FROM inventario")):
+            log.info("  inventario ya poblado, se omite")
+            return
+        await s.execute(
+            text("""
+            WITH tiendas_top AS (
+                SELECT tienda_id FROM tiendas WHERE codigo <> 'DEMO' ORDER BY tienda_id LIMIT 6
+            ), prods AS (
+                SELECT product_id, es_perecedero FROM productos
+                WHERE precio_base IS NOT NULL ORDER BY product_id LIMIT 400
+            ), base AS (
+                SELECT p.product_id, t.tienda_id, p.es_perecedero,
+                       (5 + (p.product_id * 7 + t.tienda_id) % 260)::int AS cant
+                FROM prods p CROSS JOIN tiendas_top t
+            )
+            INSERT INTO inventario (product_id, tienda_id, cantidad_disponible, cantidad_minima)
+            SELECT product_id, tienda_id, cant, 20 + (product_id % 40) FROM base
+            ON CONFLICT DO NOTHING
+        """)
+        )
+        await s.execute(
+            text("""
+            INSERT INTO lotes (product_id, tienda_id, cantidad_recibida, cantidad_disponible,
+                               fecha_vencimiento)
+            SELECT i.product_id, i.tienda_id, i.cantidad_disponible, i.cantidad_disponible,
+                   CASE WHEN p.es_perecedero
+                        THEN CURRENT_DATE + ((i.product_id * 3 + i.tienda_id) % 40 - 6)
+                        ELSE NULL END
+            FROM inventario i JOIN productos p ON p.product_id = i.product_id
+        """)
+        )
+        # alertas: reposición para stock < mínimo, vencimiento para lotes < 7 días
+        await s.execute(
+            text("""
+            INSERT INTO alertas_inventario (tipo, product_id, tienda_id, estado)
+            SELECT 'reposicion', product_id, tienda_id, 'pendiente'
+            FROM inventario WHERE cantidad_disponible < cantidad_minima
+        """)
+        )
+        await s.execute(
+            text("""
+            INSERT INTO alertas_inventario (tipo, product_id, tienda_id, lote_id, estado)
+            SELECT 'vencimiento', l.product_id, l.tienda_id, l.lote_id, 'pendiente'
+            FROM lotes l
+            WHERE l.fecha_vencimiento IS NOT NULL
+              AND l.fecha_vencimiento <= CURRENT_DATE + 7
+        """)
+        )
+        await s.commit()
+        n = await s.scalar(text("SELECT count(*) FROM inventario"))
+        a = await s.scalar(text("SELECT count(*) FROM alertas_inventario"))
+        log.info("  inventario: %s filas · alertas: %s", n, a)
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    log.info("1/3 · cuentas de login por rol")
+    log.info("1/4 · cuentas de login por rol")
     from scripts.seed_usuarios_demo import seed as seed_usuarios
 
     await seed_usuarios(reset_password=True)
 
-    log.info("2/3 · precios de competencia sintéticos")
+    log.info("2/4 · precios de competencia sintéticos")
     from scripts.seed_precio_competencia_sintetico import main as seed_competencia
 
     await seed_competencia()
 
-    log.info("3/3 · jobs derivados + dashboards 009")
+    log.info("3/4 · inventario + lotes + alertas de demo")
+    await _inventario_demo()
+
+    log.info("4/4 · jobs derivados + dashboards 009")
     await _correr_jobs()
 
     log.info("listo — abrí http://localhost:5173/auth/login")

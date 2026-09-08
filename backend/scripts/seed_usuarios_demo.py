@@ -48,6 +48,15 @@ CUENTAS: list[tuple[str, str, bool]] = [
 
 
 async def _tienda_demo(session) -> int:
+    # Prefiere una tienda real del dataset (con inventario/ventas) sobre la 'DEMO'.
+    tid = await session.scalar(
+        text(
+            "SELECT tienda_id FROM tiendas WHERE codigo <> 'DEMO' "
+            "ORDER BY tienda_id LIMIT 1"
+        )
+    )
+    if tid is not None:
+        return tid
     tid = await session.scalar(text("SELECT tienda_id FROM tiendas ORDER BY tienda_id LIMIT 1"))
     if tid is not None:
         return tid
