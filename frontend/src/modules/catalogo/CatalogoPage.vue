@@ -9,7 +9,7 @@ import { catalogoApi } from '@/services/catalogoApi'
 import { useSesion } from '@/stores/sesion'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
-import FilterBar from '@/shared/ui/FilterBar.vue'
+import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
@@ -156,19 +156,14 @@ onMounted(() => {
       subtitulo="Alta con autocompletado, edición de precio/costo y baja lógica. Toda regla en el backend."
     >
       <template #acciones>
-        <button
-          v-if="puedeEditar"
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover"
-          @click="modal = 'nuevo'"
-        >
-          <Icon name="plus" :size="16" /> Nuevo producto
-        </button>
+        <Btn v-if="puedeEditar" variant="primary" @click="modal = 'nuevo'">
+          <Icon name="plus" :size="17" /> Nuevo producto
+        </Btn>
         <span
           v-else
-          class="rounded-full border border-surface-border bg-surface-canvas px-3 py-1 text-[11px] font-semibold text-on-surface-variant"
+          class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600"
         >
-          Solo lectura
+          <Icon name="shield" :size="14" /> Solo lectura
         </span>
       </template>
     </PageHeader>
@@ -179,27 +174,30 @@ onMounted(() => {
         :valor="kpi.total.toLocaleString('es-CL')"
         variant="emerald"
         microcopy="Catálogo maestro sincronizado con la red"
+        pie-label="Fuente"
+        pie-valor="Dataset + altas"
       />
-      <KpiTile label="Activos" :valor="kpi.activos.toLocaleString('es-CL')" variant="mint">
-        <template #icono><Icon name="check" :size="17" /></template>
+      <KpiTile
+        label="Activos"
+        :valor="kpi.activos.toLocaleString('es-CL')"
+        estado="en venta"
+        estado-tipo="ok"
+        microcopy="Disponibles para la red"
+        pie-label="Baja lógica"
+        :pie-valor="`${(kpi.total - kpi.activos).toLocaleString('es-CL')} dados de baja`"
+      >
+        <template #icono><Icon name="check" :size="16" /></template>
       </KpiTile>
       <KpiTile
         label="Dados de baja"
         :valor="(kpi.total - kpi.activos).toLocaleString('es-CL')"
-        :variant="kpi.total - kpi.activos > 0 ? 'crimson' : 'default'"
+        :estado="kpi.total - kpi.activos > 0 ? 'histórico' : 'ninguno'"
+        estado-tipo="neutral"
+        microcopy="Se conserva el rastro (FR-011)"
       >
-        <template #icono><Icon name="trash" :size="17" /></template>
+        <template #icono><Icon name="trash" :size="16" /></template>
       </KpiTile>
     </section>
-
-    <FilterBar
-      v-model="busqueda"
-      placeholder="Buscar por nombre, marca o código de barras…"
-      :pills="pills"
-      :pill-activa="pill"
-      class="mb-4"
-      @pill="pill = $event"
-    />
 
     <p
       v-if="error"
@@ -209,6 +207,8 @@ onMounted(() => {
     </p>
 
     <DataTable
+      titulo="Productos"
+      subtitulo="Catálogo maestro de la red — alta, edición de precio/costo y baja lógica."
       :columns="columnas"
       :rows="rows"
       row-key="product_id"
@@ -216,9 +216,15 @@ onMounted(() => {
       :page="page"
       :size="size"
       :total="total"
+      :search="busqueda"
+      search-placeholder="Buscar por nombre, marca o código de barras…"
+      :pills="pills"
+      :pill-activa="pill"
       empty-text="Sin productos para este filtro"
       @update:page="page = $event"
       @update:size="((size = $event), (page = 1))"
+      @update:search="busqueda = $event"
+      @pill="pill = $event"
       @row-click="puedeEditar && abrirEdicion($event)"
     >
       <template #cell:nombre="{ row }">

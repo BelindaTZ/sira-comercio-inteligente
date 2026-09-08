@@ -1,154 +1,142 @@
 <script setup>
 /**
- * KPI tile — markup EXACTO de `docs/diseno-ui/.../sira_inventario_y_alertas_fifo…/code.html`
- * y `…/sira_dashboard_ejecutivo…/code.html`.
+ * KPI tile — markup EXACTO de las "High Impact KPIs" de
+ * `docs/diseno-ui/.../sira_dashboard_ejecutivo…/code.html` (líneas 322-498).
  *
- *   hero    → tarjeta rellena verde abisal (#0a3632), texto blanco. La primera de la fila.
- *   default → `.kpi-tinted`, borde superior 4px verde + label verde abisal.
- *   mint    → borde + label VERDE éxito  (métrica sana / en meta)
- *   crimson → borde + label ROJO carmesí (quiebre / crítico / merma)
- *   amber   → tinte cálido + borde + label ÁMBAR (alerta FIFO / vencimiento)
- *   ia      → borde + label AMATISTA (métrica de IA / predictivo)
+ * Un solo lenguaje visual para TODA la app:
+ *  - etiqueta en tono oscuro de marca (NO en color semántico)
+ *  - borde superior fino de 2px (verde de marca; amatista sólo en métricas de IA)
+ *  - el color semántico vive en el "delta pill" (verde sube / rosa baja / ámbar ojo)
+ *  - pie con divisor: mini-label + valor a la izq., sparkline/chip a la der. (slots)
  *
- * Compat: `emerald`→hero, `plain`→default.
+ * `variant`: emerald|hero → tarjeta rellena verde abisal · ia → borde amatista ·
+ * default (o mint/plain/amber/crimson, por compat) → tinted con borde verde.
  */
-import SemanticChip from './SemanticChip.vue'
+import { computed } from 'vue'
 
 const props = defineProps({
   label: { type: String, required: true },
-  valor: { type: [String, Number], default: null }, // null → "No disponible"
+  valor: { type: [String, Number], default: null },
   unidad: { type: String, default: '' },
   microcopy: { type: String, default: '' },
-  estado: { type: String, default: '' }, // texto del chip de delta
-  estadoTipo: { type: String, default: 'neutral' }, // color del chip (SemanticChip)
+  estado: { type: String, default: '' }, // texto del delta pill
+  estadoTipo: { type: String, default: 'neutral' }, // ok | quiebre | fifo | ia | neutral
   variant: { type: String, default: 'default' },
+  pieLabel: { type: String, default: '' },
+  pieValor: { type: String, default: '' },
 })
 
-const modo =
-  {
-    emerald: 'hero',
-    hero: 'hero',
-    plain: 'default',
-    default: 'default',
-    mint: 'mint',
-    ia: 'ia',
-    amber: 'amber',
-    crimson: 'crimson',
-  }[props.variant] ?? 'default'
+const esHero = computed(() => props.variant === 'emerald' || props.variant === 'hero')
+const esIA = computed(() => props.variant === 'ia')
 
-// Config por modo: contenedor, color del borde superior, color del label y caja de ícono.
-const ESTILO = {
-  default: {
-    caja: 'kpi-tinted',
-    borde: 'border-t-brand-600',
-    label: 'text-brand-800',
-    icono: 'border-brand-300 bg-brand-100 text-brand-800',
-  },
-  mint: {
-    caja: 'kpi-tinted',
-    borde: 'border-t-emerald-600',
-    label: 'text-emerald-700',
-    icono: 'border-emerald-300 bg-emerald-100 text-emerald-700',
-  },
-  crimson: {
-    caja: 'kpi-tinted',
-    borde: 'border-t-crimson-ruby',
-    label: 'text-crimson-ruby',
-    icono: 'border-rose-300 bg-rose-100 text-crimson-ruby',
-  },
-  amber: {
-    caja: 'kpi-amber',
-    borde: 'border-t-damask-amber',
-    label: 'text-damask-amber',
-    icono: 'border-amber-300 bg-amber-100 text-damask-amber',
-  },
-  ia: {
-    caja: 'kpi-tinted',
-    borde: 'border-t-amethyst-500',
-    label: 'text-amethyst-700',
-    icono: 'border-amethyst-300 bg-amethyst-100 text-amethyst-700',
-  },
+const DELTA = {
+  ok: 'text-emerald-800 bg-emerald-100 border-emerald-300',
+  quiebre: 'text-rose-800 bg-rose-100 border-rose-300',
+  fifo: 'text-amber-800 bg-amber-100 border-amber-300',
+  ia: 'text-amethyst-800 bg-amethyst-100 border-amethyst-300',
+  neutral: 'text-slate-700 bg-slate-100 border-slate-300',
 }
-
-const e = ESTILO[modo] ?? ESTILO.default
+const deltaCls = computed(() => DELTA[props.estadoTipo] || DELTA.neutral)
 const hayValor = () => props.valor !== null && props.valor !== undefined && props.valor !== ''
+const hayPie = () => props.pieLabel || props.pieValor
 </script>
 
 <template>
-  <!-- Hero: verde abisal profundo, texto blanco -->
+  <!-- HERO — verde abisal profundo -->
   <div
-    v-if="modo === 'hero'"
-    class="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-brand-600 bg-brand-800 p-5 text-white shadow-hero-teal transition-all hover:-translate-y-1"
+    v-if="esHero"
+    class="flex flex-col justify-between rounded-2xl border border-brand-600 bg-gradient-to-br from-brand-900 via-brand-800 to-brand-750 p-4 text-white shadow-hero-teal transition-all hover:-translate-y-1"
   >
-    <div
-      class="pointer-events-none absolute -bottom-6 -right-6 h-32 w-32 rounded-full bg-brand-600/40 blur-2xl"
-    />
-    <div class="relative z-10 flex items-start justify-between">
-      <div>
-        <div class="flex items-center gap-1.5">
-          <span class="text-[11px] font-bold uppercase tracking-wider text-primary-fixed">{{
-            label
-          }}</span>
-          <span
-            v-if="estado"
-            class="rounded-full border border-primary-fixed/30 bg-brand-700 px-1.5 py-0.5 text-[9.5px] font-extrabold uppercase text-primary-fixed"
-          >
-            {{ estado }}
-          </span>
-        </div>
-        <div class="mt-0.5 font-display text-[32px] font-extrabold tracking-tight tabular-nums">
-          <template v-if="hayValor()">{{ valor }}{{ unidad ? ' ' + unidad : '' }}</template>
-          <template v-else>No disponible</template>
-        </div>
-      </div>
+    <div class="flex items-center justify-between">
+      <span class="text-[11px] font-extrabold uppercase tracking-wider text-brand-200">{{
+        label
+      }}</span>
       <span
-        class="inline-flex items-center gap-1 rounded-full border border-primary-fixed/30 bg-brand-700 px-2 py-0.5 text-[10px] font-bold text-primary-fixed"
+        class="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-300 px-2 py-0.5 text-[10px] font-bold text-emerald-950 shadow-xs"
       >
-        <span class="live-indicator h-1.5 w-1.5 rounded-full bg-primary-fixed" /> En vivo
+        <span class="live-indicator h-1.5 w-1.5 rounded-full bg-emerald-700" /> En Vivo
       </span>
     </div>
-    <div
-      class="relative z-10 mt-3 flex items-center justify-between border-t border-white/15 pt-2.5 text-[11.5px]"
-    >
-      <span class="font-medium text-primary-fixed">{{ microcopy || 'Sincronizado' }}</span>
-      <slot name="pie" />
-      <slot name="sparkline" />
+    <div class="my-2.5">
+      <div class="flex items-baseline gap-2">
+        <span class="font-display text-[24px] font-extrabold tracking-tight tabular-nums">
+          <template v-if="hayValor()">{{ valor }}{{ unidad ? ' ' + unidad : '' }}</template>
+          <template v-else>No disponible</template>
+        </span>
+        <span
+          v-if="estado"
+          class="rounded bg-emerald-200 px-1.5 py-0.5 text-[11px] font-extrabold text-emerald-900 shadow-2xs"
+          >{{ estado }}</span
+        >
+      </div>
+      <p v-if="microcopy" class="mt-0.5 text-[10px] font-medium text-brand-200">{{ microcopy }}</p>
+    </div>
+    <div v-if="hayPie() || $slots.sparkline" class="border-t border-white/15 pt-2">
+      <div class="flex items-center justify-between">
+        <div v-if="hayPie()" class="flex flex-col leading-tight">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-brand-200">{{
+            pieLabel
+          }}</span>
+          <span class="text-[11px] font-bold text-white">{{ pieValor }}</span>
+        </div>
+        <slot name="sparkline" />
+      </div>
     </div>
   </div>
 
-  <!-- Tinted: fondo claro, borde superior 4px y label en color semántico -->
+  <!-- TINTED — tarjeta clara, borde superior 2px, etiqueta oscura -->
   <div
     v-else
-    class="flex flex-col justify-between gap-2 rounded-2xl border-t-4 p-4"
-    :class="[e.caja, e.borde]"
+    class="kpi-tinted flex flex-col justify-between rounded-2xl border-t-2 p-4"
+    :class="esIA ? 'border-t-amethyst-500' : 'border-t-brand-600'"
   >
-    <div class="flex items-start justify-between gap-2">
-      <div class="min-w-0">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="text-[11px] font-bold uppercase tracking-wider" :class="e.label">{{
-            label
-          }}</span>
-          <SemanticChip v-if="estado" :tipo="estadoTipo">{{ estado }}</SemanticChip>
-        </div>
-        <div
-          class="mt-1 font-display text-[32px] font-extrabold leading-none tracking-tight tabular-nums text-on-surface"
-        >
-          <template v-if="hayValor()">{{ valor }}{{ unidad ? ' ' + unidad : '' }}</template>
-          <span v-else class="text-base font-bold text-on-surface-variant">No disponible</span>
-        </div>
-      </div>
+    <div class="flex items-center justify-between">
+      <span
+        class="text-[11px] font-bold uppercase tracking-wider"
+        :class="esIA ? 'text-amethyst-950' : 'text-brand-900'"
+        >{{ label }}</span
+      >
       <span
         v-if="$slots.icono"
-        class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border"
-        :class="e.icono"
+        class="flex h-7 w-7 items-center justify-center rounded-lg border"
+        :class="
+          esIA
+            ? 'border-amethyst-300 bg-amethyst-100 text-amethyst-700'
+            : 'border-brand-300 bg-brand-100 text-brand-800'
+        "
       >
         <slot name="icono" />
       </span>
     </div>
+    <div class="my-2">
+      <div class="flex items-baseline gap-2">
+        <span
+          class="font-display text-[22px] font-extrabold tracking-tight tabular-nums text-brand-950"
+        >
+          <template v-if="hayValor()">{{ valor }}{{ unidad ? ' ' + unidad : '' }}</template>
+          <template v-else
+            ><span class="text-base font-bold text-slate-500">No disponible</span></template
+          >
+        </span>
+        <span
+          v-if="estado"
+          class="inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold"
+          :class="deltaCls"
+          >{{ estado }}</span
+        >
+      </div>
+      <p v-if="microcopy" class="mt-0.5 text-[10px] font-medium text-slate-500">{{ microcopy }}</p>
+    </div>
     <div
-      class="flex items-center justify-between border-t border-surface-border pt-2 text-[11px] font-medium text-on-surface-variant"
+      v-if="hayPie() || $slots.pie || $slots.sparkline"
+      class="flex items-center justify-between border-t border-brand-200/80 pt-2"
     >
-      <span class="truncate">{{ microcopy || 'Actualizado en vivo' }}</span>
+      <div v-if="hayPie()" class="flex flex-col leading-tight">
+        <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500">{{
+          pieLabel
+        }}</span>
+        <span class="text-[11px] font-bold text-brand-900">{{ pieValor }}</span>
+      </div>
       <slot name="pie" />
       <slot name="sparkline" />
     </div>

@@ -10,7 +10,7 @@ import { useSesion } from '@/stores/sesion'
 import { inventarioApi } from '@/services/inventarioApi'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
-import FilterBar from '@/shared/ui/FilterBar.vue'
+import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
@@ -187,34 +187,14 @@ onMounted(() => {
       subtitulo="Stock por lote priorizando FEFO, alertas de reposición y vencimiento, y control físico de góndola."
     >
       <template #acciones>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-primary-hover"
-          @click="modal = 'ajuste'"
-        >
-          <Icon name="plus" :size="16" /> Ajuste de conteo
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-md border border-outline-variant bg-white px-3.5 py-2 text-[13px] font-semibold text-on-surface transition hover:bg-surface-container"
-          @click="modal = 'anaquel'"
-        >
-          Verificar anaquel
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-md border border-outline-variant bg-white px-3.5 py-2 text-[13px] font-semibold text-on-surface transition hover:bg-surface-container"
-          @click="modal = 'stock-max'"
-        >
-          Stock máx.
-        </button>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1.5 rounded-md border border-crimson-ruby/40 bg-white px-3.5 py-2 text-[13px] font-semibold text-crimson-ruby transition hover:bg-[#ffe4e6]"
-          @click="modal = 'merma'"
-        >
-          <Icon name="alert" :size="16" /> Declarar merma
-        </button>
+        <Btn variant="primary" @click="modal = 'ajuste'">
+          <Icon name="plus" :size="17" /> Ajuste de conteo
+        </Btn>
+        <Btn variant="ghost" @click="modal = 'anaquel'">Verificar anaquel</Btn>
+        <Btn variant="ghost" @click="modal = 'stock-max'">Stock máx.</Btn>
+        <Btn variant="danger" @click="modal = 'merma'">
+          <Icon name="alert" :size="17" /> Declarar merma
+        </Btn>
       </template>
     </PageHeader>
 
@@ -238,65 +218,65 @@ onMounted(() => {
           :valor="kpi.lotes"
           variant="emerald"
           microcopy="Inventario por lote de la tienda"
+          pie-label="Cobertura"
+          :pie-valor="tab === 'lotes' ? 'FEFO activo' : '—'"
         />
         <KpiTile
           label="Reposición inmediata"
           :valor="kpi.reposicion"
-          variant="crimson"
-          :estado="kpi.reposicion ? 'crítico' : 'ok'"
+          :estado="kpi.reposicion ? 'crítico' : 'al día'"
           :estado-tipo="kpi.reposicion ? 'quiebre' : 'ok'"
           microcopy="Bajo stock de seguridad"
+          pie-label="Origen"
+          pie-valor="Job diario"
         >
-          <template #icono><Icon name="alert" :size="17" /></template>
+          <template #icono><Icon name="alert" :size="16" /></template>
         </KpiTile>
         <KpiTile
           label="Alertas de vencimiento"
           :valor="kpi.vencimiento"
-          variant="amber"
-          :estado="kpi.vencimiento ? 'revisar' : 'ok'"
+          :estado="kpi.vencimiento ? 'revisar' : 'al día'"
           :estado-tipo="kpi.vencimiento ? 'fifo' : 'ok'"
           microcopy="Pendientes de atención"
+          pie-label="Origen"
+          pie-valor="Job diario"
         >
-          <template #icono><Icon name="clock" :size="17" /></template>
+          <template #icono><Icon name="clock" :size="16" /></template>
         </KpiTile>
         <KpiTile
           label="Lotes por vencer (7 d)"
           :valor="kpi.porVencer"
-          variant="amber"
-          microcopy="Ventana FEFO de 7 días"
+          :estado="kpi.porVencer ? 'ventana FEFO' : 'sin próximos'"
+          :estado-tipo="kpi.porVencer ? 'fifo' : 'ok'"
+          microcopy="Vencen en ≤ 7 días"
+          pie-label="Acción"
+          pie-valor="Rotar a góndola"
         >
-          <template #icono><Icon name="cube" :size="17" /></template>
+          <template #icono><Icon name="cube" :size="16" /></template>
         </KpiTile>
       </section>
 
-      <div class="mb-4 flex gap-1 border-b border-outline-variant">
+      <div
+        class="mb-4 inline-flex items-center gap-1 rounded-xl border border-brand-200/80 bg-brand-100/60 p-1 shadow-inner"
+      >
         <button
           v-for="t in [
-            { v: 'lotes', l: 'Lotes' },
-            { v: 'alertas', l: 'Alertas' },
+            { v: 'lotes', l: 'Lotes en stock' },
+            { v: 'alertas', l: 'Alertas pendientes' },
           ]"
           :key="t.v"
           type="button"
-          class="-mb-px border-b-2 px-4 py-2 text-[13px] font-semibold transition"
+          class="rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all"
           :class="
             tab === t.v
-              ? 'border-primary text-primary'
-              : 'border-transparent text-on-surface-variant hover:text-on-surface'
+              ? 'border border-brand-900 bg-brand-800 text-white shadow-xs'
+              : 'text-slate-600 hover:bg-white/60 hover:text-brand-900'
           "
           @click="tab = t.v"
         >
           {{ t.l }}
         </button>
       </div>
-
-      <FilterBar
-        v-model="busqueda"
-        placeholder="Filtrar por id de producto…"
-        :pills="tab === 'lotes' ? pillsLotes : pillsAlertas"
-        :pill-activa="pill"
-        class="mb-4"
-        @pill="pill = $event"
-      />
 
       <p
         v-if="error"
@@ -307,6 +287,8 @@ onMounted(() => {
 
       <DataTable
         v-if="tab === 'lotes'"
+        titulo="Lotes en stock"
+        subtitulo="Priorizados por fecha de vencimiento más próxima (FEFO)."
         :columns="columnasLotes"
         :rows="rows"
         row-key="lote_id"
@@ -314,9 +296,15 @@ onMounted(() => {
         :page="page"
         :size="size"
         :total="total"
+        :search="busqueda"
+        search-placeholder="Filtrar por id de producto…"
+        :pills="pillsLotes"
+        :pill-activa="pill"
         empty-text="Sin lotes para este filtro"
         @update:page="page = $event"
         @update:size="((size = $event), (page = 1))"
+        @update:search="busqueda = $event"
+        @pill="pill = $event"
       >
         <template #cell:fecha_vencimiento="{ value }">
           {{ value || '—' }}
@@ -333,6 +321,8 @@ onMounted(() => {
 
       <DataTable
         v-else
+        titulo="Alertas pendientes"
+        subtitulo="Reposición y vencimiento generadas por los jobs diarios."
         :columns="columnasAlertas"
         :rows="rows"
         row-key="alerta_id"
@@ -340,9 +330,15 @@ onMounted(() => {
         :page="page"
         :size="size"
         :total="total"
+        :search="busqueda"
+        search-placeholder="Filtrar por id de producto…"
+        :pills="pillsAlertas"
+        :pill-activa="pill"
         empty-text="Sin alertas pendientes"
         @update:page="page = $event"
         @update:size="((size = $event), (page = 1))"
+        @update:search="busqueda = $event"
+        @pill="pill = $event"
       >
         <template #cell:tipo="{ value }">
           <SemanticChip :tipo="value === 'reposicion' ? 'quiebre' : 'fifo'">
