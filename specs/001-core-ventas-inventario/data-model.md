@@ -76,6 +76,23 @@
 
 **Validación**: `cantidad_recibida > 0`. Orden de consumo FIFO/FEFO determinístico: `fecha_vencimiento ASC NULLS LAST, cantidad_recibida ASC, lote_id ASC` (research.md #4) bajo `SELECT ... FOR UPDATE` para evitar sobreventa concurrente (FR-006).
 
+## 7.1 Ubicación del Producto en Sala (feature 013)
+
+**Tabla**: `ubicacion_producto` (migración 0021)
+
+**Campos clave**: PK compuesta `(product_id, tienda_id)`, `pasillo` (obligatorio),
+`gondola` (opcional), `nivel` (opcional), `actualizado_por` → `empleados`.
+
+**Relaciones**: N:1 con `productos` y `tiendas` (ambas `ON DELETE CASCADE`).
+
+**Propósito**: Principio XII — la pantalla "Gestión de Inventario & Alertas FIFO"
+muestra dónde está cada SKU ("Pasillo 01 · G-03"). Una fila por (producto,
+tienda); cambiar la ubicación es un `UPDATE` de la misma fila (la spec no pide
+histórico de movimientos de góndola).
+
+**RBAC**: módulo `Operaciones`. `Reponedor` y `Encargado_Tienda` la editan
+(insert/update); `Jefe_Operaciones` la ve (select).
+
 ## 8. Recepción de Mercadería
 
 **Tabla**: `recepcion_mercaderia`

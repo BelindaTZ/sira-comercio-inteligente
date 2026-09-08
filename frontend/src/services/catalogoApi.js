@@ -41,6 +41,11 @@ export const catalogoApi = {
     return http.patch(`/api/catalogo/productos/${productId}`, patch).then((r) => r.data)
   },
 
+  /** Asigna una foto genérica de Unsplash por el nombre del producto. */
+  imagenAuto(productId) {
+    return http.post(`/api/catalogo/productos/${productId}/imagen-auto`).then((r) => r.data)
+  },
+
   darDeBaja(productId) {
     return http.delete(`/api/catalogo/productos/${productId}`).then((r) => r.data)
   },

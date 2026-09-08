@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Select, func, or_, select
+from sqlalchemy import Select, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.alerta_inventario import AlertaInventario
@@ -136,6 +136,122 @@ class InventarioRepository(BaseRepository[Lote]):
             select(Producto.product_id, Producto.nombre).where(Producto.product_id.in_(ids))
         )
         return {pid: nombre for pid, nombre in rows}
+
+    async def stock_por_sku(
+        self,
+        *,
+        tienda_id: int,
+        search: str | None,
+        categoria: str | None,
+        estado: str | None,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[dict], int]:
+        """Vista de la pantalla de Inventario: una fila por SKU con stock vs.
+        mínimo, ubicación en sala y el lote más próximo a vencer. `estado` se
+        deriva en SQL (quiebre / por_vencer / sobre_stock / normal)."""
+        cond = ["i.tienda_id = :tienda_id"]
+        params: dict = {"tienda_id": tienda_id, "offset": offset, "limit": limit}
+        if search and search.strip():
+            t = search.strip()
+            if t.isdigit():
+                cond.append("p.product_id = :pid")
+                params["pid"] = int(t)
+            else:
+                cond.append(
+                    "(p.nombre ILIKE :q OR p.product_type ILIKE :q OR p.marca ILIKE :q)"
+                )
+                params["q"] = f"%{t}%"
+        if categoria:
+            cond.append("p.product_category = :categoria")
+            params["categoria"] = categoria
+        where = " AND ".join(cond)
+
+        base = f"""
+            FROM inventario i
+            JOIN productos p ON p.product_id = i.product_id
+            LEFT JOIN ubicacion_producto u
+                   ON u.product_id = i.product_id AND u.tienda_id = i.tienda_id
+            LEFT JOIN LATERAL (
+                SELECT l.codigo_lote_proveedor, l.fecha_vencimiento
+                FROM lotes l
+                WHERE l.product_id = i.product_id AND l.tienda_id = i.tienda_id
+                  AND l.cantidad_disponible > 0
+                ORDER BY l.fecha_vencimiento ASC NULLS LAST, l.lote_id ASC
+                LIMIT 1
+            ) lote ON true
+            WHERE {where}
+        """
+        estado_expr = """
+            CASE
+                WHEN i.cantidad_disponible <= i.cantidad_minima THEN 'quiebre'
+                WHEN lote.fecha_vencimiento IS NOT NULL
+                     AND lote.fecha_vencimiento <= CURRENT_DATE + 7 THEN 'por_vencer'
+                WHEN i.cantidad_maxima IS NOT NULL
+                     AND i.cantidad_disponible > i.cantidad_maxima THEN 'sobre_stock'
+                ELSE 'normal'
+            END
+        """
+        having = ""
+        if estado in {"quiebre", "por_vencer", "sobre_stock", "normal"}:
+            having = f" AND {estado_expr.strip()} = :estado"
+            params["estado"] = estado
+            base = base + having
+
+        total = await self.session.scalar(text(f"SELECT count(*) {base}"), params) or 0
+        filas = await self.session.execute(
+            text(f"""
+            SELECT p.product_id, p.nombre, p.marca, p.product_category,
+                   p.clasificacion_abc, p.imagen_url, p.codigo_barras,
+                   p.costo, p.precio_base, p.es_perecedero,
+                   CASE WHEN p.precio_base > 0
+                        THEN round((p.precio_base - COALESCE(p.costo, 0)) / p.precio_base * 100, 1)
+                        END AS margen_pct,
+                   i.cantidad_disponible, i.cantidad_minima, i.cantidad_maxima,
+                   u.pasillo, u.gondola,
+                   lote.codigo_lote_proveedor AS lote_urgente,
+                   lote.fecha_vencimiento,
+                   CASE WHEN lote.fecha_vencimiento IS NOT NULL
+                        THEN (lote.fecha_vencimiento - CURRENT_DATE) END AS dias_para_vencer,
+                   {estado_expr} AS estado
+            {base}
+            ORDER BY
+                CASE {estado_expr}
+                     WHEN 'quiebre' THEN 0 WHEN 'por_vencer' THEN 1
+                     WHEN 'sobre_stock' THEN 2 ELSE 3 END,
+                p.nombre
+            OFFSET :offset LIMIT :limit
+            """),
+            params,
+        )
+        return [dict(r._mapping) for r in filas], int(total)
+
+    async def upsert_ubicacion(
+        self, *, product_id: int, tienda_id: int, pasillo: str, gondola, nivel, empleado_id: int
+    ) -> dict:
+        await self.session.execute(
+            text("""
+            INSERT INTO ubicacion_producto
+                (product_id, tienda_id, pasillo, gondola, nivel, actualizado_por, updated_at)
+            VALUES (:p, :t, :pasillo, :gondola, :nivel, :emp, CURRENT_TIMESTAMP)
+            ON CONFLICT (product_id, tienda_id) DO UPDATE SET
+                pasillo = EXCLUDED.pasillo, gondola = EXCLUDED.gondola,
+                nivel = EXCLUDED.nivel, actualizado_por = EXCLUDED.actualizado_por,
+                updated_at = CURRENT_TIMESTAMP
+            """),
+            {
+                "p": product_id, "t": tienda_id, "pasillo": pasillo,
+                "gondola": gondola, "nivel": nivel, "emp": empleado_id,
+            },
+        )
+        row = await self.session.execute(
+            text(
+                "SELECT product_id, tienda_id, pasillo, gondola, nivel "
+                "FROM ubicacion_producto WHERE product_id = :p AND tienda_id = :t"
+            ),
+            {"p": product_id, "t": tienda_id},
+        )
+        return dict(row.first()._mapping)
 
     async def buscar_productos(self, termino: str, limite: int = 12) -> list[Producto]:
         """Autocompletado para los formularios de operación (ajuste, merma,

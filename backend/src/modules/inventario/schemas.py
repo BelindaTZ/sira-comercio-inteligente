@@ -95,6 +95,40 @@ class ProductoBusquedaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UbicacionIn(BaseModel):
+    product_id: int
+    tienda_id: int
+    pasillo: str = Field(min_length=1, max_length=40)
+    gondola: str | None = Field(default=None, max_length=20)
+    nivel: str | None = Field(default=None, max_length=20)
+    empleado_id: int
+
+
+class StockItemOut(BaseModel):
+    """Una fila de la vista de stock por SKU (pantalla de Inventario)."""
+
+    product_id: int
+    nombre: str | None
+    marca: str | None
+    product_category: str | None
+    clasificacion_abc: str | None
+    imagen_url: str | None
+    codigo_barras: str | None
+    costo: Decimal | None
+    precio_base: Decimal | None
+    margen_pct: float | None
+    es_perecedero: bool
+    cantidad_disponible: int
+    cantidad_minima: int
+    cantidad_maxima: int | None
+    pasillo: str | None
+    gondola: str | None
+    lote_urgente: str | None
+    fecha_vencimiento: date | None
+    dias_para_vencer: int | None
+    estado: Literal["quiebre", "por_vencer", "sobre_stock", "normal"]
+
+
 class RecepcionOut(BaseModel):
     recepcion_id: int
     lote_id: int

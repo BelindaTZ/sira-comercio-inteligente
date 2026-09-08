@@ -64,6 +64,15 @@ async def dar_de_baja(
     return _out(await svc.dar_de_baja(product_id))
 
 
+@router.post("/productos/{product_id}/imagen-auto", response_model=ProductoOut)
+async def imagen_automatica(
+    product_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_editar)]
+) -> ProductoOut:
+    """Asigna una foto genérica de Unsplash por el nombre del producto. Para
+    una imagen propia se usa `PATCH /productos/{id}` con `imagen_url`."""
+    return _out(await svc.imagen_automatica(product_id))
+
+
 @router.get("/categorias", response_model=list[str])
 async def listar_categorias(
     svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]

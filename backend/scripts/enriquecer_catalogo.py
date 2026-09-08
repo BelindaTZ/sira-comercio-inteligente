@@ -196,8 +196,65 @@ async def main() -> None:
             )
             log.info("alertas de vencimiento regeneradas: %s", r.rowcount)
 
+        # 7 · ubicación en sala de los SKU con inventario (pasillo/góndola
+        #     determinista por department). Se cubre solo lo que se ve.
+        r = await s.execute(
+            text("""
+            WITH deps AS (
+                SELECT p.department, dense_rank() OVER (ORDER BY p.department) AS d
+                FROM (SELECT DISTINCT department FROM productos WHERE department IS NOT NULL) p
+            )
+            INSERT INTO ubicacion_producto (product_id, tienda_id, pasillo, gondola)
+            SELECT i.product_id, i.tienda_id,
+                   'Pasillo ' || lpad(((COALESCE(d.d, 1) % 12) + 1)::text, 2, '0'),
+                   'G-' || lpad(((abs(hashtext(i.product_id::text)) % 24) + 1)::text, 2, '0')
+            FROM inventario i
+            JOIN productos p ON p.product_id = i.product_id
+            LEFT JOIN deps d ON d.department = p.department
+            ON CONFLICT (product_id, tienda_id) DO NOTHING
+        """)
+        )
+        log.info("ubicaciones sembradas: %s", r.rowcount)
+
         await s.commit()
+
+    await _imagenes_unsplash(limite=40)
     log.info("catálogo enriquecido")
+
+
+async def _imagenes_unsplash(limite: int) -> None:
+    """Best-effort: pide unas pocas fotos a Unsplash para los SKU con inventario
+    que aún tienen el placeholder. El tier Demo son 50 req/hora, así que se hace
+    en tandas chicas; el resto queda con el ícono por categoría."""
+    from src.integrations import unsplash_client
+
+    if not unsplash_client.is_configured():
+        log.info("Unsplash sin clave — se omiten las imágenes")
+        return
+    async with AsyncSessionLocal() as s:
+        filas = (
+            await s.execute(
+                text("""
+                SELECT DISTINCT p.product_id, p.nombre
+                FROM productos p JOIN inventario i ON i.product_id = p.product_id
+                WHERE p.imagen_url LIKE 'producto-imagenes/placeholder/%'
+                ORDER BY p.product_id
+                LIMIT :lim
+            """),
+                {"lim": limite},
+            )
+        ).all()
+        n = 0
+        for product_id, nombre in filas:
+            url = await unsplash_client.buscar_imagen(nombre or "")
+            if url:
+                await s.execute(
+                    text("UPDATE productos SET imagen_url = :u WHERE product_id = :p"),
+                    {"u": url, "p": product_id},
+                )
+                n += 1
+        await s.commit()
+        log.info("imágenes Unsplash: %s/%s", n, len(filas))
 
 
 if __name__ == "__main__":

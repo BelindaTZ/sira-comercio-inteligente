@@ -438,6 +438,21 @@ CREATE TABLE inventario (
     PRIMARY KEY (product_id, tienda_id)
 );
 
+-- Ubicación física del SKU en sala (Principio XII: la pantalla de Inventario
+-- muestra "Pasillo 01 · G-03"). Una fila por (producto, tienda). La mantiene el
+-- Reponedor / Encargado_Tienda. Añadida por la migración 0021.
+CREATE TABLE ubicacion_producto (
+    product_id INTEGER NOT NULL REFERENCES productos(product_id) ON DELETE CASCADE,
+    tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id) ON DELETE CASCADE,
+    pasillo VARCHAR(40) NOT NULL,           -- "Pasillo 01", "Cámara Fría A"
+    gondola VARCHAR(20),                    -- "G-03", "R-04" (opcional)
+    nivel VARCHAR(20),                      -- "Nivel medio" (opcional)
+    actualizado_por INTEGER REFERENCES empleados(empleado_id),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, tienda_id)
+);
+CREATE INDEX idx_ubicacion_producto_tienda ON ubicacion_producto(tienda_id);
+
 CREATE TABLE movimientos_inventario (
     movimiento_id BIGSERIAL PRIMARY KEY,
     product_id INTEGER NOT NULL,

@@ -31,6 +31,35 @@ export const inventarioApi = {
     return http.get('/api/inventario/productos', { params: { q } }).then((r) => r.data)
   },
 
+  /** Vista de stock por SKU (pantalla principal de Inventario). */
+  stock({ tiendaId, search, categoria, estado, page = 1, size = 25 } = {}) {
+    return http
+      .get('/api/inventario/stock', {
+        params: {
+          tienda_id: tiendaId,
+          search: search || undefined,
+          categoria: categoria || undefined,
+          estado: estado || undefined,
+          page,
+          size,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  definirUbicacion({ productId, tiendaId, pasillo, gondola, nivel, empleadoId }) {
+    return http
+      .put('/api/inventario/ubicacion', {
+        product_id: productId,
+        tienda_id: tiendaId,
+        pasillo,
+        gondola: gondola || null,
+        nivel: nivel || null,
+        empleado_id: empleadoId,
+      })
+      .then((r) => r.data)
+  },
+
   recepcion({ ordenId, productId, tiendaId, cantidad, fechaVencimiento, codigoLoteProveedor }) {
     return http
       .post('/api/inventario/recepciones', {

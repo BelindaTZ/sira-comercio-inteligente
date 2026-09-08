@@ -1,10 +1,10 @@
 <script setup>
 /** Define el stock máximo vigente por categoría y tienda (FR-037, Jefe de Operaciones).
- *  La categoría se elige de las que ya existen en el catálogo (no hay alta de
- *  categoría suelta: nace cuando un producto la usa). */
-import { onMounted, reactive, ref } from 'vue'
+ *  La categoría se elige (escribiendo para filtrar) de las que ya existen en el
+ *  catálogo — no hay alta de categoría suelta: nace cuando un producto la usa. */
+import { reactive, ref } from 'vue'
 import { inventarioApi } from '@/services/inventarioApi'
-import { catalogoApi } from '@/services/catalogoApi'
+import CategoriaPicker from '@/shared/ui/CategoriaPicker.vue'
 
 const props = defineProps({
   tiendaId: { type: Number, required: true },
@@ -13,17 +13,8 @@ const props = defineProps({
 const emit = defineEmits(['definido'])
 
 const form = reactive({ productCategory: '', cantidadMaxima: null })
-const categorias = ref([])
 const error = ref('')
 const enviando = ref(false)
-
-onMounted(async () => {
-  try {
-    categorias.value = await catalogoApi.categorias()
-  } catch {
-    /* si falla, el select queda vacío pero el form no se rompe */
-  }
-})
 
 async function enviar() {
   error.value = ''
@@ -46,21 +37,17 @@ async function enviar() {
 
 <template>
   <form class="space-y-3" @submit.prevent="enviar">
-    <label class="block text-[12px] font-semibold text-slate-600">
-      Categoría
-      <select
+    <div>
+      <CategoriaPicker
         v-model="form.productCategory"
+        placeholder="Escribí para filtrar…"
         required
-        class="mt-1 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-      >
-        <option value="" disabled>Elegí una categoría…</option>
-        <option v-for="c in categorias" :key="c" :value="c">{{ c }}</option>
-      </select>
-      <span class="mt-1 block text-[11px] font-normal text-slate-400">
-        {{ categorias.length }} categorías del catálogo. Una categoría nueva aparece al crear un
-        producto con ella (Jefe Comercial).
-      </span>
-    </label>
+      />
+      <p class="mt-1 text-[11px] text-slate-400">
+        Categorías del catálogo. Una categoría nueva aparece al crear un producto con ella (Jefe
+        Comercial).
+      </p>
+    </div>
     <label class="block text-[12px] font-semibold text-slate-600">
       Cantidad máxima
       <input

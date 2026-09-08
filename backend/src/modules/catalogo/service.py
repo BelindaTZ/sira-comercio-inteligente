@@ -94,6 +94,8 @@ class CatalogoService:
             producto.product_category = campos["categoria"]
         if "marca" in campos:
             producto.marca = campos["marca"]
+        if "imagen_url" in campos:
+            producto.imagen_url = campos["imagen_url"]
         if "costo" in campos:
             producto.costo = campos["costo"]
         if "es_perecedero" in campos:
@@ -127,3 +129,20 @@ class CatalogoService:
 
     async def categorias(self) -> list[str]:
         return await self.repo.categorias()
+
+    async def imagen_automatica(self, product_id: int) -> Producto:
+        """Busca una foto genérica en Unsplash por el nombre del producto y la
+        fija como `imagen_url`. Si no hay clave o coincidencia, deja la actual
+        (Principio II) y el llamador puede subir una manual."""
+        from src.integrations import unsplash_client
+
+        producto = await self.repo.get_producto(product_id)
+        if producto is None:
+            raise NotFoundError(f"Producto {product_id} no existe")
+        consulta = producto.nombre or producto.product_type or producto.product_category
+        url = await unsplash_client.buscar_imagen(consulta or "")
+        if url:
+            producto.imagen_url = url
+            producto.updated_at = _ahora()
+            await self.repo.flush()
+        return producto

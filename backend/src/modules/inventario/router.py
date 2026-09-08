@@ -27,8 +27,10 @@ from src.modules.inventario.schemas import (
     QuiebreOut,
     RecepcionIn,
     RecepcionOut,
+    StockItemOut,
     StockMaximoIn,
     StockMaximoOut,
+    UbicacionIn,
     ValidarMermaIn,
     VerificacionAnaquelIn,
     VerificacionAnaquelOut,
@@ -50,6 +52,7 @@ _alerta_atender = require_permission("Operaciones", "alertas_inventario", "updat
 _quiebre = require_permission("Operaciones", "eventos_quiebre_stock", "insert")
 _stock_max = require_permission("Operaciones", "stock_maximo_categoria", "insert")
 _anaquel = require_permission("Operaciones", "verificacion_anaquel", "insert")
+_ubicacion = require_permission("Operaciones", "ubicacion_producto", "update")
 
 
 def _svc(session: SessionDep) -> InventarioService:
@@ -116,6 +119,33 @@ async def buscar_productos(
     """Autocompletado de producto para los formularios de operación (ajuste,
     merma, verificación de anaquel): acepta nombre o id."""
     return [ProductoBusquedaOut.model_validate(p) for p in await svc.buscar_productos(q)]
+
+
+@router.get("/stock", response_model=Page[StockItemOut])
+async def listar_stock(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    params: Annotated[PageParams, Depends(page_params)],
+    tienda_id: Annotated[int, Query()],
+    search: str | None = None,
+    categoria: str | None = None,
+    estado: str | None = None,
+) -> Page[StockItemOut]:
+    """Vista de la pantalla de Inventario: una fila por SKU con stock vs. mínimo,
+    ubicación en sala, lote más urgente y estado derivado
+    (quiebre / por_vencer / sobre_stock / normal)."""
+    res = await svc.listar_stock(
+        params, tienda_id=tienda_id, search=search, categoria=categoria, estado=estado
+    )
+    return Page[StockItemOut](**res)
+
+
+@router.put("/ubicacion", response_model=dict)
+async def definir_ubicacion(
+    data: UbicacionIn, svc: ServiceDep, _: Annotated[Principal, Depends(_ubicacion)]
+) -> dict:
+    """Ubica un SKU en sala (pasillo/góndola). Reponedor y Encargado."""
+    return await svc.definir_ubicacion(data)
 
 
 @router.post("/ajustes", status_code=status.HTTP_201_CREATED, response_model=AjusteOut)

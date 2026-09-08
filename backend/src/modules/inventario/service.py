@@ -485,6 +485,31 @@ class InventarioService:
     async def buscar_productos(self, termino: str):
         return await self.repo.buscar_productos(termino)
 
+    async def listar_stock(
+        self, params, *, tienda_id, search=None, categoria=None, estado=None
+    ) -> dict:
+        filas, total = await self.repo.stock_por_sku(
+            tienda_id=tienda_id,
+            search=search,
+            categoria=categoria,
+            estado=estado,
+            offset=params.offset,
+            limit=params.limit,
+        )
+        return {"items": filas, "total": total, "page": params.page, "size": params.size}
+
+    async def definir_ubicacion(self, data) -> dict:
+        if await self.repo.get_producto(data.product_id) is None:
+            raise NotFoundError(f"El producto {data.product_id} no existe")
+        return await self.repo.upsert_ubicacion(
+            product_id=data.product_id,
+            tienda_id=data.tienda_id,
+            pasillo=data.pasillo,
+            gondola=data.gondola,
+            nivel=data.nivel,
+            empleado_id=data.empleado_id,
+        )
+
     async def listar_stock_maximo(self, params, *, tienda_id: int, product_category=None):
         stmt = self.repo.stock_maximo_query(tienda_id=tienda_id, product_category=product_category)
         return await self.repo.paginate(

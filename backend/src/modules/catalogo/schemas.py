@@ -32,6 +32,7 @@ class ProductoPatch(BaseModel):
     es_perecedero: bool | None = None
     vida_util_dias: int | None = Field(default=None, gt=0)
     clasificacion: Clasificacion | None = None
+    imagen_url: str | None = Field(default=None, max_length=500)
 
 
 class ProductoOut(BaseModel):

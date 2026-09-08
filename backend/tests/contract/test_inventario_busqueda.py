@@ -77,6 +77,56 @@ async def test_autocompletado_productos_por_nombre_e_id(
     assert [p["product_id"] for p in por_id.json()] == [e["product_id"]]
 
 
+async def test_stock_por_sku_con_ubicacion_y_estado(
+    client, escenario_pos, auth_encargado, db_session
+):
+    e = escenario_pos
+    await _nombrar_producto(db_session, e["product_id"], "Yogurt Griego", "Del Sur")
+    await db_session.execute(
+        text(
+            "INSERT INTO inventario (product_id, tienda_id, cantidad_disponible, cantidad_minima) "
+            "VALUES (:p, :t, 5, 30) "
+            "ON CONFLICT (product_id, tienda_id) DO UPDATE "
+            "SET cantidad_disponible = 5, cantidad_minima = 30"
+        ),
+        {"p": e["product_id"], "t": e["tienda_id"]},
+    )
+    await db_session.flush()
+
+    # ubicar el SKU en sala
+    ubic = await client.put(
+        "/api/inventario/ubicacion",
+        json={
+            "product_id": e["product_id"],
+            "tienda_id": e["tienda_id"],
+            "pasillo": "Pasillo 04",
+            "gondola": "G-01",
+            "empleado_id": e["encargado_id"],
+        },
+        headers=auth_encargado,
+    )
+    assert ubic.status_code == 200, ubic.text
+
+    r = await client.get(
+        "/api/inventario/stock",
+        params={"tienda_id": e["tienda_id"], "search": "yogurt"},
+        headers=auth_encargado,
+    )
+    assert r.status_code == 200, r.text
+    fila = next(x for x in r.json()["items"] if x["product_id"] == e["product_id"])
+    assert fila["pasillo"] == "Pasillo 04"
+    assert fila["gondola"] == "G-01"
+    assert fila["estado"] == "quiebre"  # 5 <= 30
+    assert fila["cantidad_minima"] == 30
+
+    solo_quiebre = await client.get(
+        "/api/inventario/stock",
+        params={"tienda_id": e["tienda_id"], "estado": "quiebre"},
+        headers=auth_encargado,
+    )
+    assert all(x["estado"] == "quiebre" for x in solo_quiebre.json()["items"])
+
+
 async def test_categorias_del_catalogo(client, escenario_pos, auth_jefe_comercial):
     r = await client.get("/api/catalogo/categorias", headers=auth_jefe_comercial)
     assert r.status_code == 200, r.text

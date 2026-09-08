@@ -59,6 +59,14 @@ class Settings(BaseSettings):
     open_prices_base_url: str = Field(
         default="https://prices.openfoodfacts.org", alias="OPEN_PRICES_BASE_URL"
     )
+    # Unsplash (001) — imágenes para el catálogo genérico del dataset Dunnhumby,
+    # que llega sin fotos. Sólo se necesita el Access Key (client_id) para el
+    # endpoint público de búsqueda. Vacío = búsqueda de imagen deshabilitada
+    # (se degrada al placeholder por categoría, Principio II).
+    unsplash_access_key: str = Field(default="", alias="UNSPLASH_ACCESS_KEY")
+    unsplash_base_url: str = Field(
+        default="https://api.unsplash.com", alias="UNSPLASH_BASE_URL"
+    )
 
     # --- App ---
     cors_origins: list[str] = Field(default=["http://localhost:5173"], alias="CORS_ORIGINS")
