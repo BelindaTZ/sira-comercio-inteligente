@@ -2,11 +2,14 @@
 /**
  * Shell de navegación maestro (feature 013, Principio XII).
  *
- * Barra horizontal superior fija en Abyssal Emerald (`#0a3632`) — no sidebar.
- * Categorías de primer nivel de `navegacion.js`, filtradas a los módulos que el
- * rol de la sesión puede ver. Una categoría con ≥4 sub-opciones abre un mega-menú
- * (panel blanco redondeado, columnas temáticas con ícono + título); con <4, una
- * lista simple.
+ * Réplica fiel del header de
+ * `docs/diseno-ui/.../sira_punto_de_venta_y_registro_r_pido_header_verde_abisal/code.html`:
+ * barra superior fija `#072623`, nav dentro de un pill oscuro embebido, tab activo
+ * en gradiente amatista (`secondary → secondary-subtle`).
+ *
+ * Categorías de `navegacion.js` filtradas a los módulos que el rol puede ver. Una
+ * categoría con ≥4 sub-opciones abre un mega-menú (panel blanco redondeado,
+ * columnas temáticas con ícono + título); con <4, lista simple (Principio XII).
  */
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -21,9 +24,8 @@ const sesion = useSesion()
 const route = useRoute()
 
 const categorias = computed(() => categoriasVisibles(sesion))
-const abierta = ref(null) // label de la categoría con el panel abierto
+const abierta = ref(null)
 const catAbierta = computed(() => categorias.value.find((c) => c.label === abierta.value) ?? null)
-// Columnas del mega-menú: los `grupos`, o un único grupo sintético si es lista plana.
 const columnas = computed(() => {
   const c = catAbierta.value
   if (!c) return []
@@ -36,55 +38,70 @@ function toggle(label) {
 function cerrar() {
   abierta.value = null
 }
-function activa(cat) {
-  return cat.items.some((it) => esActivo(it.to))
-}
 function esActivo(to) {
   return route.path === to || route.path.startsWith(to + '/')
+}
+function activa(cat) {
+  return cat.items.some((it) => esActivo(it.to))
 }
 </script>
 
 <template>
   <div class="flex min-h-screen flex-col overflow-x-hidden bg-background">
     <header
-      class="relative sticky top-0 z-40 w-full border-b border-[#072623] bg-primary-container shadow-md"
+      class="relative sticky top-0 z-40 w-full border-b border-shell-line bg-shell-bar text-white shadow-lg shadow-black/20"
       @mouseleave="cerrar"
     >
       <div
-        class="mx-auto flex min-h-16 w-full max-w-[1720px] items-center justify-between gap-4 px-6 py-1.5 text-white lg:px-8"
+        class="mx-auto flex min-h-16 w-full max-w-[1840px] items-center justify-between gap-3 px-4 py-1.5 lg:px-6"
       >
         <!-- Marca -->
         <RouterLink to="/" class="flex shrink-0 items-center gap-2.5" @click="cerrar">
-          <img :src="logoUrl" alt="" class="h-9 w-9 rounded-xl bg-[#145952] p-1.5" />
+          <span
+            class="grid h-9 w-9 place-items-center rounded-2xl border border-emerald-400/30 bg-gradient-to-br from-[#10534c] to-[#041a18] shadow-sm"
+          >
+            <img :src="logoUrl" alt="" class="h-5 w-5" />
+          </span>
           <span class="flex flex-col leading-none">
-            <span class="font-display text-[18px] font-extrabold tracking-tight">SIRA</span>
-            <span class="mt-0.5 text-[10px] font-bold tracking-[0.2em] text-primary-fixed-dim">
-              RETAIL OS
+            <span class="flex items-center gap-1.5">
+              <span class="font-display text-xl font-extrabold tracking-tight text-white"
+                >SIRA</span
+              >
+              <span
+                class="rounded-md border border-secondary/40 bg-secondary/30 px-2 py-0.5 font-mono text-[10px] font-bold text-secondary-fixed"
+              >
+                RETAIL OS
+              </span>
+            </span>
+            <span class="mt-0.5 text-[10px] font-medium text-emerald-200/70">
+              Retail Omnichannel Engine
             </span>
           </span>
         </RouterLink>
 
-        <!-- Navegación de categorías -->
-        <nav class="hidden min-w-0 flex-1 flex-wrap items-center gap-0.5 md:flex">
+        <!-- Navegación (pill embebido) -->
+        <nav
+          class="hidden min-w-0 flex-wrap items-center gap-1 rounded-2xl border border-shell-line bg-shell-inset p-1 shadow-inner md:flex"
+        >
           <button
             v-for="cat in categorias"
             :key="cat.label"
             type="button"
-            class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-[13px] font-medium transition"
+            class="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-[13px] font-medium transition-all"
             :class="
               activa(cat) || abierta === cat.label
-                ? 'bg-[#145952] text-primary-fixed ring-1 ring-primary-fixed/30'
-                : 'text-white/80 hover:bg-white/15 hover:text-white'
+                ? 'bg-gradient-to-r from-secondary to-secondary-subtle font-semibold text-white shadow-md shadow-secondary/30'
+                : 'text-emerald-200/80 hover:bg-white/10 hover:text-white'
             "
             @click="toggle(cat.label)"
           >
-            <Icon :name="cat.icon" :size="16" class="opacity-90" />
+            <Icon :name="cat.icon" :size="16" />
             {{ cat.label }}
             <Icon
               v-if="cat.items.length > 1"
               name="chevron"
               :size="12"
-              class="opacity-50 transition"
+              class="opacity-60 transition-transform"
               :class="abierta === cat.label ? '-rotate-180' : ''"
             />
           </button>
@@ -99,10 +116,10 @@ function esActivo(to) {
       <!-- Mega-menú: panel blanco redondeado, columnas temáticas -->
       <div
         v-if="catAbierta"
-        class="absolute left-0 right-0 top-full z-50 hidden px-6 pt-1.5 md:block lg:px-8"
+        class="absolute left-0 right-0 top-full z-50 hidden px-4 pt-2 md:block lg:px-6"
         @mouseleave="cerrar"
       >
-        <div class="mx-auto w-full max-w-[1720px]">
+        <div class="mx-auto w-full max-w-[1840px]">
           <div
             class="rounded-2xl border border-black/5 bg-white p-5 text-on-surface shadow-tier-2"
             :class="columnas.length === 1 ? 'inline-block min-w-[15rem]' : 'w-full'"
@@ -119,7 +136,7 @@ function esActivo(to) {
                   v-if="!col.plano"
                   class="mb-3 flex items-center gap-2 text-[13px] font-bold text-on-surface"
                 >
-                  <Icon :name="col.icon" :size="16" class="text-primary-container" />
+                  <Icon :name="col.icon" :size="16" class="text-primary" />
                   {{ col.titulo }}
                 </p>
                 <ul class="space-y-0.5">
@@ -129,7 +146,7 @@ function esActivo(to) {
                       class="block rounded-lg px-3 py-2 text-[13px] font-medium transition"
                       :class="
                         esActivo(it.to)
-                          ? 'bg-[#ede9fe] font-semibold text-[#6d28d9]'
+                          ? 'bg-secondary-light font-semibold text-on-secondary-strong'
                           : 'text-on-surface-variant hover:bg-surface-container hover:text-on-surface'
                       "
                       @click="cerrar"
@@ -150,8 +167,10 @@ function esActivo(to) {
           v-for="cat in categorias"
           :key="cat.label"
           :to="cat.items[0].to"
-          class="flex items-center gap-1 whitespace-nowrap rounded-lg px-3 py-1 text-[12px] font-medium text-white/80"
-          :class="activa(cat) ? 'bg-[#145952] text-primary-fixed' : ''"
+          class="flex items-center gap-1 whitespace-nowrap rounded-xl px-3 py-1 text-[12px] font-medium text-emerald-200/80"
+          :class="
+            activa(cat) ? 'bg-gradient-to-r from-secondary to-secondary-subtle text-white' : ''
+          "
         >
           <Icon :name="cat.icon" :size="13" />
           {{ cat.label }}

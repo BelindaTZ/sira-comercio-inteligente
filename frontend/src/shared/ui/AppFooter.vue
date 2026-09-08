@@ -5,9 +5,9 @@ const anio = new Date().getFullYear()
 
 <template>
   <footer
-    class="mt-auto border-t border-[#072623] bg-primary-container px-6 py-3 text-[11px] text-primary-fixed-dim lg:px-8"
+    class="mt-auto border-t border-shell-line bg-shell-bar px-6 py-3 text-[11px] text-emerald-200/70 lg:px-8"
   >
-    <div class="mx-auto flex max-w-[1720px] flex-wrap items-center justify-between gap-2">
+    <div class="mx-auto flex max-w-[1840px] flex-wrap items-center justify-between gap-2">
       <span>© {{ anio }} SIRA — Marzú Retail Group SpA</span>
       <span class="flex items-center gap-2">
         <span class="inline-block h-1.5 w-1.5 rounded-full bg-tertiary-fixed" />

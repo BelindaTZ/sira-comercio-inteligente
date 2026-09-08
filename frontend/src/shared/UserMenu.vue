@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { authApi } from '@/services/authApi'
 import Modal from './ui/Modal.vue'
+import Icon from './ui/Icon.vue'
 
 const sesion = useSesion()
 const router = useRouter()
@@ -68,23 +69,27 @@ function cerrarModal() {
   <div class="relative">
     <button
       type="button"
-      class="flex items-center gap-2 rounded-full py-1 pl-1 pr-2.5 transition hover:bg-white/15"
+      class="flex items-center gap-2.5 border-l border-[#164c45] py-1 pl-3 pr-1 transition"
       @click="abierto = !abierto"
     >
       <span
-        class="grid h-8 w-8 place-items-center rounded-full bg-primary-fixed text-[12px] font-bold text-on-primary-fixed"
+        class="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[#10534c] to-[#041a18] text-[12px] font-bold text-emerald-50 ring-2 ring-emerald-400/40"
       >
         {{ iniciales }}
       </span>
-      <span class="hidden text-left leading-none sm:block">
-        <span class="block text-[13px] font-semibold text-white">{{
-          sesion.nombre || sesion.username
-        }}</span>
-        <span class="mt-0.5 block text-[10px] text-primary-fixed-dim">{{ sesion.rol }}</span>
+      <span class="hidden text-left leading-tight lg:block">
+        <span class="flex items-center gap-1.5">
+          <span class="text-xs font-bold text-emerald-50">{{
+            sesion.nombre || sesion.username
+          }}</span>
+        </span>
+        <span
+          class="mt-0.5 inline-block rounded border border-emerald-400/20 bg-emerald-500/20 px-1.5 font-mono text-[9px] font-bold text-emerald-300"
+        >
+          {{ sesion.rol }}
+        </span>
       </span>
-      <svg class="hidden h-3 w-3 text-white/60 sm:block" viewBox="0 0 12 12" fill="none">
-        <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-      </svg>
+      <Icon name="chevron" :size="14" class="text-emerald-300/60" />
     </button>
 
     <div v-if="abierto" class="fixed inset-0 z-40" @click="abierto = false" />

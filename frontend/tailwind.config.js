@@ -26,20 +26,33 @@ export default {
         background: '#f8f9fb',
         'on-background': '#191c1e',
         // --- Primary: Abyssal Emerald (navegación maestra, headers, triggers) ---
-        primary: '#00201d',
+        //     (valores exactos de docs/diseno-ui/.../code.html tailwind.config)
+        primary: '#0a3632',
+        'primary-dark': '#05201d',
+        'primary-hover': '#0f4742',
+        'primary-light': '#155751',
         'on-primary': '#ffffff',
         'primary-container': '#0a3632',
         'on-primary-container': '#779f9a',
         'inverse-primary': '#a5cfc9',
+        // Chrome del shell (barra de navegación maestra) — tonos de la referencia POS.
+        'shell-bar': '#072623',
+        'shell-inset': '#092e2a',
+        'shell-line': '#154640',
+        'shell-pill': '#0c3934',
+        'shell-pill-line': '#1b5c53',
         'primary-fixed': '#c0ebe4',
         'primary-fixed-dim': '#a5cfc9',
         'on-primary-fixed': '#00201d',
         'on-primary-fixed-variant': '#254d49',
-        // --- Secondary: Amethyst (IA / predictivo / VIP) ---
+        // --- Secondary: Amethyst (IA / predictivo / VIP · tab de navegación activo) ---
         secondary: '#7c3aed',
+        'secondary-subtle': '#8b5cf6', // fin del gradiente del tab activo (referencia POS)
+        'secondary-light': '#f6f0ff', // fondo de ítem seleccionado en el mega-menú
         'on-secondary': '#ffffff',
         'secondary-container': '#8a4cfc',
         'on-secondary-container': '#fffbff',
+        'on-secondary-strong': '#4c1d95', // texto de ítem seleccionado en el mega-menú
         'secondary-fixed': '#eaddff',
         'secondary-fixed-dim': '#d2bbff',
         'on-secondary-fixed': '#25005a',
