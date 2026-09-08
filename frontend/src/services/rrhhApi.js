@@ -1,6 +1,11 @@
 import { http } from './http'
 
-/** Capa de servicio del módulo RRHH (feature 008) — CRUD base de empleado. */
+/**
+ * Capa de servicio del módulo RRHH.
+ * - Feature 008: CRUD base de empleado.
+ * - Feature 011: puestos críticos, retención, capacitación (con fan-out), clima
+ *   laboral cruzado con rotación y plan de sucesión.
+ */
 export const rrhhApi = {
   crearEmpleado({ nombre, puestoId, tiendaId, email, telefono, fechaContratacion }) {
     return http
@@ -27,5 +32,80 @@ export const rrhhApi = {
     return http
       .patch(`/api/rrhh/empleados/${empleadoId}/baja`, { fecha_baja: fechaBaja })
       .then((r) => r.data)
+  },
+
+  // --------------------------------------------------- 011: puestos críticos / retención
+  marcarPuestoCritico(puestoId, esCritico) {
+    return http
+      .patch(`/api/rrhh/puestos/${puestoId}/critico`, { es_critico: esCritico })
+      .then((r) => r.data)
+  },
+
+  registrarAccionRetencion({ empleadoId, fecha, descripcion }) {
+    return http
+      .post('/api/rrhh/acciones-retencion', {
+        empleado_id: empleadoId,
+        fecha,
+        descripcion,
+      })
+      .then((r) => r.data)
+  },
+
+  accionesRetencion(empleadoId) {
+    return http.get(`/api/rrhh/empleados/${empleadoId}/acciones-retencion`).then((r) => r.data)
+  },
+
+  // --------------------------------------------------- 011: capacitación
+  programarCapacitacion({ nombre, descripcion, roleIds }) {
+    return http
+      .post('/api/rrhh/capacitaciones', {
+        nombre,
+        descripcion: descripcion || null,
+        role_ids: roleIds,
+      })
+      .then((r) => r.data)
+  },
+
+  completarCapacitacion(empleadoId, capacitacionId, fechaCompletado) {
+    return http
+      .patch(`/api/rrhh/empleado-capacitacion/${empleadoId}/${capacitacionId}/completar`, {
+        fecha_completado: fechaCompletado,
+      })
+      .then((r) => r.data)
+  },
+
+  cumplimientoCapacitacionTienda(tiendaId) {
+    return http.get(`/api/rrhh/tiendas/${tiendaId}/cumplimiento-capacitacion`).then((r) => r.data)
+  },
+
+  // --------------------------------------------------- 011: clima laboral / rotación
+  registrarClima({ tiendaId, periodo, resultadoPromedio }) {
+    return http
+      .post('/api/rrhh/clima-laboral', {
+        tienda_id: tiendaId,
+        periodo,
+        resultado_promedio: resultadoPromedio,
+      })
+      .then((r) => r.data)
+  },
+
+  climaRotacion(tiendaId, periodo) {
+    return http
+      .get(`/api/rrhh/tiendas/${tiendaId}/clima-rotacion`, { params: { periodo } })
+      .then((r) => r.data)
+  },
+
+  // --------------------------------------------------- 011: plan de sucesión
+  registrarCandidatoSucesion({ puestoId, empleadoCandidatoId }) {
+    return http
+      .post('/api/rrhh/plan-sucesion', {
+        puesto_id: puestoId,
+        empleado_candidato_id: empleadoCandidatoId,
+      })
+      .then((r) => r.data)
+  },
+
+  coberturaSucesion() {
+    return http.get('/api/rrhh/plan-sucesion/cobertura').then((r) => r.data)
   },
 }

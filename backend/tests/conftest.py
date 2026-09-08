@@ -797,3 +797,103 @@ def auth_admin_ti(escenario_auth: dict) -> dict[str, str]:
 @pytest.fixture
 def auth_rrhh(escenario_auth: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_auth['rrhh']['token']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_rrhh(db_session: AsyncSession) -> dict:
+    """Feature 011: dos tiendas, un Jefe_RRHH (sin tienda), un Encargado de la
+    tienda A, un puesto crítico y uno normal, y cuatro empleados-cajero: dos con
+    cuenta activa en la tienda A, uno sin cuenta en la tienda A, y uno con cuenta
+    en la tienda B (para probar el fan-out por rol y la restricción por tienda)."""
+    s = db_session
+
+    async def _rol(nombre: str) -> int:
+        return await s.scalar(text("SELECT role_id FROM roles WHERE nombre = :n"), {"n": nombre})
+
+    rol_rrhh = await _rol("Jefe_RRHH")
+    rol_encargado = await _rol("Encargado_Tienda")
+    rol_cajero = await _rol("Cajero")
+
+    async def _tienda(nombre: str) -> int:
+        return await s.scalar(
+            text(
+                "INSERT INTO tiendas (codigo, nombre) VALUES "
+                "(substr(md5(random()::text), 1, 8), :n) RETURNING tienda_id"
+            ),
+            {"n": nombre},
+        )
+
+    async def _puesto(prefijo: str, critico: bool) -> int:
+        return await s.scalar(
+            text(
+                "INSERT INTO roles_puesto (nombre, es_critico) VALUES "
+                "(:p || '-' || gen_random_uuid()::text, :c) RETURNING puesto_id"
+            ),
+            {"p": prefijo, "c": critico},
+        )
+
+    async def _empleado(tienda_id: int, puesto_id: int, nombre: str) -> int:
+        return await s.scalar(
+            text(
+                "INSERT INTO empleados (tienda_id, puesto_id, nombre, fecha_contratacion) "
+                "VALUES (:t, :p, :n, DATE '2026-01-01') RETURNING empleado_id"
+            ),
+            {"t": tienda_id, "p": puesto_id, "n": nombre},
+        )
+
+    tienda_a = await _tienda("Tienda RRHH A")
+    tienda_b = await _tienda("Tienda RRHH B")
+    puesto_critico = await _puesto("Puesto critico", True)
+    puesto_normal = await _puesto("Puesto normal", False)
+
+    cajero_a1 = await _empleado(tienda_a, puesto_normal, "Cajero A1")
+    cajero_a2 = await _empleado(tienda_a, puesto_normal, "Cajero A2")
+    cajero_a_sin_cuenta = await _empleado(tienda_a, puesto_normal, "Cajero A sin cuenta")
+    cajero_b1 = await _empleado(tienda_b, puesto_normal, "Cajero B1")
+    empleado_critico_a = await _empleado(tienda_a, puesto_critico, "Encargada A")
+    await s.flush()
+
+    token_rrhh = await _token(s, role_id=rol_rrhh)
+    token_encargado_a = await _token(
+        s,
+        empleado_id=await _empleado(tienda_a, puesto_normal, "Encargado token A"),
+        role_id=rol_encargado,
+        tienda_id=tienda_a,
+    )
+    token_encargado_b = await _token(
+        s,
+        empleado_id=await _empleado(tienda_b, puesto_normal, "Encargado token B"),
+        role_id=rol_encargado,
+        tienda_id=tienda_b,
+    )
+    # cuentas de cajero: A1 y A2 con cuenta, B1 con cuenta; A sin cuenta se deja sin usuario.
+    await _token(s, empleado_id=cajero_a1, role_id=rol_cajero, tienda_id=tienda_a)
+    await _token(s, empleado_id=cajero_a2, role_id=rol_cajero, tienda_id=tienda_a)
+    await _token(s, empleado_id=cajero_b1, role_id=rol_cajero, tienda_id=tienda_b)
+    await s.flush()
+
+    return {
+        "tienda_a": tienda_a,
+        "tienda_b": tienda_b,
+        "rol_cajero_id": rol_cajero,
+        "puesto_critico_id": puesto_critico,
+        "puesto_normal_id": puesto_normal,
+        "cajero_a1": cajero_a1,
+        "cajero_a2": cajero_a2,
+        "cajero_a_sin_cuenta": cajero_a_sin_cuenta,
+        "cajero_b1": cajero_b1,
+        "empleado_critico_a": empleado_critico_a,
+        "token_rrhh": token_rrhh,
+        "token_encargado_a": token_encargado_a,
+        "token_encargado_b": token_encargado_b,
+    }
+
+
+@pytest.fixture
+def auth_jefe_rrhh(escenario_rrhh: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_rrhh['token_rrhh']}"}
+
+
+@pytest.fixture
+def auth_encargado_rrhh(escenario_rrhh: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_rrhh['token_encargado_a']}"}

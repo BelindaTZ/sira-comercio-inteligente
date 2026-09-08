@@ -30,14 +30,19 @@
 - 201: `{capacitacion_id, nombre, descripcion, empleados_asignados: integer}`.
 
 `PATCH /api/rrhh/empleado-capacitacion/{empleado_id}/{capacitacion_id}/completar`
-- Registra la fecha de finalización de una capacitación para un empleado.
+- Registra la fecha de finalización de una capacitación para un empleado (FR-004).
 - Body: `{fecha_completado}`.
-- RBAC: `Jefe_RRHH`, `Encargado_Tienda` (solo empleados de su tienda).
+- RBAC: `Jefe_RRHH` (`can_update` sobre `empleado_capacitacion`). El
+  `Encargado_Tienda` tiene acceso de solo lectura al módulo `RRHH` (data-model.md,
+  Extensión RBAC / research.md Decisión 5): verifica el cumplimiento de su
+  personal por el `GET` de abajo, no muta el registro. 404 si el empleado no tiene
+  esa capacitación asignada.
 - 200: registro actualizado.
 
 `GET /api/rrhh/tiendas/{tienda_id}/cumplimiento-capacitacion`
 - Cumplimiento de capacitación del personal de una tienda (FR-005).
-- RBAC: `Encargado_Tienda` (solo su propia tienda).
+- RBAC: `Encargado_Tienda` (restringido a su propia tienda — 403 sobre otra) y
+  `Jefe_RRHH` (cualquier tienda).
 - 200: `[{empleado_id, nombre, capacitacion_id, nombre_capacitacion, fecha_completado}]` — `fecha_completado: null` = pendiente.
 
 ## Clima laboral y rotación (FR-006, FR-007, FR-010)

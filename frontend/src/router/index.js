@@ -37,6 +37,31 @@ const routes = [
     component: () => import('@/modules/rrhh/pages/EmpleadosPage.vue'),
   },
   {
+    path: '/rrhh/puestos-criticos',
+    name: 'rrhh-puestos-criticos',
+    component: () => import('@/modules/rrhh/pages/PuestosCriticosPage.vue'),
+  },
+  {
+    path: '/rrhh/retencion',
+    name: 'rrhh-retencion',
+    component: () => import('@/modules/rrhh/pages/RetencionPage.vue'),
+  },
+  {
+    path: '/rrhh/capacitaciones',
+    name: 'rrhh-capacitaciones',
+    component: () => import('@/modules/rrhh/pages/CapacitacionesPage.vue'),
+  },
+  {
+    path: '/rrhh/clima-laboral',
+    name: 'rrhh-clima-laboral',
+    component: () => import('@/modules/rrhh/pages/ClimaLaboralPage.vue'),
+  },
+  {
+    path: '/rrhh/plan-sucesion',
+    name: 'rrhh-plan-sucesion',
+    component: () => import('@/modules/rrhh/pages/PlanSucesionPage.vue'),
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('@/shared/PlaceholderHome.vue'),
