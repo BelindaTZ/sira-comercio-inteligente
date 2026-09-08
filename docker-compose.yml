@@ -107,8 +107,6 @@ services:
       # en un volumen ya existente: `docker compose exec postgres createdb -U sira airflow`.
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/airflow
       AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
-      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
-      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
       # Airflow 2.9 fija SQLAlchemy 1.4.x (no tocar) — ya trae `sqlalchemy.ext.asyncio`,
       # que es lo que usa dags_utils/. Sólo se agregan los drivers que no vienen.
       _PIP_ADDITIONAL_REQUIREMENTS: "clickhouse-connect>=0.7 minio>=7.2 asyncpg>=0.30"
@@ -123,7 +121,11 @@ services:
     volumes:
       - ./data_platform/dags:/opt/airflow/dags
       - sira_airflowlogs:/opt/airflow/logs
-    command: standalone
+    # `airflow standalone` genera una contraseña aleatoria en el PRIMER arranque.
+    # Este wrapper fija admin/admin de forma determinista antes de arrancar; en
+    # arranques siguientes el usuario ya existe y se le re-fija la contraseña.
+    #   Login dev: admin / admin  ·  http://localhost:8080
+    command: ["bash", "-c", "airflow db migrate; airflow users create -r Admin -u admin -p admin -e admin@sira.local -f Admin -l User || airflow users reset-password -u admin -p admin; exec airflow standalone"]
 
 volumes:
   sira_pgdata:
