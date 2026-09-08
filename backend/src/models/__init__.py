@@ -31,6 +31,7 @@ from src.models.configuracion_pricing import ConfiguracionPricing
 from src.models.configuracion_promociones import ConfiguracionPromociones
 from src.models.configuracion_pronostico import ConfiguracionPronostico
 from src.models.configuracion_seguridad_pagos import ConfiguracionSeguridadPagos
+from src.models.corrida_carga import CorridaCarga
 from src.models.cupon import Cupon
 from src.models.cupon_enviado import CuponEnviado
 from src.models.cupon_redimido import CuponRedimido
@@ -52,6 +53,7 @@ from src.models.lote import Lote
 from src.models.margen_objetivo import MargenObjetivo
 from src.models.medio_pago import MedioPago
 from src.models.merma import Merma
+from src.models.modelo_datos_warehouse import ModeloDatosWarehouse
 from src.models.modelo_demanda import ModeloDemanda
 from src.models.monitoreo_precision_modelo import MonitoreoPrecisionModelo
 from src.models.movimiento_inventario import MovimientoInventario
@@ -60,6 +62,7 @@ from src.models.orden_compra import OrdenCompra
 from src.models.orden_compra_detalle import OrdenCompraDetalle
 from src.models.pago_proveedor import PagoProveedor
 from src.models.plan_sucesion import PlanSucesion
+from src.models.politica_gobierno_datos import PoliticaGobiernoDatos
 from src.models.politica_seguridad_pagos import PoliticaSeguridadPagos
 from src.models.precio_competencia import PrecioCompetencia
 from src.models.producto import Producto
@@ -69,6 +72,7 @@ from src.models.protocolo_escalamiento import ProtocoloEscalamiento
 from src.models.proveedor import Proveedor
 from src.models.recepcion_mercaderia import RecepcionMercaderia
 from src.models.recuperacion_password import RecuperacionPassword
+from src.models.registro_calidad_carga import RegistroCalidadCarga
 from src.models.regla_afinidad import ReglaAfinidad
 from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.rol_puesto import RolPuesto
@@ -106,6 +110,7 @@ __all__ = [
     "ConfiguracionPromociones",
     "ConfiguracionPronostico",
     "ConfiguracionSeguridadPagos",
+    "CorridaCarga",
     "Cupon",
     "CuponEnviado",
     "CuponRedimido",
@@ -127,6 +132,7 @@ __all__ = [
     "MargenObjetivo",
     "MedioPago",
     "Merma",
+    "ModeloDatosWarehouse",
     "ModeloDemanda",
     "MonitoreoPrecisionModelo",
     "MovimientoInventario",
@@ -135,6 +141,7 @@ __all__ = [
     "OrdenCompraDetalle",
     "PagoProveedor",
     "PlanSucesion",
+    "PoliticaGobiernoDatos",
     "PoliticaSeguridadPagos",
     "PrecioCompetencia",
     "Producto",
@@ -144,6 +151,7 @@ __all__ = [
     "Proveedor",
     "RecepcionMercaderia",
     "RecuperacionPassword",
+    "RegistroCalidadCarga",
     "ReglaAfinidad",
     "RevisionMargenBajo",
     "RolPuesto",

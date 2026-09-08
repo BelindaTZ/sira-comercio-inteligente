@@ -1820,3 +1820,85 @@ JOIN modulos m ON m.nombre = 'Operaciones'
 JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
 WHERE r.nombre IN ('Jefe_Operaciones','Encargado_Tienda')
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- EXTENSIÓN — Feature 010-plataforma-datos-tactico-estrategico (spec.md, plan.md, research.md, data-model.md)
+-- Cierra OT-7.1 (OE-7 TI/Datos — modelo de datos único + carga/integración diaria)
+-- y OO-7.5.1 (OT-7.5 gobierno de datos — calidad y trazabilidad del pipeline ELT),
+-- que 008 dejó explícitamente pendiente de evaluar aquí.
+-- 4 tablas de CONTROL del pipeline en PostgreSQL (Principio II/III — el resultado
+-- de cada corrida es un registro real, no un estado en memoria de Airflow). Los
+-- DATOS de negocio del warehouse (fact_venta + dimensiones) viven SÓLO en
+-- ClickHouse (data_platform/clickhouse/schema_warehouse.sql), nunca aquí.
+-- RBAC: sin rol ni módulo nuevo — módulo `TI` (Jefe_TI) ya reservado desde 004.
+-- ============================================================================
+
+-- 1. modelo_datos_warehouse — catálogo del modelo único (FR-001, research.md Decisión 1).
+CREATE TABLE IF NOT EXISTS modelo_datos_warehouse (
+    entidad_id SERIAL PRIMARY KEY,
+    nombre_entidad VARCHAR(60) NOT NULL UNIQUE,
+    tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('fact','dimension')),
+    tabla_origen_postgres VARCHAR(60) NOT NULL,
+    descripcion TEXT,
+    activa BOOLEAN NOT NULL DEFAULT true,
+    definido_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_definicion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. corrida_carga — una fila por corrida de UNA entidad (research.md Decisión 2).
+--    Exclusión mutua por destino (FR-005): índice único parcial WHERE estado = 'en_progreso'.
+CREATE TABLE IF NOT EXISTS corrida_carga (
+    corrida_id BIGSERIAL PRIMARY KEY,
+    entidad_id INTEGER NOT NULL REFERENCES modelo_datos_warehouse(entidad_id),
+    tipo_carga VARCHAR(12) NOT NULL CHECK (tipo_carga IN ('completa','incremental')),
+    origen VARCHAR(20) NOT NULL CHECK (origen IN ('postgres','minio_landing_zone')),
+    estado VARCHAR(12) NOT NULL DEFAULT 'en_progreso'
+        CHECK (estado IN ('en_progreso','exitosa','fallida')),
+    filas_cargadas INTEGER,
+    filas_error INTEGER NOT NULL DEFAULT 0,
+    fecha_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_fin TIMESTAMP,
+    CONSTRAINT chk_corrida_carga_fin CHECK (estado = 'en_progreso' OR fecha_fin IS NOT NULL),
+    CONSTRAINT chk_corrida_carga_filas CHECK (estado <> 'exitosa' OR filas_cargadas IS NOT NULL)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_corrida_carga_en_progreso
+    ON corrida_carga(entidad_id) WHERE estado = 'en_progreso';
+CREATE INDEX IF NOT EXISTS idx_corrida_carga_entidad_fecha
+    ON corrida_carga(entidad_id, fecha_inicio DESC);
+
+-- 3. registro_calidad_carga — señalar, nunca bloquear (FR-007, research.md Decisión 4).
+CREATE TABLE IF NOT EXISTS registro_calidad_carga (
+    registro_id BIGSERIAL PRIMARY KEY,
+    corrida_id BIGINT NOT NULL REFERENCES corrida_carga(corrida_id) ON DELETE CASCADE,
+    descripcion_problema VARCHAR(300) NOT NULL,
+    identificador_registro VARCHAR(100),
+    fecha_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_registro_calidad_carga_corrida ON registro_calidad_carga(corrida_id);
+
+-- 4. politica_gobierno_datos — append-only (FR-009/FR-010, research.md Decisión 5).
+CREATE TABLE IF NOT EXISTS politica_gobierno_datos (
+    politica_id BIGSERIAL PRIMARY KEY,
+    texto TEXT NOT NULL,
+    definido_por INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    fecha_creacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 5. RBAC — Jefe_TI sobre el módulo `TI` ya reservado (data-model.md §RBAC).
+INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
+SELECT r.role_id, m.modulo_id, true, true
+FROM roles r, modulos m
+WHERE m.nombre = 'TI' AND r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id) DO NOTHING;
+
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, t.tabla, true, t.ins, t.upd, false
+FROM roles r JOIN modulos m ON m.nombre = 'TI'
+CROSS JOIN (VALUES
+     ('modelo_datos_warehouse', true, true),
+     ('corrida_carga', false, false),
+     ('registro_calidad_carga', false, false),
+     ('politica_gobierno_datos', true, false)
+) AS t(tabla, ins, upd)
+WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

@@ -201,6 +201,21 @@ const routes = [
     name: 'operaciones-traslados',
     component: () => import('@/modules/operaciones/TrasladosPage.vue'),
   },
+  {
+    path: '/plataforma-datos/modelo',
+    name: 'plataforma-datos-modelo',
+    component: () => import('@/modules/plataforma-datos/pages/ModeloDatosWarehousePage.vue'),
+  },
+  {
+    path: '/plataforma-datos/corridas',
+    name: 'plataforma-datos-corridas',
+    component: () => import('@/modules/plataforma-datos/pages/MonitoreoCorridasPage.vue'),
+  },
+  {
+    path: '/plataforma-datos/politica',
+    name: 'plataforma-datos-politica',
+    component: () => import('@/modules/plataforma-datos/pages/PoliticaGobiernoDatosPage.vue'),
+  },
 ]
 
 const router = createRouter({

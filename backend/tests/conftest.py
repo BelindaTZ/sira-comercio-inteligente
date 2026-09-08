@@ -979,3 +979,48 @@ async def escenario_traslados(db_session: AsyncSession) -> dict:
 @pytest.fixture
 def auth_traslados_ops(escenario_traslados: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {escenario_traslados['token_ops']}"}
+
+
+@pytest_asyncio.fixture
+async def escenario_plataforma_datos(
+    db_session: AsyncSession, escenario_forecasting: dict
+) -> dict:
+    """Feature 010: reutiliza el historial de ventas + el Jefe_TI de
+    `escenario_forecasting` y siembra el catálogo `modelo_datos_warehouse` con
+    `fact_venta` + `dim_producto` + `dim_tienda` activas (para las corridas de
+    US2/US3). El resto de dimensiones las registran los tests de US1."""
+    s = db_session
+    e = escenario_forecasting
+
+    jefe_ti_emp = await _mk_empleado(s, e["tienda_id"])
+    rol_ti = await s.scalar(text("SELECT role_id FROM roles WHERE nombre = 'Jefe_TI'"))
+    token_ti = await _token(s, empleado_id=jefe_ti_emp, role_id=rol_ti, tienda_id=e["tienda_id"])
+
+    async def _entidad(nombre: str, tipo: str, origen: str) -> int:
+        return await s.scalar(
+            text(
+                "INSERT INTO modelo_datos_warehouse "
+                "(nombre_entidad, tipo, tabla_origen_postgres, definido_por) "
+                "VALUES (:n, :t, :o, :d) RETURNING entidad_id"
+            ),
+            {"n": nombre, "t": tipo, "o": origen, "d": jefe_ti_emp},
+        )
+
+    entidad_fact = await _entidad("fact_venta", "fact", "venta_detalle")
+    entidad_producto = await _entidad("dim_producto", "dimension", "productos")
+    entidad_tienda = await _entidad("dim_tienda", "dimension", "tiendas")
+    await s.flush()
+
+    return {
+        **e,
+        "jefe_ti_emp": jefe_ti_emp,
+        "token_ti": token_ti,
+        "entidad_fact": entidad_fact,
+        "entidad_producto": entidad_producto,
+        "entidad_tienda": entidad_tienda,
+    }
+
+
+@pytest.fixture
+def auth_plataforma_ti(escenario_plataforma_datos: dict) -> dict[str, str]:
+    return {"Authorization": f"Bearer {escenario_plataforma_datos['token_ti']}"}

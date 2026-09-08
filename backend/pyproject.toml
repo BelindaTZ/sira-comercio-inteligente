@@ -63,3 +63,6 @@ target-version = ["py311"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+# `data_platform/dags` en el path para que los tests de idempotencia/exclusión
+# mutua (feature 010) importen `dags_utils` sin instalar Airflow.
+pythonpath = [".", "../data_platform/dags"]

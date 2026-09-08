@@ -4,6 +4,10 @@
 
 Todas las tablas de esta sección son de **control del pipeline**, viven en PostgreSQL (Principio II/III) y no contienen datos de negocio del warehouse — esos viven exclusivamente en ClickHouse (`data_platform/clickhouse/schema_warehouse.sql`, fuera del alcance de este documento por Principio III).
 
+> **Ronda 1**: creadas por la migración Alembic `0018` (sobre `0017` de la feature 012) y por
+> el bloque EXTENSIÓN de `01_operativo_postgres.sql`. RBAC: `Jefe_TI` ya tiene el módulo `TI`
+> desde `0011` (feature 004); `0018` sólo agrega el permiso de tabla de las 4 tablas nuevas.
+
 ## Tabla nueva 1: `modelo_datos_warehouse`
 
 ```sql

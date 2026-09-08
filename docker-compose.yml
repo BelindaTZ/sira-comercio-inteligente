@@ -1,7 +1,11 @@
 # SIRA — entorno de desarrollo/demo local.
-# Feature 001 solo levanta PostgreSQL + MinIO (Principio III: ClickHouse/Airflow
-# quedan fuera del alcance, capa táctica/estratégica en pausa).
-#   docker compose up -d postgres minio
+#   docker compose up -d postgres minio           # núcleo operativo (001-008/011/012)
+#   docker compose --profile data up -d           # + warehouse ELT (010): clickhouse + airflow
+#
+# Principio III (Separación de Motores): postgres = operativo + control del
+# pipeline; minio landing-zone = raw del Extract; clickhouse = warehouse OLAP;
+# airflow = orquestación ELT. Todas las credenciales de estos servicios son
+# locales de desarrollo (como JWT_SECRET / MinIO), no de un tercero.
 
 services:
   postgres:
@@ -56,6 +60,65 @@ services:
       echo 'buckets listos';
       "
 
+  # ---------------------------------------------------------------------------
+  # Warehouse ELT (feature 010) — perfil `data`, no arranca por defecto.
+  # ---------------------------------------------------------------------------
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: sira-clickhouse
+    profiles: ["data"]
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-sira}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-sira}
+      CLICKHOUSE_DB: sira_warehouse
+    ports:
+      - "8123:8123"   # HTTP (clickhouse-connect)
+      - "9010:9000"   # native
+    volumes:
+      - sira_chdata:/var/lib/clickhouse
+      # DDL de fact_venta + dimensiones — se aplica al primer arranque.
+      - ./data_platform/clickhouse/schema_warehouse.sql:/docker-entrypoint-initdb.d/schema_warehouse.sql:ro
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  airflow:
+    image: apache/airflow:2.9.3-python3.11
+    container_name: sira-airflow
+    profiles: ["data"]
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/${POSTGRES_DB:-sira}
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "true"
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+      _PIP_ADDITIONAL_REQUIREMENTS: "clickhouse-connect>=0.7 minio>=7.2 asyncpg>=0.30 SQLAlchemy>=2.0"
+      # Origen operativo + destinos que consumen los DAGs (dags_utils/*).
+      SIRA_PG_DSN: postgresql://${POSTGRES_USER:-sira}:${POSTGRES_PASSWORD:-sira}@postgres:5432/${POSTGRES_DB:-sira}
+      SIRA_CLICKHOUSE_URL: http://${CLICKHOUSE_USER:-sira}:${CLICKHOUSE_PASSWORD:-sira}@clickhouse:8123/sira_warehouse
+      SIRA_MINIO_ENDPOINT: minio:9000
+      SIRA_MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      SIRA_MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data_platform/dags:/opt/airflow/dags
+      - sira_airflowlogs:/opt/airflow/logs
+    command: standalone
+
 volumes:
   sira_pgdata:
   sira_miniodata:
+  sira_chdata:
+  sira_airflowlogs:

@@ -3,7 +3,15 @@
 **Branch**: `010-plataforma-datos-tactico-estrategico` | **Date**: 2026-09-06 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/010-plataforma-datos-tactico-estrategico/spec.md`
 
-**Estado**: en espera de implementación (junto con 009-dashboards-multinivel) — este plan documenta el diseño completo del pipeline ELT para que la implementación pueda arrancar en cuanto se retome la capa táctica/estratégica; no se ejecuta el `/speckit-implement` de esta feature antes de esa fecha.
+**Estado**: implementada (`/speckit-implement`, 2026-09-07).
+
+> **Ronda 1 (post-implementación) — sin cambio de alcance ni de FR**: módulo backend plano
+> `backend/src/modules/plataforma_datos/` (no anidado bajo `ti/`); frontend `plataformaDatosApi.js`
+> + `modules/plataforma-datos/pages/` (sin Pinia/TypeScript); base path `/api/plataforma-datos` y
+> error `{"error": {...}}`; migración Alembic `0018` (sobre `0017`); el orquestador de una corrida
+> (`data_platform/dags/dags_utils/pipeline.py`) es único y compartido entre el DAG y el endpoint
+> dev de forzar corrida. `docker-compose.yml` gana `clickhouse` + `airflow` bajo el perfil `data`.
+> Los tests de ClickHouse/MinIO usan dobles en memoria (quickstart.md).
 
 ## Summary
 
@@ -42,6 +50,12 @@ Construye la plataforma de datos que 009 consume: el modelo de datos único del 
 
 **Resultado**: sin violaciones. No se requiere entrada en Complexity Tracking.
 
+**Re-chequeo ronda 1 (T043, tras la implementación)**: sigue en PASS en los 12 principios.
+Notas: II — cada corrida escribe una fila real en `corrida_carga` (`en_progreso` → `exitosa`/`fallida`),
+nunca se lee el estado de los logs de Airflow. III — el módulo backend no instancia ningún cliente
+de ClickHouse; el único escritor del warehouse es `data_platform/`. VIII — el orquestador de la
+corrida es una sola implementación (`pipeline.py`) reutilizada por el DAG y el endpoint dev.
+
 ## Project Structure
 
 ### Documentation (this feature)
@@ -60,38 +74,39 @@ specs/010-plataforma-datos-tactico-estrategico/
 
 ### Source Code (repository root)
 
+Estructura real tras la implementación (ronda 1 — módulo plano):
+
 ```
 backend/
-├── modules/
-│   └── ti/
-│       └── plataforma_datos/               # NUEVO (dentro del módulo TI ya reservado)
-│           ├── router.py                   # monitoreo de corridas, modelo de datos, política
-│           ├── service.py
-│           ├── repository.py
-│           └── schemas.py
+├── src/modules/plataforma_datos/           # NUEVO (módulo plano; RBAC bajo el módulo TI ya reservado)
+│   ├── router.py                           # modelo de datos, monitoreo de corridas, calidad, política
+│   ├── service.py
+│   ├── repository.py
+│   └── schemas.py
+├── src/models/{modelo_datos_warehouse,corrida_carga,registro_calidad_carga,politica_gobierno_datos}.py
+├── alembic/versions/0018_feature010_plataforma_datos_tactico_estrategico.py
 └── tests/
     ├── contract/test_plataforma_datos.py
     └── integration/test_idempotencia_carga.py
 
-data_platform/                              # NUEVO — no es "backend" de request/response, es infraestructura ELT
+data_platform/                              # NUEVO — infraestructura ELT, no request/response
 ├── dags/
-│   ├── carga_diaria_warehouse.py           # DAG principal, un task por entidad de modelo_datos_warehouse
+│   ├── carga_diaria_warehouse.py           # DAG, un task por entidad activa de modelo_datos_warehouse
 │   └── dags_utils/
+│       ├── pipeline.py                     # orquestador de una corrida (compartido con el endpoint dev)
 │       ├── extract_postgres.py
 │       ├── load_landing_zone_minio.py
-│       ├── load_clickhouse.py
-│       └── transform_in_warehouse.py
+│       ├── load_clickhouse.py              # INSERT + 2 reglas de calidad
+│       └── transform_in_warehouse.py       # OPTIMIZE ... FINAL
 └── clickhouse/
     └── schema_warehouse.sql                # DDL de fact_venta + dimensiones (ClickHouse, no PostgreSQL)
 
-frontend/
-├── src/
-│   └── modules/
-│       └── ti/
-│           └── plataforma_datos/
-│               ├── ModeloDatosWarehouse.vue    # NUEVO (US1)
-│               ├── MonitoreoCorridas.vue       # NUEVO (US2/US3)
-│               └── PoliticaGobiernoDatos.vue   # NUEVO (US4)
+frontend/src/
+├── services/plataformaDatosApi.js
+└── modules/plataforma-datos/pages/
+    ├── ModeloDatosWarehousePage.vue        # US1
+    ├── MonitoreoCorridasPage.vue           # US2/US3
+    └── PoliticaGobiernoDatosPage.vue       # US4
 ```
 
 **Cruce entre módulos**: ninguno nuevo — todo vive dentro de `TI`, ya reservado desde 006. La única relación entre capas es de lectura: los DAGs leen PostgreSQL (todas las features 001-009/011/012) como origen, nunca escriben en sus tablas.

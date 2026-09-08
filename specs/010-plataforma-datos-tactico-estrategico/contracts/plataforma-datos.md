@@ -1,8 +1,13 @@
 # API Contracts: Plataforma de Datos Táctico-Estratégica
 
-**Feature**: 010-plataforma-datos-tactico-estrategico | **Base path**: `/api/v1/ti/plataforma-datos`
+**Feature**: 010-plataforma-datos-tactico-estrategico | **Base path**: `/api/plataforma-datos`
 
-Todos los endpoints requieren JWT válido (008) y RBAC de módulo `TI` (data-model.md §RBAC). Formato de error estándar del proyecto (`{"detail": "..."}`).
+> **Ronda 1 (post-implementación)**: base path real `/api/plataforma-datos` (plano, mismo
+> patrón que 002-012 — el borrador decía `/api/v1/ti/plataforma-datos`) y formato de error
+> del proyecto `{"error": {"code": "...", "message": "...", "details": ...}}` (el borrador
+> decía `{"detail": ...}`). Los paths de abajo se dejan como estaban salvo el prefijo.
+
+Todos los endpoints requieren JWT válido (008) y RBAC de módulo `TI` (data-model.md §RBAC).
 
 ## 1. Modelo de datos único (US1, FR-001)
 
@@ -79,8 +84,11 @@ RBAC: `Jefe_TI`.
 ```json
 {"entidad_id": 1, "tipo_carga": "incremental"}
 ```
-409 si ya existe una corrida `en_progreso` para esa `entidad_id` (FR-005). Deshabilitado fuera de entorno de desarrollo — 403 en producción (mismo patrón de 003-006/009).
+409 si ya existe una corrida `en_progreso` para esa `entidad_id` (FR-005). 422 si la entidad
+está inactiva. Deshabilitado fuera de entorno de desarrollo — la ruta no se monta si
+`app_env == "production"` (mismo patrón de 003-006/009).
 
-Respuesta 202: `{"corrida_id": ..., "estado": "en_progreso"}`.
+Respuesta 202: `{"corrida_id": ..., "estado": "exitosa"}` (sin ClickHouse configurado la
+corrida es de control — abre y cierra su fila en `corrida_carga` sin mover datos de negocio).
 
 RBAC: `Jefe_TI`.

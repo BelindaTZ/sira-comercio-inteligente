@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-06
 
-**Status**: Draft — **en espera de implementación** hasta retomar la capa táctica/estratégica (junto con 009-dashboards-multinivel, ya documentado en `constitution.md`/`domain-context.md`)
+**Status**: Implementada (`/speckit-implement`, 2026-09-07). El pipeline ELT se desarrolló y probó con PostgreSQL/MinIO reales y dobles en memoria para ClickHouse/Airflow; su activación con volumen de producción se retoma junto con la capa táctica/estratégica (009-dashboards-multinivel).
 
 **Input**: OT-7.1 completo (OE-7 TI/Datos — definición del modelo de datos único, carga/integración diaria de datos) más OO-7.5.1 (OT-7.5, gobierno de datos — calidad y trazabilidad), que la feature 008 dejó explícitamente pendiente de evaluar aquí por tratarse del pipeline de datos completo, no solo de accesos.
 

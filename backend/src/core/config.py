@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     minio_bucket_comprobantes: str = Field(
         default="comprobantes-venta", alias="MINIO_BUCKET_COMPROBANTES"
     )
+    minio_bucket_landing_zone: str = Field(
+        default="landing-zone", alias="MINIO_BUCKET_LANDING_ZONE"
+    )
+
+    # --- ClickHouse (warehouse, feature 010). Vacío = pipeline ELT no configurado:
+    #     el endpoint dev de forzar corrida usa un cargador no-op (tests con mocks). ---
+    clickhouse_url: str = Field(default="", alias="CLICKHOUSE_URL")
 
     # --- Integraciones externas (modo test / sandbox) ---
     stripe_secret_key: str = Field(default="", alias="STRIPE_SECRET_KEY")

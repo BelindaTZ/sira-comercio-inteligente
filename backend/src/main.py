@@ -60,6 +60,7 @@ from src.modules.clientes.router import router as clientes_router  # noqa: E402
 from src.modules.compras.router import router as compras_router  # noqa: E402
 from src.modules.forecasting.router import router as forecasting_router  # noqa: E402
 from src.modules.inventario.router import router as inventario_router  # noqa: E402
+from src.modules.plataforma_datos.router import router as plataforma_datos_router  # noqa: E402
 from src.modules.pricing.router import router as pricing_router  # noqa: E402
 from src.modules.promociones.router import router as promociones_router  # noqa: E402
 from src.modules.rrhh.router import router as rrhh_router  # noqa: E402
@@ -80,6 +81,7 @@ api.include_router(auth_router)
 api.include_router(sistema_router)
 api.include_router(rrhh_router)
 api.include_router(traslados_router)
+api.include_router(plataforma_datos_router)
 
 
 # --- Endpoints de desarrollo (T005) — fuerzan un job periódico a mano.
