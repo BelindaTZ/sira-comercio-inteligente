@@ -64,7 +64,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/shared/PlaceholderHome.vue'),
+    component: () => import('@/shared/HomeNav.vue'),
   },
   {
     path: '/pos',
