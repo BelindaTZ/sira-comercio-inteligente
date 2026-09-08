@@ -4,8 +4,15 @@ Los tests de contrato/integración corren contra la BD PostgreSQL real vía Dock
 (research.md #3), no con mocks. Cada test corre dentro de una transacción que se
 revierte al final (aislamiento por savepoint), así no ensucian la base.
 
-Requisitos: `docker compose up -d postgres` y `alembic upgrade head`.
-`DATABASE_URL` apunta al Postgres de desarrollo (puerto 15432 por defecto).
+Requisitos: `docker compose up -d postgres`, la BD `sira_test` creada y migrada:
+
+    docker exec sira-postgres psql -U sira -d postgres -c "CREATE DATABASE sira_test"
+    TEST_DATABASE_URL= DATABASE_URL=postgresql+asyncpg://sira:sira@127.0.0.1:15432/sira_test \
+        .venv/Scripts/python -m alembic upgrade head
+
+Los tests corren SIEMPRE contra `settings.test_db_url` (`<db>_test` por defecto, o
+`TEST_DATABASE_URL` si se define) — aislada del dataset de demo que
+`scripts/cargar_dataset_inicial` carga en `DATABASE_URL`.
 """
 
 from __future__ import annotations
@@ -35,7 +42,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     # Engine propio con NullPool: cada test abre y cierra su conexión real y no
     # deja conexiones en pool ligadas a un event loop ya cerrado (pytest-asyncio
     # crea un loop por test).
-    test_engine = create_async_engine(settings.database_url, poolclass=NullPool)
+    test_engine = create_async_engine(settings.test_db_url, poolclass=NullPool)
     conn = await test_engine.connect()
     trans = await conn.begin()
     session_factory = async_sessionmaker(

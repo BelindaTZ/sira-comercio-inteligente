@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { authApi } from '@/services/authApi'
+import { useSesion } from '@/stores/sesion'
 
 // Las rutas de cada módulo (pos, inventario, catalogo, compras) se agregan en
 // sus fases respectivas de tasks.md. Este archivo solo define el router base.
@@ -64,7 +65,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/shared/HomeNav.vue'),
+    component: () => import('@/shared/PortalHome.vue'),
   },
   {
     path: '/pos',
@@ -231,6 +232,11 @@ const routes = [
     name: 'ti-dashboards-operativos',
     component: () => import('@/modules/ti/VerificacionDashboardsOperativos.vue'),
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'no-encontrado',
+    component: () => import('@/shared/NoEncontrado.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -238,13 +244,26 @@ const router = createRouter({
   routes,
 })
 
-// Guard de navegación (feature 008): toda ruta fuera de `/auth` exige un JWT
-// válido en localStorage. La validez real la comprueba el backend en cada
-// request; aquí sólo se evita mostrar vistas autenticadas sin sesión.
-router.beforeEach((to) => {
+// Guard de navegación. Toda ruta fuera de `/auth` exige un JWT en localStorage
+// (la validez real la comprueba el backend). Feature 013: además carga el perfil
+// de la sesión (`/auth/me`) la primera vez, para que el shell pinte la
+// navegación según el rol (Principio XII). Si `/auth/me` da 401, `http.js` ya
+// limpia el token y redirige.
+router.beforeEach(async (to) => {
   if (to.meta.publica) return true
-  if (authApi.estaAutenticado()) return true
-  return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  if (!authApi.estaAutenticado()) {
+    return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+  }
+  try {
+    await useSesion().cargar()
+  } catch (e) {
+    if (e?.status === 401) {
+      authApi.logout()
+      return { name: 'auth-login', query: to.fullPath !== '/' ? { redirect: to.fullPath } : {} }
+    }
+    /* otro error (red, 500): no bloquear la navegación */
+  }
+  return true
 })
 
 export default router

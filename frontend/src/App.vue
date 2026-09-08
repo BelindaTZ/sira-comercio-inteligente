@@ -1,10 +1,16 @@
 <script setup>
-// Shell mínimo — la navegación horizontal con mega-menú (Principio XII) se
-// implementa junto con la feature 008; por ahora solo el contenedor de rutas.
+/**
+ * Raíz de la SPA. Las rutas autenticadas se montan dentro del shell de
+ * navegación maestro (feature 013, Principio XII); las rutas públicas
+ * (`/auth/*`, `meta.publica`) se renderizan sin shell.
+ */
+import { useRoute } from 'vue-router'
+import AppShell from '@/shared/AppShell.vue'
+
+const route = useRoute()
 </script>
 
 <template>
-  <div class="min-h-screen">
-    <RouterView />
-  </div>
+  <AppShell v-if="!route.meta.publica" />
+  <RouterView v-else />
 </template>

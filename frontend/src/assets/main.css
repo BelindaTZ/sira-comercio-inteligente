@@ -1,3 +1,5 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,5 +9,12 @@
 }
 
 body {
-  @apply bg-background text-on-surface font-sans antialiased;
+  @apply bg-background font-sans text-on-surface antialiased;
+}
+
+/* design-system.md §Typography: cifras tabulares en toda métrica/monto/timestamp
+   para alineación estricta de columnas. Se aplica con la utilidad `.tabular` o
+   `tabular-nums` de Tailwind; esto fija el feature-setting subyacente. */
+.tabular-nums {
+  font-feature-settings: 'tnum' 1;
 }

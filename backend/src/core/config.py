@@ -13,7 +13,17 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+asyncpg://sira:sira@localhost:5432/sira", alias="DATABASE_URL"
     )
+    # BD dedicada para pytest — aislada del dataset de demo cargado en `database_url`.
+    # Si no se define, se deriva cambiando el nombre de BD a `<db>_test`.
+    test_database_url: str = Field(default="", alias="TEST_DATABASE_URL")
     db_echo: bool = Field(default=False, alias="DB_ECHO")
+
+    @property
+    def test_db_url(self) -> str:
+        if self.test_database_url:
+            return self.test_database_url
+        base, _, _name = self.database_url.rpartition("/")
+        return f"{base}/{_name}_test" if base else self.database_url
 
     # --- Auth / RBAC (el emisor real del JWT es la feature 008; 001 solo lo consume) ---
     jwt_secret: str = Field(default="dev-insecure-secret-change-me", alias="JWT_SECRET")
@@ -54,7 +64,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(default=["http://localhost:5173"], alias="CORS_ORIGINS")
     app_env: str = Field(default="development", alias="APP_ENV")
 
-    @field_validator("database_url", mode="after")
+    @field_validator("database_url", "test_database_url", mode="after")
     @classmethod
     def _force_async_driver(cls, v: str) -> str:
         """Acepta `postgresql://` y lo normaliza al driver async que usa el backend."""

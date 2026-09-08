@@ -24,6 +24,27 @@ class CambiarPasswordIn(BaseModel):
     password_nueva: str = Field(min_length=8, max_length=128)
 
 
+class PerfilModuloOut(BaseModel):
+    nombre: str
+    puede_ver: bool
+    puede_editar: bool
+
+
+class PerfilOut(BaseModel):
+    """`GET /auth/me` — identidad de la sesión + módulos visibles para el rol.
+
+    El JWT sólo transporta `usuario_id`; el frontend necesita esto para pintar la
+    navegación según el rol (Principio XII) sin exponer la tabla RBAC completa.
+    """
+
+    usuario_id: int
+    empleado_id: int
+    role_id: int
+    rol: str | None
+    tienda_id: int | None
+    modulos: list[PerfilModuloOut]
+
+
 class RecuperarPasswordIn(BaseModel):
     email: str = Field(min_length=3, max_length=150)
 

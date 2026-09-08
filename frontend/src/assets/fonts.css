@@ -1,0 +1,13 @@
+/* Fuentes del design-system "Nordic Abyssal & Amethyst Intelligence"
+   (.specify/memory/design-system.md §Typography): Plus Jakarta Sans para títulos,
+   Inter para datos/microcopy. Self-hosted vía @fontsource — sin CDN, subset latin. */
+
+/* Inter — cuerpo, tablas, microcopy */
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/inter/latin-700.css';
+
+/* Plus Jakarta Sans — headlines e identidad estructural */
+@import '@fontsource/plus-jakarta-sans/latin-700.css';
+@import '@fontsource/plus-jakarta-sans/latin-800.css';

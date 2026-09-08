@@ -37,10 +37,13 @@ python -m scripts.cargar_dataset_inicial
 python -m scripts.preparar_demo
 ```
 
-`preparar_demo` deja una cuenta por rol RBAC (`gerente.general`, `jefe.ti`,
-`jefe.comercial`, …, `cajero`), todas con contraseña **`Sira2026!`**. Login en
-`http://localhost:5173/auth/login`. Sólo `scripts.seed_usuarios_demo` (idempotente,
-`--reset-password` para re-hashear) si sólo hacen falta las cuentas.
+`preparar_demo` deja una cuenta por rol RBAC (`demo.gerente`, `demo.ti`,
+`demo.comercial`, `demo.marketing`, `demo.operaciones`, `demo.finanzas`, `demo.rrhh`,
+`demo.encargado`, `demo.reponedor`, `demo.cajero`), todas con contraseña **`Sira2026!`**.
+Login en `http://localhost:5173/auth/login`. Sólo `scripts.seed_usuarios_demo`
+(idempotente, `--reset-password` para re-hashear) si sólo hacen falta las cuentas.
+El prefijo `demo.` evita chocar con los usernames que fabrican los fixtures de pytest
+sobre la misma BD.
 
 ## Convenciones
 

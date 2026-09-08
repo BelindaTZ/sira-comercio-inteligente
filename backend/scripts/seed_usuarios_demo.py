@@ -31,17 +31,19 @@ if sys.platform == "win32":  # asyncpg + ProactorEventLoop no se llevan bien
 PASSWORD = "Sira2026!"
 
 # rol RBAC -> (username, ¿opera en una tienda concreta?)
+# Prefijo `demo.` para no chocar con los usernames que fabrican los fixtures de
+# pytest (`escenario_auth` usa `jefe.ti`, `jefe.rrhh`, `cajero.uno`) sobre la misma BD.
 CUENTAS: list[tuple[str, str, bool]] = [
-    ("Gerente_General", "gerente.general", False),
-    ("Jefe_TI", "jefe.ti", False),
-    ("Jefe_Comercial", "jefe.comercial", False),
-    ("Jefe_Marketing", "jefe.marketing", False),
-    ("Jefe_Operaciones", "jefe.operaciones", False),
-    ("Jefe_Finanzas", "jefe.finanzas", False),
-    ("Jefe_RRHH", "jefe.rrhh", False),
-    ("Encargado_Tienda", "encargado.tienda", True),
-    ("Reponedor", "reponedor", True),
-    ("Cajero", "cajero", True),
+    ("Gerente_General", "demo.gerente", False),
+    ("Jefe_TI", "demo.ti", False),
+    ("Jefe_Comercial", "demo.comercial", False),
+    ("Jefe_Marketing", "demo.marketing", False),
+    ("Jefe_Operaciones", "demo.operaciones", False),
+    ("Jefe_Finanzas", "demo.finanzas", False),
+    ("Jefe_RRHH", "demo.rrhh", False),
+    ("Encargado_Tienda", "demo.encargado", True),
+    ("Reponedor", "demo.reponedor", True),
+    ("Cajero", "demo.cajero", True),
 ]
 
 

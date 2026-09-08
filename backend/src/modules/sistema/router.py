@@ -31,6 +31,7 @@ from src.modules.sistema.schemas import (
     CrearUsuarioIn,
     LoginIn,
     LoginOut,
+    PerfilOut,
     PermisoModuloIn,
     PermisoModuloOut,
     PermisoTablaIn,
@@ -98,6 +99,22 @@ async def cambiar_mi_password(
         principal.usuario_id, data.password_actual, data.password_nueva
     )
     return {"mensaje": "Contraseña actualizada"}
+
+
+@auth_router.get("/me", response_model=PerfilOut)
+async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
+    """Identidad de la sesión + módulos que el rol puede ver — lo que el frontend
+    necesita para pintar la navegación (Principio XII). No expone la tabla RBAC
+    completa, sólo el nivel de módulo del propio rol."""
+    modulos = await svc.listar_permisos_modulo(principal.role_id)
+    return PerfilOut(
+        usuario_id=principal.usuario_id,
+        empleado_id=principal.empleado_id,
+        role_id=principal.role_id,
+        rol=principal.rol,
+        tienda_id=principal.tienda_id,
+        modulos=[m for m in modulos if m["puede_ver"]],
+    )
 
 
 # ============================================================ sistema (Jefe_TI)

@@ -30,6 +30,11 @@ export const authApi = {
     }
   },
 
+  /** Identidad de la sesión + módulos visibles para el rol (feature 013). */
+  me() {
+    return http.get('/api/auth/me').then((r) => r.data)
+  },
+
   token() {
     try {
       return localStorage.getItem(TOKEN_KEY)
