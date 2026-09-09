@@ -45,7 +45,10 @@ const modalCrear = ref(false)
 const ordenSeleccionada = ref(null)
 const mostrarFinanzas = ref(false)
 
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')} CLP`)
+const money = (v) =>
+  v == null
+    ? '—'
+    : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
 
 async function cargarDatos() {
   cargando.value = true
@@ -222,7 +225,7 @@ onMounted(cargarDatos)
 
       <KpiTile
         label="Gasto Compra Mes"
-        :valor="money(kpiGastoMes || 4320500)"
+        :valor="money(kpiGastoMes || 4540.00)"
         microcopy="Órdenes valorizadas en el mes"
         estado="82% prep."
         estado-tipo="neutral"

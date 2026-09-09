@@ -286,9 +286,11 @@ async def ficha_360(
     """Panel 360° del cliente: saldo de puntos, cupones activos, distribución de
     consumo por categoría y últimas compras."""
     d = await repo.ficha_360(household_id)
+    canje_usd = round(d["puntos"] * 0.01, 2)
     return Ficha360Out(
         household_id=household_id,
-        valor_canje_clp=d["puntos"],  # 1 punto = 1 CLP de canje
+        valor_canje_clp=canje_usd,
+        valor_canje_usd=canje_usd,
         **d,
     )
 

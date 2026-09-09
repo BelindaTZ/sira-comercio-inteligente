@@ -84,7 +84,7 @@ const skusPredictivos = ref([
     categoriaLabel: 'Lácteos & Frescos',
     historico7d: 540,
     pronostico7d: 680,
-    montoPronostico: '$945.200 CLP',
+    montoPronostico: '$995.00 USD',
     factorIa: '+25.9% (Desayuno + Promo)',
     factorTipo: 'ia',
     stockTienda: 92,
@@ -101,7 +101,7 @@ const skusPredictivos = ref([
     categoriaLabel: 'Bebidas & Snacks',
     historico7d: 1120,
     pronostico7d: 1580,
-    montoPronostico: '$1.738.000 CLP',
+    montoPronostico: '$1,830.00 USD',
     factorIa: '+41.0% (Ola Calor 28°C)',
     factorTipo: 'fifo',
     stockTienda: 310,
@@ -118,7 +118,7 @@ const skusPredictivos = ref([
     categoriaLabel: 'Panadería Gourmet',
     historico7d: 420,
     pronostico7d: 435,
-    montoPronostico: '$826.500 CLP',
+    montoPronostico: '$870.00 USD',
     factorIa: '+3.5% (Demanda habitual)',
     factorTipo: 'ok',
     stockTienda: 260,
@@ -135,7 +135,7 @@ const skusPredictivos = ref([
     categoriaLabel: 'Vinos & Cervezas',
     historico7d: 290,
     pronostico7d: 380,
-    montoPronostico: '$2.470.000 CLP',
+    montoPronostico: '$2,600.00 USD',
     factorIa: '+31.0% (Víspera Feriado)',
     factorTipo: 'ia',
     stockTienda: 75,
@@ -152,7 +152,7 @@ const skusPredictivos = ref([
     categoriaLabel: 'Abarrotes Finos',
     historico7d: 180,
     pronostico7d: 195,
-    montoPronostico: '$1.560.000 CLP',
+    montoPronostico: '$1,642.00 USD',
     factorIa: '+8.3% (Tendencia vespertina)',
     factorTipo: 'ok',
     stockTienda: 140,
@@ -331,7 +331,7 @@ onMounted(cargar)
 
       <KpiTile
         label="Demanda 7 Días Proyectada"
-        valor="$18.420.000 CLP"
+        valor="$19,380.00 USD"
         microcopy="Venta estimada para próxima semana"
         estado="+6.5% semana"
         estado-tipo="ia"
@@ -620,7 +620,7 @@ onMounted(cargar)
             <tr class="bg-surface-container-low border-b border-outline-variant/40 text-[11px] font-bold uppercase tracking-wider text-outline h-9">
               <th class="py-2.5 px-4">Producto / SKU</th>
               <th class="py-2.5 px-4 text-right">Histórico (7D)</th>
-              <th class="py-2.5 px-4 text-right">Pronóstico 7D (Unid / CLP)</th>
+              <th class="py-2.5 px-4 text-right">Pronóstico 7D (Unid / USD)</th>
               <th class="py-2.5 px-4">Factor Ajuste IA</th>
               <th class="py-2.5 px-4 text-right">Stock Tienda</th>
               <th class="py-2.5 px-4 text-center">Cobertura</th>

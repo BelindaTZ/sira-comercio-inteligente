@@ -53,8 +53,9 @@ watch(categoria, async (c) => {
 })
 
 const lineal85 = computed(() => (capacidad.value ? Math.round(capacidad.value * 0.85) : null))
-const capitalInmovilizado = computed(() => (maximo.value || 0) * 1500) // ref. genérica
-const money = (v) => `$${Math.round(v || 0).toLocaleString('es-CL')} CLP`
+const capitalInmovilizado = computed(() => (maximo.value || 0) * 1.50) // ref. genérica en USD
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
 const p = (ref_, n, min = 0) => {
   ref_.value = Math.max(min, (Number(ref_.value) || 0) + n)
 }

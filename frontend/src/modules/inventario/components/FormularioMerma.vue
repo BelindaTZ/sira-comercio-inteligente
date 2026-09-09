@@ -88,7 +88,8 @@ const impacto = computed(() => (Number(cantidad.value) || 0) * costo.value)
 const stockFinal = computed(() =>
   disponible.value == null ? null : disponible.value - (Number(cantidad.value) || 0)
 )
-const money = (v) => `$${Math.round(Math.abs(v || 0)).toLocaleString('es-CL')} CLP`
+const money = (v) =>
+  `$${Math.abs(Number(v || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
 const paso = (n) => {
   const max = disponible.value ?? Infinity
   cantidad.value = Math.min(max, Math.max(1, (Number(cantidad.value) || 0) + n))

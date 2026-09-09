@@ -54,7 +54,8 @@ const modal = ref(null) // 'nuevo' | fila (edición precio)
 const edicion = ref({ precio_base: null, costo: null })
 const seleccion = ref(null) // fila para el simulador
 
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')}`)
+const money = (v) =>
+  v == null ? '—' : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const pct = (v) => (v == null ? '—' : `${Number(v).toFixed(1)}%`)
 
 const eanPct = computed(() =>

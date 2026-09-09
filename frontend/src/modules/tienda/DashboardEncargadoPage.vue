@@ -35,7 +35,8 @@ const alertasVenc = ref(0)
 const cargando = ref(false)
 const error = ref('')
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 // --- datáfonos de esta tienda (filtrados por sus cajas) ---
 const cajaIds = computed(() => new Set(cajas.value.map((c) => c.caja_id)))
@@ -83,8 +84,8 @@ const chartStock = computed(() => ({
 
 // --- gráfico 2: diferencia de cuadre por caja (bar) ---
 const cierresConDif = computed(() => cierres.value.some((c) => Number(c.diferencia) !== 0))
-const cortoCLP = (v) =>
-  Math.abs(v) >= 1000 ? `${Math.round(v / 1000)}k` : String(Math.round(v))
+const cortoUSD = (v) =>
+  Math.abs(v) >= 1000 ? `$${(v / 1000).toFixed(1)}k` : `$${Number(v).toFixed(2)}`
 const chartCuadre = computed(() => {
   const filas = [...cierres.value].sort((a, b) => a.caja_id - b.caja_id)
   return {
@@ -95,7 +96,7 @@ const chartCuadre = computed(() => {
       data: filas.map((c) => cajaNombre(c.caja_id)),
       axisLabel: { fontSize: 10, interval: 0, rotate: filas.length > 6 ? 35 : 0 },
     },
-    yAxis: { type: 'value', axisLabel: { formatter: cortoCLP } },
+    yAxis: { type: 'value', axisLabel: { formatter: cortoUSD } },
     series: [
       {
         type: 'bar',

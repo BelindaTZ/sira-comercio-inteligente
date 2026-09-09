@@ -14,8 +14,8 @@ from __future__ import annotations
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-_CLP = 950
-_PTS_DIV = 1000
+_CLP = 1
+_PTS_DIV = 1
 _CONFIRMADA = "v.estado = 'confirmada'"
 
 

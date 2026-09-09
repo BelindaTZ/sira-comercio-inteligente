@@ -128,7 +128,8 @@ class CompraRecienteOut(BaseModel):
 class Ficha360Out(BaseModel):
     household_id: int
     puntos: int
-    valor_canje_clp: int
+    valor_canje_clp: float = 0.0
+    valor_canje_usd: float = 0.0
     ltv: float
     tickets: int
     cupones: list[CuponClienteOut]

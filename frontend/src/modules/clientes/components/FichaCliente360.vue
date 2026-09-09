@@ -19,7 +19,8 @@ const emit = defineEmits(['editar', 'asignar-cupon'])
 const ficha = ref(null)
 const cargando = ref(false)
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const iniciales = (n) =>
   (n || '?')
     .split(' ')
@@ -125,7 +126,7 @@ const fmtFecha = (d) =>
               {{ (ficha?.puntos ?? 0).toLocaleString('es-CL') }} pts
             </span>
             <span class="text-[11px] font-semibold text-amethyst-700">
-              = {{ money(ficha?.valor_canje_clp) }} para canje
+              = {{ money(ficha?.valor_canje_usd ?? ficha?.valor_canje_clp) }} para canje
             </span>
           </div>
         </div>

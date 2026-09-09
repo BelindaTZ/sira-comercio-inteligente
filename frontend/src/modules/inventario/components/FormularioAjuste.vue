@@ -82,7 +82,8 @@ const discrepanciaPct = computed(() =>
 const impacto = computed(() =>
   discrepancia.value == null ? null : discrepancia.value * costo.value
 )
-const money = (v) => `$${Math.round(Math.abs(v || 0)).toLocaleString('es-CL')} CLP`
+const money = (v) =>
+  `$${Math.abs(Number(v || 0)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
 const paso = (n) => {
   conteoFisico.value = Math.max(0, (Number(conteoFisico.value) || 0) + n)
 }

@@ -23,7 +23,8 @@ const error = ref('')
 const aplicando = ref(false)
 let deb
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 watch(
   () => props.producto?.product_id,
@@ -155,7 +156,7 @@ async function aplicar() {
         </p>
         <p class="font-display text-xl font-extrabold tabular-nums" :class="sim.ganancia_mensual_delta >= 0 ? 'text-emerald-800' : 'text-crimson-ruby'">
           {{ sim.ganancia_mensual_delta >= 0 ? '+' : '' }}{{ money(sim.ganancia_mensual_delta) }}
-          <span class="text-[10px] font-medium text-emerald-800">CLP netos/mes</span>
+          <span class="text-[10px] font-medium text-emerald-800">USD netos/mes</span>
         </p>
         <div class="flex items-center gap-1.5 border-t border-emerald-600/10 pt-1.5 text-[10px] text-emerald-800">
           <Icon name="check" :size="12" />

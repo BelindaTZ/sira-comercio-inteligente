@@ -38,7 +38,8 @@ const kpi = ref({
   categorias_afectadas: [],
 })
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) =>
+  `$${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 const pills = computed(() => [
   { value: '', label: 'Toda la cohorte', count: kpi.value.clientes_riesgo },

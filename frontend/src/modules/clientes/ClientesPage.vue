@@ -51,7 +51,8 @@ const seleccion = ref(null)
 const modal = ref(null) // 'nuevo' | 'editar'
 const tituloPagina = 'Gestión de Clientes & Programa de Lealtad "Club Marzú"'
 
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')}`)
+const money = (v) =>
+  v == null ? '—' : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const fmtFecha = (d) =>
   d ? new Date(d).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }) : '—'
 

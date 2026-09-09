@@ -98,7 +98,8 @@ const columnasAlertas = [
   { key: 'acciones', label: '' },
 ]
 
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')}`)
+const money = (v) =>
+  v == null ? '—' : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
 async function cargarKpis() {
   if (!tiendaId.value) return

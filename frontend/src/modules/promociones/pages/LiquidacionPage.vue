@@ -18,6 +18,7 @@ import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
+import { money } from '@/shared/currency'
 
 const sesion = useSesion()
 const tiendaId = computed(() => sesion.tiendaId ?? 1)
@@ -45,8 +46,6 @@ const politicas = reactive({
 const modalRegla = ref(false)
 const modalCambiosAbc = ref(false)
 
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')} CLP`)
-
 async function cargar() {
   cargando.value = true
   error.value = ''
@@ -72,12 +71,12 @@ async function cargar() {
 const valorEnRiesgo = computed(() =>
   candidatos.value
     .filter((c) => c.estado === 'candidato')
-    .reduce((sum, c) => sum + Number(c.precio_base || 3500) * 12, 0)
+    .reduce((sum, c) => sum + Number(c.precio_base || 3.50) * 12, 0)
 )
 const recuperacionProyectada = computed(() =>
   candidatos.value
     .filter((c) => c.estado === 'candidato')
-    .reduce((sum, c) => sum + Number(c.precio_liquidacion || 2200) * 12, 0)
+    .reduce((sum, c) => sum + Number(c.precio_liquidacion || 2.20) * 12, 0)
 )
 const skusCriticos = computed(() => candidatos.value.filter((c) => c.estado === 'candidato').length)
 
@@ -227,7 +226,7 @@ onMounted(cargar)
     <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <KpiTile
         label="Valor en Riesgo de Merma"
-        :valor="money(valorEnRiesgo || 1420800)"
+        :valor="money(valorEnRiesgo || 1495.50)"
         microcopy="Stock crítico con rotación lentificada"
         estado="&lt; 5d vida útil"
         estado-tipo="quiebre"
@@ -239,7 +238,7 @@ onMounted(cargar)
 
       <KpiTile
         label="Recuperación Proyectada"
-        :valor="money(recuperacionProyectada || 980500)"
+        :valor="money(recuperacionProyectada || 1032.00)"
         microcopy="Ingreso estimado al aplicar liquidación"
         estado="+69% salvado"
         estado-tipo="ok"
@@ -510,7 +509,7 @@ onMounted(cargar)
                 <span class="text-[10px] text-outline ml-1">uds/sem</span>
               </td>
               <td class="py-3 px-3 text-right font-mono font-medium text-outline line-through">
-                {{ money(c.precio_base || 3000) }}
+                {{ money(c.precio_base || 3.15) }}
               </td>
               <td class="py-3 px-3 text-right">
                 <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-800">
@@ -518,7 +517,7 @@ onMounted(cargar)
                 </span>
               </td>
               <td class="py-3 px-3 text-right font-mono font-bold text-primary">
-                {{ money(c.precio_liquidacion || Math.round(Number(c.precio_base || 3000) * (1 - Number(c.descuento_sugerido_pct) / 100))) }}
+                {{ money(c.precio_liquidacion || (Number(c.precio_base || 3.15) * (1 - Number(c.descuento_sugerido_pct) / 100))) }}
               </td>
               <td class="py-3 px-3 text-center">
                 <SemanticChip :tipo="c.estado === 'ejecutado' ? 'ok' : 'fifo'">

@@ -18,6 +18,7 @@ import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
+import { money } from '@/shared/currency'
 
 const sesion = useSesion()
 const tiendaId = computed(() => sesion.tiendaId ?? 1)
@@ -50,9 +51,7 @@ const totalPerdida = computed(() =>
 const totalEventos = computed(() =>
   filas.value.reduce((acc, f) => acc + Number(f.cantidad_eventos || 0), 0)
 )
-const montoTotalEstimado = computed(() => totalPerdida.value * 2850)
-
-const money = (v) => (v == null ? '—' : `$${Math.round(Number(v)).toLocaleString('es-CL')} CLP`)
+const montoTotalEstimado = computed(() => totalPerdida.value * 3.00)
 
 // SKUs de auditoría en sala con telemetría de verificadores de precio
 const incidentesSala = ref([
@@ -64,7 +63,7 @@ const incidentesSala = ref([
     ubicacion: 'Pasillo 02 - Góndola Central A-14',
     horasQuiebre: '16.5 hrs',
     udsPerdidas: 168,
-    montoPerdido: 480000,
+    montoPerdido: 505.00,
     causa: 'Stock Fantasma / Descuadre de Conteo',
     causaTipo: 'quiebre',
     comportamiento: 'Abandono de compra (sin sustitución)',
@@ -79,7 +78,7 @@ const incidentesSala = ref([
     ubicacion: 'Pasillo 05 - Estante Café Gourmet',
     horasQuiebre: '8.2 hrs',
     udsPerdidas: 42,
-    montoPerdido: 357000,
+    montoPerdido: 375.00,
     causa: 'Quiebre de Góndola (Stock en Bodega)',
     causaTipo: 'fifo',
     comportamiento: 'Consulta reponedor / busca sustituto',
@@ -94,7 +93,7 @@ const incidentesSala = ref([
     ubicacion: 'Cabecera Pasillo 01 (Entrada)',
     horasQuiebre: '24.0 hrs',
     udsPerdidas: 110,
-    montoPerdido: 429000,
+    montoPerdido: 450.00,
     causa: 'Retraso Proveedor / Fill Rate CD',
     causaTipo: 'ia',
     comportamiento: 'Sustituye por formato 500ml',
@@ -109,7 +108,7 @@ const incidentesSala = ref([
     ubicacion: 'Isla Refrigerada 03',
     horasQuiebre: '11.0 hrs',
     udsPerdidas: 65,
-    montoPerdido: 221000,
+    montoPerdido: 232.00,
     causa: 'Pico Inesperado de Demanda (Spike)',
     causaTipo: 'ok',
     comportamiento: 'Compra formato alternativo',
@@ -247,7 +246,7 @@ onMounted(cargar)
     <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <KpiTile
         label="Venta Estimada Perdida"
-        :valor="money(montoTotalEstimado || 3890400)"
+        :valor="money(montoTotalEstimado || 4095.00)"
         microcopy="Monto no concretado por stock-out"
         estado="-2.3%"
         estado-tipo="quiebre"
@@ -288,7 +287,7 @@ onMounted(cargar)
         estado="48h sin stock"
         estado-tipo="quiebre"
         pie-label="Pérdida estimada"
-        pie-valor="$480.000 CLP"
+        pie-valor="$505.00 USD"
       >
         <template #icono><Icon name="cube" :size="18" /></template>
       </KpiTile>
