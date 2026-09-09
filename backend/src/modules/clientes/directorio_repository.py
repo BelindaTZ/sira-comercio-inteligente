@@ -41,55 +41,67 @@ class DirectorioRepository:
             filtros.append("clv.nivel_id = :nivel")
             binds["nivel"] = nivel_id
         where = " AND ".join(filtros)
-        clv_lat = """
-            LEFT JOIN LATERAL (
-                SELECT cv.clv_score, cv.nivel_id FROM cliente_clv cv
-                WHERE cv.household_id = c.household_id
-                ORDER BY cv.fecha_calculo DESC LIMIT 1
-            ) clv ON true
+        # CTEs pre-agregadas UNA vez (no un LATERAL por cliente): el histórico de
+        # ventas se agrupa por household en una sola pasada.
+        ctes = f"""
+            WITH clv AS (
+                SELECT DISTINCT ON (household_id) household_id, clv_score, nivel_id
+                FROM cliente_clv ORDER BY household_id, fecha_calculo DESC
+            ), ch AS (
+                SELECT DISTINCT ON (household_id) household_id, severidad
+                FROM churn_score ORDER BY household_id, fecha_calculo DESC
+            ), vg AS (
+                SELECT v.household_id,
+                       count(*) AS tickets,
+                       max(v.fecha_hora)::date AS ultima_compra,
+                       (array_agg(v.venta_id ORDER BY v.fecha_hora DESC))[1] AS ultimo_ticket,
+                       round(sum(v.total) * {_CLP}) AS ltv,
+                       round(sum(v.total) * {_CLP} / {_PTS_DIV}) AS puntos,
+                       round((count(*)::numeric / GREATEST(1,
+                         (max(v.fecha_hora)::date - min(v.fecha_hora)::date) / 7.0))::numeric,
+                         1) AS frecuencia_sem
+                FROM ventas v
+                WHERE v.household_id IS NOT NULL AND {_CONFIRMADA}
+                GROUP BY v.household_id
+            ), sh AS (
+                SELECT DISTINCT ON (v.household_id) v.household_id, t.nombre AS sucursal
+                FROM ventas v JOIN tiendas t ON t.tienda_id = v.tienda_id
+                WHERE v.household_id IS NOT NULL AND {_CONFIRMADA}
+                GROUP BY v.household_id, t.nombre
+                ORDER BY v.household_id, count(*) DESC
+            )
         """
         total = await self.session.scalar(
-            text(f"SELECT count(*) FROM clientes c {clv_lat} WHERE {where}"), binds
+            text(f"""
+            {ctes}
+            SELECT count(*) FROM clientes c
+            LEFT JOIN clv ON clv.household_id = c.household_id
+            WHERE {where}
+            """),
+            binds,
         )
         rows = (
             await self.session.execute(
                 text(f"""
+                {ctes}
                 SELECT c.household_id, c.nombre, c.documento_identidad, c.email,
                        c.telefono, c.activo,
                        clv.clv_score, clv.nivel_id, n.nombre AS nivel_nombre,
                        ch.severidad AS severidad_churn,
-                       COALESCE(vv.tickets, 0) AS tickets,
-                       vv.ultima_compra, vv.ultimo_ticket,
-                       COALESCE(vv.ltv, 0) AS ltv,
-                       COALESCE(vv.puntos, 0) AS puntos,
-                       COALESCE(vv.frecuencia_sem, 0) AS frecuencia_sem,
-                       vv.sucursal
+                       COALESCE(vg.tickets, 0) AS tickets,
+                       vg.ultima_compra, vg.ultimo_ticket,
+                       COALESCE(vg.ltv, 0) AS ltv,
+                       COALESCE(vg.puntos, 0) AS puntos,
+                       COALESCE(vg.frecuencia_sem, 0) AS frecuencia_sem,
+                       sh.sucursal
                 FROM clientes c
-                {clv_lat}
+                LEFT JOIN clv ON clv.household_id = c.household_id
+                LEFT JOIN ch ON ch.household_id = c.household_id
                 LEFT JOIN niveles_fidelizacion n ON n.nivel_id = clv.nivel_id
-                LEFT JOIN LATERAL (
-                    SELECT severidad FROM churn_score ch2
-                    WHERE ch2.household_id = c.household_id
-                    ORDER BY ch2.fecha_calculo DESC LIMIT 1
-                ) ch ON true
-                LEFT JOIN LATERAL (
-                    SELECT count(*) AS tickets,
-                           max(v.fecha_hora)::date AS ultima_compra,
-                           (array_agg(v.venta_id ORDER BY v.fecha_hora DESC))[1] AS ultimo_ticket,
-                           round(sum(v.total) * {_CLP}) AS ltv,
-                           round(sum(v.total) * {_CLP} / {_PTS_DIV}) AS puntos,
-                           round((count(*)::numeric / GREATEST(1,
-                             (max(v.fecha_hora)::date - min(v.fecha_hora)::date) / 7.0))::numeric,
-                             1) AS frecuencia_sem,
-                           (SELECT t.nombre FROM ventas v2
-                              JOIN tiendas t ON t.tienda_id = v2.tienda_id
-                             WHERE v2.household_id = c.household_id
-                             GROUP BY t.nombre ORDER BY count(*) DESC LIMIT 1) AS sucursal
-                    FROM ventas v
-                    WHERE v.household_id = c.household_id AND {_CONFIRMADA}
-                ) vv ON true
+                LEFT JOIN vg ON vg.household_id = c.household_id
+                LEFT JOIN sh ON sh.household_id = c.household_id
                 WHERE {where}
-                ORDER BY vv.ltv DESC NULLS LAST, c.household_id
+                ORDER BY vg.ltv DESC NULLS LAST, c.household_id
                 OFFSET :offset LIMIT :limit
                 """),
                 binds,

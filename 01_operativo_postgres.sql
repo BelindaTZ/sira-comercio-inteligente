@@ -142,25 +142,22 @@ CREATE TABLE margenes_objetivo (
     margen_objetivo_pct DECIMAL(5,2) NOT NULL CHECK (margen_objetivo_pct BETWEEN 0 AND 100)
 );
 
--- US4 (migración 0024): recargo transversal por canal de venta sobre el PVP
--- físico. El PVP por canal se calcula `precio_base * (1 + markup_pct/100)`; no se
--- guarda un precio por canal por producto. Lo edita el Jefe Comercial.
-CREATE TABLE regla_recargo_canal (
-    canal       VARCHAR(30) PRIMARY KEY,
-    nombre      VARCHAR(60) NOT NULL,
-    markup_pct  NUMERIC(5,2) NOT NULL DEFAULT 0 CHECK (markup_pct >= 0 AND markup_pct <= 100),
-    descripcion TEXT,
-    activo      BOOLEAN NOT NULL DEFAULT true,
-    orden       SMALLINT NOT NULL DEFAULT 0,
-    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+-- US4 (migración 0025): snapshot de los KPIs de la cabecera del Catálogo, que
+-- agregan sobre todo el histórico de ventas. Lo refresca `refrescar_catalogo_kpi`
+-- cada 3 h (mismo criterio que los KPIs de los dashboards de la feature 009);
+-- el endpoint sólo lee esta fila.
+CREATE TABLE catalogo_kpi (
+    id                        SMALLINT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+    total_activos             INTEGER NOT NULL DEFAULT 0,
+    total                     INTEGER NOT NULL DEFAULT 0,
+    con_ean                   INTEGER NOT NULL DEFAULT 0,
+    nuevos_30d                INTEGER NOT NULL DEFAULT 0,
+    skus_con_elasticidad      INTEGER NOT NULL DEFAULT 0,
+    promos_vigentes           INTEGER NOT NULL DEFAULT 0,
+    skus_bajo_margen          INTEGER NOT NULL DEFAULT 0,
+    margen_bruto_ponderado_pct NUMERIC(6,2),
+    calculado_at              TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-INSERT INTO regla_recargo_canal (canal, nombre, markup_pct, descripcion, orden) VALUES
-    ('fisico', 'Tienda Física Base', 0,
-     'Precio de lista en góndola. Base de cálculo del resto de canales.', 1),
-    ('delivery_app', 'Canal Delivery App (Uber/Rappi)', 12,
-     'Cubre la comisión de pasarela y el packaging de última milla.', 2),
-    ('ecommerce', 'E-Commerce Web Retiro', 0,
-     'Retiro en tienda: mismo PVP físico, sin recargo.', 3);
 
 -- ============================================================================
 -- MÓDULO 3: CLIENTES / CRM

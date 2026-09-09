@@ -6,7 +6,6 @@ from sqlalchemy import Select, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.producto import Producto
-from src.models.regla_recargo_canal import ReglaRecargoCanal
 from src.shared.repository import BaseRepository
 
 
@@ -80,16 +79,7 @@ class CatalogoRepository(BaseRepository[Producto]):
             stmt = stmt.where(Producto.activo.is_(activo))
         return stmt
 
-    # ----------------------------------------- matriz de precios por canal (US4)
-    async def listar_canales(self) -> list[ReglaRecargoCanal]:
-        rows = await self.session.scalars(
-            select(ReglaRecargoCanal).order_by(ReglaRecargoCanal.orden, ReglaRecargoCanal.canal)
-        )
-        return list(rows.all())
-
-    async def get_canal(self, canal: str) -> ReglaRecargoCanal | None:
-        return await self.session.get(ReglaRecargoCanal, canal)
-
+    # ------------------------------------------------- gestión de precios (US4)
     async def matriz_precios(
         self,
         *,
@@ -153,51 +143,84 @@ class CatalogoRepository(BaseRepository[Producto]):
         return [dict(r) for r in rows], int(total)
 
     async def resumen_catalogo(self) -> dict:
+        """Lee el snapshot `catalogo_kpi` (lo refresca `refrescar_catalogo_kpi_job`).
+        Si nunca corrió el job, calcula en vivo una vez — no bloquea la pantalla."""
         row = (
             await self.session.execute(
                 text("""
-                WITH prod AS (
-                    SELECT p.product_id, p.activo, p.codigo_barras, p.created_at,
-                           p.costo, p.precio_base
+                SELECT total_activos, total, con_ean, nuevos_30d, skus_con_elasticidad,
+                       promos_vigentes, skus_bajo_margen, margen_bruto_ponderado_pct,
+                       calculado_at
+                FROM catalogo_kpi WHERE id = 1
+                """)
+            )
+        ).mappings().first()
+        if row:
+            return dict(row)
+        return {**await self.calcular_resumen_kpi(), "calculado_at": None}
+
+    async def calcular_resumen_kpi(self) -> dict:
+        """Cálculo pesado (agrega sobre todo el histórico de ventas). Lo llama el
+        job periódico; el endpoint sólo lee la fila cacheada."""
+        row = (
+            await self.session.execute(
+                text("""
+                WITH p AS (
+                    SELECT
+                      count(*) FILTER (WHERE activo) AS total_activos,
+                      count(*) AS total,
+                      count(*) FILTER (WHERE codigo_barras IS NOT NULL) AS con_ean,
+                      count(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '30 days'
+                                         AND clasificacion_abc IS NULL) AS nuevos_30d
+                    FROM productos
+                ), mo AS (
+                    SELECT
+                      count(DISTINCT p.product_id) FILTER (
+                        WHERE mo.factor_sensibilidad IS NOT NULL AND p.activo) AS elasticidad,
+                      count(*) FILTER (
+                        WHERE p.activo AND p.precio_base > 0 AND p.costo IS NOT NULL
+                          AND (p.precio_base - p.costo) / p.precio_base * 100
+                              < mo.margen_objetivo_pct - 5) AS bajo_margen
                     FROM productos p
-                ), ventas_prod AS (
-                    SELECT vd.product_id,
-                           SUM(vd.sales_value * vd.cantidad - vd.retail_disc) AS ingreso,
+                    JOIN margenes_objetivo mo ON mo.product_category = p.product_category
+                ), bruto AS (
+                    SELECT SUM(vd.sales_value * vd.cantidad - vd.retail_disc) AS ingreso,
                            SUM(vd.cantidad * COALESCE(pr.costo, 0)) AS costo_total
                     FROM venta_detalle vd
                     JOIN ventas v ON v.venta_id = vd.venta_id AND v.estado = 'confirmada'
                     JOIN productos pr ON pr.product_id = vd.product_id
-                    GROUP BY vd.product_id
                 )
-                SELECT
-                    (SELECT count(*) FROM prod WHERE activo) AS total_activos,
-                    -- "nuevo" = alta reciente por la UI; se excluye el día de la
-                    -- carga masiva del dataset para no inflar el KPI.
-                    (SELECT count(*) FROM prod p2
-                       WHERE p2.created_at >= CURRENT_DATE - INTERVAL '30 days'
-                         AND p2.created_at::date <> (
-                             SELECT mode() WITHIN GROUP (ORDER BY created_at::date)
-                             FROM productos)) AS nuevos_30d,
-                    (SELECT count(*) FROM prod WHERE codigo_barras IS NOT NULL) AS con_ean,
-                    (SELECT count(*) FROM prod) AS total,
-                    (SELECT count(*) FROM margenes_objetivo
-                       WHERE factor_sensibilidad IS NOT NULL) AS cats_con_elasticidad,
-                    (SELECT count(DISTINCT p.product_id) FROM productos p
-                       JOIN margenes_objetivo mo ON mo.product_category = p.product_category
-                       WHERE mo.factor_sensibilidad IS NOT NULL AND p.activo) AS skus_con_elasticidad,
-                    (SELECT count(DISTINCT product_id) FROM promociones) AS promos_vigentes,
-                    (SELECT count(*) FROM productos p
-                       JOIN margenes_objetivo mo ON mo.product_category = p.product_category
-                       WHERE p.activo AND p.precio_base > 0 AND p.costo IS NOT NULL
-                         AND (p.precio_base - p.costo) / p.precio_base * 100
-                             < mo.margen_objetivo_pct - 5) AS skus_bajo_margen,
-                    COALESCE(
-                        (SELECT SUM(ingreso - costo_total) / NULLIF(SUM(ingreso), 0) * 100
-                         FROM ventas_prod), 0) AS margen_bruto_ponderado_pct
+                SELECT p.total_activos, p.total, p.con_ean, p.nuevos_30d,
+                       mo.elasticidad AS skus_con_elasticidad,
+                       (SELECT count(DISTINCT product_id) FROM promociones) AS promos_vigentes,
+                       mo.bajo_margen AS skus_bajo_margen,
+                       COALESCE((bruto.ingreso - bruto.costo_total)
+                                / NULLIF(bruto.ingreso, 0) * 100, 0) AS margen_bruto_ponderado_pct
+                FROM p, mo, bruto
                 """)
             )
         ).mappings().first()
         return dict(row) if row else {}
+
+    async def guardar_resumen_kpi(self, datos: dict) -> None:
+        await self.session.execute(
+            text("""
+            INSERT INTO catalogo_kpi (id, total_activos, total, con_ean, nuevos_30d,
+                skus_con_elasticidad, promos_vigentes, skus_bajo_margen,
+                margen_bruto_ponderado_pct, calculado_at)
+            VALUES (1, :total_activos, :total, :con_ean, :nuevos_30d, :skus_con_elasticidad,
+                :promos_vigentes, :skus_bajo_margen, :margen_bruto_ponderado_pct, CURRENT_TIMESTAMP)
+            ON CONFLICT (id) DO UPDATE SET
+                total_activos = EXCLUDED.total_activos, total = EXCLUDED.total,
+                con_ean = EXCLUDED.con_ean, nuevos_30d = EXCLUDED.nuevos_30d,
+                skus_con_elasticidad = EXCLUDED.skus_con_elasticidad,
+                promos_vigentes = EXCLUDED.promos_vigentes,
+                skus_bajo_margen = EXCLUDED.skus_bajo_margen,
+                margen_bruto_ponderado_pct = EXCLUDED.margen_bruto_ponderado_pct,
+                calculado_at = CURRENT_TIMESTAMP
+            """),
+            datos,
+        )
 
     async def unidades_mensuales(self, product_id: int) -> float:
         """Unidades/mes del producto sobre todo el histórico cargado (dataset ≈ 1

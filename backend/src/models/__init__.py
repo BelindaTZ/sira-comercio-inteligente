@@ -77,7 +77,6 @@ from src.models.recuperacion_password import RecuperacionPassword
 from src.models.registro_calidad_carga import RegistroCalidadCarga
 from src.models.registro_publicacion_dashboard import RegistroPublicacionDashboard
 from src.models.regla_afinidad import ReglaAfinidad
-from src.models.regla_recargo_canal import ReglaRecargoCanal
 from src.models.revision_margen_bajo import RevisionMargenBajo
 from src.models.rol_puesto import RolPuesto
 from src.models.role_permiso import RolePermisoModulo, RolePermisoTabla
@@ -160,7 +159,6 @@ __all__ = [
     "RegistroCalidadCarga",
     "RegistroPublicacionDashboard",
     "ReglaAfinidad",
-    "ReglaRecargoCanal",
     "RevisionMargenBajo",
     "RolPuesto",
     "RolePermisoModulo",

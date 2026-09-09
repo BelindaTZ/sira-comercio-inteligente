@@ -43,6 +43,7 @@ async def _correr_jobs() -> None:
         generar_candidatos_liquidacion_job,
         generar_propuestas_ajuste_job,
         monitorear_precision_job,
+        refrescar_catalogo_kpi_job,
     )
     from src.modules.direccion.jobs import publicar_dashboard_estrategico
     from src.modules.ti.dashboards.jobs import (
@@ -54,6 +55,7 @@ async def _correr_jobs() -> None:
         clasificar_abc_job,
         calcular_afinidad_job,
         calcular_clv_churn_job,
+        refrescar_catalogo_kpi_job,
         entrenar_modelo_demanda_job,
         monitorear_precision_job,
         generar_propuestas_ajuste_job,

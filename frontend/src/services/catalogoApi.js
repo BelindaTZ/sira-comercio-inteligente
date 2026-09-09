@@ -32,20 +32,6 @@ export const catalogoApi = {
       .then((r) => r.data)
   },
 
-  /** Reglas de recargo por canal (Tienda Física / Delivery App / E-Commerce). */
-  canales() {
-    return http.get('/api/catalogo/precios/canales').then((r) => r.data)
-  },
-
-  actualizarCanal(canal, { markupPct, activo } = {}) {
-    return http
-      .patch(`/api/catalogo/precios/canales/${canal}`, {
-        markup_pct: markupPct ?? undefined,
-        activo: activo ?? undefined,
-      })
-      .then((r) => r.data)
-  },
-
   /** Simulador de impacto: proyecta margen y ganancia mensual ante un cambio de PVP. */
   simularPrecio(productId, deltaPct) {
     return http

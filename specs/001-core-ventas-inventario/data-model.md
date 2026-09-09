@@ -14,15 +14,13 @@
 
 **Transiciones**: `activo=true` → `activo=false` (descontinuado, irreversible en este flujo — reactivar requeriría un alta nueva, fuera de alcance de esta feature).
 
-### 1.1 Recargo por canal de venta (`regla_recargo_canal`, migración 0024)
+### 1.1 Gestión de precios y márgenes (pantalla de Catálogo, feature 013)
 
-La pantalla "Catálogo Maestro de Productos & Matriz de Precios" muestra, junto al PVP físico, el PVP de cada canal digital (Delivery App +12%, E-Commerce +0%). Se modela como una regla transversal, no un precio por producto:
+La pantalla de Catálogo es de **gestión de precios y márgenes**, no multicanal — `.specify/memory/domain-context.md` es explícito: SIRA es de gestión interna para tiendas físicas, ningún OO ni feature contempla e-commerce, delivery ni autoservicio digital del cliente. (La migración 0024 introdujo por error una tabla `regla_recargo_canal` con canales `delivery_app`/`ecommerce`; la 0025 la elimina.)
 
-**Campos clave**: `canal` (PK: `fisico` | `delivery_app` | `ecommerce`), `nombre`, `markup_pct` (0–100), `descripcion`, `activo`, `orden`.
-
-**Regla**: `PVP_canal = precio_base * (1 + markup_pct/100)`. El canal `fisico` es la base y su `markup_pct` es siempre 0 (se rechaza con 422 al intentar cambiarlo). Lo edita el Jefe Comercial / de Operaciones (RBAC módulo `Comercial`, tabla `regla_recargo_canal`).
-
-El **Simulador de Impacto** (`POST /catalogo/productos/{id}/simular-precio`) proyecta el margen y la ganancia mensual ante un cambio de PVP usando `margenes_objetivo.factor_sensibilidad` (0 = inelástico, 1 = muy elástico) como elasticidad de la categoría y las unidades/mes históricas del SKU.
+- **`GET /catalogo/precios`** — matriz de sólo lectura: cada SKU con su margen real vs. el `margen_objetivo_pct` de su categoría y el estado resultante (`optimo` ≥ objetivo · `ajustado` dentro de 5 pp · `bajo` · `sin_precio`).
+- **`POST /catalogo/productos/{id}/simular-precio`** — Simulador de Impacto: proyecta el margen y la ganancia mensual ante un cambio de PVP usando `margenes_objetivo.factor_sensibilidad` (0 = inelástico, 1 = muy elástico) como elasticidad de la categoría y las unidades/mes históricas del SKU. "Aplicar" persiste el nuevo `precio_base` vía el `PATCH` de producto (FR-010, conserva el histórico).
+- **`GET /catalogo/resumen`** — KPIs de la cabecera. Los que agregan sobre todo el histórico de ventas (margen bruto ponderado, huella promocional) se leen de un snapshot `catalogo_kpi` (una fila) que refresca el job `refrescar_catalogo_kpi` cada 3 h — mismo criterio que los KPIs de los dashboards de la feature 009; no se calculan por request. Si el job nunca corrió, el endpoint calcula en vivo una vez.
 
 ## 2. Venta (Ticket/Comprobante)
 

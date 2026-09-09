@@ -20,8 +20,6 @@ from src.modules.catalogo.schemas import (
     ProductoIn,
     ProductoOut,
     ProductoPatch,
-    ReglaCanalOut,
-    ReglaCanalPatch,
     SimulacionPrecioIn,
     SimulacionPrecioOut,
 )
@@ -35,7 +33,6 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 _ver = require_permission("Comercial", "productos", "select")
 _crear = require_permission("Comercial", "productos", "insert")
 _editar = require_permission("Comercial", "productos", "update")
-_canal_edita = require_permission("Comercial", "regla_recargo_canal", "update")
 
 
 def _svc(session: SessionDep) -> CatalogoService:
@@ -114,26 +111,6 @@ async def simular_precio(
     """Simulador de impacto (referencia de UI): proyecta margen y ganancia mensual
     ante un cambio de PVP, usando el factor de sensibilidad de la categoría."""
     return SimulacionPrecioOut(**await svc.simular_precio(product_id, data.delta_pct))
-
-
-@router.get("/precios/canales", response_model=list[ReglaCanalOut])
-async def listar_canales(
-    svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
-) -> list[ReglaCanalOut]:
-    """Reglas de recargo por canal (Tienda Física / Delivery App / E-Commerce)."""
-    return [ReglaCanalOut.model_validate(c) for c in await svc.listar_canales()]
-
-
-@router.patch("/precios/canales/{canal}", response_model=ReglaCanalOut)
-async def actualizar_canal(
-    canal: str,
-    data: ReglaCanalPatch,
-    svc: ServiceDep,
-    _: Annotated[Principal, Depends(_canal_edita)],
-) -> ReglaCanalOut:
-    return ReglaCanalOut.model_validate(
-        await svc.actualizar_canal(canal, data.markup_pct, data.activo)
-    )
 
 
 @router.get("/resumen", response_model=CatalogoResumenOut)

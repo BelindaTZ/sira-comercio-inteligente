@@ -131,26 +131,7 @@ class CatalogoService:
     async def categorias(self) -> list[str]:
         return await self.repo.categorias()
 
-    # ==================================== matriz de precios por canal (US4, 0024)
-    async def listar_canales(self):
-        return await self.repo.listar_canales()
-
-    async def actualizar_canal(self, canal: str, markup_pct, activo):
-        regla = await self.repo.get_canal(canal)
-        if regla is None:
-            raise NotFoundError(f"El canal '{canal}' no existe")
-        if canal == "fisico" and markup_pct not in (None, 0, Decimal("0")):
-            raise BusinessRuleError(
-                "El canal físico es la base de cálculo: su recargo es siempre 0%."
-            )
-        if markup_pct is not None:
-            regla.markup_pct = markup_pct
-        if activo is not None:
-            regla.activo = activo
-        regla.updated_at = _ahora()
-        await self.repo.flush()
-        return regla
-
+    # ============================================= gestión de precios (US4)
     @staticmethod
     def _estado_margen(margen_pct, objetivo) -> str:
         if margen_pct is None:

@@ -55,24 +55,8 @@ class ProductoOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
-# --- matriz de precios por canal (US4, migración 0024) ---
+# --- gestión de precios y márgenes (US4) ---
 EstadoMargen = Literal["optimo", "ajustado", "bajo", "sin_precio"]
-
-
-class ReglaCanalOut(BaseModel):
-    canal: str
-    nombre: str
-    markup_pct: Decimal
-    descripcion: str | None
-    activo: bool
-    orden: int
-
-    model_config = {"from_attributes": True}
-
-
-class ReglaCanalPatch(BaseModel):
-    markup_pct: Decimal | None = Field(default=None, ge=0, le=100)
-    activo: bool | None = None
 
 
 class PrecioMatrizItem(BaseModel):
@@ -102,6 +86,7 @@ class CatalogoResumenOut(BaseModel):
     promos_vigentes: int
     skus_bajo_margen: int
     margen_bruto_ponderado_pct: float | None
+    calculado_at: datetime | None = None
 
 
 class SimulacionPrecioIn(BaseModel):

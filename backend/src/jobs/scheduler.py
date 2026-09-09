@@ -28,6 +28,7 @@ from src.jobs import (
     generar_candidatos_liquidacion_job,
     generar_propuestas_ajuste_job,
     monitorear_precision_job,
+    refrescar_catalogo_kpi_job,
 )
 from src.modules.direccion.jobs import publicar_dashboard_estrategico
 from src.modules.ti.dashboards.jobs import (
@@ -51,6 +52,7 @@ JOBS = {
     calcular_afinidad_job.NOMBRE: calcular_afinidad_job,
     clasificar_abc_job.NOMBRE: clasificar_abc_job,
     generar_candidatos_liquidacion_job.NOMBRE: generar_candidatos_liquidacion_job,
+    refrescar_catalogo_kpi_job.NOMBRE: refrescar_catalogo_kpi_job,
     # Feature 009 — dashboards multinivel (publicación diaria de snapshots).
     publicar_dashboard_estrategico.NOMBRE: publicar_dashboard_estrategico,
     publicar_dashboards_tacticos.NOMBRE: publicar_dashboards_tacticos,
@@ -148,6 +150,14 @@ def start() -> None:
         CronTrigger(day_of_week="mon", hour=6, minute=0),
         args=[generar_candidatos_liquidacion_job.NOMBRE],
         id=generar_candidatos_liquidacion_job.NOMBRE,
+        replace_existing=True,
+    )
+    # Feature 013: snapshot de KPIs del Catálogo cada 3 horas.
+    _scheduler.add_job(
+        _run,
+        CronTrigger(hour="*/3", minute=10),
+        args=[refrescar_catalogo_kpi_job.NOMBRE],
+        id=refrescar_catalogo_kpi_job.NOMBRE,
         replace_existing=True,
     )
     # Feature 009: publicación diaria de dashboards (fuera de horario pico, FR-009).

@@ -24,7 +24,6 @@ import SimuladorPrecio from './components/SimuladorPrecio.vue'
 
 const sesion = useSesion()
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Comercial', 'productos'))
-const puedeCanales = computed(() => sesion.puedeEditarTabla('Comercial', 'regla_recargo_canal'))
 
 const busqueda = ref('')
 const categoria = ref('')
@@ -47,13 +46,10 @@ const kpi = ref({
   promos_vigentes: 0,
   skus_bajo_margen: 0,
   margen_bruto_ponderado_pct: null,
+  calculado_at: null,
 })
 
-const CANAL_CORTO = { fisico: 'Físico', delivery_app: 'Delivery', ecommerce: 'E‑Commerce' }
-
-const canales = ref([])
-const canalSel = ref('delivery_app')
-const modal = ref(null) // 'nuevo' | 'canales' | fila (edición precio)
+const modal = ref(null) // 'nuevo' | fila (edición precio)
 const edicion = ref({ precio_base: null, costo: null })
 const seleccion = ref(null) // fila para el simulador
 
@@ -66,10 +62,14 @@ const eanPct = computed(() =>
 const metaMargen = 32
 const margenSobreMeta = computed(() => (kpi.value.margen_bruto_ponderado_pct ?? 0) >= metaMargen)
 
-const canalActual = computed(() => canales.value.find((c) => c.canal === canalSel.value) || null)
-const markupActual = computed(() => Number(canalActual.value?.markup_pct ?? 0))
-const pvpCanal = (row) =>
-  row.precio_base == null ? null : Number(row.precio_base) * (1 + markupActual.value / 100)
+const actualizadoHace = computed(() => {
+  if (!kpi.value.calculado_at) return null
+  const min = Math.round((Date.now() - new Date(kpi.value.calculado_at)) / 60000)
+  if (min < 1) return 'hace instantes'
+  if (min < 60) return `hace ${min} min`
+  const h = Math.round(min / 60)
+  return h < 24 ? `hace ${h} h` : `hace ${Math.round(h / 24)} d`
+})
 
 const pills = computed(() => [
   { value: 'todos', label: 'Todos', count: kpi.value.total },
@@ -84,17 +84,16 @@ const ESTADO = {
   sin_precio: { tipo: 'neutral', txt: 'Sin precio' },
 }
 
-const columnas = computed(() => [
+const columnas = [
   { key: 'sku', label: 'SKU / EAN-13', width: '128px' },
   { key: 'producto', label: 'Producto & formato' },
   { key: 'categoria', label: 'Categoría' },
-  { key: 'costo', label: 'Costo neto', align: 'right', width: '104px' },
-  { key: 'margen', label: 'Margen obj.', align: 'right', width: '104px' },
-  { key: 'pvp', label: 'PVP actual', align: 'right', width: '116px' },
-  { key: 'pvp_canal', label: `PVP ${CANAL_CORTO[canalSel.value] || 'canal'}`, align: 'right', width: '116px' },
-  { key: 'estado', label: 'Estado', align: 'center', width: '132px' },
-  { key: 'acciones', label: '', align: 'center', width: '84px' },
-])
+  { key: 'costo', label: 'Costo neto', align: 'right', width: '110px' },
+  { key: 'margen', label: 'Margen real / obj.', align: 'right', width: '120px' },
+  { key: 'pvp', label: 'PVP actual', align: 'right', width: '124px' },
+  { key: 'estado', label: 'Estado', align: 'center', width: '140px' },
+  { key: 'acciones', label: '', align: 'center', width: '96px' },
+]
 
 function activoParam() {
   return pill.value === 'activos' ? true : pill.value === 'baja' ? false : undefined
@@ -105,14 +104,6 @@ async function cargarKpis() {
     kpi.value = await catalogoApi.resumen()
   } catch {
     /* informativo */
-  }
-}
-
-async function cargarCanales() {
-  try {
-    canales.value = await catalogoApi.canales()
-  } catch {
-    canales.value = []
   }
 }
 
@@ -169,15 +160,6 @@ async function darDeBaja(row) {
   }
 }
 
-async function guardarCanal(canal, markup) {
-  try {
-    const actualizado = await catalogoApi.actualizarCanal(canal, { markupPct: Number(markup) })
-    canales.value = canales.value.map((c) => (c.canal === canal ? actualizado : c))
-  } catch (e) {
-    error.value = e.response?.data?.error?.message || e.message
-  }
-}
-
 function refrescar() {
   return Promise.all([cargar(), cargarKpis()])
 }
@@ -217,28 +199,25 @@ watch(busqueda, () => {
 onMounted(() => {
   cargar()
   cargarKpis()
-  cargarCanales()
 })
 </script>
 
 <template>
   <div class="mx-auto max-w-[1720px] px-6 py-8 lg:px-8">
     <PageHeader
-      titulo="Catálogo Maestro de Productos & Matriz de Precios"
-      subtitulo="Gestión centralizada de SKU, márgenes brutos y PVP regulado por canal, con simulación de sensibilidad a la demanda."
+      titulo="Catálogo Maestro de Productos & Precios"
+      subtitulo="Gestión centralizada de SKU, márgenes reales vs. objetivo y simulación de sensibilidad de precio a la demanda."
     >
       <template #badge>
         <span
+          v-if="actualizadoHace"
           class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800"
         >
-          <span class="live-indicator h-1.5 w-1.5 rounded-full bg-emerald-500" /> Sync omnicanal
+          <span class="live-indicator h-1.5 w-1.5 rounded-full bg-emerald-500" /> KPIs {{ actualizadoHace }}
         </span>
       </template>
       <template #acciones>
         <Btn variant="ghost" @click="exportarCsv"><Icon name="download" :size="16" /> Exportar</Btn>
-        <Btn variant="ia" @click="modal = 'canales'">
-          <Icon name="cog" :size="16" /> Reglas de precio por canal
-        </Btn>
         <Btn v-if="puedeEditar" variant="primary" @click="modal = 'nuevo'">
           <Icon name="plus" :size="17" /> Nuevo producto
         </Btn>
@@ -333,12 +312,6 @@ onMounted(() => {
             <option value="normal">20–35% (normal)</option>
             <option value="premium">&gt; 35% (premium)</option>
           </select>
-          <select
-            v-model="canalSel"
-            class="h-9 rounded-lg border border-amethyst-300 bg-amethyst-50 px-2 text-[12px] font-semibold text-amethyst-800"
-          >
-            <option v-for="c in canales" :key="c.canal" :value="c.canal">{{ c.nombre }}</option>
-          </select>
         </template>
 
         <template #cell:sku="{ row }">
@@ -409,13 +382,6 @@ onMounted(() => {
           <div v-if="row.costo != null" class="text-[10px] text-slate-400">neto {{ money(row.costo) }}</div>
         </template>
 
-        <template #cell:pvp_canal="{ row }">
-          <span class="font-bold tabular-nums" :class="markupActual > 0 ? 'text-amethyst-700' : 'text-slate-700'">
-            {{ money(pvpCanal(row)) }}
-          </span>
-          <div v-if="markupActual > 0" class="text-[10px] text-amethyst-500">+{{ markupActual }}%</div>
-        </template>
-
         <template #cell:estado="{ row }">
           <SemanticChip :tipo="ESTADO[row.estado_margen].tipo">{{ ESTADO[row.estado_margen].txt }}</SemanticChip>
         </template>
@@ -455,83 +421,11 @@ onMounted(() => {
 
       <div class="space-y-4">
         <SimuladorPrecio :producto="seleccion" :puede-editar="puedeEditar" @aplicado="refrescar" />
-
-        <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
-          <div class="flex items-center justify-between">
-            <h4 class="font-display text-[11px] font-bold uppercase tracking-wider text-brand-900">
-              Reglas de recargo por canal
-            </h4>
-            <Icon name="cog" :size="14" class="text-slate-400" />
-          </div>
-          <ul class="mt-2.5 space-y-1.5">
-            <li
-              v-for="c in canales"
-              :key="c.canal"
-              class="flex items-center justify-between rounded-lg bg-brand-50/60 px-2.5 py-2 text-[12px]"
-            >
-              <span class="flex items-center gap-2 text-slate-700">
-                <span
-                  class="h-2 w-2 rounded-full"
-                  :class="c.canal === 'delivery_app' ? 'bg-amethyst-500' : c.canal === 'ecommerce' ? 'bg-sky-500' : 'bg-emerald-500'"
-                />
-                {{ c.nombre }}
-              </span>
-              <span class="font-bold tabular-nums" :class="Number(c.markup_pct) > 0 ? 'text-amethyst-700' : 'text-brand-900'">
-                {{ Number(c.markup_pct) > 0 ? '+' : '' }}{{ Number(c.markup_pct).toFixed(1) }}%
-              </span>
-            </li>
-          </ul>
-          <p class="mt-2 text-[10px] leading-tight text-slate-500">
-            Los canales digitales cubren automáticamente la comisión de pasarela y el packaging.
-          </p>
-        </div>
       </div>
     </div>
 
     <Modal v-if="modal === 'nuevo'" titulo="Nuevo producto" @cerrar="modal = null">
       <FormularioProducto @creado="trasAlta" />
-    </Modal>
-
-    <Modal
-      v-if="modal === 'canales'"
-      titulo="Reglas de recargo por canal"
-      size="lg"
-      @cerrar="modal = null"
-    >
-      <p class="mb-3 text-[13px] text-slate-600">
-        El recargo se aplica sobre el PVP físico para calcular el precio de cada canal digital.
-        El canal físico es siempre la base (0%).
-      </p>
-      <div class="space-y-2.5">
-        <div
-          v-for="c in canales"
-          :key="c.canal"
-          class="rounded-xl border border-brand-200 p-3"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-[13px] font-bold text-slate-800">{{ c.nombre }}</p>
-              <p class="text-[11px] text-slate-500">{{ c.descripcion }}</p>
-            </div>
-            <label class="flex items-center gap-1.5 text-[13px] font-semibold text-slate-700">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.5"
-                :value="c.markup_pct"
-                :disabled="c.canal === 'fisico' || !puedeCanales"
-                class="w-20 rounded-lg border border-brand-300 bg-white py-1 text-center tabular-nums disabled:bg-slate-100"
-                @change="guardarCanal(c.canal, $event.target.value)"
-              />
-              % markup
-            </label>
-          </div>
-        </div>
-      </div>
-      <p v-if="!puedeCanales" class="mt-3 text-[11px] text-slate-400">
-        Solo el Jefe Comercial / de Operaciones puede editar estas reglas.
-      </p>
     </Modal>
 
     <Modal

@@ -1,54 +1,11 @@
-"""Contrato de la matriz de precios por canal + simulador de impacto (001, US4,
-migración 0024): `GET/PATCH /catalogo/precios/canales`, `GET /catalogo/precios`,
-`GET /catalogo/resumen`, `POST /catalogo/productos/{id}/simular-precio`.
+"""Contrato de gestión de precios y márgenes (001, US4):
+`GET /catalogo/precios` (matriz con estado de margen), `GET /catalogo/resumen`
+(snapshot de KPIs) y `POST /catalogo/productos/{id}/simular-precio`.
 """
 
 import pytest
 
 pytestmark = pytest.mark.asyncio
-
-
-async def test_reglas_de_canal_y_edicion(client, escenario_pos, auth_jefe_comercial):
-    r = await client.get("/api/catalogo/precios/canales", headers=auth_jefe_comercial)
-    assert r.status_code == 200, r.text
-    canales = {c["canal"]: c for c in r.json()}
-    assert set(canales) == {"fisico", "delivery_app", "ecommerce"}
-    assert float(canales["fisico"]["markup_pct"]) == 0
-    assert float(canales["delivery_app"]["markup_pct"]) == 12
-
-    up = await client.patch(
-        "/api/catalogo/precios/canales/delivery_app",
-        json={"markup_pct": "18"},
-        headers=auth_jefe_comercial,
-    )
-    assert up.status_code == 200, up.text
-    assert float(up.json()["markup_pct"]) == 18
-
-    # el canal físico es la base: no admite recargo
-    bad = await client.patch(
-        "/api/catalogo/precios/canales/fisico",
-        json={"markup_pct": "5"},
-        headers=auth_jefe_comercial,
-    )
-    assert bad.status_code == 422, bad.text
-
-
-async def test_canal_inexistente_es_404(client, escenario_pos, auth_jefe_comercial):
-    r = await client.patch(
-        "/api/catalogo/precios/canales/marketplace",
-        json={"markup_pct": "10"},
-        headers=auth_jefe_comercial,
-    )
-    assert r.status_code == 404
-
-
-async def test_cajero_no_edita_reglas_de_canal(client, escenario_pos, auth_cajero):
-    r = await client.patch(
-        "/api/catalogo/precios/canales/delivery_app",
-        json={"markup_pct": "20"},
-        headers=auth_cajero,
-    )
-    assert r.status_code == 403
 
 
 async def test_matriz_precios_trae_estado_de_margen(client, escenario_pos, auth_jefe_comercial):
@@ -60,12 +17,25 @@ async def test_matriz_precios_trae_estado_de_margen(client, escenario_pos, auth_
     assert fila["margen_pct"] == pytest.approx(60.0, abs=0.1)
 
 
-async def test_resumen_catalogo(client, escenario_pos, auth_jefe_comercial):
+async def test_resumen_catalogo_calcula_en_vivo_si_no_hay_snapshot(
+    client, escenario_pos, auth_jefe_comercial
+):
     r = await client.get("/api/catalogo/resumen", headers=auth_jefe_comercial)
     assert r.status_code == 200, r.text
     d = r.json()
     for k in ("total_activos", "con_ean", "skus_bajo_margen", "margen_bruto_ponderado_pct"):
         assert k in d
+    assert d["total_activos"] >= 1
+
+
+async def test_refrescar_kpi_job_persiste_el_snapshot(db_session, escenario_pos):
+    from sqlalchemy import text
+
+    from src.jobs import refrescar_catalogo_kpi_job
+
+    await refrescar_catalogo_kpi_job.ejecutar(db_session)
+    ts = await db_session.scalar(text("SELECT calculado_at FROM catalogo_kpi WHERE id = 1"))
+    assert ts is not None
 
 
 async def test_simular_precio_sube_margen_al_subir_pvp(
