@@ -130,3 +130,38 @@ async def test_reponedor_no_puede_validar_mermas(client, escenario_pos, auth_rep
         headers=auth_reponedor,
     )
     assert resp.status_code == 403, resp.text
+
+
+async def test_listar_y_kpis_mermas(client, escenario_pos, auth_encargado):
+    e = escenario_pos
+    await client.post(
+        "/api/inventario/mermas",
+        json={
+            "product_id": e["product_id"],
+            "tienda_id": e["tienda_id"],
+            "cantidad": 2,
+            "causa": "rotura",
+            "empleado_id": e["encargado_id"],
+            "destino": "destruccion",
+            "observaciones": "Botella quebrada en góndola",
+        },
+        headers=auth_encargado,
+    )
+    resp = await client.get(
+        f"/api/inventario/mermas?tienda_id={e['tienda_id']}",
+        headers=auth_encargado,
+    )
+    assert resp.status_code == 200
+    items = resp.json()
+    assert len(items) >= 1
+    assert "product_nombre" in items[0]
+    assert items[0]["causa"] in ("rotura", "caducidad", "robo", "error_humano")
+
+    kpis_resp = await client.get(
+        f"/api/inventario/mermas/kpis?tienda_id={e['tienda_id']}",
+        headers=auth_encargado,
+    )
+    assert kpis_resp.status_code == 200
+    kpis = kpis_resp.json()
+    assert "merma_acumulada_mes" in kpis
+    assert "causas_desglose" in kpis

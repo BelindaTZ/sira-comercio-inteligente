@@ -268,6 +268,26 @@ class InventarioService:
         await self.repo.flush()
         return merma
 
+    async def listar_mermas(
+        self,
+        *,
+        tienda_id: int | None = None,
+        causa: str | None = None,
+        estado_validacion: str | None = None,
+        search: str | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        return await self.repo.listar_mermas(
+            tienda_id=tienda_id,
+            causa=causa,
+            estado_validacion=estado_validacion,
+            search=search,
+            limit=limit,
+        )
+
+    async def kpis_merma(self, tienda_id: int) -> dict:
+        return await self.repo.kpis_merma(tienda_id)
+
     # ------------------------------------------------------------------- lotes
     async def listar_lotes(
         self,

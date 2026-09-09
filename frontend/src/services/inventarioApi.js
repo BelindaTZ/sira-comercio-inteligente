@@ -128,6 +128,26 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
+  listarMermas({ tiendaId, causa, estado, search, limit = 50 } = {}) {
+    return http
+      .get('/api/inventario/mermas', {
+        params: {
+          tienda_id: tiendaId,
+          causa: causa || undefined,
+          estado: estado || undefined,
+          search: search || undefined,
+          limit,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  kpisMermas(tiendaId) {
+    return http
+      .get('/api/inventario/mermas/kpis', { params: { tienda_id: tiendaId } })
+      .then((r) => r.data)
+  },
+
   // --- US3 ---
   alertas({ tipo, estado = 'pendiente', tiendaId, search, page = 1, size = 25 } = {}) {
     return http

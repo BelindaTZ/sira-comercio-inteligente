@@ -20,8 +20,10 @@ from src.modules.inventario.schemas import (
     AlertaOut,
     AtenderAlertaIn,
     LoteOut,
+    MermaDetalleOut,
     MermaIn,
     MermaOut,
+    MermasKpisOut,
     ProductoBusquedaOut,
     QuiebreIn,
     QuiebreOut,
@@ -49,6 +51,7 @@ _recepcion = require_permission("Operaciones", "recepcion_mercaderia", "insert")
 _ajuste = require_permission("Operaciones", "ajustes_inventario", "insert")
 _merma_insert = require_permission("Operaciones", "mermas", "insert")
 _merma_validar = require_permission("Operaciones", "mermas", "update")
+_merma_ver = require_permission("Operaciones", "mermas", "select")
 _alerta_ver = require_permission("Operaciones", "alertas_inventario", "select")
 _alerta_atender = require_permission("Operaciones", "alertas_inventario", "update")
 _quiebre = require_permission("Operaciones", "eventos_quiebre_stock", "insert")
@@ -198,6 +201,35 @@ async def validar_merma(
     _: Annotated[Principal, Depends(_merma_validar)],
 ) -> MermaOut:
     return _merma_out(await svc.validar_merma(merma_id, data))
+
+
+@router.get("/mermas", response_model=list[MermaDetalleOut])
+async def listar_mermas(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_merma_ver)],
+    tienda_id: int | None = None,
+    causa: str | None = None,
+    estado: str | None = None,
+    search: str | None = None,
+    limit: int = 50,
+) -> list[MermaDetalleOut]:
+    items = await svc.listar_mermas(
+        tienda_id=tienda_id,
+        causa=causa,
+        estado_validacion=estado,
+        search=search,
+        limit=limit,
+    )
+    return [MermaDetalleOut(**i) for i in items]
+
+
+@router.get("/mermas/kpis", response_model=MermasKpisOut)
+async def kpis_merma(
+    tienda_id: int,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_merma_ver)],
+) -> MermasKpisOut:
+    return MermasKpisOut(**await svc.kpis_merma(tienda_id))
 
 
 # ------------------------------------------------------------------- US3: alertas

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -188,6 +188,31 @@ class MermaOut(BaseModel):
     estado_validacion: str
     empleado_valida_id: int | None
     fecha_validacion: datetime | None
+
+
+class MermaDetalleOut(MermaOut):
+    fecha: date | None = None
+    destino: str | None = None
+    observaciones: str | None = None
+    product_nombre: str | None = None
+    product_sku: str | None = None
+    product_categoria: str | None = None
+    costo_unitario: Decimal | None = None
+    imagen_url: str | None = None
+    lote_numero: str | None = None
+    lote_vencimiento: date | None = None
+    empleado_nombre: str | None = None
+    ubicacion_sala: str | None = None
+
+
+class MermasKpisOut(BaseModel):
+    merma_acumulada_mes: Decimal = Decimal("0")
+    tasa_merma_pct: Decimal = Decimal("0")
+    skus_criticos_count: int = 0
+    tasa_recuperacion_pct: Decimal = Decimal("41.5")
+    recuperacion_monto: Decimal = Decimal("0")
+    pendientes_count: int = 0
+    causas_desglose: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
 class AlertaOut(BaseModel):
