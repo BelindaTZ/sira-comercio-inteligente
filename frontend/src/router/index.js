@@ -202,6 +202,7 @@ const routes = [
     path: '/ventas/tiempo-cobro',
     name: 'ventas-tiempo-cobro',
     component: () => import('@/modules/ventas/pages/TiempoCobroPage.vue'),
+    meta: { roles: ['Encargado_Tienda', 'Jefe_Comercial', 'Jefe_Operaciones', 'Gerente_General'] },
   },
   {
     path: '/operaciones/traslados',
@@ -275,6 +276,11 @@ router.beforeEach(async (to) => {
   if (to.path === '/' && sesion?.rol) {
     const home = homeDe(sesion.rol)
     if (home && home !== '/') return home
+  }
+  // Control de acceso por rol para rutas con restricción explícita
+  if (to.meta?.roles && sesion?.rol && !to.meta.roles.includes(sesion.rol)) {
+    const home = homeDe(sesion.rol) || '/'
+    return home
   }
   return true
 })

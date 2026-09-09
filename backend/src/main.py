@@ -41,7 +41,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
 register_exception_handlers(app)
+
+uploads_dir = Path(__file__).resolve().parent.parent / "uploads"
+uploads_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 api = APIRouter(prefix="/api")
 

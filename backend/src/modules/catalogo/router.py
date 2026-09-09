@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
-from src.core.security import Principal, require_permission
+from src.core.security import Principal, require_any_permission, require_permission
 from src.integrations import minio_client
 from src.modules.catalogo.repository import CatalogoRepository
 from src.modules.catalogo.schemas import (
@@ -34,6 +34,12 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 _ver = require_permission("Comercial", "productos", "select")
 _crear = require_permission("Comercial", "productos", "insert")
 _editar = require_permission("Comercial", "productos", "update")
+_ver_o_operaciones = require_any_permission([
+    ("Comercial", "productos", "select"),
+    ("Operaciones", "inventario", "select"),
+    ("Operaciones", "productos", "select"),
+    ("Operaciones", "lotes", "select"),
+])
 
 
 def _svc(session: SessionDep) -> CatalogoService:
@@ -76,10 +82,10 @@ async def dar_de_baja(
 
 @router.post("/productos/{product_id}/imagen-auto", response_model=ProductoOut)
 async def imagen_automatica(
-    product_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+    product_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver_o_operaciones)]
 ) -> ProductoOut:
     """Asigna una foto genérica de Unsplash por el nombre del producto. Gestión
-    de imagen — basta con poder ver el catálogo (la usan también Operaciones)."""
+    de imagen — basta con poder ver el catálogo o el inventario (la usan también Operaciones)."""
     return _out(await svc.imagen_automatica(product_id))
 
 
@@ -87,7 +93,7 @@ async def imagen_automatica(
 async def subir_imagen(
     product_id: int,
     svc: ServiceDep,
-    _: Annotated[Principal, Depends(_ver)],
+    _: Annotated[Principal, Depends(_ver_o_operaciones)],
     archivo: Annotated[UploadFile, File(alias="archivo")],
 ) -> ProductoOut:
     """Sube una imagen propia (JPG/PNG/WEBP ≤ 5 MB) al bucket de MinIO y la fija

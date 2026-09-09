@@ -58,22 +58,45 @@ def _asegurar_bucket(bucket: str) -> None:
         pass
 
 
+from pathlib import Path
+
+UPLOADS_DIR = Path(__file__).resolve().parents[2] / "uploads"
+
+
 def subir_imagen_producto(product_id: int, data: bytes, content_type: str) -> str:
-    """Sube la imagen y devuelve la URL pública. Valida tipo y tamaño."""
+    """Sube la imagen y devuelve la URL pública. Valida tipo y tamaño.
+    Si MinIO no está disponible, utiliza almacenamiento local como fallback resiliente."""
     if content_type not in _EXT:
         raise RuntimeError("Formato no soportado (usá JPG, PNG o WEBP)")
     if len(data) > _MAX_BYTES:
         raise RuntimeError("La imagen supera los 5 MB")
 
     bucket = settings.minio_bucket_producto_imagenes
-    key = f"productos/{product_id}/{uuid.uuid4().hex}.{_EXT[content_type]}"
+    ext = _EXT[content_type]
+    file_name = f"{uuid.uuid4().hex}.{ext}"
+    key = f"productos/{product_id}/{file_name}"
+
+    # 1. Intentar MinIO primero
     try:
         _asegurar_bucket(bucket)
         _cliente().put_object(
             bucket, key, io.BytesIO(data), length=len(data), content_type=content_type
         )
-    except (S3Error, OSError) as exc:  # noqa: BLE001
-        log.exception("minio: falló la subida de imagen de producto %s", product_id)
-        raise RuntimeError("No se pudo guardar la imagen (almacenamiento no disponible)") from exc
+        return f"{settings.minio_public_url.rstrip('/')}/{bucket}/{key}"
+    except Exception as exc:  # noqa: BLE001
+        log.warning(
+            "MinIO no disponible para imagen de producto %s (%s); utilizando almacenamiento local",
+            product_id,
+            exc,
+        )
 
-    return f"{settings.minio_public_url.rstrip('/')}/{bucket}/{key}"
+    # 2. Fallback resiliente: guardar localmente y servir vía endpoint estático
+    try:
+        local_dir = UPLOADS_DIR / "productos" / str(product_id)
+        local_dir.mkdir(parents=True, exist_ok=True)
+        local_file = local_dir / file_name
+        local_file.write_bytes(data)
+        return f"http://127.0.0.1:8000/static/uploads/productos/{product_id}/{file_name}"
+    except Exception as exc:  # noqa: BLE001
+        log.exception("Falló el almacenamiento local para imagen de producto %s", product_id)
+        raise RuntimeError("No se pudo guardar la imagen (almacenamiento no disponible)") from exc

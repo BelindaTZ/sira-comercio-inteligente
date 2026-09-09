@@ -27,9 +27,11 @@ async function subir(e) {
     url.value = p.imagen_url
     emit('actualizada', p.imagen_url)
   } catch (err) {
-    error.value = err.response?.data?.detail || err.message
+    error.value =
+      err.response?.data?.error?.message || err.response?.data?.detail || err.message
   } finally {
     cargando.value = ''
+    if (e.target) e.target.value = ''
   }
 }
 
@@ -45,7 +47,8 @@ async function unsplash() {
       error.value = 'Unsplash no devolvió una imagen (límite de la API o sin coincidencia).'
     }
   } catch (err) {
-    error.value = err.response?.data?.detail || err.message
+    error.value =
+      err.response?.data?.error?.message || err.response?.data?.detail || err.message
   } finally {
     cargando.value = ''
   }
@@ -72,7 +75,7 @@ async function unsplash() {
     <div v-if="puedeEditar" class="flex flex-wrap gap-2">
       <button
         type="button"
-        :disabled="cargando"
+        :disabled="Boolean(cargando)"
         class="inline-flex items-center gap-1.5 rounded-xl border border-brand-600 bg-brand-800 px-3.5 py-2 text-[13px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
         @click="fileInput.click()"
       >
@@ -81,7 +84,7 @@ async function unsplash() {
       </button>
       <button
         type="button"
-        :disabled="cargando"
+        :disabled="Boolean(cargando)"
         class="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:border-brand-400 disabled:opacity-50"
         @click="unsplash"
       >
@@ -96,6 +99,9 @@ async function unsplash() {
         @change="subir"
       />
     </div>
+    <p v-else class="text-[12px] italic text-slate-400">
+      Solo lectura — no tienes permisos para cambiar la imagen.
+    </p>
 
     <p v-if="error" class="text-[12px] text-crimson-ruby">{{ error }}</p>
     <p class="text-[11px] text-slate-400">JPG, PNG o WEBP · hasta 5 MB.</p>

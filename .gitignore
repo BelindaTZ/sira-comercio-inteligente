@@ -34,3 +34,7 @@ csv/*.rds
 .DS_Store
 Thumbs.db
 DS_Store
+
+# Archivos subidos localmente
+backend/uploads/
+

@@ -159,3 +159,21 @@ def require_permission(modulo: str, tabla: str, action: Action):
         return principal
 
     return _dependency
+
+
+def require_any_permission(specs: list[tuple[str, str, Action]]):
+    """Dependencia de FastAPI que permite el acceso si se cumple AL MENOS UNA de las tuplas (modulo, tabla, action)."""
+
+    async def _dependency(
+        principal: CurrentPrincipal,
+        db: Annotated[AsyncSession, Depends(get_session)],
+    ) -> Principal:
+        for modulo, tabla, action in specs:
+            if await _has_permission(db, principal.role_id, modulo, tabla, action):
+                return principal
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            "El rol no tiene permisos suficientes para realizar esta acción",
+        )
+
+    return _dependency

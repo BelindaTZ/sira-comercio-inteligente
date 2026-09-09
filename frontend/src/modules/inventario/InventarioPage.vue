@@ -33,7 +33,14 @@ const tiendaManual = ref(null)
 const tiendaId = computed(() => sesion.tiendaId ?? tiendaManual.value ?? null)
 const empleadoId = computed(() => sesion.empleadoId ?? 1)
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Operaciones', 'ubicacion_producto'))
-const puedeImagen = computed(() => sesion.puedeLeerTabla('Comercial', 'productos'))
+const puedeImagen = computed(
+  () =>
+    sesion.puedeLeerTabla('Comercial', 'productos') ||
+    sesion.puedeLeerTabla('Operaciones', 'inventario') ||
+    sesion.puedeLeerTabla('Operaciones', 'productos') ||
+    sesion.esEncargado ||
+    sesion.esAdmin
+)
 const puedeAnaquel = computed(() => sesion.puedeEditarTabla('Operaciones', 'verificacion_anaquel'))
 
 const tab = ref('stock') // 'stock' | 'alertas'

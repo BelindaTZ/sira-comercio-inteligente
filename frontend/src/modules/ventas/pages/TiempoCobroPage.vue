@@ -25,6 +25,11 @@ const sesion = useSesion()
 const puedeVerRed = computed(() =>
   ['Jefe_Comercial', 'Gerente_General'].includes(sesion.rol),
 )
+const puedeVerCaja = computed(() =>
+  ['Encargado_Tienda', 'Jefe_Comercial', 'Jefe_Operaciones', 'Gerente_General'].includes(
+    sesion.rol,
+  ),
+)
 
 const hoy = new Date()
 
@@ -99,7 +104,7 @@ async function cargarCajas() {
 }
 
 async function consultarSemanal() {
-  if (semanal.cajaId == null) return
+  if (!puedeVerCaja.value || semanal.cajaId == null) return
   cargandoSemanal.value = true
   error.value = ''
   try {
@@ -132,9 +137,13 @@ async function consultarMensual() {
 }
 
 onMounted(async () => {
-  await cargarCajas()
-  consultarSemanal()
-  consultarMensual()
+  if (puedeVerCaja.value) {
+    await cargarCajas()
+    consultarSemanal()
+  }
+  if (puedeVerRed.value) {
+    consultarMensual()
+  }
 })
 </script>
 

@@ -222,6 +222,7 @@ export const CATEGORIAS = [
   {
     label: 'Finanzas & BI',
     icon: 'bank',
+    rolesExcluidos: ['Cajero'],
     grupos: [
       {
         titulo: 'Caja',
@@ -249,6 +250,7 @@ export const CATEGORIAS = [
             label: 'Tiempo de cobro',
             to: '/ventas/tiempo-cobro',
             modulos: ['Ventas', 'Comercial', 'Finanzas'],
+            roles: ['Encargado_Tienda', 'Jefe_Comercial', 'Jefe_Operaciones'],
           },
         ],
       },
@@ -390,8 +392,13 @@ export function itemVisible(item, sesion) {
   // un módulo propio) o para la Gerencia (que elige el área). Un Encargado/Cajero
   // tiene visibilidad de módulos pero no un "área" → sería un callejón sin salida.
   if (item.soloArea && !sesion.miModulo && !sesion.esGerente) return false
-  if (item.modulos) return item.modulos.some((m) => sesion.puedeVer(m))
-  if (!sesion.puedeVer(item.modulo)) return false
+  if (item.rolesExcluidos && item.rolesExcluidos.includes(sesion.rol)) return false
+  if (item.roles && !sesion.esGerente && !item.roles.includes(sesion.rol)) return false
+  if (item.modulos) {
+    if (!item.modulos.some((m) => sesion.puedeVer(m))) return false
+  } else if (item.modulo) {
+    if (!sesion.puedeVer(item.modulo)) return false
+  }
   // Permiso de tabla: más fino que el de módulo — evita llevar la navegación a un 403.
   if (item.tabla) return sesion.puedeLeerTabla(item.modulo, item.tabla)
   return true
@@ -407,14 +414,21 @@ export function itemsDe(cat) {
  * grupos/categorías vacíos descartados.
  */
 export function categoriasVisibles(sesion) {
-  return CATEGORIAS.map((cat) => {
-    if (cat.grupos) {
-      const grupos = cat.grupos
-        .map((g) => ({ ...g, items: g.items.filter((it) => itemVisible(it, sesion)) }))
-        .filter((g) => g.items.length > 0)
-      return { ...cat, grupos, items: grupos.flatMap((g) => g.items) }
-    }
-    const items = (cat.items ?? []).filter((it) => itemVisible(it, sesion))
-    return { ...cat, items }
-  }).filter((cat) => cat.items.length > 0)
+  return CATEGORIAS
+    .filter((cat) => {
+      if (cat.rolesExcluidos && cat.rolesExcluidos.includes(sesion.rol)) return false
+      if (cat.roles && !sesion.esGerente && !cat.roles.includes(sesion.rol)) return false
+      return true
+    })
+    .map((cat) => {
+      if (cat.grupos) {
+        const grupos = cat.grupos
+          .map((g) => ({ ...g, items: g.items.filter((it) => itemVisible(it, sesion)) }))
+          .filter((g) => g.items.length > 0)
+        return { ...cat, grupos, items: grupos.flatMap((g) => g.items) }
+      }
+      const items = (cat.items ?? []).filter((it) => itemVisible(it, sesion))
+      return { ...cat, items }
+    })
+    .filter((cat) => cat.items.length > 0)
 }
