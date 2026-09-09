@@ -33,7 +33,10 @@ class AgregarLineaIn(BaseModel):
 
 
 class RemoverLineaIn(BaseModel):
-    autoriza_empleado_id: int
+    # el autorizador se identifica por su PIN (releva de teclear un id) o, para la
+    # API / pruebas, por su id explícito
+    autoriza_empleado_id: int | None = None
+    autoriza_pin: str | None = Field(default=None, min_length=4, max_length=6)
     motivo: str | None = None
 
 
@@ -45,7 +48,8 @@ class DescuentoManualIn(BaseModel):
     valor: Decimal = Field(gt=0)
     motivo: str = Field(min_length=1, max_length=200)
     empleado_aplica_id: int
-    empleado_autoriza_id: int
+    empleado_autoriza_id: int | None = None
+    autoriza_pin: str | None = Field(default=None, min_length=4, max_length=6)
 
 
 class PagoTarjetaIn(BaseModel):

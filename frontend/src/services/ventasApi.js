@@ -26,10 +26,14 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
-  removerLinea(ventaId, lineaId, { autorizaEmpleadoId, motivo }) {
+  removerLinea(ventaId, lineaId, { autorizaEmpleadoId, autorizaPin, motivo }) {
     return http
       .delete(`/api/ventas/${ventaId}/lineas/${lineaId}`, {
-        data: { autoriza_empleado_id: autorizaEmpleadoId, motivo },
+        data: {
+          autoriza_empleado_id: autorizaEmpleadoId ?? undefined,
+          autoriza_pin: autorizaPin || undefined,
+          motivo,
+        },
       })
       .then((r) => r.data)
   },
@@ -37,12 +41,12 @@ export const ventasApi = {
   /**
    * FR-009/FR-010 (feature 003) — descuento manual con autorización obligatoria
    * de un Encargado_Tienda (o superior) distinto del cajero, sin excepción por
-   * monto. `empleadoAutorizaId` se obtiene re-autenticando al encargado.
+   * monto. El autorizador se identifica por su PIN (feature 018).
    */
   aplicarDescuento(
     ventaId,
     lineaId,
-    { tipo, valor, motivo, empleadoAplicaId, empleadoAutorizaId }
+    { tipo, valor, motivo, empleadoAplicaId, empleadoAutorizaId, autorizaPin }
   ) {
     return http
       .post(`/api/ventas/${ventaId}/lineas/${lineaId}/descuento`, {
@@ -50,7 +54,8 @@ export const ventasApi = {
         valor,
         motivo,
         empleado_aplica_id: empleadoAplicaId,
-        empleado_autoriza_id: empleadoAutorizaId,
+        empleado_autoriza_id: empleadoAutorizaId ?? undefined,
+        autoriza_pin: autorizaPin || undefined,
       })
       .then((r) => r.data)
   },

@@ -129,8 +129,9 @@ async def remover_linea(
     svc: ServiceDep,
     principal: Annotated[Principal, Depends(_linea_delete)],
 ) -> VentaOut:
-    # El principal autenticado es quien autoriza: no se autoriza en nombre de otro.
-    if data.autoriza_empleado_id != principal.empleado_id:
+    # Con PIN el cajero autenticado presenta la credencial del supervisor presente;
+    # sin PIN (API/pruebas) el autorizador debe ser el propio principal autenticado.
+    if not data.autoriza_pin and data.autoriza_empleado_id != principal.empleado_id:
         raise ForbiddenError("autoriza_empleado_id debe coincidir con el empleado autenticado")
     venta = await svc.remover_linea(venta_id, linea_id, data)
     return await _venta_out(svc, venta)

@@ -147,6 +147,12 @@ class SistemaRepository:
         ).first()
         return dict(row._mapping) if row is not None else None
 
+    async def pin_de_empleado(self, empleado_id: int) -> str | None:
+        return await self.session.scalar(
+            text("SELECT pin_autorizacion FROM empleados WHERE empleado_id = :e"),
+            {"e": empleado_id},
+        )
+
     async def modulo_id_existe(self, modulo_id: int) -> bool:
         return (
             await self.session.scalar(

@@ -495,6 +495,25 @@ async def main() -> None:
 
     await seed_usuarios(reset_password=True)
 
+    # PIN de autorización para los roles que autorizan procesos del POS (feature 018)
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        await s.execute(
+            text("""
+            UPDATE empleados e
+            SET pin_autorizacion = lpad((floor(random() * 10000))::int::text, 4, '0')
+            FROM usuarios u
+            JOIN roles r ON r.role_id = u.role_id
+            WHERE u.empleado_id = e.empleado_id
+              AND r.nombre IN ('Encargado_Tienda','Jefe_Comercial','Jefe_Operaciones',
+                               'Jefe_Finanzas','Gerente_General')
+              AND e.pin_autorizacion IS NULL
+        """)
+        )
+        await s.commit()
+
     log.info("2/5 · enriquecimiento genérico del catálogo (nombre/marca/precio/proveedores)")
     from scripts.enriquecer_catalogo import main as enriquecer
 

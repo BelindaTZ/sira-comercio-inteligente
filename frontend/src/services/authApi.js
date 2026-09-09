@@ -35,6 +35,11 @@ export const authApi = {
     return http.get('/api/auth/me').then((r) => r.data)
   },
 
+  /** El propio PIN de autorización (feature 018) — `{pin, puede_autorizar}`. */
+  miPin() {
+    return http.get('/api/auth/mi-pin').then((r) => r.data)
+  },
+
   token() {
     try {
       return localStorage.getItem(TOKEN_KEY)

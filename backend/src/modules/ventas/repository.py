@@ -279,6 +279,26 @@ class VentasRepository(BaseRepository[Venta]):
         )
         return [dict(r._mapping) for r in rows]
 
+    async def empleado_por_pin(self, pin: str) -> dict | None:
+        """Empleado (id, rol, tienda) cuyo PIN de autorización coincide. `None` si
+        no hay match. El PIN se usa para autorizar procesos del POS sin que el
+        supervisor teclee su id (feature 018, migración 0031)."""
+        from sqlalchemy import text
+
+        row = (
+            await self.session.execute(
+                text(
+                    "SELECT e.empleado_id, e.tienda_id, r.nombre AS rol "
+                    "FROM empleados e "
+                    "JOIN usuarios u ON u.empleado_id = e.empleado_id "
+                    "JOIN roles r ON r.role_id = u.role_id "
+                    "WHERE e.pin_autorizacion = :pin AND e.activo = true"
+                ),
+                {"pin": pin},
+            )
+        ).first()
+        return dict(row._mapping) if row is not None else None
+
     async def rol_de_empleado(self, empleado_id: int) -> str | None:
         """Rol RBAC del empleado vía `usuarios.role_id → roles.nombre` (feature 003,
         research.md §4). `None` si el empleado no tiene usuario / rol asociado."""

@@ -186,6 +186,10 @@ class SistemaService:
             return None
         return await self.repo.tienda_de(tienda_id)
 
+    async def mi_pin(self, empleado_id: int) -> dict:
+        pin = await self.repo.pin_de_empleado(empleado_id)
+        return {"pin": pin, "puede_autorizar": pin is not None}
+
     async def definir_permiso_tabla(
         self,
         role_id: int,

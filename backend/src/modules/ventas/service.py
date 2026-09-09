@@ -156,17 +156,40 @@ class VentasService:
         await self.repo.flush()
         return venta, linea
 
+    async def _resolver_autorizador(
+        self, *, pin: str | None, empleado_id: int | None, tienda_id: int
+    ) -> int:
+        """El supervisor que autoriza un proceso del POS se identifica por su PIN
+        (feature 018) o, para la API, por su id. Valida rol y —para un Encargado—
+        que sea de la misma tienda de la venta."""
+        if pin:
+            emp = await self.repo.empleado_por_pin(pin.strip())
+            if emp is None or not pricing_calc.rol_autoriza_descuento(emp["rol"]):
+                raise ForbiddenError("PIN de autorización inválido")
+            if emp["rol"] == "Encargado_Tienda" and emp["tienda_id"] != tienda_id:
+                raise ForbiddenError("El Encargado que autoriza no es de esta tienda")
+            return emp["empleado_id"]
+        if empleado_id is not None:
+            return empleado_id
+        raise ForbiddenError("Falta la autorización de un supervisor (PIN)")
+
     async def remover_linea(self, venta_id: int, linea_id: int, data: RemoverLineaIn) -> Venta:
         venta = await self._venta_en_curso(venta_id)
         linea = await self.repo.get_linea(venta_id, linea_id)
         if linea is None:
             raise NotFoundError(f"La línea {linea_id} no pertenece a la venta {venta_id}")
 
+        autoriza_id = await self._resolver_autorizador(
+            pin=data.autoriza_pin,
+            empleado_id=data.autoriza_empleado_id,
+            tienda_id=venta.tienda_id,
+        )
         # FR-027 / SC-007: control de doble persona, sin excepciones.
-        if data.autoriza_empleado_id == venta.cajero_id:
+        if autoriza_id == venta.cajero_id:
             raise ForbiddenError(
                 "Quien autoriza la remoción debe ser distinto del cajero de la venta"
             )
+        data.autoriza_empleado_id = autoriza_id
 
         self.repo.agregar(
             LineaVentaRemovida(
@@ -234,9 +257,15 @@ class VentasService:
         if linea is None:
             raise NotFoundError(f"La línea {linea_id} no pertenece a la venta {venta_id}")
 
-        if data.empleado_aplica_id == data.empleado_autoriza_id:
+        autoriza_id = await self._resolver_autorizador(
+            pin=data.autoriza_pin,
+            empleado_id=data.empleado_autoriza_id,
+            tienda_id=venta.tienda_id,
+        )
+        data.empleado_autoriza_id = autoriza_id
+        if data.empleado_aplica_id == autoriza_id:
             raise ForbiddenError("Quien autoriza el descuento debe ser distinto de quien lo aplica")
-        rol_autoriza = await self.repo.rol_de_empleado(data.empleado_autoriza_id)
+        rol_autoriza = await self.repo.rol_de_empleado(autoriza_id)
         if not pricing_calc.rol_autoriza_descuento(rol_autoriza):
             raise ForbiddenError(
                 "Sólo un Encargado_Tienda (o superior) puede autorizar un descuento manual"

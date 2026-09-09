@@ -41,15 +41,15 @@ watch(
 )
 
 async function pedirRemocion(linea) {
-  const autoriza = await prompt({
-    title: `Remover línea — producto ${linea.product_id}`,
-    message: 'Requiere la autorización de un empleado distinto del cajero.',
-    label: 'ID del empleado que autoriza',
-    inputType: 'number',
+  const pin = await prompt({
+    title: `Remover línea — ${linea.nombre || `producto ${linea.product_id}`}`,
+    message: 'Requiere el PIN de un Encargado (o superior) distinto del cajero.',
+    label: 'PIN de autorización',
+    inputType: 'password',
     required: true,
     confirmText: 'Continuar',
   })
-  if (!autoriza) return
+  if (!pin) return
   const motivo = await prompt({
     title: 'Motivo de la remoción',
     label: 'Motivo',
@@ -57,7 +57,7 @@ async function pedirRemocion(linea) {
     tone: 'danger',
   })
   if (motivo === null) return
-  emit('remover', { lineaId: linea.venta_detalle_id, autorizaEmpleadoId: Number(autoriza), motivo })
+  emit('remover', { lineaId: linea.venta_detalle_id, autorizaPin: String(pin).trim(), motivo })
 }
 
 // --- modal de descuento manual con autorización ---
@@ -67,7 +67,6 @@ const modal = reactive({
   tipo: 'monto',
   valor: '',
   motivo: '',
-  encargadoId: '',
   encargadoPin: '',
 })
 const errorModal = ref('')
@@ -79,7 +78,6 @@ function abrirDescuento(linea) {
     tipo: 'monto',
     valor: '',
     motivo: '',
-    encargadoId: '',
     encargadoPin: '',
   })
   errorModal.value = ''
@@ -95,9 +93,8 @@ function confirmarDescuento() {
     errorModal.value = 'El motivo del descuento es obligatorio.'
     return
   }
-  if (!modal.encargadoId || !modal.encargadoPin) {
-    errorModal.value =
-      'El Encargado_Tienda debe re-autenticarse (ID + PIN) para autorizar el descuento.'
+  if (!modal.encargadoPin.trim()) {
+    errorModal.value = 'El PIN de un Encargado (o superior) es obligatorio para autorizar.'
     return
   }
   emit('descuento', {
@@ -105,7 +102,7 @@ function confirmarDescuento() {
     tipo: modal.tipo,
     valor: modal.valor,
     motivo: modal.motivo.trim(),
-    empleadoAutorizaId: Number(modal.encargadoId),
+    autorizaPin: modal.encargadoPin.trim(),
   })
   modal.abierto = false
 }
@@ -260,21 +257,17 @@ function confirmarDescuento() {
         class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
       />
 
-      <p class="mb-1 text-[12px] font-semibold text-slate-600">Autorización del Encargado</p>
-      <div class="mb-3 flex gap-2">
-        <input
-          v-model="modal.encargadoId"
-          type="number"
-          placeholder="ID empleado"
-          class="w-1/2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-        />
-        <input
-          v-model="modal.encargadoPin"
-          type="password"
-          placeholder="PIN"
-          class="w-1/2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-        />
-      </div>
+      <p class="mb-1 text-[12px] font-semibold text-slate-600">
+        Autorización — PIN de un Encargado (o superior) distinto del cajero
+      </p>
+      <input
+        v-model="modal.encargadoPin"
+        type="password"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="PIN de autorización"
+        class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-center font-mono text-lg tracking-[0.3em] text-slate-800"
+      />
 
       <p v-if="errorModal" class="mb-2 text-[12px] text-crimson-ruby">{{ errorModal }}</p>
 

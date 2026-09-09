@@ -783,6 +783,7 @@ async def escenario_auth(db_session: AsyncSession) -> dict:
     ti = await _cuenta("Jefe_TI", "jefe.ti", "Password-TI-2026")
     rrhh = await _cuenta("Jefe_RRHH", "jefe.rrhh", "Password-RRHH-2026")
     cajero = await _cuenta("Cajero", "cajero.uno", "Password-Cajero-2026")
+    encargado = await _cuenta("Encargado_Tienda", "encargado.uno", "Password-Enc-2026")
     await s.flush()
 
     return {
@@ -793,6 +794,7 @@ async def escenario_auth(db_session: AsyncSession) -> dict:
         "ti": ti,
         "rrhh": rrhh,
         "cajero": cajero,
+        "encargado": encargado,
     }
 
 

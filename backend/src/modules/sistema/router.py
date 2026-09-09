@@ -101,6 +101,13 @@ async def cambiar_mi_password(
     return {"mensaje": "Contraseña actualizada"}
 
 
+@auth_router.get("/mi-pin", status_code=status.HTTP_200_OK)
+async def mi_pin(principal: CurrentPrincipal, svc: ServiceDep) -> dict:
+    """El propio PIN de autorización — visible sólo para su dueño. `pin` es null si
+    el rol no autoriza procesos del POS (feature 018)."""
+    return await svc.mi_pin(principal.empleado_id)
+
+
 @auth_router.get("/me", response_model=PerfilOut)
 async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
     """Identidad de la sesión + módulos que el rol puede ver — lo que el frontend

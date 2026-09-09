@@ -153,13 +153,17 @@ async function agregar({ productId, codigoBarras, cantidad }) {
   )
 }
 
-async function remover({ lineaId, autorizaEmpleadoId, motivo }) {
+async function remover({ lineaId, autorizaEmpleadoId, autorizaPin, motivo }) {
   venta.value = await conError(() =>
-    ventasApi.removerLinea(venta.value.venta_id, lineaId, { autorizaEmpleadoId, motivo }),
+    ventasApi.removerLinea(venta.value.venta_id, lineaId, {
+      autorizaEmpleadoId,
+      autorizaPin,
+      motivo,
+    }),
   )
 }
 
-async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutorizaId }) {
+async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutorizaId, autorizaPin }) {
   venta.value = await conError(() =>
     ventasApi.aplicarDescuento(venta.value.venta_id, lineaId, {
       tipo,
@@ -167,6 +171,7 @@ async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutoriza
       motivo,
       empleadoAplicaId: sesion.cajeroId,
       empleadoAutorizaId,
+      autorizaPin,
     }),
   )
 }

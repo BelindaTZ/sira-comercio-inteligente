@@ -69,3 +69,27 @@ async def test_me_cajero_no_ve_sistema_ni_direccion(client, escenario_auth):
 async def test_me_sin_token_401(client):
     r = await client.get("/api/auth/me")
     assert r.status_code == 401
+
+
+async def test_mi_pin_solo_para_roles_autorizadores(client, escenario_auth, db_session):
+    """Feature 018 — el Encargado ve su PIN; el Cajero no tiene."""
+    e = escenario_auth
+    await db_session.execute(
+        text("UPDATE empleados SET pin_autorizacion = '7788' WHERE empleado_id = :id"),
+        {"id": e["encargado"]["empleado_id"]},
+    )
+    await db_session.flush()
+
+    enc = await client.get(
+        "/api/auth/mi-pin",
+        headers={"Authorization": f"Bearer {e['encargado']['token']}"},
+    )
+    assert enc.status_code == 200
+    assert enc.json() == {"pin": "7788", "puede_autorizar": True}
+
+    caj = await client.get(
+        "/api/auth/mi-pin",
+        headers={"Authorization": f"Bearer {e['cajero']['token']}"},
+    )
+    assert caj.status_code == 200
+    assert caj.json()["puede_autorizar"] is False

@@ -15,7 +15,26 @@ const sesion = useSesion()
 const router = useRouter()
 
 const abierto = ref(false)
-const modal = ref(null) // 'cuenta' | 'password' | null
+const modal = ref(null) // 'cuenta' | 'password' | 'pin' | null
+
+// --- PIN de autorización (feature 018) ---
+const pin = ref(null)
+const pinRevelado = ref(false)
+const pinCargando = ref(false)
+async function abrirPin() {
+  modal.value = 'pin'
+  abierto.value = false
+  pinRevelado.value = false
+  if (pin.value === null) {
+    pinCargando.value = true
+    try {
+      const r = await authApi.miPin()
+      pin.value = r
+    } finally {
+      pinCargando.value = false
+    }
+  }
+}
 
 const iniciales = computed(() => {
   const n = (sesion.nombre || sesion.username || 'U').trim()
@@ -62,6 +81,7 @@ function cerrarModal() {
   pwError.value = ''
   pwOk.value = false
   pw.value = { actual: '', nueva: '', repetir: '' }
+  pinRevelado.value = false
 }
 </script>
 
@@ -117,6 +137,13 @@ function cerrarModal() {
       </button>
       <button
         type="button"
+        class="block w-full px-4 py-2.5 text-left text-[13px] text-on-surface-variant hover:bg-surface-container hover:text-on-surface"
+        @click="abrirPin"
+      >
+        Mi PIN de autorización
+      </button>
+      <button
+        type="button"
         class="block w-full border-t border-outline-variant px-4 py-2.5 text-left text-[13px] font-medium text-crimson-ruby hover:bg-[#ffe4e6]"
         @click="salir"
       >
@@ -138,6 +165,34 @@ function cerrarModal() {
         <dt class="text-on-surface-variant">Empleado #</dt>
         <dd class="text-on-surface">{{ sesion.empleadoId }}</dd>
       </dl>
+    </Modal>
+
+    <!-- Mi PIN de autorización -->
+    <Modal v-if="modal === 'pin'" titulo="Mi PIN de autorización" @cerrar="cerrarModal">
+      <p v-if="pinCargando" class="text-sm text-on-surface-variant">Cargando…</p>
+      <template v-else-if="pin?.puede_autorizar">
+        <p class="mb-4 text-[13px] text-on-surface-variant">
+          Úsalo para autorizar en caja procesos que exigen un supervisor distinto del cajero
+          (remover una línea, aplicar un descuento manual). No lo compartas.
+        </p>
+        <div
+          class="flex items-center justify-between rounded-xl border border-outline-variant bg-surface-container-lowest px-4 py-3"
+        >
+          <span class="font-mono text-2xl font-extrabold tracking-[0.35em] text-on-surface">
+            {{ pinRevelado ? pin.pin : '••••' }}
+          </span>
+          <button
+            type="button"
+            class="rounded-lg border border-outline-variant px-3 py-1.5 text-[12px] font-semibold text-on-surface-variant hover:bg-surface-container"
+            @click="pinRevelado = !pinRevelado"
+          >
+            {{ pinRevelado ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+      </template>
+      <p v-else class="text-[13px] text-on-surface-variant">
+        Tu rol no autoriza procesos de caja, así que no tienes un PIN de autorización.
+      </p>
     </Modal>
 
     <!-- Cambiar contraseña -->
