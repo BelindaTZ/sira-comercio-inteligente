@@ -39,6 +39,16 @@ export const catalogoApi = {
       .then((r) => r.data)
   },
 
+  /** Descarga la matriz de precios filtrada como csv | xlsx | pdf. */
+  exportarPrecios(formato, { search, categoria, margen } = {}) {
+    return http
+      .get('/api/catalogo/precios/export', {
+        params: { formato, search: search || undefined, categoria: categoria || undefined, margen: margen || undefined },
+        responseType: 'blob',
+      })
+      .then((r) => r.data)
+  },
+
   crear({
     codigoBarras,
     nombre,

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Gestión y Mitigación de Riesgo de Fuga de Clientes</title>
+<!-- Fonts: Google Fonts (Inter + Plus Jakarta Sans) -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration (verbatim tokens) -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-error": "#ffffff",
+            "on-primary-fixed-variant": "#254d49",
+            "secondary": "#712ae2",
+            "inverse-on-surface": "#eff1f3",
+            "tertiary": "#002014",
+            "secondary-fixed": "#eaddff",
+            "on-tertiary": "#ffffff",
+            "primary-fixed": "#c0ebe4",
+            "surface-dim": "#d8dadc",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-high": "#e6e8ea",
+            "on-primary": "#ffffff",
+            "surface-bright": "#f8f9fb",
+            "error": "#ba1a1a",
+            "inverse-surface": "#2d3133",
+            "secondary-container": "#8a4cfc",
+            "on-background": "#191c1e",
+            "tertiary-container": "#003825",
+            "on-tertiary-fixed": "#002114",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "primary": "#00201d",
+            "surface-tint": "#3e6561",
+            "background": "#f8f9fb",
+            "on-secondary-fixed": "#25005a",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-tertiary-container": "#30ab7c",
+            "outline-variant": "#c0c8c6",
+            "on-tertiary-fixed-variant": "#005137",
+            "surface-container-low": "#f2f4f6",
+            "on-error-container": "#93000a",
+            "error-container": "#ffdad6",
+            "surface": "#f8f9fb",
+            "surface-container": "#eceef0",
+            "on-secondary-container": "#fffbff",
+            "on-surface-variant": "#414847",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-primary-container": "#779f9a",
+            "tertiary-fixed": "#85f8c4",
+            "on-surface": "#191c1e",
+            "surface-variant": "#e0e3e5",
+            "outline": "#717977",
+            "secondary-fixed-dim": "#d2bbff",
+            "inverse-primary": "#a5cfc9",
+            "on-primary-fixed": "#00201d",
+            "on-secondary": "#ffffff",
+            "primary-container": "#0a3632",
+            "surface-container-highest": "#e0e3e5"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-desktop": "1.5rem",
+            "space-2xl": "3rem",
+            "space-lg": "1.5rem",
+            "sidebar-expanded": "16.5rem",
+            "space-xl": "2rem",
+            "space-2xs": "0.125rem",
+            "space-sm": "0.5rem",
+            "space-base": "1rem",
+            "sidebar-collapsed": "4.5rem",
+            "gutter-mobile": "1rem",
+            "space-md": "0.75rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(10, 54, 50, 0.03);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(10, 54, 50, 0.18);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(10, 54, 50, 0.32);
+    }
+  </style>
+</head>
+<body class="h-full font-body-md text-on-surface bg-background antialiased overflow-hidden relative selection:bg-primary-fixed selection:text-primary">
+<!-- ========================================================================= -->
+<!-- BACKGROUND LAYER: REALISTIC SIRA CRM DASHBOARD (Frosted & Blurred)        -->
+<!-- ========================================================================= -->
+<div aria-hidden="true" class="fixed inset-0 pointer-events-none filter blur-[6px] opacity-40 scale-[1.01] transition-all duration-300">
+<!-- Top Bar Simulation -->
+<header class="h-16 w-full bg-surface-container-lowest border-b border-outline-variant/40 flex items-center justify-between px-gutter-desktop">
+<div class="flex items-center gap-space-lg">
+<span class="font-headline-md text-headline-md font-bold text-primary tracking-tight">SIRA</span>
+<div class="h-5 w-px bg-outline-variant/40"></div>
+<div class="flex items-center gap-space-md text-body-sm font-body-sm text-on-surface-variant">
+<span class="material-symbols-outlined">storefront</span>
+<span>Marzú Retail Group • Providencia Express</span>
+</div>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="w-80 h-9 bg-surface-container-low rounded-lg border border-outline-variant/50"></div>
+<div class="w-8 h-8 rounded-full bg-surface-variant"></div>
+</div>
+</header>
+<!-- App Stage Grid Layout Simulation -->
+<div class="flex h-[calc(100vh-4rem)]">
+<!-- Left Rail Sidebar Simulation -->
+<aside class="w-64 bg-surface-container-lowest border-r border-outline-variant/40 p-space-md flex flex-col justify-between">
+<div class="space-y-2">
+<div class="h-9 rounded-xl bg-surface-container-low"></div>
+<div class="h-9 rounded-xl bg-primary-container/10 border-l-2 border-primary-container"></div>
+<div class="h-9 rounded-xl bg-surface-container-low"></div>
+<div class="h-9 rounded-xl bg-surface-container-low"></div>
+</div>
+<div class="h-12 bg-surface-container-high rounded-xl"></div>
+</aside>
+<!-- Stage Content Mockup -->
+<main class="flex-1 p-space-xl overflow-hidden space-y-space-lg">
+<div class="flex justify-between items-center">
+<div>
+<div class="h-7 w-64 bg-surface-variant rounded-lg"></div>
+<div class="h-4 w-96 bg-surface-container-high rounded-lg mt-2"></div>
+</div>
+<div class="flex gap-space-sm">
+<div class="h-9 w-32 bg-surface-variant rounded-lg"></div>
+<div class="h-9 w-36 bg-primary-container rounded-lg"></div>
+</div>
+</div>
+<!-- 4 Grid Metric Cards -->
+<div class="grid grid-cols-4 gap-space-lg">
+<div class="h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md"></div>
+<div class="h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md"></div>
+<div class="h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md"></div>
+<div class="h-32 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md"></div>
+</div>
+<!-- Big Table Placeholder -->
+<div class="h-96 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-lg"></div>
+</main>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- MODAL CONTAINER (BACKDROP & CENTERING COCKPIT)                            -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-black/60 backdrop-blur-md overflow-y-auto">
+<!-- MODAL CARD: Tier 2 Elevation with Hairline Border and Atmospheric Shadow -->
+<section aria-labelledby="modal-title" aria-modal="true" class="relative w-full max-w-5xl max-h-[942px] flex flex-col bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.14)] shadow-[0_4px_8px_rgba(10,54,50,0.06),0_20px_48px_-8px_rgba(10,54,50,0.22)] overflow-hidden animate-in fade-in zoom-in-95 duration-200" role="dialog">
+<!-- ===================================================================== -->
+<!-- 1. HEADER DEL MODAL                                                   -->
+<!-- ===================================================================== -->
+<header class="px-space-xl pt-space-lg pb-space-md border-b border-[rgba(10,54,50,0.08)] bg-gradient-to-r from-surface-bright via-surface-container-lowest to-surface-bright/50">
+<div class="flex items-start justify-between gap-space-lg">
+<div class="space-y-space-xs flex-1">
+<!-- Badge Cluster -->
+<div class="flex flex-wrap items-center gap-space-xs">
+<!-- Early Detection Churn Badge (Warm Alert/Coral) -->
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-[#ffe4e6] text-[#be123c] border border-[rgba(225,29,72,0.24)]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#e11d48] animate-pulse"></span>
+                DETECCIÓN TEMPRANA DE CHURN
+              </span>
+<!-- Code Token -->
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-surface-container text-on-surface-variant border border-outline-variant/40 font-mono">
+                #CHURN-RISK-Q1
+              </span>
+<!-- AI Predictive Accent Badge (Amethyst) -->
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-[#f3e8ff] text-[#6b21a8] border border-[rgba(124,58,237,0.25)]">
+<span class="material-symbols-outlined text-[13px] text-secondary">auto_awesome</span>
+                Algoritmo Predictivo Marzú AI
+              </span>
+<!-- High Prevention Level (Amber) -->
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-[#fef3c7] text-[#b45309] border border-[rgba(217,119,6,0.25)] font-semibold">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+                Alerta Preventiva Nivel Alto
+              </span>
+</div>
+<!-- Modal Title -->
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold" id="modal-title">
+              Gestión y Mitigación de Riesgo de Fuga (Churn)
+            </h1>
+<!-- Subtitle -->
+<p class="font-body-sm text-body-sm text-on-surface-variant max-w-3xl">
+              Análisis de cohortes de clientes en riesgo de abandono, detección de quiebre en ciclo de compra y plan de retención personalizado.
+            </p>
+</div>
+<!-- Close Action -->
+<button aria-label="Cerrar modal" class="group inline-flex items-center justify-center w-8 h-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-container" onclick="window.history.length &gt; 1 ? window.history.back() : null" type="button">
+<span class="material-symbols-outlined text-[20px] group-hover:rotate-90 transition-transform duration-200">close</span>
+</button>
+</div>
+</header>
+<!-- ===================================================================== -->
+<!-- MODAL BODY CONTENT (Scrollable Canvas with 8px Rhythmic Spacing)      -->
+<!-- ===================================================================== -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-space-xl space-y-space-xl bg-surface-bright/30">
+<!-- ------------------------------------------------------------------- -->
+<!-- BLOQUE 1: DIAGNÓSTICO DE FUGA Y MÉTRICAS DEL SEGMENTO CRÍTICO       -->
+<!-- ------------------------------------------------------------------- -->
+<section aria-labelledby="kpi-section-title" class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-2" id="kpi-section-title">
+<span class="material-symbols-outlined text-primary-container text-[18px]">query_stats</span>
+              Diagnóstico del Segmento y Proyección de Impacto
+            </h2>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Ventana móvil: Últimos 30 días</span>
+</div>
+<!-- 3 KPI Comparative Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Card 1: Clientes en Riesgo Crítico -->
+<article class="bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.08)] p-space-md shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-primary-container/30 transition-all duration-150">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Clientes en Riesgo Crítico</span>
+<span class="w-7 h-7 rounded-lg bg-[#ffe4e6] text-[#be123c] flex items-center justify-center">
+<span class="material-symbols-outlined text-[17px]">person_off</span>
+</span>
+</div>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric text-primary font-bold">342</span>
+<span class="font-body-md text-body-md text-on-surface-variant">clientes</span>
+</div>
+<div class="mt-2.5 pt-2 border-t border-outline-variant/30 flex items-center gap-1.5 text-label-sm font-label-sm">
+<span class="inline-flex items-center text-[#b91c1c] font-bold">
+<span class="material-symbols-outlined text-[15px]">trending_up</span>
+                  +18
+                </span>
+<span class="text-on-surface-variant">vs mes anterior • <strong class="text-[#b91c1c]">85% prob. abandono</strong> (&gt;25d inactivos)</span>
+</div>
+</article>
+<!-- Card 2: LTV en Riesgo -->
+<article class="bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.08)] p-space-md shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-primary-container/30 transition-all duration-150">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">LTV en Riesgo Directo</span>
+<span class="w-7 h-7 rounded-lg bg-[#fef3c7] text-[#b45309] flex items-center justify-center">
+<span class="material-symbols-outlined text-[17px]">savings</span>
+</span>
+</div>
+<div class="mt-2">
+<span class="font-tabular-metric text-tabular-metric text-primary font-bold">$48.650.000</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant ml-1 font-medium">CLP</span>
+</div>
+<div class="mt-2.5 pt-2 border-t border-outline-variant/30 flex items-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span class="inline-flex items-center text-[#b45309] font-bold">
+<span class="material-symbols-outlined text-[15px]">priority_high</span>
+                  Exposición alta
+                </span>
+<span>Gasto histórico ponderado en peligro de pérdida</span>
+</div>
+</article>
+<!-- Card 3: Categorías más Afectadas -->
+<article class="bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.08)] p-space-md shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-primary-container/30 transition-all duration-150">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Categorías más Afectadas</span>
+<span class="w-7 h-7 rounded-lg bg-[#f3e8ff] text-[#6b21a8] flex items-center justify-center">
+<span class="material-symbols-outlined text-[17px]">wine_bar</span>
+</span>
+</div>
+<div class="mt-2 text-primary font-headline-sm text-headline-sm font-semibold truncate" title="Vinos Reserva, Quesos Madurados y Panadería Artesanal">
+                Vinos Reserva &amp; Quesos
+              </div>
+<div class="mt-2.5 pt-2 border-t border-outline-variant/30 flex items-center gap-1.5 text-label-sm font-label-sm text-on-surface-variant">
+<span class="inline-flex items-center text-secondary font-bold">Panadería Artesanal</span>
+<span>• Quiebre severo de recurrencia en frescos</span>
+</div>
+</article>
+</div>
+</section>
+<!-- ------------------------------------------------------------------- -->
+<!-- BLOQUE 2: CASOS EMBLEMÁTICOS / MUESTRA DE CLIENTES EN RIESGO        -->
+<!-- ------------------------------------------------------------------- -->
+<section aria-labelledby="sample-table-title" class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-2" id="sample-table-title">
+<span class="material-symbols-outlined text-primary-container text-[18px]">group_search</span>
+                Casos Emblemáticos en Observación Algorítmica
+              </h2>
+<span class="px-2 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-fixed text-on-primary-fixed-variant font-medium">
+                Top Muestra Cohorte VIP
+              </span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Mostrando 3 de 342 registros auditados</span>
+</div>
+<!-- Structured Mini Table with Precision Styling -->
+<div class="bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.1)] shadow-[0_1px_2px_rgba(10,54,50,0.03)] overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-[rgba(10,54,50,0.08)] h-9">
+<th class="py-2 px-space-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold" scope="col">Cliente / Segmento</th>
+<th class="py-2 px-space-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold" scope="col">Última Visita • Frecuencia</th>
+<th class="py-2 px-space-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold text-right" scope="col">LTV Histórico</th>
+<th class="py-2 px-space-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold" scope="col">Causal Probable (IA)</th>
+<th class="py-2 px-space-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold text-center" scope="col">Nivel de Riesgo</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[rgba(15,23,42,0.05)] text-body-sm font-body-sm">
+<!-- Row 1: Valentina Silva -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors duration-150">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-label-md">
+                          VS
+                        </div>
+<div>
+<div class="font-semibold text-on-surface">Valentina Silva</div>
+<div class="flex items-center gap-1 text-label-sm">
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-surface-container-highest text-primary font-medium text-[10px]">
+                              Black Gourmet
+                            </span>
+<span class="text-on-surface-variant text-[11px]">• Providencia</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="text-[#be123c] font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">event_busy</span>
+                        Hace 24 días
+                      </div>
+<div class="text-on-surface-variant text-label-sm">Normal: 3.2 vis/sem</div>
+</td>
+<td class="py-3 px-space-md text-right font-tabular-data text-tabular-data font-bold text-primary">
+                      $2.840.500 CLP
+                    </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-[#b45309]">inventory_2</span>
+<span>Quiebre de stock en su vino habitual (Cabernet Reserva)</span>
+</div>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-[#ffe4e6] text-[#be123c] border border-[rgba(225,29,72,0.25)] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#be123c]"></span>
+                        Riesgo Alto 91%
+                      </span>
+</td>
+</tr>
+<!-- Row 2: Rodrigo Edwards -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors duration-150">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-surface-container-high text-on-surface flex items-center justify-center font-bold text-label-md">
+                          RE
+                        </div>
+<div>
+<div class="font-semibold text-on-surface">Rodrigo Edwards</div>
+<div class="flex items-center gap-1 text-label-sm">
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-surface-container text-on-surface-variant font-medium text-[10px]">
+                              Platinum
+                            </span>
+<span class="text-on-surface-variant text-[11px]">• Tobalaba</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="text-[#b45309] font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">event_busy</span>
+                        Hace 18 días
+                      </div>
+<div class="text-on-surface-variant text-label-sm">Normal: 1.8 vis/sem</div>
+</td>
+<td class="py-3 px-space-md text-right font-tabular-data text-tabular-data font-bold text-primary">
+                      $1.492.300 CLP
+                    </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary">store</span>
+<span>Campaña agresiva de competidor directo en Providencia</span>
+</div>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-[#fef3c7] text-[#b45309] border border-[rgba(217,119,6,0.25)] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#b45309]"></span>
+                        Riesgo Medio 74%
+                      </span>
+</td>
+</tr>
+<!-- Row 3: Álvaro Guzmán -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors duration-150">
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-label-md">
+                          AG
+                        </div>
+<div>
+<div class="font-semibold text-on-surface">Álvaro Guzmán</div>
+<div class="flex items-center gap-1 text-label-sm">
+<span class="inline-flex items-center px-1.5 py-0.2 rounded bg-surface-container-highest text-primary font-medium text-[10px]">
+                              Black Gourmet
+                            </span>
+<span class="text-on-surface-variant text-[11px]">• Manuel Montt</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-space-md">
+<div class="text-[#be123c] font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">event_busy</span>
+                        Hace 21 días
+                      </div>
+<div class="text-on-surface-variant text-label-sm">Normal: 4.1 vis/sem</div>
+</td>
+<td class="py-3 px-space-md text-right font-tabular-data text-tabular-data font-bold text-primary">
+                      $3.110.000 CLP
+                    </td>
+<td class="py-3 px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-outline">tune</span>
+<span>Cambio estacional • Falta de interacción con newsletter</span>
+</div>
+</td>
+<td class="py-3 px-space-md text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-label-sm font-label-sm bg-[#ffe4e6] text-[#be123c] border border-[rgba(225,29,72,0.25)] font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#be123c]"></span>
+                        Riesgo Alto 88%
+                      </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- ------------------------------------------------------------------- -->
+<!-- BLOQUE 3: ESTRATEGIA DE RETENCIÓN Y PLAN DE ACCIÓN INMEDIATA       -->
+<!-- ------------------------------------------------------------------- -->
+<section aria-labelledby="strategy-section-title" class="space-y-space-md bg-surface-container-low/60 rounded-xl p-space-lg border border-[rgba(10,54,50,0.09)]">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-2" id="strategy-section-title">
+<span class="material-symbols-outlined text-secondary text-[20px]">smart_toy</span>
+              Protocolo de Reactivación Sugerido por IA
+            </h2>
+<span class="font-label-sm text-label-sm px-2.5 py-0.5 rounded-full bg-[#f3e8ff] text-[#6b21a8] border border-[rgba(124,58,237,0.2)] font-semibold">
+              Motor Predictivo Fidelización v4.2
+            </span>
+</div>
+<!-- Radio Strategy Selectors (Tier 3 Predictive Accent Glow) -->
+<fieldset class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<legend class="sr-only">Selección de Estrategia de Retención</legend>
+<!-- Opción A (Seleccionada) -->
+<label class="relative flex flex-col justify-between p-space-md rounded-xl cursor-pointer bg-surface-container-lowest border-2 border-secondary shadow-[0_0_0_1px_rgba(124,58,237,0.12),0_8px_24px_-4px_rgba(124,58,237,0.08)] transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<input checked="" class="w-4 h-4 text-secondary focus:ring-secondary border-outline" name="retention_protocol" type="radio" value="coupon_vip"/>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Cupón VIP Recuperación</span>
+</div>
+<span class="material-symbols-outlined text-secondary text-[18px]">verified</span>
+</div>
+<p class="mt-2 text-body-sm font-body-sm text-on-surface">
+<strong>25% OFF</strong> en su producto favorito + <strong>$5.000 CLP</strong> en saldo de puntos de regalo de bienvenida.
+              </p>
+<div class="mt-3 pt-2 border-t border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm">
+<span class="text-secondary font-bold">Efectividad proyectada</span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] font-bold">
+                  62% de Retorno
+                </span>
+</div>
+</label>
+<!-- Opción B -->
+<label class="relative flex flex-col justify-between p-space-md rounded-xl cursor-pointer bg-surface-container-lowest border border-outline-variant/50 hover:border-outline transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<input class="w-4 h-4 text-secondary focus:ring-secondary border-outline" name="retention_protocol" type="radio" value="concierge_call"/>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Concierge Telefónico VIP</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">support_agent</span>
+</div>
+<p class="mt-2 text-body-sm font-body-sm text-on-surface-variant">
+                Contacto telefónico y atención preferente por Concierge de Tienda Providencia enfocado en Top 50 Black Gourmet.
+              </p>
+<div class="mt-3 pt-2 border-t border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Efectividad proyectada</span>
+<span class="font-semibold text-primary">48% de Retorno</span>
+</div>
+</label>
+<!-- Opción C -->
+<label class="relative flex flex-col justify-between p-space-md rounded-xl cursor-pointer bg-surface-container-lowest border border-outline-variant/50 hover:border-outline transition-all">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2.5">
+<input class="w-4 h-4 text-secondary focus:ring-secondary border-outline" name="retention_protocol" type="radio" value="wine_tasting"/>
+<span class="font-headline-sm text-headline-sm text-primary font-bold">Cata &amp; Degustación Exclusiva</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">wine_bar</span>
+</div>
+<p class="mt-2 text-body-sm font-body-sm text-on-surface-variant">
+                Invitación privada a Cata de Vinos Reserva &amp; Degustación Gourmet de Fin de Mes con Sommelier Marzú.
+              </p>
+<div class="mt-3 pt-2 border-t border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant">
+<span>Efectividad proyectada</span>
+<span class="font-semibold text-primary">54% de Retorno</span>
+</div>
+</label>
+</fieldset>
+<!-- Action Switches & Allocation Row -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md pt-2">
+<!-- Disparador Automático (Switch) -->
+<div class="md:col-span-7 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md flex items-center justify-between gap-space-md">
+<div class="flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container text-[22px] mt-0.5">mark_chat_unread</span>
+<div>
+<label class="font-headline-sm text-headline-sm text-primary font-semibold cursor-pointer" for="switch-notification">
+                    Disparador Automático Multicanal
+                  </label>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Activar notificación push personalizada vía WhatsApp y App móvil con código QR de bienvenida dinámico.
+                  </p>
+</div>
+</div>
+<!-- Modern Accessible Switch Component -->
+<div class="flex-shrink-0">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="switch-notification" type="checkbox"/>
+<div class="w-11 h-6 bg-surface-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+</div>
+<!-- Asignación de Responsabilidad (Selector & PIN) -->
+<div class="md:col-span-5 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-space-md flex flex-col justify-between gap-space-xs">
+<label class="font-label-md text-label-md text-on-surface uppercase font-semibold flex items-center gap-1.5" for="crm-supervisor">
+<span class="material-symbols-outlined text-[16px] text-primary">badge</span>
+                Asignación de Responsabilidad CRM
+              </label>
+<div class="flex items-center gap-2">
+<div class="relative flex-1">
+<select class="w-full h-[38px] pl-3 pr-8 rounded-lg bg-surface-container-lowest border border-outline-variant text-body-sm font-body-sm text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/10" id="crm-supervisor">
+<option selected="" value="chenriquez">Supervisora CRM: Camila Henríquez</option>
+<option value="mreyes">Jefe de Fidelización: Matías Reyes</option>
+<option value="fbravo">Concierge Líder: Fernando Bravo</option>
+</select>
+</div>
+<div class="w-24">
+<input aria-label="PIN de auditoría" class="w-full h-[38px] text-center tracking-widest font-mono text-body-sm rounded-lg bg-surface-container-low border border-outline-variant text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/10" maxlength="4" placeholder="PIN" type="password" value="••••"/>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- ===================================================================== -->
+<!-- 5. FOOTER DEL MODAL: AUDITORÍA & ACCIONES OPERACIONALES               -->
+<!-- ===================================================================== -->
+<footer class="px-space-xl py-space-md bg-surface-container-low/70 border-t border-[rgba(10,54,50,0.08)] flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<!-- Trazabilidad Audit -->
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant font-mono">
+<span class="material-symbols-outlined text-[15px] text-primary-container">fingerprint</span>
+<span>ID Auditoría Algorítmica: <strong class="text-primary font-semibold">#CHURN-PREV-2025-411</strong></span>
+<span class="hidden md:inline text-outline-variant">•</span>
+<span class="hidden md:inline">Modelo Predictivo v4.2</span>
+</div>
+<!-- Action Buttons Cluster -->
+<div class="flex flex-wrap items-center justify-end gap-space-sm w-full sm:w-auto">
+<!-- Secundario 1: Cancelar / Descartar -->
+<button class="px-4 h-10 rounded-lg text-body-sm font-body-sm font-semibold text-primary bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low active:scale-[0.98] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-container/20" onclick="window.history.length &gt; 1 ? window.history.back() : null" type="button">
+            Cancelar / Descartar
+          </button>
+<!-- Secundario 2: Exportar Lista a Excel / Call Center -->
+<button class="inline-flex items-center gap-1.5 px-4 h-10 rounded-lg text-body-sm font-body-sm font-semibold text-primary bg-surface-container-lowest border border-outline-variant/60 hover:bg-surface-container-low hover:border-primary/30 active:scale-[0.98] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-container/20" type="button">
+<span class="material-symbols-outlined text-[17px] text-primary">download</span>
+            Exportar Lista a Excel / Call Center
+          </button>
+<!-- Primario Operacional: Verde Abisal (#0a3632) -->
+<button class="inline-flex items-center gap-2 px-5 h-10 rounded-lg text-body-sm font-body-sm font-semibold text-white bg-primary-container hover:bg-[#0e4a44] shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] active:scale-[0.98] transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2" type="button">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>Ejecutar Estrategia de Retención (342 Clientes)</span>
+</button>
+</div>
+</footer>
+</section>
+</div>
+</body></html>

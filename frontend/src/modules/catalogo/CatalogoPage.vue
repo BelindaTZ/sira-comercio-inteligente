@@ -168,19 +168,26 @@ function trasAlta() {
   return refrescar()
 }
 
-function exportarCsv() {
-  const cab = ['product_id', 'ean', 'nombre', 'marca', 'categoria', 'costo', 'precio_base', 'margen_pct', 'estado']
-  const lineas = rows.value.map((r) =>
-    [r.product_id, r.codigo_barras, r.nombre, r.marca, r.product_category, r.costo, r.precio_base, r.margen_pct, r.estado_margen]
-      .map((v) => `"${(v ?? '').toString().replace(/"/g, '""')}"`)
-      .join(','),
-  )
-  const blob = new Blob([[cab.join(','), ...lineas].join('\n')], { type: 'text/csv;charset=utf-8' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = `catalogo-precios-p${page.value}.csv`
-  a.click()
-  URL.revokeObjectURL(a.href)
+const descargando = ref('')
+async function descargar(formato) {
+  descargando.value = formato
+  try {
+    const blob = await catalogoApi.exportarPrecios(formato, {
+      search: busqueda.value.trim(),
+      categoria: categoria.value,
+      margen: bandaMargen.value,
+    })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `catalogo-precios.${formato}`
+    a.click()
+    URL.revokeObjectURL(a.href)
+    modal.value = null
+  } catch (e) {
+    error.value = e.response?.data?.error?.message || e.message
+  } finally {
+    descargando.value = ''
+  }
 }
 
 watch([pill, categoria, bandaMargen], () => {
@@ -217,7 +224,7 @@ onMounted(() => {
         </span>
       </template>
       <template #acciones>
-        <Btn variant="ghost" @click="exportarCsv"><Icon name="download" :size="16" /> Exportar</Btn>
+        <Btn variant="ghost" @click="modal = 'export'"><Icon name="download" :size="16" /> Exportar</Btn>
         <Btn v-if="puedeEditar" variant="primary" @click="modal = 'nuevo'">
           <Icon name="plus" :size="17" /> Nuevo producto
         </Btn>
@@ -426,6 +433,33 @@ onMounted(() => {
 
     <Modal v-if="modal === 'nuevo'" titulo="Nuevo producto" @cerrar="modal = null">
       <FormularioProducto @creado="trasAlta" />
+    </Modal>
+
+    <Modal v-if="modal === 'export'" titulo="Exportar matriz de precios" @cerrar="modal = null">
+      <p class="mb-3 text-[13px] text-slate-600">
+        Se exporta el listado con los filtros activos ({{ total.toLocaleString('es-CL') }} productos,
+        hasta 5.000 filas). Elegí el formato:
+      </p>
+      <div class="grid grid-cols-3 gap-2.5">
+        <button
+          v-for="f in [
+            { v: 'csv', t: 'CSV', d: 'Texto plano', icon: 'filter' },
+            { v: 'xlsx', t: 'Excel', d: '.xlsx con formato', icon: 'chart' },
+            { v: 'pdf', t: 'PDF', d: 'Reporte para imprimir', icon: 'image' },
+          ]"
+          :key="f.v"
+          type="button"
+          :disabled="descargando"
+          class="flex flex-col items-center gap-1.5 rounded-xl border border-brand-200 bg-white p-4 text-center transition hover:border-brand-500 hover:bg-brand-50/60 disabled:opacity-50"
+          @click="descargar(f.v)"
+        >
+          <Icon :name="f.icon" :size="22" class="text-brand-700" />
+          <span class="text-[13px] font-bold text-slate-800">
+            {{ descargando === f.v ? 'Generando…' : f.t }}
+          </span>
+          <span class="text-[10px] text-slate-500">{{ f.d }}</span>
+        </button>
+      </div>
     </Modal>
 
     <Modal

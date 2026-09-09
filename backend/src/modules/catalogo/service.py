@@ -163,6 +163,37 @@ class CatalogoService:
     async def resumen(self) -> dict:
         return await self.repo.resumen_catalogo()
 
+    async def exportar_precios(self, formato, *, search, categoria, margen, activo):
+        """Listado completo de la matriz de precios (hasta 5000 filas) en el
+        formato pedido. Reutiliza `matriz_precios` con los mismos filtros."""
+        from src.shared.exportador import exportar
+
+        filas, _ = await self.repo.matriz_precios(
+            search=search, categoria=categoria, margen=margen, activo=activo,
+            offset=0, limit=5000,
+        )
+        for f in filas:
+            f["estado_margen"] = self._estado_margen(
+                f.get("margen_pct"), f.get("margen_objetivo_pct")
+            )
+            if f.get("margen_pct") is not None:
+                f["margen_pct"] = round(f["margen_pct"], 1)
+        columnas = [
+            ("product_id", "SKU"),
+            ("codigo_barras", "EAN-13"),
+            ("nombre", "Producto"),
+            ("marca", "Marca"),
+            ("product_category", "Categoría"),
+            ("costo", "Costo neto"),
+            ("precio_base", "PVP"),
+            ("margen_pct", "Margen %"),
+            ("margen_objetivo_pct", "Margen objetivo %"),
+            ("estado_margen", "Estado"),
+        ]
+        return exportar(
+            formato, titulo="Catálogo — matriz de precios", columnas=columnas, filas=filas
+        )
+
     async def simular_precio(self, product_id: int, delta_pct: Decimal) -> dict:
         producto = await self.repo.get_producto(product_id)
         if producto is None:

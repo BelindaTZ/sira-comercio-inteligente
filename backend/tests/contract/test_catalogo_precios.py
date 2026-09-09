@@ -38,6 +38,25 @@ async def test_refrescar_kpi_job_persiste_el_snapshot(db_session, escenario_pos)
     assert ts is not None
 
 
+async def test_export_precios_en_los_tres_formatos(client, escenario_pos, auth_jefe_comercial):
+    for fmt, ct in [
+        ("csv", "text/csv"),
+        ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        ("pdf", "application/pdf"),
+    ]:
+        r = await client.get(
+            f"/api/catalogo/precios/export?formato={fmt}", headers=auth_jefe_comercial
+        )
+        assert r.status_code == 200, r.text
+        assert ct in r.headers["content-type"]
+        assert r.headers["content-disposition"].endswith(f'.{fmt}"')
+        assert len(r.content) > 100
+    bad = await client.get(
+        "/api/catalogo/precios/export?formato=word", headers=auth_jefe_comercial
+    )
+    assert bad.status_code == 422
+
+
 async def test_simular_precio_sube_margen_al_subir_pvp(
     client, escenario_pos, auth_jefe_comercial
 ):

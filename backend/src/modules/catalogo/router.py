@@ -7,7 +7,8 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
@@ -118,6 +119,27 @@ async def resumen_catalogo(
     svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
 ) -> CatalogoResumenOut:
     return CatalogoResumenOut(**await svc.resumen())
+
+
+@router.get("/precios/export")
+async def exportar_precios(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+    formato: str = Query("csv", pattern="^(csv|xlsx|pdf)$"),
+    search: str | None = None,
+    categoria: str | None = None,
+    margen: str | None = None,
+    activo: bool | None = None,
+) -> Response:
+    """Descarga la matriz de precios filtrada como CSV, Excel o PDF."""
+    contenido, media_type, ext = await svc.exportar_precios(
+        formato, search=search, categoria=categoria, margen=margen, activo=activo
+    )
+    return Response(
+        content=contenido,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="catalogo-precios.{ext}"'},
+    )
 
 
 @router.get("/precios", response_model=Page[PrecioMatrizItem])
