@@ -101,7 +101,7 @@ export const CATEGORIAS = [
             modulo: 'Operaciones',
             tabla: 'ordenes_compra',
           },
-          { label: 'Pronóstico de demanda', to: '/forecasting', modulo: 'TI' },
+          { label: 'Pronóstico de demanda', to: '/forecasting', modulos: ['TI', 'Operaciones'] },
           {
             label: 'Demanda perdida',
             to: '/forecasting/demanda-perdida',

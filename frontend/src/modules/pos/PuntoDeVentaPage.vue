@@ -58,7 +58,13 @@ const emailResultado = ref('')
 
 // alta rápida de cliente desde el POS
 const modalNuevoCliente = ref(false)
-const formCliente = reactive({ nombre: '', email: '', documento: '', consentimiento: true })
+const formCliente = reactive({
+  nombre: '',
+  email: '',
+  documento: '',
+  fechaNacimiento: '',
+  consentimiento: true,
+})
 const guardandoCliente = ref(false)
 
 // ---- turno de caja -------------------------------------------------------
@@ -341,9 +347,23 @@ async function confirmar() {
   await cargarTurno()
 }
 
-function imprimirComprobante() {
-  if (!ventaCobrada.value) return
-  window.open(ventasApi.comprobanteUrl(ventaCobrada.value.venta_id), '_blank', 'noopener')
+const imprimiendo = ref(false)
+async function imprimirComprobante() {
+  if (!ventaCobrada.value || imprimiendo.value) return
+  // abre la pestaña ya (gesto del usuario) y le carga el PDF cuando llega
+  const w = window.open('', '_blank')
+  imprimiendo.value = true
+  try {
+    const url = await ventasApi.comprobanteBlobUrl(ventaCobrada.value.venta_id)
+    if (w) w.location.href = url
+    else window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
+  } catch (e) {
+    if (w) w.close()
+    error.value = msg(e)
+  } finally {
+    imprimiendo.value = false
+  }
 }
 
 async function enviarComprobantePorCorreo() {
@@ -374,10 +394,17 @@ async function crearCliente() {
       nombre: formCliente.nombre.trim(),
       email: formCliente.email.trim(),
       documentoIdentidad: formCliente.documento.trim() || null,
+      fechaNacimiento: formCliente.fechaNacimiento || null,
       consentimientoDatos: formCliente.consentimiento,
     })
     modalNuevoCliente.value = false
-    Object.assign(formCliente, { nombre: '', email: '', documento: '', consentimiento: true })
+    Object.assign(formCliente, {
+      nombre: '',
+      email: '',
+      documento: '',
+      fechaNacimiento: '',
+      consentimiento: true,
+    })
     await vincularCliente(c)
     aviso.value = `Cliente ${c.nombre} registrado y vinculado a la venta.`
   } catch (e) {
@@ -685,10 +712,12 @@ function atajos(e) {
             <div class="grid gap-2">
               <button
                 type="button"
-                class="flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white px-4 py-2.5 text-[13px] font-bold text-brand-800 hover:bg-brand-50"
+                :disabled="imprimiendo"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white px-4 py-2.5 text-[13px] font-bold text-brand-800 hover:bg-brand-50 disabled:opacity-50"
                 @click="imprimirComprobante"
               >
-                <Icon name="download" :size="15" /> Ver / imprimir comprobante
+                <Icon name="download" :size="15" />
+                {{ imprimiendo ? 'Abriendo…' : 'Ver / imprimir comprobante' }}
               </button>
               <button
                 v-if="cliente"
@@ -866,13 +895,23 @@ function atajos(e) {
             class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
         </label>
-        <label class="block text-[12px] font-semibold text-slate-600">
-          Identificación (opcional)
-          <input
-            v-model="formCliente.documento"
-            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-          />
-        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-[12px] font-semibold text-slate-600">
+            Identificación (opcional)
+            <input
+              v-model="formCliente.documento"
+              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+            />
+          </label>
+          <label class="block text-[12px] font-semibold text-slate-600">
+            Fecha de nacimiento (opcional)
+            <input
+              v-model="formCliente.fechaNacimiento"
+              type="date"
+              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+            />
+          </label>
+        </div>
         <label class="flex items-start gap-2 text-[12px] text-slate-600">
           <input v-model="formCliente.consentimiento" type="checkbox" class="mt-0.5" />
           <span>El cliente autoriza el tratamiento de sus datos para el programa de fidelización.</span>

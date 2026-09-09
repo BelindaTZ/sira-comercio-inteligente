@@ -90,10 +90,14 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
-  /** URL del comprobante — se abre en pestaña nueva al confirmar (FR-004, SC-011). */
-  comprobanteUrl(ventaId) {
-    const base = import.meta.env.VITE_API_BASE_URL || ''
-    return `${base}/api/ventas/${ventaId}/comprobante`
+  /**
+   * Descarga el comprobante (PDF) autenticado y devuelve un blob URL para abrirlo
+   * o imprimirlo. `window.open` directo no sirve: el endpoint exige el JWT y el
+   * navegador no lo adjunta en una pestaña nueva.
+   */
+  async comprobanteBlobUrl(ventaId) {
+    const r = await http.get(`/api/ventas/${ventaId}/comprobante`, { responseType: 'blob' })
+    return URL.createObjectURL(new Blob([r.data], { type: 'application/pdf' }))
   },
 
   /** Envía el comprobante (PDF) al correo del cliente registrado en la venta. */
