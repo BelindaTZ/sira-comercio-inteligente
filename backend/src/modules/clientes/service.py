@@ -162,20 +162,65 @@ class ClientesService:
         margen_p95 = percentil_95(margenes)
 
         niveles = await self.repo.niveles()
-        calculados = 0
+        por_id = {n.nivel_id: n for n in niveles}
+        calculados = ascensos = 0
         for household_id, (compras, margen) in por_cliente.items():
             if compras < 1:
                 continue
             score = clv_score(float(compras), float(margen), freq_p95, margen_p95)
             nivel_id = self.nivel_para_score(score, niveles)
+            nivel_previo_id = await self.repo.nivel_previo(household_id, fecha)
             await self.repo.upsert_clv(household_id, score, nivel_id, fecha)
             calculados += 1
+            # FR-008 — un ascenso de nivel se felicita por correo con sus cupones.
+            if nivel_id is not None and self._es_ascenso(nivel_previo_id, nivel_id, por_id):
+                ascensos += 1
+                await self._notificar_ascenso_nivel(household_id, por_id[nivel_id])
         await self.repo.flush()
         return {
             "clientes_con_clv": calculados,
+            "ascensos_de_nivel": ascensos,
             "frecuencia_p95": freq_p95,
             "margen_p95": margen_p95,
         }
+
+    @staticmethod
+    def _es_ascenso(previo_id, nuevo_id, por_id) -> bool:
+        # La primera asignación de nivel (sin nivel previo) no cuenta como ascenso
+        # — evita un correo a todo el padrón en la primera corrida del job.
+        if previo_id is None or previo_id == nuevo_id or previo_id not in por_id:
+            return False
+        return (
+            Decimal(str(por_id[nuevo_id].umbral_clv_min))
+            > Decimal(str(por_id[previo_id].umbral_clv_min))
+        )
+
+    async def _notificar_ascenso_nivel(self, household_id: int, nivel) -> bool:
+        cliente = await self.repo.get_cliente(household_id)
+        if cliente is None or not cliente.email or not cliente.consentimiento_datos:
+            return False
+        cupones = await self.repo.cupones_activos(household_id)
+        if cupones:
+            items = "".join(
+                f"<li><strong>{c['producto']}</strong> — cupón <code>{c['coupon_upc']}</code></li>"
+                for c in cupones
+            )
+            bloque_cupones = f"<p>Estos son tus cupones disponibles:</p><ul>{items}</ul>"
+        else:
+            bloque_cupones = (
+                "<p>Muy pronto verás cupones exclusivos para tu nuevo nivel.</p>"
+            )
+        return sendgrid_client.enviar_correo(
+            to=cliente.email,
+            subject=f"¡Felicitaciones! Subiste a Club Marzú {nivel.nombre} 🎉",
+            html=(
+                f"<p>Hola {cliente.nombre or ''},</p>"
+                f"<p>¡Gracias por tu preferencia! Con tus compras alcanzaste el nivel "
+                f"<strong>{nivel.nombre}</strong> del Club Marzú.</p>"
+                f"{bloque_cupones}"
+                "<p>Nos vemos pronto en tienda.</p>"
+            ),
+        )
 
     async def listar_niveles(self) -> list[NivelFidelizacion]:
         return await self.repo.niveles()

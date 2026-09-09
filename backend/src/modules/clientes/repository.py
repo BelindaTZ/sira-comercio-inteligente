@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import date, datetime
 from decimal import Decimal
 
-from sqlalchemy import Date, Select, exists, func, or_, select
+from sqlalchemy import Date, Select, exists, func, or_, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -105,6 +105,45 @@ class ClientesRepository(BaseRepository[Cliente]):
             .limit(1)
         )
         return (await self.session.scalars(stmt)).first()
+
+    async def nivel_previo(self, household_id: int, antes_de: date) -> int | None:
+        """Nivel del CLV más reciente calculado ANTES de `antes_de` — para detectar
+        el ascenso de nivel en la corrida actual del job (feature 002, FR-008)."""
+        row = (
+            await self.session.execute(
+                text(
+                    "SELECT nivel_id FROM cliente_clv "
+                    "WHERE household_id = :h AND fecha_calculo < :f "
+                    "ORDER BY fecha_calculo DESC LIMIT 1"
+                ),
+                {"h": household_id, "f": antes_de},
+            )
+        ).first()
+        return row.nivel_id if row else None
+
+    async def cupones_activos(self, household_id: int) -> list[dict]:
+        """Cupones vigentes y no redimidos del cliente (mismo criterio que la
+        ficha 360°) — se listan en el correo de ascenso de nivel."""
+        rows = (
+            await self.session.execute(
+                text("""
+                SELECT DISTINCT ON (cu.coupon_upc)
+                       cu.coupon_upc, p.nombre AS producto, p.product_category AS categoria
+                FROM campana_cliente cc
+                JOIN cupones cu ON cu.campaign_id = cc.campaign_id
+                JOIN campanas ca ON ca.campaign_id = cc.campaign_id
+                JOIN productos p ON p.product_id = cu.product_id
+                WHERE cc.household_id = :h
+                  AND NOT EXISTS (SELECT 1 FROM cupon_redimido r
+                                  WHERE r.household_id = cc.household_id
+                                    AND r.coupon_upc = cu.coupon_upc)
+                ORDER BY cu.coupon_upc
+                LIMIT 8
+                """),
+                {"h": household_id},
+            )
+        ).mappings().all()
+        return [dict(r) for r in rows]
 
     async def ultimo_churn(self, household_id: int) -> ChurnScore | None:
         stmt = (
