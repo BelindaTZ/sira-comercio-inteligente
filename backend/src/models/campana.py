@@ -30,5 +30,6 @@ class Campana(Base):
     )
     campaign_type: Mapped[str | None] = mapped_column(String(20))
     categoria_sira: Mapped[str | None] = mapped_column(String(20))
+    nombre: Mapped[str | None] = mapped_column(String(120))
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)

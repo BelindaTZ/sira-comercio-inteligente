@@ -35,15 +35,17 @@ class CampanasService:
             raise BusinessRuleError("categoria_sira debe ser 'reactivacion'")
         if data.end_date < data.start_date:
             raise BusinessRuleError("end_date no puede ser anterior a start_date")
-        if not data.miembros:
+
+        miembros = await self._resolver_miembros(data)
+        if not miembros:
             raise BusinessRuleError("La campaña necesita al menos un miembro")
 
-        household_ids = [m.household_id for m in data.miembros]
+        household_ids = [hid for hid, _ in miembros]
         if len(set(household_ids)) != len(household_ids):
             raise BusinessRuleError("Un cliente no puede figurar dos veces en la campaña")
-        for m in data.miembros:
-            if m.grupo not in _GRUPOS:
-                raise BusinessRuleError(f"grupo inválido: {m.grupo}")
+        for _, grupo in miembros:
+            if grupo not in _GRUPOS:
+                raise BusinessRuleError(f"grupo inválido: {grupo}")
 
         no_elegibles = await self.repo.household_ids_no_elegibles(household_ids)
         if no_elegibles:
@@ -56,11 +58,31 @@ class CampanasService:
             start_date=data.start_date,
             end_date=data.end_date,
             categoria_sira="reactivacion",
+            nombre=getattr(data, "nombre", None),
         )
-        await self.repo.agregar_miembros(
-            campana.campaign_id, [(m.household_id, m.grupo) for m in data.miembros]
-        )
+        await self.repo.agregar_miembros(campana.campaign_id, miembros)
         return campana
+
+    async def _resolver_miembros(self, data) -> list[tuple[int, str]]:
+        """Miembros explícitos, o un `segmento` predefinido → split 80/20
+        tratado/control determinista (por household_id)."""
+        if data.miembros:
+            return [(m.household_id, m.grupo) for m in data.miembros]
+        if not getattr(data, "segmento", None):
+            return []
+        from src.modules.clientes.directorio_repository import DirectorioRepository
+
+        ids = await DirectorioRepository(self.repo.session).household_ids_de_segmento(
+            data.segmento
+        )
+        if not ids:
+            raise BusinessRuleError(f"El segmento '{data.segmento}' no tiene clientes elegibles")
+        ids = sorted(ids)
+        # ~20% al grupo de control (los primeros), mínimo 1 de cada grupo si hay ≥2.
+        n_control = max(1, round(len(ids) * 0.2)) if len(ids) >= 2 else 0
+        return [
+            (hid, "control" if i < n_control else "tratado") for i, hid in enumerate(ids)
+        ]
 
     async def _campana_reactivacion(self, campaign_id: int) -> Campana:
         campana = await self.repo.get_campana(campaign_id)
@@ -163,6 +185,7 @@ class CampanasService:
         return {
             "campaign_id": campana.campaign_id,
             "categoria_sira": campana.categoria_sira,
+            "nombre": campana.nombre,
             "start_date": campana.start_date,
             "end_date": campana.end_date,
             "enviada": await self.repo.campana_enviada(campaign_id),

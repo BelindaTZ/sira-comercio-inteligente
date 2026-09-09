@@ -220,3 +220,204 @@ class DirectorioRepository:
             )
         ).mappings().all()
         return [dict(r) for r in rows]
+
+    # ============================================ riesgo de fuga (churn, US3)
+    _CHURN_LATEST = """
+        SELECT DISTINCT ON (household_id) household_id, score, severidad,
+               ciclo_compra_dias, fecha_calculo
+        FROM churn_score ORDER BY household_id, fecha_calculo DESC
+    """
+    _EN_RIESGO = "ch.severidad IN ('en_riesgo', 'inactivo')"
+
+    async def riesgo_fuga_resumen(self, severidad: str | None) -> dict:
+        filtro = self._EN_RIESGO if not severidad else "ch.severidad = :sev"
+        binds = {} if not severidad else {"sev": severidad}
+        row = (
+            await self.session.execute(
+                text(f"""
+                WITH ch AS ({self._CHURN_LATEST}),
+                riesgo AS (SELECT ch.household_id, ch.score FROM ch WHERE {filtro}),
+                gasto AS (
+                    SELECT v.household_id, sum(v.total) * {_CLP} AS ltv
+                    FROM ventas v WHERE {_CONFIRMADA}
+                      AND v.household_id IN (SELECT household_id FROM riesgo)
+                    GROUP BY v.household_id
+                )
+                SELECT (SELECT count(*) FROM riesgo) AS clientes_riesgo,
+                       (SELECT round(avg(score) * 100, 1) FROM riesgo) AS prob_abandono_media,
+                       (SELECT round(coalesce(sum(ltv), 0)) FROM gasto) AS ltv_en_riesgo,
+                       ARRAY(
+                         SELECT p.product_category
+                         FROM venta_detalle vd
+                         JOIN ventas v ON v.venta_id = vd.venta_id AND {_CONFIRMADA}
+                                       AND v.household_id IN (SELECT household_id FROM riesgo)
+                         JOIN productos p ON p.product_id = vd.product_id
+                         WHERE p.product_category IS NOT NULL
+                         GROUP BY p.product_category
+                         ORDER BY sum(vd.sales_value * vd.cantidad) DESC
+                         LIMIT 3
+                       ) AS categorias_afectadas
+                """),
+                binds,
+            )
+        ).mappings().first()
+        return dict(row) if row else {}
+
+    async def riesgo_fuga_directorio(
+        self, *, severidad: str | None, offset: int, limit: int
+    ) -> tuple[list[dict], int]:
+        filtro = self._EN_RIESGO if not severidad else "ch.severidad = :sev"
+        binds: dict = {"offset": offset, "limit": limit}
+        if severidad:
+            binds["sev"] = severidad
+        ctes = f"""
+            WITH ch AS ({self._CHURN_LATEST}),
+            clv AS (
+                SELECT DISTINCT ON (household_id) household_id, nivel_id
+                FROM cliente_clv ORDER BY household_id, fecha_calculo DESC
+            ),
+            vg AS (
+                SELECT v.household_id, count(*) AS tickets,
+                       max(v.fecha_hora)::date AS ultima_compra,
+                       round(sum(v.total) * {_CLP}) AS ltv,
+                       round((count(*)::numeric / GREATEST(1,
+                         (max(v.fecha_hora)::date - min(v.fecha_hora)::date) / 7.0))::numeric,
+                         1) AS frecuencia_sem
+                FROM ventas v WHERE v.household_id IS NOT NULL AND {_CONFIRMADA}
+                GROUP BY v.household_id
+            ),
+            sh AS (
+                SELECT DISTINCT ON (v.household_id) v.household_id, t.nombre AS sucursal
+                FROM ventas v JOIN tiendas t ON t.tienda_id = v.tienda_id
+                WHERE v.household_id IS NOT NULL AND {_CONFIRMADA}
+                GROUP BY v.household_id, t.nombre ORDER BY v.household_id, count(*) DESC
+            )
+        """
+        from_where = f"""
+            FROM ch
+            JOIN clientes c ON c.household_id = ch.household_id
+            LEFT JOIN clv ON clv.household_id = ch.household_id
+            LEFT JOIN niveles_fidelizacion n ON n.nivel_id = clv.nivel_id
+            LEFT JOIN vg ON vg.household_id = ch.household_id
+            LEFT JOIN sh ON sh.household_id = ch.household_id
+            WHERE {filtro} AND c.activo
+        """
+        total = await self.session.scalar(
+            text(f"{ctes} SELECT count(*) {from_where}"), binds
+        )
+        rows = (
+            await self.session.execute(
+                text(f"""
+                {ctes}
+                SELECT c.household_id, c.nombre, c.documento_identidad,
+                       ch.score, ch.severidad, ch.ciclo_compra_dias,
+                       (CURRENT_DATE - vg.ultima_compra) AS dias_desde_ultima_compra,
+                       n.nombre AS nivel_nombre,
+                       COALESCE(vg.ltv, 0) AS ltv,
+                       COALESCE(vg.frecuencia_sem, 0) AS frecuencia_sem,
+                       sh.sucursal
+                {from_where}
+                ORDER BY ch.score DESC, vg.ltv DESC NULLS LAST
+                OFFSET :offset LIMIT :limit
+                """),
+                binds,
+            )
+        ).mappings()
+        return [dict(r) for r in rows], int(total or 0)
+
+    async def exportar_riesgo_fuga(self, formato, *, severidad):
+        from src.shared.exportador import exportar
+
+        filas, _ = await self.riesgo_fuga_directorio(
+            severidad=severidad, offset=0, limit=5000
+        )
+        for f in filas:
+            f["riesgo_pct"] = round(float(f["score"]) * 100)
+        columnas = [
+            ("documento_identidad", "RUT"),
+            ("nombre", "Cliente"),
+            ("nivel_nombre", "Nivel Club"),
+            ("ltv", "LTV histórico"),
+            ("frecuencia_sem", "Frecuencia/sem"),
+            ("dias_desde_ultima_compra", "Días sin compra"),
+            ("ciclo_compra_dias", "Ciclo habitual (d)"),
+            ("severidad", "Severidad"),
+            ("riesgo_pct", "Riesgo %"),
+            ("sucursal", "Sucursal habitual"),
+        ]
+        return exportar(
+            formato, titulo="Riesgo de fuga — cohorte", columnas=columnas, filas=filas
+        )
+
+    async def segmentos_riesgo(self) -> list[dict]:
+        """Segmentos objetivo predefinidos para una campaña de reactivación,
+        con su conteo de miembros elegibles (activo + consentimiento)."""
+        defs = [
+            (
+                "tier_alto_desaceleracion",
+                "Tier alto en desaceleración",
+                "Clientes Oro/Platino con el ciclo de compra quebrado (en riesgo o inactivos).",
+                "n.nombre IN ('Oro','Platino') AND ch.severidad IN ('en_riesgo','inactivo')",
+            ),
+            (
+                "riesgo_alto_general",
+                "Riesgo alto general",
+                "Todos los clientes marcados como inactivos por el modelo de churn.",
+                "ch.severidad = 'inactivo'",
+            ),
+            (
+                "en_riesgo_reciente",
+                "En riesgo reciente",
+                "Desaceleración incipiente — todavía recuperables con un incentivo puntual.",
+                "ch.severidad = 'en_riesgo'",
+            ),
+        ]
+        out = []
+        for clave, nombre, desc, cond in defs:
+            n_mi = await self.session.scalar(
+                text(f"""
+                WITH ch AS ({self._CHURN_LATEST}),
+                clv AS (
+                    SELECT DISTINCT ON (household_id) household_id, nivel_id
+                    FROM cliente_clv ORDER BY household_id, fecha_calculo DESC
+                )
+                SELECT count(*)
+                FROM ch
+                JOIN clientes c ON c.household_id = ch.household_id
+                LEFT JOIN clv ON clv.household_id = ch.household_id
+                LEFT JOIN niveles_fidelizacion n ON n.nivel_id = clv.nivel_id
+                WHERE c.activo AND c.consentimiento_datos AND ({cond})
+                """)
+            )
+            out.append(
+                {"clave": clave, "nombre": nombre, "descripcion": desc, "miembros": int(n_mi or 0)}
+            )
+        return out
+
+    async def household_ids_de_segmento(self, clave: str) -> list[int]:
+        cond = {
+            "tier_alto_desaceleracion": (
+                "n.nombre IN ('Oro','Platino') AND ch.severidad IN ('en_riesgo','inactivo')"
+            ),
+            "riesgo_alto_general": "ch.severidad = 'inactivo'",
+            "en_riesgo_reciente": "ch.severidad = 'en_riesgo'",
+        }.get(clave)
+        if cond is None:
+            return []
+        rows = await self.session.execute(
+            text(f"""
+            WITH ch AS ({self._CHURN_LATEST}),
+            clv AS (
+                SELECT DISTINCT ON (household_id) household_id, nivel_id
+                FROM cliente_clv ORDER BY household_id, fecha_calculo DESC
+            )
+            SELECT ch.household_id
+            FROM ch
+            JOIN clientes c ON c.household_id = ch.household_id
+            LEFT JOIN clv ON clv.household_id = ch.household_id
+            LEFT JOIN niveles_fidelizacion n ON n.nivel_id = clv.nivel_id
+            WHERE c.activo AND c.consentimiento_datos AND ({cond})
+            ORDER BY ch.score DESC
+            """)
+        )
+        return [r[0] for r in rows]

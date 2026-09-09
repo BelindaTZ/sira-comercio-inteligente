@@ -1180,6 +1180,9 @@ ALTER TABLE campanas
     ADD COLUMN categoria_sira VARCHAR(20)
         CHECK (categoria_sira IN ('hito','reactivacion'));
 
+-- feature 013: nombre legible de la campaña (opcional; las del dataset no lo traen).
+ALTER TABLE campanas ADD COLUMN nombre VARCHAR(120);
+
 ALTER TABLE campana_cliente
     ADD COLUMN grupo VARCHAR(20)
         CHECK (grupo IN ('tratado','control'));

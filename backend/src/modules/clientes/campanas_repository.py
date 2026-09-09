@@ -35,9 +35,14 @@ class CampanasRepository(BaseRepository[Campana]):
 
     # --- creación ---
     async def crear_campana(
-        self, *, start_date: date, end_date: date, categoria_sira: str
+        self, *, start_date: date, end_date: date, categoria_sira: str, nombre: str | None = None
     ) -> Campana:
-        campana = Campana(start_date=start_date, end_date=end_date, categoria_sira=categoria_sira)
+        campana = Campana(
+            start_date=start_date,
+            end_date=end_date,
+            categoria_sira=categoria_sira,
+            nombre=nombre,
+        )
         self.session.add(campana)
         await self.session.flush()
         return campana

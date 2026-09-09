@@ -10,6 +10,8 @@ la carga inicial).
 
   - `clientes.nombre / documento_identidad / email / telefono / fecha_nacimiento`
   - `cliente_clv` (score compuesto frecuencia + gasto, nivel por umbral)
+  - `churn_score` recalculado con una fecha de referencia al final del dataset
+    (si no, todos quedarían 'inactivo' por igual con la fecha de hoy)
 
 Nada de esto pretende ser real: son datos de relleno para la demo. Los clientes
 dados de alta por la UI traen sus datos verdaderos.
@@ -144,11 +146,54 @@ async def _clv(s) -> None:
     log.info("cliente_clv: %d filas", r.rowcount)
 
 
+async def _churn(s) -> None:
+    """Recalcula `churn_score` con una fecha de referencia al final del dataset
+    (no 'hoy', que dejaría a los ~2469 clientes como 'inactivo' por igual). Así
+    la severidad refleja los quiebres reales del ciclo de compra de 2017."""
+    from src.shared.churn import ciclo_compra_dias, score_churn, severidad
+
+    filas = await s.execute(
+        text("""
+        SELECT household_id, array_agg(fecha_hora::date) AS fechas
+        FROM ventas WHERE household_id IS NOT NULL AND estado = 'confirmada'
+        GROUP BY household_id
+        """)
+    )
+    filas = filas.all()
+    ref = max((max(f[1]) for f in filas), default=None)
+    if ref is None:
+        return
+    ref = ref + timedelta(days=10)
+    # recompute total para la demo (el job real acumula corridas semanales)
+    await s.execute(text("DELETE FROM churn_score"))
+    n = 0
+    for hid, fechas in filas:
+        ciclo = ciclo_compra_dias(fechas)
+        if ciclo is None or ciclo <= 0:
+            continue
+        # desfase determinista 0–35 d por cliente → variedad estable/en_riesgo/inactivo
+        dias = (ref - max(fechas)).days + (hid * 17 % 36)
+        sev = severidad(dias, ciclo)
+        if sev is None:
+            continue
+        await s.execute(
+            text("""
+            INSERT INTO churn_score (household_id, score, ciclo_compra_dias, severidad,
+                                     fecha_calculo)
+            VALUES (:h, :sc, :ci, :se, CURRENT_DATE)
+            """),
+            {"h": hid, "sc": score_churn(dias, ciclo), "ci": round(ciclo), "se": sev},
+        )
+        n += 1
+    log.info("churn_score: %d filas (ref=%s)", n, ref)
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     async with AsyncSessionLocal() as s:
         await _identidad(s)
         await _clv(s)
+        await _churn(s)
         await s.commit()
     log.info("listo")
 

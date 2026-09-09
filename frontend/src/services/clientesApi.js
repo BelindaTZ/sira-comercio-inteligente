@@ -85,6 +85,37 @@ export const clientesApi = {
       .then((r) => r.data)
   },
 
+  /** KPIs de la cabecera de Riesgo de Fuga (cohorte crítica, LTV en riesgo…). */
+  riesgoFugaResumen(severidad) {
+    return http
+      .get('/api/clientes/riesgo-fuga/resumen', { params: { severidad: severidad || undefined } })
+      .then((r) => r.data)
+  },
+
+  /** Cohorte de riesgo enriquecida (LTV, frecuencia, sucursal, nivel del Club). */
+  riesgoFugaDirectorio({ severidad, page = 1, size = 25 } = {}) {
+    return http
+      .get('/api/clientes/riesgo-fuga/directorio', {
+        params: { severidad: severidad || undefined, page, size },
+      })
+      .then((r) => r.data)
+  },
+
+  /** Descarga la cohorte de riesgo como csv | xlsx | pdf. */
+  exportarRiesgoFuga(formato, severidad) {
+    return http
+      .get('/api/clientes/riesgo-fuga/export', {
+        params: { formato, severidad: severidad || undefined },
+        responseType: 'blob',
+      })
+      .then((r) => r.data)
+  },
+
+  /** Segmentos objetivo predefinidos para una campaña de reactivación. */
+  segmentosRiesgo() {
+    return http.get('/api/clientes/segmentos-riesgo').then((r) => r.data)
+  },
+
   // --- campañas por hito (US4) ---
   tasaRedencion(tipoEvento) {
     return http
@@ -109,13 +140,15 @@ export const clientesApi = {
     return http.get(`/api/clientes/campanas/${campaignId}`).then((r) => r.data)
   },
 
-  crearCampana({ startDate, endDate, miembros }) {
+  crearCampana({ nombre, startDate, endDate, miembros, segmento }) {
     return http
       .post('/api/clientes/campanas', {
         categoria_sira: 'reactivacion',
+        nombre: nombre || null,
         start_date: startDate,
         end_date: endDate,
-        miembros,
+        miembros: miembros || [],
+        segmento: segmento || null,
       })
       .then((r) => r.data)
   },

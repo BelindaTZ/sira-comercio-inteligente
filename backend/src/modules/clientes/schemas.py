@@ -182,6 +182,27 @@ class RiesgoFugaOut(BaseModel):
     fecha_calculo: date
 
 
+class RiesgoFugaResumenOut(BaseModel):
+    clientes_riesgo: int
+    prob_abandono_media: float | None
+    ltv_en_riesgo: Decimal
+    categorias_afectadas: list[str]
+
+
+class RiesgoFugaDirectorioItem(BaseModel):
+    household_id: int
+    nombre: str | None
+    documento_identidad: str | None
+    score: Decimal
+    severidad: str
+    ciclo_compra_dias: int | None
+    dias_desde_ultima_compra: int | None
+    nivel_nombre: str | None
+    ltv: Decimal
+    frecuencia_sem: Decimal
+    sucursal: str | None
+
+
 # --- campañas por hito (US4) ---
 class RedencionIn(BaseModel):
     household_id: int
@@ -212,9 +233,13 @@ class CampanaMiembroIn(BaseModel):
 
 class CampanaReactivacionIn(BaseModel):
     categoria_sira: str = "reactivacion"
+    nombre: str | None = Field(default=None, max_length=120)
     start_date: date
     end_date: date
-    miembros: list[CampanaMiembroIn] = Field(min_length=1)
+    # Se puede pasar la lista explícita de miembros, o un `segmento` predefinido
+    # (el servicio resuelve los household_id y hace el split tratado/control 80/20).
+    miembros: list[CampanaMiembroIn] = Field(default_factory=list)
+    segmento: str | None = None
 
 
 class DecisionIn(BaseModel):
@@ -224,10 +249,18 @@ class DecisionIn(BaseModel):
 class CampanaResumenOut(BaseModel):
     campaign_id: int
     categoria_sira: str | None
+    nombre: str | None = None
     start_date: date
     end_date: date
 
     model_config = {"from_attributes": True}
+
+
+class SegmentoRiesgoOut(BaseModel):
+    clave: str
+    nombre: str
+    descripcion: str
+    miembros: int
 
 
 class CampanaResultadoOut(BaseModel):
@@ -241,6 +274,7 @@ class CampanaResultadoOut(BaseModel):
 class CampanaDetalleOut(BaseModel):
     campaign_id: int
     categoria_sira: str | None
+    nombre: str | None = None
     start_date: date
     end_date: date
     enviada: bool

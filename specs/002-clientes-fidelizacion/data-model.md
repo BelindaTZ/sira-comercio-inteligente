@@ -50,12 +50,24 @@ La pantalla "Gestión de Clientes & Programa de Lealtad Club Marzú" no agrega t
 - **Validación**: `ciclo_compra_dias` y `severidad` se calculan según `research.md` §2 (multiplicadores 1.5x/3x sobre el ciclo propio del cliente, nunca un umbral fijo de días — FR-009/FR-010). Solo se calcula para clientes con `consentimiento_datos = true`. Un cliente con menos de 2 compras no tiene fila (ciclo no calculable).
 - **Transiciones de estado**: `severidad` puede pasar de NULL → `en_riesgo` → `inactivo` (o volver a NULL si el cliente vuelve a comprar dentro de su ciclo) en corridas sucesivas del job semanal — siempre como fila nueva, nunca UPDATE de una fila histórica.
 
+### 5.1 Pantalla de Riesgo de Fuga (feature 013)
+
+Consultas de sólo lectura (`DirectorioRepository`) sobre el `churn_score` más reciente por cliente:
+
+- **`GET /clientes/riesgo-fuga/resumen`** — cohorte crítica (conteo + probabilidad media), LTV en riesgo directo (`Σ ventas.total` de esos clientes) y las 3 categorías más compradas por la cohorte.
+- **`GET /clientes/riesgo-fuga/directorio`** — fila por cliente en riesgo enriquecida con LTV, frecuencia, sucursal habitual, nivel del Club y `dias_desde_ultima_compra` vs `ciclo_compra_dias`; el "causal probable" se deriva de ese quiebre (no hay un modelo de causas, sólo la comparación).
+- **`GET /clientes/riesgo-fuga/export?formato=csv|xlsx|pdf`** — la cohorte lista para el Call Center.
+- **`GET /clientes/segmentos-riesgo`** — segmentos objetivo predefinidos (tier alto en desaceleración / riesgo alto general / en riesgo reciente) con su conteo de miembros elegibles, para lanzar una campaña de reactivación.
+
+Datos de demo: `scripts/enriquecer_crm.py` recalcula `churn_score` con una fecha de referencia al final del dataset (2017) — con la fecha de hoy los ~2469 clientes quedarían todos `inactivo`.
+
 ## 6. Campaña
 
-- **Tabla**: `campanas` (ya existe; **se extiende** con `categoria_sira`).
-- **Campos clave**: `campaign_id` (PK, natural para campañas sembradas del dataset; **nuevo**: campañas creadas por el sistema usan `nextval('campanas_campaign_id_seq')`, secuencia que arranca en 100000 para no colisionar con los IDs ya sembrados — ver DDL abajo), `campaign_type` (campo original del dataset, TypeA/B/C — no se reutiliza para la clasificación de SIRA), `categoria_sira` (**nuevo**, `hito`/`reactivacion`, NULL para campañas sembradas que no aplican a ninguna de las dos), `start_date`, `end_date`.
+- **Tabla**: `campanas` (ya existe; **se extiende** con `categoria_sira` y, en la migración 0026, `nombre VARCHAR(120)` opcional — las campañas del dataset no lo traen).
+- **Campos clave**: `campaign_id` (PK, natural para campañas sembradas del dataset; **nuevo**: campañas creadas por el sistema usan `nextval('campanas_campaign_id_seq')`, secuencia que arranca en 100000 para no colisionar con los IDs ya sembrados — ver DDL abajo), `campaign_type` (campo original del dataset, TypeA/B/C — no se reutiliza para la clasificación de SIRA), `categoria_sira` (**nuevo**, `hito`/`reactivacion`, NULL para campañas sembradas que no aplican a ninguna de las dos), `nombre`, `start_date`, `end_date`.
 - **Relaciones**: 1:N con `campana_cliente`, 1:1 con Resultado de Campaña (solo si `categoria_sira = 'reactivacion'`), 1:N con Cupón.
 - **Validación**: `end_date >= start_date` (ya existente). Una campaña `categoria_sira = 'reactivacion'` no puede enviarse sin que exista al menos un `household_id` con `grupo = 'control'` en `campana_cliente` (FR-017, verificado en la capa de servicio antes de permitir el envío).
+- **Creación por segmento (feature 013)**: `POST /clientes/campanas` acepta, en vez de la lista explícita de `miembros`, un `segmento` (`GET /clientes/segmentos-riesgo`) — el servicio resuelve los `household_id` elegibles y hace el split ~80/20 tratado/control determinista. La pantalla de campañas y la de riesgo de fuga usan esta vía.
 
 ## 7. Miembro de Campaña (grupo tratado/control)
 

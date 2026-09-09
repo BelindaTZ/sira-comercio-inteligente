@@ -23,6 +23,9 @@ from src.modules.clientes.schemas import (
     Ficha360Out,
     NivelConteoOut,
     ResumenCrmOut,
+    RiesgoFugaDirectorioItem,
+    RiesgoFugaResumenOut,
+    SegmentoRiesgoOut,
     CampanaReactivacionIn,
     CampanaResumenOut,
     ClienteDetalleOut,
@@ -174,6 +177,62 @@ def _directorio(session: SessionDep) -> DirectorioRepository:
 
 
 DirectorioDep = Annotated[DirectorioRepository, Depends(_directorio)]
+
+
+@router.get("/riesgo-fuga/resumen", response_model=RiesgoFugaResumenOut)
+async def riesgo_fuga_resumen(
+    repo: DirectorioDep,
+    _: Annotated[Principal, Depends(_ver_churn)],
+    severidad: str | None = None,
+) -> RiesgoFugaResumenOut:
+    return RiesgoFugaResumenOut(**await repo.riesgo_fuga_resumen(severidad))
+
+
+@router.get("/riesgo-fuga/directorio", response_model=Page[RiesgoFugaDirectorioItem])
+async def riesgo_fuga_directorio(
+    repo: DirectorioDep,
+    _: Annotated[Principal, Depends(_ver_churn)],
+    params: Annotated[PageParams, Depends(page_params)],
+    severidad: str | None = None,
+) -> Page[RiesgoFugaDirectorioItem]:
+    """Cohorte de clientes en riesgo enriquecida con LTV, frecuencia, sucursal y
+    nivel del Club — el Jefe de Marketing nunca deriva esto a mano (SC-005)."""
+    filas, total = await repo.riesgo_fuga_directorio(
+        severidad=severidad, offset=params.offset, limit=params.limit
+    )
+    return Page[RiesgoFugaDirectorioItem](
+        items=[RiesgoFugaDirectorioItem(**f) for f in filas],
+        total=total, page=params.page, size=params.size,
+    )
+
+
+@router.get("/riesgo-fuga/export")
+async def exportar_riesgo_fuga(
+    repo: DirectorioDep,
+    _: Annotated[Principal, Depends(_ver_churn)],
+    formato: str = "csv",
+    severidad: str | None = None,
+):
+    from fastapi.responses import Response
+
+    if formato not in ("csv", "xlsx", "pdf"):
+        from src.shared.exceptions import BusinessRuleError
+
+        raise BusinessRuleError("formato debe ser csv, xlsx o pdf")
+    contenido, media_type, ext = await repo.exportar_riesgo_fuga(formato, severidad=severidad)
+    return Response(
+        content=contenido,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="riesgo-fuga.{ext}"'},
+    )
+
+
+@router.get("/segmentos-riesgo", response_model=list[SegmentoRiesgoOut])
+async def segmentos_riesgo(
+    repo: DirectorioDep, _: Annotated[Principal, Depends(_campana_ve)]
+) -> list[SegmentoRiesgoOut]:
+    """Segmentos objetivo predefinidos para una campaña de reactivación."""
+    return [SegmentoRiesgoOut(**s) for s in await repo.segmentos_riesgo()]
 
 
 @router.get("/directorio", response_model=Page[DirectorioItemOut])
