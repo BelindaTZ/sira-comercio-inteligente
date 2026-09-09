@@ -165,6 +165,19 @@ class CajaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CatalogoPosItem(BaseModel):
+    """Producto para el grid de registro rápido del POS."""
+
+    product_id: int
+    nombre: str | None
+    marca: str | None
+    product_category: str | None
+    codigo_barras: str | None
+    imagen_url: str | None
+    precio_base: Decimal
+    stock_disponible: int
+
+
 class TiempoCobroSemanalOut(BaseModel):
     caja_id: int
     semana: int

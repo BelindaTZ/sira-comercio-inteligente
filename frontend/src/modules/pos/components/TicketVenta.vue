@@ -18,7 +18,7 @@ const props = defineProps({
   removible: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['remover', 'descuento'])
+const emit = defineEmits(['remover', 'descuento', 'incrementar'])
 
 function moneda(v) {
   return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(
@@ -171,7 +171,20 @@ function confirmarDescuento() {
               margen bajo mínimo
             </span>
           </td>
-          <td class="px-3 py-2.5 text-right tabular-nums">{{ linea.cantidad }}</td>
+          <td class="px-3 py-2.5">
+            <div class="flex items-center justify-end gap-1.5">
+              <span class="tabular-nums font-semibold text-slate-800">{{ linea.cantidad }}</span>
+              <button
+                v-if="removible"
+                type="button"
+                class="grid h-5 w-5 place-items-center rounded border border-brand-200 text-brand-700 hover:bg-brand-50"
+                title="Agregar una unidad"
+                @click="emit('incrementar', linea.product_id)"
+              >
+                <Icon name="plus" :size="11" />
+              </button>
+            </div>
+          </td>
           <td class="px-3 py-2.5 text-right tabular-nums text-slate-600">{{ moneda(linea.sales_value) }}</td>
           <td class="px-4 py-2.5 text-right font-semibold tabular-nums text-slate-900">
             {{ moneda(linea.subtotal) }}

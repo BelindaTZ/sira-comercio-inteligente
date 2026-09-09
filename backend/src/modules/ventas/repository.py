@@ -60,6 +60,73 @@ class VentasRepository(BaseRepository[Venta]):
         stmt = select(Producto).where(Producto.codigo_barras == codigo_barras)
         return (await self.session.scalars(stmt)).first()
 
+    async def catalogo_pos(
+        self,
+        *,
+        tienda_id: int,
+        search: str | None,
+        categoria: str | None,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[dict], int]:
+        """Productos con precio y stock en una tienda, para el grid del POS
+        (registro rápido). Sólo `activo` y con `precio_base`."""
+        cond = [
+            "p.activo",
+            "p.precio_base IS NOT NULL",
+            "p.precio_base > 0",
+            "i.cantidad_disponible > 0",
+        ]
+        binds: dict = {"t": tienda_id, "offset": offset, "limit": limit}
+        if search and search.strip():
+            s = search.strip()
+            if s.isdigit():
+                cond.append("(p.product_id = :sid OR p.codigo_barras = :sbar)")
+                binds["sid"] = int(s)
+                binds["sbar"] = s
+            else:
+                cond.append("(p.nombre ILIKE :q OR p.marca ILIKE :q OR p.product_type ILIKE :q)")
+                binds["q"] = f"%{s}%"
+        if categoria:
+            cond.append("p.product_category = :cat")
+            binds["cat"] = categoria
+        where = " AND ".join(cond)
+        base = (
+            "FROM productos p JOIN inventario i "
+            "ON i.product_id = p.product_id AND i.tienda_id = :t "
+            f"WHERE {where}"
+        )
+        total = await self.session.scalar(text(f"SELECT count(*) {base}"), binds) or 0
+        rows = await self.session.execute(
+            text(f"""
+            SELECT p.product_id, p.nombre, p.marca, p.product_category,
+                   p.codigo_barras, p.imagen_url, p.precio_base,
+                   i.cantidad_disponible AS stock_disponible
+            {base}
+            ORDER BY p.clasificacion_abc NULLS LAST, p.nombre
+            OFFSET :offset LIMIT :limit
+            """),
+            binds,
+        )
+        return [dict(r._mapping) for r in rows], int(total)
+
+    async def categorias_con_stock(self, tienda_id: int, limite: int = 10) -> list[str]:
+        """Las categorías con más productos disponibles — para las pills del POS."""
+        rows = await self.session.execute(
+            text("""
+            SELECT p.product_category, count(*) AS n
+            FROM productos p JOIN inventario i
+              ON i.product_id = p.product_id AND i.tienda_id = :t
+            WHERE p.activo AND p.precio_base > 0 AND i.cantidad_disponible > 0
+              AND p.product_category IS NOT NULL
+            GROUP BY p.product_category
+            ORDER BY n DESC, p.product_category
+            LIMIT :lim
+            """),
+            {"t": tienda_id, "lim": limite},
+        )
+        return [r.product_category for r in rows]
+
     # --- inventario / lotes ---
     async def stock_disponible(self, product_id: int, tienda_id: int) -> int:
         stmt = select(Inventario.cantidad_disponible).where(

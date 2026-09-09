@@ -42,6 +42,18 @@ La pantalla de Catálogo es de **gestión de precios y márgenes**, no multicana
 
 **Relaciones**: N:1 con `ventas` y `productos`. El/los lote(s) de origen del descuento FIFO se resuelven en `movimientos_inventario` (`referencia_tabla='venta_detalle'`), no como FK directa — una línea puede descontar de más de un lote si el primero no cubre la cantidad completa.
 
+**Acumulación (feature 013)**: agregar el mismo `product_id` al ticket suma sobre la línea existente (una fila por SKU, como el POS de referencia). Excepción: si la línea ya tiene descuentos (`retail_disc`/`coupon_disc`/`coupon_match_disc`), se crea una fila nueva para no mezclar precios.
+
+### 3.1 Pantalla de POS (feature 013)
+
+`frontend/src/modules/pos/PuntoDeVentaPage.vue` — arquetipo Cockpit: columna de
+registro rápido (escáner + grid de productos con foto/precio/stock desde
+`GET /api/ventas/catalogo`, filtrable por categoría) + ticket con `+` por línea y
+"Quitar" (con autorización, FR-027 — no hay `−` libre porque reducir lo
+registrado es sub-registro); columna de cobro con medios de pago, montos rápidos
+de efectivo y vuelto. El grid necesitó un endpoint de catálogo propio del módulo
+`Ventas` porque el Cajero no lee `productos`/`inventario`.
+
 **Validación**: `cantidad > 0`. El precio unitario aplicado no cambia si el precio del producto se actualiza después (FR-010) — es un valor congelado al momento de la venta.
 
 ## 4. Línea de Venta Removida (auditoría anti-fraude)

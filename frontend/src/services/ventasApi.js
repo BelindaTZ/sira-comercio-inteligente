@@ -117,6 +117,27 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
+  /** Grid de productos del POS (registro rápido) — con precio y stock en la tienda. */
+  catalogo({ tiendaId, search, categoria, page = 1, size = 24 } = {}) {
+    return http
+      .get('/api/ventas/catalogo', {
+        params: {
+          tienda_id: tiendaId ?? undefined,
+          search: search || undefined,
+          categoria: categoria || undefined,
+          page,
+          size,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  catalogoCategorias(tiendaId) {
+    return http
+      .get('/api/ventas/catalogo/categorias', { params: { tienda_id: tiendaId ?? undefined } })
+      .then((r) => r.data)
+  },
+
   tiempoCobroSemanal(cajaId, { semana, anio } = {}) {
     return http
       .get(`/api/ventas/cajas/${cajaId}/tiempo-cobro-semanal`, {

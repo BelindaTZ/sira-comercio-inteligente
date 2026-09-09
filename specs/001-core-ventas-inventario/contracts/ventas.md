@@ -5,8 +5,14 @@ Backend: `backend/src/modules/ventas/router.py`. RBAC: módulo `Ventas` (rol Caj
 ## POST /api/ventas
 Inicia una venta nueva en estado `en_curso`. Body: `{tienda_id, cajero_id, household_id?}`. 201 → `{venta_id, estado: "en_curso"}`. (FR-001)
 
+## GET /api/ventas/catalogo?tienda_id=&search=&categoria=&page=&size=  (feature 013)
+Grid de productos con precio y stock en la tienda, para el registro rápido del POS. RBAC `Ventas`/`ventas` SELECT (Cajero). 200 → `Page[{product_id, nombre, marca, product_category, codigo_barras, imagen_url, precio_base, stock_disponible}]` — sólo `activo`, con `precio_base` y `stock > 0`.
+
+## GET /api/ventas/catalogo/categorias?tienda_id=  (feature 013)
+Las ~10 categorías con más productos disponibles, para las pills del grid. 200 → `[str]`.
+
 ## POST /api/ventas/{venta_id}/lineas
-Agrega una línea por código de barras o `product_id` + `cantidad`. 200 → línea agregada, total recalculado. 409 si `cantidad` excede stock disponible (FR-006). (FR-001)
+Agrega una línea por código de barras o `product_id` + `cantidad`. 200 → línea agregada, total recalculado. 409 si `cantidad` (acumulada) excede stock disponible (FR-006). **Acumula sobre la línea existente del mismo `product_id` sin descuentos** (una fila por SKU en el ticket, feature 013); si ya tiene descuentos aplicados, crea una fila nueva. (FR-001)
 
 ## DELETE /api/ventas/{venta_id}/lineas/{linea_id}
 Requiere `autoriza_empleado_id` (encargado, distinto del cajero) y `motivo` en el body. 200 → línea removida, queda registrada en `lineas_venta_removidas`. 403 si `autoriza_empleado_id == cajero_id`. (FR-027)

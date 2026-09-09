@@ -63,16 +63,24 @@ async def test_escenario_1_venta_con_tarjeta_aprobada(
     )
     assert disponible == 97  # 100 - 3
 
-    # trazabilidad venta -> línea -> lote (FR-026)
-    movimientos = await db_session.scalar(
+    # escanear el mismo SKU 3 veces = una sola línea de cantidad 3 (una fila por
+    # SKU en el ticket, como el POS de referencia)
+    lineas = await db_session.execute(
+        text("SELECT cantidad FROM venta_detalle WHERE venta_id = :v"), {"v": venta_id}
+    )
+    cantidades = [r.cantidad for r in lineas]
+    assert cantidades == [3]
+
+    # trazabilidad venta -> línea -> lote (FR-026): la salida se rastrea al lote
+    unidades = await db_session.scalar(
         text(
-            "SELECT COUNT(*) FROM movimientos_inventario "
+            "SELECT COALESCE(SUM(cantidad), 0) FROM movimientos_inventario "
             "WHERE referencia_tabla = 'venta_detalle' AND tipo = 'salida' AND lote_id IS NOT NULL "
             "AND referencia_id IN (SELECT venta_detalle_id FROM venta_detalle WHERE venta_id = :v)"
         ),
         {"v": venta_id},
     )
-    assert movimientos == 3
+    assert unidades == 3
 
 
 async def test_escenario_2_rechazo_y_reintento_con_efectivo(
@@ -107,7 +115,8 @@ async def test_escenario_2_rechazo_y_reintento_con_efectivo(
     assert conf.status_code == 200, conf.text
     body = conf.json()
     assert body["estado"] == "confirmada"
-    assert len(body["lineas"]) == 2
+    assert len(body["lineas"]) == 1  # el mismo SKU acumula en una línea
+    assert body["lineas"][0]["cantidad"] == 2
     assert body["total"] == "5.00"
 
     intentos = await db_session.scalar(

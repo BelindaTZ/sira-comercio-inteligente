@@ -235,12 +235,17 @@ async function confirmar() {
     <div v-else class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
       <!-- Columna izquierda: registro + ticket -->
       <section class="space-y-4">
-        <BuscadorProducto v-if="venta.estado === 'en_curso'" @agregar="agregar" />
+        <BuscadorProducto
+          v-if="venta.estado === 'en_curso'"
+          :tienda-id="sesion.tiendaId"
+          @agregar="agregar"
+        />
         <TicketVenta
           :venta="venta"
           :removible="venta.estado === 'en_curso'"
           @remover="remover"
           @descuento="aplicarDescuento"
+          @incrementar="agregar({ productId: $event, cantidad: 1 })"
         />
       </section>
 

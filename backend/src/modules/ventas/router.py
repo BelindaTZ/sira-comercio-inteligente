@@ -24,6 +24,7 @@ from src.modules.ventas.schemas import (
     AltaMedioPagoIn,
     AnularVentaIn,
     CajaOut,
+    CatalogoPosItem,
     ConfirmarVentaIn,
     DatafonoDisponibleOut,
     DescuentoManualIn,
@@ -266,6 +267,41 @@ async def datafono_disponible(
 ) -> DatafonoDisponibleOut:
     """FR-004 — el flujo de cobro consulta esto antes de intentar con tarjeta."""
     return DatafonoDisponibleOut(**await svc.datafono_disponible_de_caja(caja_id))
+
+
+@router.get("/catalogo/categorias", response_model=list[str])
+async def catalogo_pos_categorias(
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ver)],
+    tienda_id: int | None = None,
+) -> list[str]:
+    """Categorías con stock para las pills del grid de POS."""
+    return await svc.categorias_pos(tienda_id or principal.tienda_id or 0)
+
+
+@router.get("/catalogo", response_model=Page[CatalogoPosItem])
+async def catalogo_pos(
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ver)],
+    params: Annotated[PageParams, Depends(page_params)],
+    tienda_id: int | None = None,
+    search: str | None = None,
+    categoria: str | None = None,
+) -> Page[CatalogoPosItem]:
+    """FR-001 — grid de productos con precio y stock para el registro rápido."""
+    items, total = await svc.catalogo_pos(
+        tienda_id=tienda_id or principal.tienda_id or 0,
+        search=search,
+        categoria=categoria,
+        offset=(params.page - 1) * params.size,
+        limit=params.size,
+    )
+    return Page(
+        items=[CatalogoPosItem(**i) for i in items],
+        total=total,
+        page=params.page,
+        size=params.size,
+    )
 
 
 @router.get("/cajas", response_model=list[CajaOut])

@@ -120,25 +120,36 @@ class VentasService:
             )
 
         # FR-006: no exceder el stock disponible de la tienda.
+        lineas = await self.repo.lineas_de(venta_id)
         disponible = await self.repo.stock_disponible(producto.product_id, venta.tienda_id)
-        ya_en_venta = sum(
-            ln.cantidad
-            for ln in await self.repo.lineas_de(venta_id)
-            if ln.product_id == producto.product_id
-        )
+        ya_en_venta = sum(ln.cantidad for ln in lineas if ln.product_id == producto.product_id)
         if ya_en_venta + data.cantidad > disponible:
             raise ConflictError(
                 f"Stock insuficiente para el producto {producto.product_id}: "
                 f"disponible {disponible}, solicitado {ya_en_venta + data.cantidad}"
             )
 
-        linea = VentaDetalle(
-            venta_id=venta_id,
-            product_id=producto.product_id,
-            cantidad=data.cantidad,
-            sales_value=producto.precio_base,
+        # "Agregar producto" acumula sobre la línea existente del mismo producto
+        # (una fila por SKU en el ticket), salvo que ya tenga descuentos aplicados.
+        linea = next(
+            (
+                ln
+                for ln in lineas
+                if ln.product_id == producto.product_id
+                and not (ln.retail_disc or ln.coupon_disc or ln.coupon_match_disc)
+            ),
+            None,
         )
-        self.repo.agregar(linea)
+        if linea is not None:
+            linea.cantidad += data.cantidad
+        else:
+            linea = VentaDetalle(
+                venta_id=venta_id,
+                product_id=producto.product_id,
+                cantidad=data.cantidad,
+                sales_value=producto.precio_base,
+            )
+            self.repo.agregar(linea)
         await self.repo.flush()
 
         venta.total = calcular_total(await self.repo.lineas_de(venta_id))
@@ -560,6 +571,28 @@ class VentasService:
     async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
         """FR-016 — cajas para el selector de la revisión semanal de tiempo de cobro."""
         return await self.repo.listar_cajas(tienda_id)
+
+    async def catalogo_pos(
+        self,
+        *,
+        tienda_id: int,
+        search: str | None,
+        categoria: str | None,
+        offset: int,
+        limit: int,
+    ) -> tuple[list[dict], int]:
+        """Grid de productos del POS (registro rápido) — productos con precio y
+        stock en la tienda."""
+        return await self.repo.catalogo_pos(
+            tienda_id=tienda_id,
+            search=search,
+            categoria=categoria,
+            offset=offset,
+            limit=limit,
+        )
+
+    async def categorias_pos(self, tienda_id: int) -> list[str]:
+        return await self.repo.categorias_con_stock(tienda_id)
 
     async def tiempo_cobro_semanal(self, caja_id: int, semana: int, anio: int | None) -> dict:
         """FR-016/FR-018 — tiempo promedio de cobro de una caja en una semana,
