@@ -487,6 +487,89 @@ async def _compras_demo() -> None:
             log.info("  eventos de quiebre de stock: %s", nq)
 
 
+async def _forecasting_demo() -> None:
+    """Deja la pantalla de Pronóstico con datos reales (feature 004): un modelo
+    vigente en producción con historial de monitoreo WAPE semanal, y un segundo
+    modelo pendiente para que la gobernanza (US1) tenga una decisión que tomar.
+    El job mensual sólo deja un modelo `pendiente`; sin uno aprobado no corre el
+    monitoreo semanal (US3) y la pantalla se queda sin la curva de precisión."""
+    from datetime import date
+
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        if await s.scalar(text("SELECT count(*) FROM monitoreo_precision_modelo")):
+            log.info("  monitoreo de pronóstico ya poblado")
+            return
+        modelo_id = await s.scalar(
+            text(
+                "SELECT modelo_id FROM modelo_demanda WHERE estado = 'pendiente' "
+                "ORDER BY fecha_entrenamiento LIMIT 1"
+            )
+        )
+        if modelo_id is None:
+            log.info("  sin modelo de pronóstico entrenado — nada que aprobar")
+            return
+        jefe_ti = await s.scalar(
+            text(
+                "SELECT u.empleado_id FROM usuarios u JOIN roles r ON r.role_id = u.role_id "
+                "WHERE r.nombre = 'Jefe_TI' LIMIT 1"
+            )
+        )
+        await s.execute(
+            text(
+                "UPDATE modelo_demanda SET estado = 'aprobado', aprobado_por = :e, "
+                "fecha_resolucion = now(), metrica_precision_validacion = :w "
+                "WHERE modelo_id = :m"
+            ),
+            {"e": jefe_ti, "m": modelo_id, "w": 0.1320},
+        )
+        # segundo modelo, recién entrenado, a la espera de revisión del Jefe de TI
+        await s.execute(
+            text(
+                "INSERT INTO modelo_demanda "
+                "(metrica_precision_validacion, estado, fecha_entrenamiento, observaciones) "
+                "VALUES (:w, 'pendiente', now(), "
+                "'Reentrenamiento mensual — pendiente de revisión del Jefe de TI')"
+            ),
+            {"w": 0.1105},
+        )
+        # Historial de monitoreo semanal (US3 / FR-011). El job real
+        # (`monitorear_precision_job`) compara pronóstico contra venta observada,
+        # pero el dataset Dunnhumby que alimenta el entrenamiento no deja pares
+        # producto/tienda/semana comparables, así que aquí se siembra una serie
+        # WAPE creíble: precisión estable ~0.12-0.19 con una degradación reciente
+        # que cruza el umbral configurado y dispara la alerta para el Jefe de TI.
+        umbral = float(
+            await s.scalar(
+                text(
+                    "SELECT valor FROM configuracion_pronostico "
+                    "WHERE clave = 'umbral_degradacion_semanal_pct'"
+                )
+            )
+            or 0.45
+        )
+        iso = date.today().isocalendar()
+        serie = [0.14, 0.12, 0.15, 0.13, 0.17, 0.16, 0.14, 0.18, 0.19, 0.21, 0.28, 0.33, 0.41, 0.49]
+        for i, wape_sem in enumerate(serie):
+            delta = len(serie) - 1 - i
+            semana = (iso.week - delta - 1) % 52 + 1
+            anio = iso.year if iso.week - delta >= 1 else iso.year - 1
+            await s.execute(
+                text(
+                    "INSERT INTO monitoreo_precision_modelo "
+                    "(modelo_id, semana, anio, metrica_precision, supero_umbral_alerta, "
+                    " fecha_calculo) VALUES (:m, :s, :a, :w, :sup, now()) "
+                    "ON CONFLICT DO NOTHING"
+                ),
+                {"m": modelo_id, "s": semana, "a": anio, "w": wape_sem,
+                 "sup": wape_sem > umbral},
+            )
+        await s.commit()
+        log.info("  monitoreo de pronóstico: %s semanas sembradas", len(serie))
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -548,6 +631,9 @@ async def main() -> None:
 
     log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()
+
+    log.info("5b/5 · modelo de pronóstico vigente + monitoreo WAPE de demo")
+    await _forecasting_demo()
 
     log.info("listo — abrí http://localhost:5173/auth/login")
 

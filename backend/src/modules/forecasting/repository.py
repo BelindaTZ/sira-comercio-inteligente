@@ -139,14 +139,15 @@ class ForecastingRepository(BaseRepository[ModeloDemanda]):
         return stmt
 
     async def contar_pronosticos(self, modelo_id: int) -> int:
-        return int(
-            await self.session.scalar(
-                select(func.count())
-                .select_from(PronosticoDemanda)
-                .where(PronosticoDemanda.modelo_id == modelo_id)
-            )
-            or 0
+        """Combinaciones producto/tienda distintas que el modelo cubre (no el
+        total de filas: el modelo emite varias semanas de horizonte por par)."""
+        pares = (
+            select(PronosticoDemanda.product_id, PronosticoDemanda.tienda_id)
+            .where(PronosticoDemanda.modelo_id == modelo_id)
+            .distinct()
+            .subquery()
         )
+        return int(await self.session.scalar(select(func.count()).select_from(pares)) or 0)
 
     async def pronostico_vigente_proximo(
         self, product_id: int, tienda_id: int
