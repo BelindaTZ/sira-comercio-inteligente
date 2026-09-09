@@ -1,28 +1,36 @@
 <script setup>
 /**
- * Candidatos a Liquidación & Venta Estratégica de Stock (FR-011 a FR-014).
- * Rediseño basado en `docs/diseno-ui/.../sira_candidatos_a_liquidaci_n_venta_estrat_gica_de_stock/`:
- *  - Header y banner contextual con alcance de tienda local y motor de markdown preventivo.
- *  - 4 KpiTiles: Valor en Riesgo, Recuperación Proyectada, SKUs Candidatos y Eficacia.
- *  - Matriz de Niveles de Descuento por Días de Vida Útil (Nivel 1, 2 y 3).
- *  - Políticas y switches operativos locales (sincronización con POS, push app Club Marzú).
- *  - Catálogo de productos candidatos con selección múltiple y ejecución individual o masiva en POS.
- *  - Configuración de parámetros de liquidación y auditoría de reclasificación ABC.
+ * Candidatos a liquidación & venta estratégica de stock — feature 005 (FR-011 a
+ * FR-014). Arquetipo "Gestión" del kit ya implementado.
+ *
+ * El sistema clasifica semanalmente los SKU de baja rotación (categoría C) y
+ * sugiere una rebaja; el Encargado de Tienda autoriza la liquidación producto a
+ * producto o en lote, y ésta se propaga al POS. Alcance = spec + backend: las
+ * "políticas locales" y la matriz de niveles del mockup no tienen respaldo y no
+ * se implementan.
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useSesion } from '@/stores/sesion'
 import { promocionesApi } from '@/services/promocionesApi'
+import { confirm } from '@/shared/ui/dialogs'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
+import DataTable from '@/shared/DataTable.vue'
 import { money } from '@/shared/currency'
 
 const sesion = useSesion()
 const tiendaId = computed(() => sesion.tiendaId ?? 1)
-const empleadoId = computed(() => sesion.empleadoId ?? 1)
+const puedeEjecutar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Operaciones', 'candidato_liquidacion'),
+)
+const puedeConfigurar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Operaciones', 'configuracion_promociones'),
+)
+const puedeVerAbc = computed(() => sesion.puedeLeerTabla('Operaciones', 'cambio_clasificacion_abc'))
 
 const candidatos = ref([])
 const cambiosAbc = ref([])
@@ -31,20 +39,19 @@ const cargando = ref(false)
 const error = ref('')
 const aviso = ref('')
 
-const filtroChip = ref('todos') // 'todos' | 'vence48' | 'sobrestock' | 'lacteos'
 const busqueda = ref('')
-const seleccionados = ref(new Set())
+const pill = ref('')
+const page = ref(1)
+const size = ref(15)
+const seleccion = ref(new Set())
 
-// Políticas operativas
-const politicas = reactive({
-  syncPos: true,
-  pushClubMarzu: true,
-  bloqueoReposicion: false,
-})
-
-// Modales
 const modalRegla = ref(false)
-const modalCambiosAbc = ref(false)
+const modalAbc = ref(false)
+const guardando = ref(false)
+
+function msg(e) {
+  return e.response?.data?.error?.message || e.message || 'No se pudo completar la operación.'
+}
 
 async function cargar() {
   cargando.value = true
@@ -53,117 +60,142 @@ async function cargar() {
     const [r, cList, abcList] = await Promise.all([
       promocionesApi.reglaLiquidacion().catch(() => ({})),
       promocionesApi.candidatosLiquidacion({ tiendaId: tiendaId.value }).catch(() => []),
-      promocionesApi.cambiosAbc().catch(() => []),
+      puedeVerAbc.value ? promocionesApi.cambiosAbc().catch(() => []) : Promise.resolve([]),
     ])
-    regla.rotacion_minima_liquidacion_semanal = r.rotacion_minima_liquidacion_semanal || ''
-    regla.descuento_liquidacion_pct = r.descuento_liquidacion_pct || ''
+    regla.rotacion_minima_liquidacion_semanal = r.rotacion_minima_liquidacion_semanal ?? ''
+    regla.descuento_liquidacion_pct = r.descuento_liquidacion_pct ?? ''
     candidatos.value = cList || []
     cambiosAbc.value = abcList || []
-    seleccionados.value.clear()
+    seleccion.value = new Set()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   } finally {
     cargando.value = false
   }
 }
 
-// Métricas de KPIs
-const valorEnRiesgo = computed(() =>
-  candidatos.value
-    .filter((c) => c.estado === 'candidato')
-    .reduce((sum, c) => sum + Number(c.precio_base || 3.50) * 12, 0)
-)
-const recuperacionProyectada = computed(() =>
-  candidatos.value
-    .filter((c) => c.estado === 'candidato')
-    .reduce((sum, c) => sum + Number(c.precio_liquidacion || 2.20) * 12, 0)
-)
-const skusCriticos = computed(() => candidatos.value.filter((c) => c.estado === 'candidato').length)
-
-// Filtrado de candidatos
-const candidatosFiltrados = computed(() => {
-  return candidatos.value.filter((c) => {
-    if (filtroChip.value === 'vence48' && Number(c.rotacion_reciente_calculada || 0) > 2) return false
-    if (filtroChip.value === 'sobrestock' && Number(c.rotacion_reciente_calculada || 0) <= 2) return false
-    if (filtroChip.value === 'lacteos' && !((c.product_category || '').toLowerCase().includes('l') || (c.product_nombre || '').toLowerCase().includes('lech'))) {
-      return false
-    }
-    if (busqueda.value.trim()) {
-      const q = busqueda.value.toLowerCase()
-      const matchNom = (c.product_nombre || '').toLowerCase().includes(q)
-      const matchSku = String(c.product_id).includes(q)
-      const matchCat = (c.product_category || '').toLowerCase().includes(q)
-      if (!matchNom && !matchSku && !matchCat) return false
-    }
-    return true
-  })
+const pendientes = computed(() => candidatos.value.filter((c) => c.estado === 'candidato'))
+const kpi = computed(() => {
+  const enRiesgo = pendientes.value.reduce((s, c) => s + Number(c.precio_base || 0), 0)
+  const recup = pendientes.value.reduce((s, c) => s + Number(c.precio_liquidacion || 0), 0)
+  return {
+    total: candidatos.value.length,
+    pendientes: pendientes.value.length,
+    ejecutados: candidatos.value.filter((c) => c.estado === 'ejecutado').length,
+    enRiesgo,
+    recuperacion: recup,
+    recuperacionPct: enRiesgo ? Math.round((recup / enRiesgo) * 100) : null,
+  }
 })
 
-function toggleSeleccion(candidatoId) {
-  if (seleccionados.value.has(candidatoId)) {
-    seleccionados.value.delete(candidatoId)
-  } else {
-    seleccionados.value.add(candidatoId)
-  }
-}
+const pills = computed(() => [
+  { value: '', label: 'Todos', count: kpi.value.total },
+  { value: 'candidato', label: 'Por autorizar', count: kpi.value.pendientes },
+  { value: 'ejecutado', label: 'En liquidación', count: kpi.value.ejecutados },
+])
 
+const columnas = [
+  { key: 'sel', label: '', width: '36px' },
+  { key: 'producto', label: 'Producto' },
+  { key: 'rotacion', label: 'Rotación', align: 'right', width: '110px' },
+  { key: 'precio', label: 'Normal → liquidación', align: 'right', width: '190px' },
+  { key: 'descuento', label: 'Descuento', align: 'center', width: '100px' },
+  { key: 'estado', label: 'Estado', align: 'center', width: '130px' },
+  { key: 'acciones', label: '', align: 'right', width: '130px' },
+]
+
+const filtrados = computed(() => {
+  const q = busqueda.value.trim().toLowerCase()
+  return candidatos.value.filter((c) => {
+    if (pill.value && c.estado !== pill.value) return false
+    if (!q) return true
+    return (
+      (c.product_nombre || '').toLowerCase().includes(q) ||
+      String(c.product_id).includes(q) ||
+      (c.product_category || '').toLowerCase().includes(q)
+    )
+  })
+})
+const filas = computed(() =>
+  filtrados.value.slice((page.value - 1) * size.value, page.value * size.value),
+)
+
+function toggle(id) {
+  const s = new Set(seleccion.value)
+  s.has(id) ? s.delete(id) : s.add(id)
+  seleccion.value = s
+}
+const seleccionables = computed(() => filtrados.value.filter((c) => c.estado === 'candidato'))
 function toggleTodos() {
-  if (seleccionados.value.size === candidatosFiltrados.value.length) {
-    seleccionados.value.clear()
-  } else {
-    seleccionados.value = new Set(candidatosFiltrados.value.map((c) => c.candidato_id))
-  }
+  seleccion.value =
+    seleccion.value.size === seleccionables.value.length
+      ? new Set()
+      : new Set(seleccionables.value.map((c) => c.candidato_id))
 }
 
 async function ejecutar(c) {
+  error.value = ''
+  aviso.value = ''
   try {
     await promocionesApi.ejecutarCandidato(c.candidato_id)
-    aviso.value = `Liquidación activada en cajas POS para producto #${c.product_id}.`
+    aviso.value = `Liquidación de "${c.product_nombre}" activada en el POS.`
     await cargar()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   }
 }
 
-async function ejecutarSeleccionados() {
-  if (!seleccionados.value.size) return
-  const ids = Array.from(seleccionados.value)
-  let count = 0
+async function ejecutarSeleccion() {
+  const ids = [...seleccion.value]
+  if (!ids.length) return
+  const ok = await confirm({
+    title: 'Autorizar liquidación en lote',
+    message: `Se activará la rebaja en el POS para ${ids.length} producto(s). Esta acción se propaga a todas las cajas.`,
+    confirmText: 'Autorizar',
+  })
+  if (!ok) return
+  let n = 0
+  const fallos = []
   for (const id of ids) {
     try {
       await promocionesApi.ejecutarCandidato(id)
-      count++
+      n++
     } catch {
-      /* Continua ejecutando el resto */
+      fallos.push(id)
     }
   }
-  aviso.value = `Se ejecutó la liquidación en POS para ${count} productos.`
+  aviso.value = `${n} liquidación(es) activada(s) en POS${fallos.length ? ` · ${fallos.length} con error` : ''}.`
   await cargar()
 }
 
 async function guardarRegla() {
+  guardando.value = true
+  error.value = ''
   try {
     await promocionesApi.actualizarReglaLiquidacion({
       rotacionMinima: regla.rotacion_minima_liquidacion_semanal,
       descuento: regla.descuento_liquidacion_pct,
     })
     modalRegla.value = false
-    aviso.value = 'Regla de liquidación actualizada correctamente.'
+    aviso.value = 'Regla de liquidación actualizada. Se aplicará en el próximo cálculo semanal.'
     await cargar()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
+  } finally {
+    guardando.value = false
   }
 }
 
 async function recalcular() {
   aviso.value = ''
+  error.value = ''
   try {
-    await promocionesApi.forzarClasificacionAbc()
+    if (puedeVerAbc.value) await promocionesApi.forzarClasificacionAbc().catch(() => {})
     await promocionesApi.forzarCandidatos()
     aviso.value = 'Clasificación ABC y candidatos recalculados.'
     await cargar()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   }
 }
 
@@ -171,427 +203,225 @@ onMounted(cargar)
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-[1720px] px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-    <!-- 1. ENCABEZADO Y ACCIONES PRINCIPALES -->
+  <div class="mx-auto max-w-[1560px] px-6 py-8 lg:px-8">
     <PageHeader
-      titulo="Candidatos a Liquidación &amp; Venta Estratégica de Stock"
-      subtitulo="Monitoreo automatizado de vida útil FEFO y rotación lentificada. Ejecute rebajas de precio de oportunidad para rescatar margen operativo antes de incurrir en merma irreversible."
+      titulo="Candidatos a liquidación"
+      subtitulo="SKU de baja rotación con rebaja sugerida por el sistema. Autoriza la liquidación para rescatar margen antes de que el stock caiga en merma."
     >
       <template #badge>
-        <span
-          class="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900"
-        >
-          <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-          Tienda #{{ tiendaId }} • Providencia Express
-        </span>
+        <SemanticChip :tipo="kpi.pendientes > 0 ? 'fifo' : 'ok'">
+          {{ kpi.pendientes > 0 ? `${kpi.pendientes} por autorizar` : 'Sin pendientes' }}
+        </SemanticChip>
       </template>
-
       <template #acciones>
-        <Btn variant="outline" @click="recalcular">
-          <Icon name="refresh" :size="16" /> Recalcular ABC + Candidatos
+        <Btn v-if="puedeEjecutar" variant="ghost" @click="recalcular">
+          <Icon name="cog" :size="16" /> Recalcular candidatos
         </Btn>
-        <Btn variant="outline" @click="modalCambiosAbc = true">
+        <Btn v-if="puedeVerAbc" variant="ghost" @click="modalAbc = true">
           <Icon name="chart" :size="16" /> Auditoría ABC ({{ cambiosAbc.length }})
         </Btn>
-        <Btn variant="primary" @click="modalRegla = true">
-          <Icon name="tag" :size="16" /> Configurar Reglas de Markdown
+        <Btn v-if="puedeConfigurar" variant="primary" @click="modalRegla = true">
+          <Icon name="tag" :size="16" /> Configurar regla
         </Btn>
+        <span
+          v-if="!puedeEjecutar && !puedeConfigurar"
+          class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600"
+        >
+          <Icon name="shield" :size="14" /> Solo lectura
+        </span>
       </template>
     </PageHeader>
 
-    <!-- ALERTAS O AVISOS -->
-    <div
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
+      {{ error }}
+    </p>
+    <p
       v-if="aviso"
-      class="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-xs"
+      class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
     >
-      <div class="flex items-center gap-2">
-        <Icon name="check" :size="18" class="text-emerald-600" />
-        <span>{{ aviso }}</span>
-      </div>
-      <button class="text-emerald-700 hover:text-emerald-950 font-bold" @click="aviso = ''">✕</button>
-    </div>
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''"><Icon name="x" :size="14" /></button>
+    </p>
+
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiTile
+        label="Valor en riesgo"
+        :valor="money(kpi.enRiesgo)"
+        variant="emerald"
+        microcopy="Precio normal del stock candidato aún no liquidado"
+        pie-label="SKU candidatos"
+        :pie-valor="`${kpi.pendientes} por autorizar`"
+      />
+      <KpiTile
+        label="Recuperación proyectada"
+        :valor="money(kpi.recuperacion)"
+        :estado="kpi.recuperacionPct != null ? `${kpi.recuperacionPct}% del valor` : ''"
+        estado-tipo="ok"
+        microcopy="Ingreso estimado si se autoriza toda la liquidación sugerida"
+      >
+        <template #icono><Icon name="tag" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="SKU candidatos activos"
+        :valor="kpi.pendientes.toLocaleString('es-EC')"
+        :estado-tipo="kpi.pendientes > 0 ? 'fifo' : 'ok'"
+        microcopy="Elegibles según la rotación mínima semanal configurada"
+      >
+        <template #icono><Icon name="cube" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="En liquidación"
+        :valor="kpi.ejecutados.toLocaleString('es-EC')"
+        estado-tipo="neutral"
+        microcopy="Rebaja ya propagada a las cajas POS"
+      >
+        <template #icono><Icon name="check" :size="16" /></template>
+      </KpiTile>
+    </section>
 
     <div
-      v-if="error"
-      class="flex items-center justify-between rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-xs"
+      v-if="seleccion.size"
+      class="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-brand-300 bg-brand-50 px-4 py-2.5"
     >
-      <div class="flex items-center gap-2">
-        <Icon name="alert" :size="18" class="text-rose-600" />
-        <span>{{ error }}</span>
+      <span class="text-[13px] font-semibold text-brand-900">
+        {{ seleccion.size }} producto(s) seleccionado(s)
+      </span>
+      <div class="flex gap-2">
+        <Btn variant="ghost" class="!py-1 !text-[12px]" @click="seleccion = new Set()">
+          Limpiar
+        </Btn>
+        <Btn variant="primary" class="!py-1 !text-[12px]" @click="ejecutarSeleccion">
+          <Icon name="bolt" :size="13" /> Autorizar liquidación ({{ seleccion.size }})
+        </Btn>
       </div>
-      <button class="text-rose-700 hover:text-rose-950 font-bold" @click="error = ''">✕</button>
     </div>
 
-    <!-- 2. TARJETAS DE KPIS DE LIQUIDACIÓN -->
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <KpiTile
-        label="Valor en Riesgo de Merma"
-        :valor="money(valorEnRiesgo || 1495.50)"
-        microcopy="Stock crítico con rotación lentificada"
-        estado="&lt; 5d vida útil"
-        estado-tipo="quiebre"
-        pie-label="Criterio FEFO"
-        pie-valor="Evitar merma irreversible"
-      >
-        <template #icono><Icon name="alert" :size="18" /></template>
-      </KpiTile>
+    <DataTable
+      titulo="Productos candidatos"
+      subtitulo="Selección múltiple para autorizar en lote, o ejecución individual."
+      :columns="columnas"
+      :rows="filas"
+      row-key="candidato_id"
+      :loading="cargando"
+      densa
+      :page="page"
+      :size="size"
+      :total="filtrados.length"
+      :search="busqueda"
+      search-placeholder="Producto o categoría…"
+      :pills="pills"
+      :pill-activa="pill"
+      empty-text="Sin candidatos a liquidación esta semana"
+      @update:page="page = $event"
+      @update:size="((size = $event), (page = 1))"
+      @update:search="((busqueda = $event), (page = 1))"
+      @pill="((pill = $event), (page = 1))"
+    >
+      <template #acciones-cabecera>
+        <button
+          v-if="seleccionables.length && puedeEjecutar"
+          type="button"
+          class="rounded-lg border border-brand-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-brand-800 hover:bg-brand-50"
+          @click="toggleTodos"
+        >
+          {{ seleccion.size === seleccionables.length ? 'Deseleccionar' : 'Seleccionar todos' }}
+        </button>
+      </template>
 
-      <KpiTile
-        label="Recuperación Proyectada"
-        :valor="money(recuperacionProyectada || 1032.00)"
-        microcopy="Ingreso estimado al aplicar liquidación"
-        estado="+69% salvado"
-        estado-tipo="ok"
-        pie-label="Rescate de margen"
-        pie-valor="vs $0 en caso de descarte"
-      >
-        <template #icono><Icon name="tag" :size="18" /></template>
-      </KpiTile>
+      <template #cell:sel="{ row }">
+        <input
+          v-if="row.estado === 'candidato' && puedeEjecutar"
+          type="checkbox"
+          class="accent-brand-700"
+          :checked="seleccion.has(row.candidato_id)"
+          @change="toggle(row.candidato_id)"
+        />
+      </template>
 
-      <KpiTile
-        label="SKUs Candidatos Activos"
-        :valor="`${skusCriticos} SKUs`"
-        microcopy="Elegibles según rotación local semanal"
-        :estado="skusCriticos > 0 ? 'Acción requerida' : 'Al día'"
-        :estado-tipo="skusCriticos > 0 ? 'fifo' : 'ok'"
-        pie-label="Categoría C"
-        pie-valor="Umbral rotación baja"
-      >
-        <template #icono><Icon name="cube" :size="18" /></template>
-      </KpiTile>
-
-      <KpiTile
-        label="Eficacia Liquidación en Sala"
-        valor="84.2%"
-        microcopy="Tasa de venta antes de vencimiento"
-        estado="+4.1% mes"
-        estado-tipo="ok"
-        pie-label="Rotación sala"
-        pie-valor="Vendidos antes de merma"
-      >
-        <template #icono><Icon name="chart" :size="18" /></template>
-      </KpiTile>
-    </section>
-
-    <!-- 3. MATRIZ DE NIVELES DE MARKDOWN & POLÍTICAS OPERATIVAS -->
-    <section class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-      <!-- Tarjetas de Niveles de Markdown (2 Columnas) -->
-      <div class="lg:col-span-2 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-xs">
-        <div class="flex items-center justify-between pb-3 border-b border-outline-variant/30 mb-4">
-          <div class="flex items-center gap-2">
-            <Icon name="sparkles" :size="18" class="text-primary-container" />
-            <h2 class="text-sm font-bold text-primary">Matriz de Sugerencia Algorítmica de Descuento (FEFO Dinámico)</h2>
-          </div>
-          <span class="text-xs text-outline font-medium">Algoritmo SIRA v4.2</span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <!-- Nivel 1 -->
-          <div class="flex flex-col justify-between rounded-xl border border-amber-200 bg-amber-50/70 p-3.5">
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[11px] font-bold text-amber-800">NIVEL 1 PREVENTIVO</span>
-                <span class="rounded bg-amber-200 px-1.5 py-0.5 text-xs font-bold text-amber-900">-25%</span>
-              </div>
-              <p class="text-xs font-bold text-primary">6 a 10 días restantes</p>
-              <p class="text-[11px] text-on-surface-variant mt-1">Góndola destacada con fleje naranja estándar.</p>
-            </div>
-            <div class="mt-3 pt-2 border-t border-amber-200/80 text-[11px] font-bold text-amber-900 flex justify-between">
-              <span>9 SKUs elegibles</span>
-              <span>→</span>
-            </div>
-          </div>
-
-          <!-- Nivel 2 -->
-          <div class="flex flex-col justify-between rounded-xl border border-orange-200 bg-orange-50/70 p-3.5">
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[11px] font-bold text-orange-900">NIVEL 2 OPORTUNIDAD</span>
-                <span class="rounded bg-orange-200 px-1.5 py-0.5 text-xs font-bold text-orange-950">-40%</span>
-              </div>
-              <p class="text-xs font-bold text-primary">3 a 5 días restantes</p>
-              <p class="text-[11px] text-on-surface-variant mt-1">Isla central de oportunidad y sticker amarillo flúor.</p>
-            </div>
-            <div class="mt-3 pt-2 border-t border-orange-200/80 text-[11px] font-bold text-orange-950 flex justify-between">
-              <span>11 SKUs elegibles</span>
-              <span>→</span>
-            </div>
-          </div>
-
-          <!-- Nivel 3 -->
-          <div class="flex flex-col justify-between rounded-xl border border-rose-200 bg-rose-50/70 p-3.5">
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-[11px] font-bold text-rose-900">NIVEL 3 CRÍTICO REMATE</span>
-                <span class="rounded bg-rose-200 px-1.5 py-0.5 text-xs font-bold text-rose-950">-65%</span>
-              </div>
-              <p class="text-xs font-bold text-primary">1 a 2 días restantes</p>
-              <p class="text-[11px] text-on-surface-variant mt-1">Canasta de remate en línea de cajas POS.</p>
-            </div>
-            <div class="mt-3 pt-2 border-t border-rose-200/80 text-[11px] font-bold text-rose-950 flex justify-between">
-              <span>8 SKUs riesgo 0</span>
-              <span>!</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Políticas Operativas Locales -->
-      <div class="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-xs flex flex-col justify-between">
-        <div>
-          <div class="flex items-center gap-2 pb-3 border-b border-outline-variant/30 mb-3">
-            <Icon name="gear" :size="18" class="text-secondary" />
-            <h2 class="text-sm font-bold text-primary">Políticas Operativas Locales</h2>
-          </div>
-
-          <div class="space-y-3">
-            <label class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-              <input v-model="politicas.syncPos" type="checkbox" class="mt-0.5 rounded text-primary-container" />
-              <div>
-                <p class="text-xs font-semibold text-primary">Sincronización instantánea POS</p>
-                <p class="text-[11px] text-on-surface-variant">Propaga el precio rebajado a cajas al aprobar.</p>
-              </div>
-            </label>
-
-            <label class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-              <input v-model="politicas.pushClubMarzu" type="checkbox" class="mt-0.5 rounded text-primary-container" />
-              <div>
-                <p class="text-xs font-semibold text-primary">Push Rescate Club Marzú</p>
-                <p class="text-[11px] text-on-surface-variant">Notifica oferta relámpago a clientes frecuentes.</p>
-              </div>
-            </label>
-
-            <label class="flex items-start gap-2.5 p-2 rounded-lg hover:bg-surface-container-low transition-colors cursor-pointer">
-              <input v-model="politicas.bloqueoReposicion" type="checkbox" class="mt-0.5 rounded text-primary-container" />
-              <div>
-                <p class="text-xs font-semibold text-primary">Bloqueo reposición bodega</p>
-                <p class="text-[11px] text-on-surface-variant">Impide rellenar góndola hasta vaciar lote.</p>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <div class="pt-3 text-[11px] text-outline border-t border-outline-variant/30 flex justify-between">
-          <span>Servidor Local: Online</span>
-          <span class="text-emerald-700 font-semibold">Sincronizado</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. CATÁLOGO DE PRODUCTOS CANDIDATOS -->
-    <section class="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-xs overflow-hidden">
-      <!-- Toolbar y Filtros -->
-      <div class="flex flex-col gap-3 border-b border-outline-variant/30 p-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h3 class="text-sm font-bold text-primary">Catálogo de Productos Candidatos a Liquidación</h3>
-          <p class="text-xs text-on-surface-variant">Seleccione los SKUs a autorizar para rebaja y emisión de etiquetas de oferta en sala.</p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2.5">
-          <!-- Chips de Segmento -->
-          <div class="flex items-center gap-1.5 p-0.5 bg-surface-container-low rounded-xl border border-outline-variant/40 text-xs">
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroChip === 'todos' ? 'bg-primary-container text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroChip = 'todos'"
-            >
-              Todos ({{ candidatos.length }})
-            </button>
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroChip === 'vence48' ? 'bg-primary-container text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroChip = 'vence48'"
-            >
-              Vencimiento &lt; 48 hrs
-            </button>
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroChip === 'sobrestock' ? 'bg-primary-container text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroChip = 'sobrestock'"
-            >
-              Sobrestock / Lenta rotación
-            </button>
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroChip === 'lacteos' ? 'bg-primary-container text-white shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroChip = 'lacteos'"
-            >
-              Lácteos &amp; Frescos
-            </button>
-          </div>
-
-          <div class="relative">
-            <input
-              v-model="busqueda"
-              type="text"
-              placeholder="Buscar SKU, nombre..."
-              class="h-8 w-44 rounded-lg border border-outline-variant/60 bg-surface-container-low px-2.5 pl-8 text-xs text-on-surface focus:outline-none focus:border-primary-container"
-            />
-            <Icon name="search" :size="14" class="absolute left-2.5 top-2 text-outline" />
-          </div>
-        </div>
-      </div>
-
-      <!-- Tabla de Candidatos -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[980px]">
-          <thead>
-            <tr class="bg-surface-container-low border-b border-outline-variant/40 text-[11px] font-bold uppercase tracking-wider text-outline h-9">
-              <th class="w-10 px-3 text-center">
-                <input
-                  type="checkbox"
-                  :checked="seleccionados.size === candidatosFiltrados.length && candidatosFiltrados.length > 0"
-                  class="rounded text-primary-container"
-                  @change="toggleTodos"
-                />
-              </th>
-              <th class="py-2 px-3">Producto &amp; SKU</th>
-              <th class="py-2 px-3">Categoría &amp; Barcode</th>
-              <th class="py-2 px-3 text-right">Rotación Semanal</th>
-              <th class="py-2 px-3 text-right">Precio Normal</th>
-              <th class="py-2 px-3 text-right">Desc. Sugerido</th>
-              <th class="py-2 px-3 text-right">Precio Liquidación</th>
-              <th class="py-2 px-3 text-center">Estado POS</th>
-              <th class="py-2 px-3 text-center">Acción</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-outline-variant/25 text-xs text-on-surface">
-            <tr v-if="cargando">
-              <td colspan="9" class="py-8 text-center text-on-surface-variant">
-                <span class="inline-block animate-spin mr-2">⏳</span> Cargando candidatos a liquidación...
-              </td>
-            </tr>
-            <tr v-else-if="!candidatosFiltrados.length">
-              <td colspan="9" class="py-8 text-center text-on-surface-variant">
-                Sin candidatos a liquidación esta semana para la tienda seleccionada.
-              </td>
-            </tr>
-            <tr
-              v-for="c in candidatosFiltrados"
-              :key="c.candidato_id"
-              class="hover:bg-amber-50/30 transition-colors"
-              :class="seleccionados.has(c.candidato_id) ? 'bg-amber-50/50' : ''"
-            >
-              <td class="px-3 text-center">
-                <input
-                  type="checkbox"
-                  :checked="seleccionados.has(c.candidato_id)"
-                  class="rounded text-primary-container"
-                  @change="toggleSeleccion(c.candidato_id)"
-                />
-              </td>
-              <td class="py-3 px-3">
-                <div class="flex items-center gap-2.5">
-                  <img
-                    v-if="c.imagen_url"
-                    :src="c.imagen_url"
-                    alt="Producto"
-                    class="h-8 w-8 rounded-lg object-cover border border-outline-variant/50"
-                  />
-                  <div
-                    v-else
-                    class="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-container text-[11px] font-bold text-outline"
-                  >
-                    SKU
-                  </div>
-                  <div>
-                    <span class="font-semibold text-primary block text-xs">{{ c.product_nombre || `Producto #${c.product_id}` }}</span>
-                    <span class="text-[11px] font-mono text-outline">SKU-{{ c.product_id }}</span>
-                  </div>
-                </div>
-              </td>
-              <td class="py-3 px-3">
-                <div class="font-medium text-on-surface">{{ c.product_category || 'General' }}</div>
-                <div class="text-[10px] text-outline font-mono">{{ c.codigo_barras || 'Sin EAN' }}</div>
-              </td>
-              <td class="py-3 px-3 text-right">
-                <span class="font-mono font-semibold text-rose-700">{{ Number(c.rotacion_reciente_calculada).toFixed(1) }}</span>
-                <span class="text-[10px] text-outline ml-1">uds/sem</span>
-              </td>
-              <td class="py-3 px-3 text-right font-mono font-medium text-outline line-through">
-                {{ money(c.precio_base || 3.15) }}
-              </td>
-              <td class="py-3 px-3 text-right">
-                <span class="rounded bg-rose-100 px-1.5 py-0.5 text-[11px] font-bold text-rose-800">
-                  -{{ Math.round(Number(c.descuento_sugerido_pct)) }}%
-                </span>
-              </td>
-              <td class="py-3 px-3 text-right font-mono font-bold text-primary">
-                {{ money(c.precio_liquidacion || (Number(c.precio_base || 3.15) * (1 - Number(c.descuento_sugerido_pct) / 100))) }}
-              </td>
-              <td class="py-3 px-3 text-center">
-                <SemanticChip :tipo="c.estado === 'ejecutado' ? 'ok' : 'fifo'">
-                  {{ c.estado === 'ejecutado' ? 'En Liquidación' : 'Pendiente' }}
-                </SemanticChip>
-              </td>
-              <td class="py-3 px-3 text-center">
-                <Btn
-                  v-if="c.estado === 'candidato'"
-                  size="xs"
-                  variant="primary"
-                  @click="ejecutar(c)"
-                >
-                  Ejecutar POS
-                </Btn>
-                <span v-else class="text-[11px] text-emerald-700 font-semibold flex items-center justify-center gap-1">
-                  <Icon name="check" :size="12" /> Aplicado
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Barra de Acción Masiva Fija (cuando hay seleccionados) -->
-      <div
-        v-if="seleccionados.size > 0"
-        class="border-t border-amber-300 bg-amber-50 p-3 flex items-center justify-between shadow-xs"
-      >
-        <span class="text-xs font-semibold text-amber-950">
-          {{ seleccionados.size }} productos seleccionados para liquidación estratégica
-        </span>
+      <template #cell:producto="{ row }">
         <div class="flex items-center gap-2">
-          <button
-            class="rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
-            @click="seleccionados.clear()"
-          >
-            Cancelar selección
-          </button>
-          <button
-            class="rounded-lg bg-primary-container px-4 py-1.5 text-xs font-semibold text-white hover:bg-brand-900 shadow-xs flex items-center gap-1.5"
-            @click="ejecutarSeleccionados"
-          >
-            <Icon name="bolt" :size="14" class="text-amber-300" />
-            Ejecutar Liquidación en POS ({{ seleccionados.size }})
-          </button>
+          <img
+            v-if="row.imagen_url"
+            :src="row.imagen_url"
+            alt=""
+            class="h-8 w-8 shrink-0 rounded-lg border border-brand-100 object-cover"
+          />
+          <div class="leading-tight">
+            <div class="text-[12px] font-semibold text-slate-800">
+              {{ row.product_nombre || `Producto ${row.product_id}` }}
+            </div>
+            <div class="text-[10px] text-slate-400">
+              {{ row.product_category || 'General' }} · ID {{ row.product_id }}
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </template>
 
-    <!-- MODAL: CONFIGURAR REGLAS DE LIQUIDACIÓN -->
+      <template #cell:rotacion="{ row }">
+        <span class="tabular-nums text-[12px] font-semibold text-crimson-ruby">
+          {{ Number(row.rotacion_reciente_calculada).toFixed(1) }}
+        </span>
+        <span class="text-[10px] text-slate-400"> u/sem</span>
+      </template>
+
+      <template #cell:precio="{ row }">
+        <span class="text-[12px] text-slate-400 line-through">{{ money(row.precio_base) }}</span>
+        <span class="mx-1 text-slate-300">→</span>
+        <span class="text-[13px] font-bold text-brand-900">{{ money(row.precio_liquidacion) }}</span>
+      </template>
+
+      <template #cell:descuento="{ row }">
+        <SemanticChip tipo="quiebre">−{{ Math.round(Number(row.descuento_sugerido_pct)) }}%</SemanticChip>
+      </template>
+
+      <template #cell:estado="{ row }">
+        <SemanticChip :tipo="row.estado === 'ejecutado' ? 'ok' : 'fifo'">
+          {{ row.estado === 'ejecutado' ? 'En liquidación' : 'Por autorizar' }}
+        </SemanticChip>
+      </template>
+
+      <template #cell:acciones="{ row }">
+        <Btn
+          v-if="row.estado === 'candidato' && puedeEjecutar"
+          variant="primary"
+          class="!px-2.5 !py-1 !text-[12px]"
+          @click="ejecutar(row)"
+        >
+          <Icon name="bolt" :size="13" /> Autorizar
+        </Btn>
+        <span v-else-if="row.estado === 'ejecutado'" class="text-[11px] font-semibold text-emerald-700">
+          Aplicado
+        </span>
+        <span v-else class="text-[11px] text-slate-400">—</span>
+      </template>
+    </DataTable>
+
     <Modal
       v-if="modalRegla"
-      titulo="Reglas y Umbrales de Liquidación (Categoría C)"
-      ancho="max-w-md"
+      titulo="Regla de liquidación (categoría C)"
       @cerrar="modalRegla = false"
     >
-      <form class="space-y-4 text-xs" @submit.prevent="guardarRegla">
-        <p class="text-on-surface-variant">
-          El sistema evalúa semanalmente productos de baja rotación para sugerir su venta estratégica en cajas antes de merma.
-        </p>
-        <div>
-          <label class="font-semibold text-on-surface block mb-1">Rotación mínima aceptable (uds/semana)</label>
+      <p class="mb-4 text-[13px] text-slate-600">
+        El sistema evalúa cada semana los productos de baja rotación y sugiere su liquidación antes de
+        que caigan en merma.
+      </p>
+      <form class="space-y-4" @submit.prevent="guardarRegla">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Rotación mínima aceptable (u/semana) <span class="text-crimson-ruby">*</span>
           <input
             v-model="regla.rotacion_minima_liquidacion_semanal"
             type="number"
             step="0.1"
+            min="0"
             required
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface focus:border-primary-container focus:outline-none"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
-          <span class="text-[11px] text-outline">Por debajo de este valor el SKU se clasifica como candidato a markdown.</span>
-        </div>
-        <div>
-          <label class="font-semibold text-on-surface block mb-1">Descuento de liquidación sugerido (%)</label>
+          <span class="mt-1 block text-[11px] text-slate-500">
+            Por debajo de este valor el SKU se marca como candidato.
+          </span>
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Descuento de liquidación sugerido (%) <span class="text-crimson-ruby">*</span>
           <input
             v-model="regla.descuento_liquidacion_pct"
             type="number"
@@ -599,56 +429,59 @@ onMounted(cargar)
             min="1"
             max="90"
             required
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface focus:border-primary-container focus:outline-none"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
-          <span class="text-[11px] text-outline">Porcentaje sugerido de rebaja en precio de venta para góndola.</span>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-outline-variant/30">
-          <Btn variant="outline" type="button" @click="modalRegla = false">Cancelar</Btn>
-          <Btn variant="primary" type="submit">Guardar regla</Btn>
+        </label>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" @click="modalRegla = false">Cancelar</Btn>
+          <Btn variant="primary" type="submit" :disabled="guardando">
+            {{ guardando ? 'Guardando…' : 'Guardar regla' }}
+          </Btn>
         </div>
       </form>
     </Modal>
 
-    <!-- MODAL: AUDITORÍA DE CLASIFICACIÓN ABC -->
     <Modal
-      v-if="modalCambiosAbc"
-      titulo="Productos Reclasificados del Mes (Auditoría ABC)"
-      ancho="max-w-2xl"
-      @cerrar="modalCambiosAbc = false"
+      v-if="modalAbc"
+      titulo="Auditoría de reclasificación ABC"
+      size="lg"
+      @cerrar="modalAbc = false"
     >
-      <div class="space-y-3 text-xs">
-        <p class="text-on-surface-variant">
-          Registro histórico de cambios de clasificación según el principio de Pareto (80/15/5).
-        </p>
-        <div class="max-h-72 overflow-y-auto rounded-xl border border-outline-variant/30 bg-surface-container-low">
-          <table class="w-full text-left border-collapse">
-            <thead>
-              <tr class="border-b border-outline-variant/40 text-[11px] uppercase font-bold text-outline">
-                <th class="py-2 px-3">Producto</th>
-                <th class="py-2 px-3 text-center">Clasificación Anterior</th>
-                <th class="py-2 px-3 text-center">Nueva Clasificación</th>
-                <th class="py-2 px-3 text-right">Fecha</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-outline-variant/20">
-              <tr v-if="!cambiosAbc.length">
-                <td colspan="4" class="py-4 text-center text-on-surface-variant">Sin reclasificaciones en el período.</td>
-              </tr>
-              <tr v-for="(c, i) in cambiosAbc" :key="i" class="py-2">
-                <td class="py-2 px-3 font-semibold text-on-surface">SKU #{{ c.product_id }}</td>
-                <td class="py-2 px-3 text-center font-bold font-mono">{{ c.clasificacion_anterior || '—' }}</td>
-                <td class="py-2 px-3 text-center font-bold font-mono text-primary">{{ c.clasificacion_nueva }}</td>
-                <td class="py-2 px-3 text-right text-outline">{{ c.fecha || 'Reciente' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <div class="flex justify-end pt-2">
-          <Btn variant="outline" @click="modalCambiosAbc = false">Cerrar</Btn>
-        </div>
+      <p class="mb-3 text-[13px] text-slate-600">
+        Cambios de clasificación (principio de Pareto 80/15/5) del período.
+      </p>
+      <div class="max-h-80 overflow-y-auto rounded-xl border border-brand-200">
+        <table class="w-full text-left text-[13px]">
+          <thead>
+            <tr class="border-b border-brand-100 text-[11px] uppercase text-slate-400">
+              <th class="px-3 py-2">Producto</th>
+              <th class="px-3 py-2 text-center">Antes</th>
+              <th class="px-3 py-2 text-center">Ahora</th>
+              <th class="px-3 py-2 text-right">Fecha</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-100">
+            <tr v-if="!cambiosAbc.length">
+              <td colspan="4" class="px-3 py-6 text-center text-slate-400">
+                Sin reclasificaciones en el período.
+              </td>
+            </tr>
+            <tr v-for="(c, i) in cambiosAbc" :key="i">
+              <td class="px-3 py-1.5 font-medium text-slate-700">Producto #{{ c.product_id }}</td>
+              <td class="px-3 py-1.5 text-center font-mono">{{ c.clasificacion_anterior || '—' }}</td>
+              <td class="px-3 py-1.5 text-center font-mono font-bold text-brand-800">
+                {{ c.clasificacion_nueva }}
+              </td>
+              <td class="px-3 py-1.5 text-right text-slate-500">
+                {{ (c.fecha_calculo || '').slice(0, 10) || '—' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="flex justify-end pt-3">
+        <Btn variant="ghost" @click="modalAbc = false">Cerrar</Btn>
       </div>
     </Modal>
-  </main>
+  </div>
 </template>

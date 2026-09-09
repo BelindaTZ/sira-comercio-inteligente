@@ -31,6 +31,7 @@ from src.modules.compras.schemas import (
     ProveedorOut,
     ProveedorPatch,
     ReporteAutomaticoManual,
+    RespuestaProveedorIn,
     ResumenCuentasPorPagar,
     SugerenciaLinea,
 )
@@ -91,6 +92,11 @@ async def _orden_out(svc: ComprasService, orden) -> OrdenOut:
         total_neto=total_neto,
         cantidad_skus=len(lineas),
         total_unidades=total_unidades,
+        proveedor_confirmo=orden.proveedor_confirmo,
+        respuesta_proveedor=orden.respuesta_proveedor,
+        canal_respuesta=orden.canal_respuesta,
+        fecha_respuesta=orden.fecha_respuesta,
+        empleado_respuesta_id=orden.empleado_respuesta_id,
         lineas=lineas_out,
     )
 
@@ -122,6 +128,15 @@ async def sugerencias(
 
 
 # ------------------------------------------------------------------- proveedores
+@router.get("/proveedores", response_model=list[ProveedorOut])
+async def listar_proveedores(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ver_ops)]
+) -> list[ProveedorOut]:
+    """Proveedores activos — para el selector de la orden de compra (Principio XII:
+    no se teclea un id de proveedor a memoria)."""
+    return [ProveedorOut.model_validate(p) for p in await svc.listar_proveedores()]
+
+
 @router.post("/proveedores", status_code=status.HTTP_201_CREATED, response_model=ProveedorOut)
 async def crear_proveedor(
     data: ProveedorIn, svc: ServiceDep, _: Annotated[Principal, Depends(_proveedores)]
@@ -202,6 +217,28 @@ async def pedido_especial(
     _: Annotated[Principal, Depends(_ordenes_aprob)],
 ) -> OrdenOut:
     return await _orden_out(svc, await svc.pedido_especial(orden_id, data.motivo))
+
+
+@router.post("/ordenes/{orden_id}/respuesta-proveedor", response_model=OrdenOut)
+async def respuesta_proveedor(
+    orden_id: int,
+    data: RespuestaProveedorIn,
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ordenes_aprob)],
+) -> OrdenOut:
+    """Feature 018 — registra lo que el proveedor respondió a la orden (por correo,
+    WhatsApp, teléfono u otro medio). `aceptar` → `confirmada`; `rechazar` →
+    `rechazada`. Motivo obligatorio."""
+    return await _orden_out(
+        svc,
+        await svc.registrar_respuesta_proveedor(
+            orden_id,
+            decision=data.decision,
+            canal=data.canal,
+            motivo=data.motivo,
+            empleado_id=principal.empleado_id,
+        ),
+    )
 
 
 # ------------------------------------------------------------------- facturas

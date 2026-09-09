@@ -37,6 +37,12 @@ class ComprasRepository(BaseRepository[OrdenCompra]):
     def proveedores_query(self) -> Select:
         return select(Proveedor).order_by(Proveedor.nombre)
 
+    async def listar_proveedores(self, *, solo_activos: bool = True) -> list[Proveedor]:
+        stmt = select(Proveedor).order_by(Proveedor.nombre)
+        if solo_activos:
+            stmt = stmt.where(Proveedor.activo.is_(True))
+        return list((await self.session.scalars(stmt)).all())
+
     # --- órdenes ---
     async def get_orden_for_update(self, orden_id: int) -> OrdenCompra | None:
         stmt = select(OrdenCompra).where(OrdenCompra.orden_id == orden_id).with_for_update()

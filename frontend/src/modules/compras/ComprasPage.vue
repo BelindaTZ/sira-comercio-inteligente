@@ -1,14 +1,15 @@
 <script setup>
 /**
- * Abastecimiento Local & Órdenes de Compra (US3 / Feature 014).
- * Rediseño basado en `docs/diseno-ui/.../sira_rdenes_de_compra_abastecimiento_local/`:
- *  - Header ejecutivo con identidad de sucursal y acciones primarias.
- *  - 4 KpiTiles: Órdenes en Tránsito, Fill Rate, Gasto Compra Mes, Recepciones en Muelle.
- *  - Matriz de Órdenes de Compra con tabs de estado operativo, búsqueda y acciones.
- *  - Panel dual inferior: Sugerencias automáticas por algoritmo Min/Max (AI SIRA) + Bitácora y Cuentas por Pagar.
- *  - Modales in-app para creación de OC y visualización de líneas de detalle.
+ * Abastecimiento & Órdenes de Compra — feature 001 US3 (+ extensión 018:
+ * confirmación de la respuesta del proveedor). Arquetipo "Gestión" del kit ya
+ * implementado (mismo lenguaje que Datáfonos / Traslados / Inventario).
+ *
+ * Ciclo: crear solicitud (automática o especial) → aprobar internamente →
+ * registrar la respuesta del proveedor (un actor humano, con motivo obligatorio)
+ * → recibir mercadería (en Inventario) → factura y pago (Finanzas).
  */
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { comprasApi } from '@/services/comprasApi'
 import { inventarioApi } from '@/services/inventarioApi'
@@ -18,6 +19,7 @@ import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
+import DataTable from '@/shared/DataTable.vue'
 import FormularioOrdenCompra from './components/FormularioOrdenCompra.vue'
 import ResumenCuentasPorPagar from './components/ResumenCuentasPorPagar.vue'
 import ReporteComprasAutomaticoManual from './components/ReporteComprasAutomaticoManual.vue'
@@ -26,594 +28,708 @@ import FormularioFacturaProveedor from './components/FormularioFacturaProveedor.
 import FormularioPagoProveedor from './components/FormularioPagoProveedor.vue'
 
 const sesion = useSesion()
+const route = useRoute()
+const router = useRouter()
 const tiendaId = computed(() => sesion.tiendaId ?? 1)
 const empleadoId = computed(() => sesion.empleadoId ?? 1)
+const puedeOperar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Operaciones', 'ordenes_compra'),
+)
+const puedeFinanzas = computed(() => sesion.puedeLeerTabla('Finanzas', 'facturas_proveedor'))
+
+const ESTADO = {
+  pendiente: { tipo: 'fifo', txt: 'Pendiente de aprobación' },
+  aprobada: { tipo: 'neutral', txt: 'Enviada al proveedor' },
+  confirmada: { tipo: 'ia', txt: 'Confirmada por proveedor' },
+  recibida: { tipo: 'ok', txt: 'Recibida' },
+  rechazada: { tipo: 'quiebre', txt: 'Rechazada por proveedor' },
+  cancelada: { tipo: 'neutral', txt: 'Cancelada' },
+}
+const CANALES = [
+  { v: 'correo', t: 'Correo electrónico' },
+  { v: 'whatsapp', t: 'WhatsApp' },
+  { v: 'telefono', t: 'Teléfono' },
+  { v: 'presencial', t: 'Presencial' },
+  { v: 'otro', t: 'Otro' },
+]
 
 const ordenes = ref([])
 const sugerencias = ref([])
-const alertas = ref([])
 const cargando = ref(false)
 const error = ref('')
 const aviso = ref('')
 
-const tabEstado = ref('todas') // 'todas' | 'transito' | 'pendiente' | 'recibida'
-const filtroOrigen = ref('todos') // 'todos' | 'cd' | 'dsd'
 const busqueda = ref('')
+const pill = ref('')
+const page = ref(1)
+const size = ref(15)
 
-// Modales
 const modalCrear = ref(false)
-const ordenSeleccionada = ref(null)
+const prefillOrden = ref(null)
+const ordenDetalle = ref(null)
+const modalRespuesta = ref(null) // orden
+const modalRecibir = ref(null) // orden
+const lineasRecibir = ref([])
+const recibiendo = ref(false)
 const mostrarFinanzas = ref(false)
+
+const formResp = reactive({ decision: 'aceptar', canal: 'correo', motivo: '' })
+const enviandoResp = ref(false)
 
 const money = (v) =>
   v == null
     ? '—'
-    : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+    : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
-async function cargarDatos() {
+function msg(e) {
+  return e.response?.data?.error?.message || e.message || 'No se pudo completar la operación.'
+}
+
+async function cargar() {
   cargando.value = true
   error.value = ''
   try {
-    const [listaOrdenes, listaSugerencias, listaAlertas] = await Promise.all([
-      comprasApi.ordenes({ tiendaId: tiendaId.value }).catch(() => []),
+    const [lo, ls] = await Promise.all([
+      comprasApi.ordenes({ tiendaId: tiendaId.value }),
       comprasApi.sugerencias(tiendaId.value).catch(() => []),
-      inventarioApi.alertas({ tiendaId: tiendaId.value }).catch(() => ({ items: [] })),
     ])
-    ordenes.value = listaOrdenes || []
-    sugerencias.value = listaSugerencias || []
-    alertas.value = listaAlertas?.items || []
+    ordenes.value = lo || []
+    sugerencias.value = ls || []
   } catch (e) {
-    error.value = e.message || 'Error al sincronizar con abastecimiento'
+    error.value = msg(e)
   } finally {
     cargando.value = false
   }
 }
 
-// Métricas de KPIs
-const kpiTransito = computed(() => ordenes.value.filter((o) => o.estado === 'aprobada').length)
-const kpiPendientes = computed(() => ordenes.value.filter((o) => o.estado === 'pendiente').length)
-const kpiGastoMes = computed(() => {
-  const ahora = new Date()
-  const mesActual = ahora.toISOString().slice(0, 7)
-  return ordenes.value
-    .filter((o) => (o.fecha || '').startsWith(mesActual) && o.estado !== 'cancelada')
-    .reduce((sum, o) => sum + Number(o.total_neto || 0), 0)
+const kpi = computed(() => {
+  const d = ordenes.value
+  const por = (e) => d.filter((o) => o.estado === e).length
+  const mes = new Date().toISOString().slice(0, 7)
+  const gastoMes = d
+    .filter((o) => (o.fecha || '').startsWith(mes) && !['cancelada', 'rechazada'].includes(o.estado))
+    .reduce((s, o) => s + Number(o.total_neto || 0), 0)
+  return {
+    total: d.length,
+    pendientes: por('pendiente'),
+    enviadas: por('aprobada'),
+    confirmadas: por('confirmada'),
+    recibidas: por('recibida'),
+    rechazadas: por('rechazada') + por('cancelada'),
+    gastoMes,
+  }
 })
 
-// Filtrado de la matriz
-const ordenesFiltradas = computed(() => {
+const pills = computed(() => [
+  { value: '', label: 'Todas', count: kpi.value.total },
+  { value: 'pendiente', label: 'Pendientes', count: kpi.value.pendientes },
+  { value: 'aprobada', label: 'Enviadas al proveedor', count: kpi.value.enviadas },
+  { value: 'confirmada', label: 'Confirmadas', count: kpi.value.confirmadas },
+  { value: 'recibida', label: 'Recibidas', count: kpi.value.recibidas },
+  { value: 'cerradas', label: 'Rechazadas / canceladas', count: kpi.value.rechazadas },
+])
+
+const columnas = [
+  { key: 'ref', label: 'Orden', width: '110px' },
+  { key: 'proveedor', label: 'Tipo / Proveedor' },
+  { key: 'carga', label: 'Carga', width: '110px' },
+  { key: 'monto', label: 'Monto neto', align: 'right', width: '120px' },
+  { key: 'estado', label: 'Estado', align: 'center', width: '170px' },
+  { key: 'acciones', label: '', align: 'right', width: '220px' },
+]
+
+const filtradas = computed(() => {
+  const q = busqueda.value.trim().toLowerCase()
   return ordenes.value.filter((o) => {
-    // Filtro por tab de estado
-    if (tabEstado.value === 'transito' && o.estado !== 'aprobada') return false
-    if (tabEstado.value === 'pendiente' && o.estado !== 'pendiente') return false
-    if (tabEstado.value === 'recibida' && o.estado !== 'recibida') return false
-
-    // Filtro por origen (CD vs DSD)
-    const prov = (o.proveedor_nombre || '').toLowerCase()
-    if (filtroOrigen.value === 'cd' && !prov.includes('cd ') && !prov.includes('central') && !prov.includes('boza')) {
-      return false
-    }
-    if (filtroOrigen.value === 'dsd' && (prov.includes('cd ') || prov.includes('central') || prov.includes('boza'))) {
-      return false
-    }
-
-    // Búsqueda
-    if (busqueda.value.trim()) {
-      const q = busqueda.value.toLowerCase()
-      const matchId = String(o.orden_id).includes(q)
-      const matchProv = (o.proveedor_nombre || '').toLowerCase().includes(q)
-      const matchTipo = (o.tipo || '').toLowerCase().includes(q)
-      if (!matchId && !matchProv && !matchTipo) return false
-    }
-    return true
+    if (pill.value === 'cerradas') {
+      if (!['rechazada', 'cancelada'].includes(o.estado)) return false
+    } else if (pill.value && o.estado !== pill.value) return false
+    if (!q) return true
+    return (
+      String(o.orden_id).includes(q) ||
+      (o.proveedor_nombre || '').toLowerCase().includes(q) ||
+      (o.tipo || '').toLowerCase().includes(q)
+    )
   })
 })
+const filas = computed(() =>
+  filtradas.value.slice((page.value - 1) * size.value, page.value * size.value),
+)
 
-async function aprobar(ordenId) {
+async function aprobar(orden) {
+  error.value = ''
+  aviso.value = ''
   try {
-    await comprasApi.aprobarOrden(ordenId)
-    aviso.value = `Orden #${ordenId} aprobada con éxito.`
-    await cargarDatos()
+    await comprasApi.aprobarOrden(orden.orden_id)
+    aviso.value = `Orden #${orden.orden_id} aprobada internamente. Envíala al proveedor y registra su respuesta.`
+    if (ordenDetalle.value?.orden_id === orden.orden_id) ordenDetalle.value = null
+    await cargar()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   }
+}
+
+function abrirRespuesta(orden) {
+  Object.assign(formResp, { decision: 'aceptar', canal: 'correo', motivo: '' })
+  modalRespuesta.value = orden
+  ordenDetalle.value = null
+}
+
+async function enviarRespuesta() {
+  if (!formResp.motivo.trim()) return
+  enviandoResp.value = true
+  error.value = ''
+  try {
+    const r = await comprasApi.respuestaProveedor(modalRespuesta.value.orden_id, {
+      decision: formResp.decision,
+      canal: formResp.canal,
+      motivo: formResp.motivo.trim(),
+    })
+    modalRespuesta.value = null
+    aviso.value =
+      r.estado === 'confirmada'
+        ? `El proveedor confirmó la orden #${r.orden_id}. Lista para recepción en Inventario.`
+        : `Orden #${r.orden_id} marcada como rechazada por el proveedor.`
+    await cargar()
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    enviandoResp.value = false
+  }
+}
+
+function abrirRecibir(orden) {
+  lineasRecibir.value = (orden.lineas || []).map((l) => ({
+    product_id: l.product_id,
+    nombre: l.product_nombre || `Producto ${l.product_id}`,
+    cantidad: l.cantidad,
+    fecha_vencimiento: '',
+    codigo_lote: '',
+  }))
+  modalRecibir.value = orden
+  ordenDetalle.value = null
+}
+
+async function registrarRecepcion() {
+  recibiendo.value = true
+  error.value = ''
+  try {
+    for (const l of lineasRecibir.value) {
+      if (Number(l.cantidad) <= 0) continue
+      await inventarioApi.recepcion({
+        ordenId: modalRecibir.value.orden_id,
+        productId: l.product_id,
+        tiendaId: tiendaId.value,
+        cantidad: Number(l.cantidad),
+        fechaVencimiento: l.fecha_vencimiento || null,
+        codigoLoteProveedor: l.codigo_lote || null,
+      })
+    }
+    modalRecibir.value = null
+    aviso.value = 'Recepción registrada. El stock de la tienda se actualizó por FIFO.'
+    await cargar()
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    recibiendo.value = false
+  }
+}
+
+function ordenCreada(orden) {
+  modalCrear.value = false
+  prefillOrden.value = null
+  aviso.value = `Solicitud de pedido #${orden.orden_id} creada (${orden.tipo === 'especial' ? 'especial' : 'automática'}).`
+  cargar()
+}
+
+function pedirDeSugerencia() {
+  prefillOrden.value = null
+  modalCrear.value = true
+}
+
+function pedirProducto(s) {
+  prefillOrden.value = {
+    product_id: s.product_id,
+    nombre: s.nombre || `Producto ${s.product_id}`,
+    cantidad: s.cantidad_sugerida,
+  }
+  modalCrear.value = true
 }
 
 async function correrJobs() {
   aviso.value = ''
+  error.value = ''
   try {
     const r = await inventarioApi.jobReposicion(tiendaId.value)
-    const v = await inventarioApi.jobVencimiento(tiendaId.value)
-    aviso.value = `Jobs ejecutados: reposición (${r.alertas_generadas.length}) · vencimiento (${v.alertas_generadas.length})`
-    await cargarDatos()
+    aviso.value = `Job de reposición ejecutado: ${r.alertas_generadas.length} alerta(s).`
+    await cargar()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   }
 }
 
-function verDetalle(orden) {
-  ordenSeleccionada.value = orden
-}
-
-function ordenCreada() {
-  modalCrear.value = false
-  aviso.value = 'Orden de compra creada exitosamente.'
-  cargarDatos()
-}
-
-onMounted(cargarDatos)
+onMounted(async () => {
+  await cargar()
+  // "Solicitar reposición" desde Inventario abre esta pantalla con el pedido casi listo
+  const pid = Number(route.query.nuevaOrden)
+  if (pid) {
+    const s = sugerencias.value.find((x) => x.product_id === pid)
+    prefillOrden.value = {
+      product_id: pid,
+      nombre: s?.nombre || `Producto ${pid}`,
+      cantidad: s?.cantidad_sugerida || 1,
+    }
+    modalCrear.value = true
+    router.replace({ query: {} })
+  }
+})
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-[1720px] px-4 py-6 sm:px-6 lg:px-8 space-y-6">
-    <!-- 1. ENCABEZADO Y ACCIONES PRINCIPALES -->
+  <div class="mx-auto max-w-[1560px] px-6 py-8 lg:px-8">
     <PageHeader
-      titulo="Abastecimiento Local &amp; Órdenes de Compra"
-      subtitulo="Coordinación logística de entradas en muelle, pedidos sugeridos por modelo Min/Max y seguimiento directo a CD y proveedores DSD."
+      titulo="Abastecimiento & órdenes de compra"
+      subtitulo="Solicitudes de pedido automáticas y especiales, confirmación de la respuesta del proveedor y seguimiento hasta la recepción en tienda."
     >
       <template #badge>
-        <span
-          class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800"
-        >
-          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          Sucursal #{{ tiendaId }} • Providencia
-        </span>
+        <SemanticChip :tipo="kpi.pendientes > 0 ? 'fifo' : 'ok'">
+          {{ kpi.pendientes > 0 ? `${kpi.pendientes} por aprobar` : 'Sin pendientes' }}
+        </SemanticChip>
       </template>
-
       <template #acciones>
-        <Btn variant="outline" @click="correrJobs">
-          <Icon name="refresh" :size="16" /> Ejecutar jobs Min/Max
+        <Btn v-if="puedeOperar" variant="ghost" @click="correrJobs">
+          <Icon name="cog" :size="16" /> Recalcular sugerencia
         </Btn>
-        <Btn variant="outline" @click="mostrarFinanzas = !mostrarFinanzas">
-          <Icon name="card" :size="16" />
-          {{ mostrarFinanzas ? 'Ocultar Cuentas por Pagar' : 'Cuentas por Pagar' }}
+        <Btn
+          v-if="puedeFinanzas"
+          variant="ghost"
+          @click="mostrarFinanzas = !mostrarFinanzas"
+        >
+          <Icon name="bank" :size="16" />
+          {{ mostrarFinanzas ? 'Ocultar cuentas por pagar' : 'Cuentas por pagar' }}
         </Btn>
-        <Btn variant="primary" @click="modalCrear = true">
-          <Icon name="plus" :size="16" /> + Crear Solicitud de Pedido
+        <Btn v-if="puedeOperar" variant="primary" @click="pedirDeSugerencia">
+          <Icon name="plus" :size="17" /> Crear solicitud de pedido
         </Btn>
+        <span
+          v-if="!puedeOperar"
+          class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600"
+        >
+          <Icon name="shield" :size="14" /> Solo lectura
+        </span>
       </template>
     </PageHeader>
 
-    <!-- ALERTAS O AVISOS -->
-    <div
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
+      {{ error }}
+    </p>
+    <p
       v-if="aviso"
-      class="flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-xs"
+      class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
     >
-      <div class="flex items-center gap-2">
-        <Icon name="check" :size="18" class="text-emerald-600" />
-        <span>{{ aviso }}</span>
-      </div>
-      <button class="text-emerald-700 hover:text-emerald-950 font-bold" @click="aviso = ''">✕</button>
-    </div>
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''">
+        <Icon name="x" :size="14" />
+      </button>
+    </p>
 
-    <div
-      v-if="error"
-      class="flex items-center justify-between rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 shadow-xs"
-    >
-      <div class="flex items-center gap-2">
-        <Icon name="alert" :size="18" class="text-rose-600" />
-        <span>{{ error }}</span>
-      </div>
-      <button class="text-rose-700 hover:text-rose-950 font-bold" @click="error = ''">✕</button>
-    </div>
-
-    <!-- 2. TARJETAS DE KPIS PRINCIPALES -->
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <KpiTile
-        label="Órdenes en Tránsito"
-        :valor="`${kpiTransito} OC`"
-        microcopy="Aprobadas con despacho en ruta"
-        estado="En ruta a sucursal"
+        label="Pendientes de aprobación"
+        :valor="kpi.pendientes.toLocaleString('es-EC')"
+        variant="emerald"
+        microcopy="Solicitudes creadas que aún no se aprueban internamente"
+        pie-label="Órdenes registradas"
+        :pie-valor="`${kpi.total} en total`"
+      />
+      <KpiTile
+        label="Esperando al proveedor"
+        :valor="kpi.enviadas.toLocaleString('es-EC')"
+        :estado-tipo="kpi.enviadas > 0 ? 'fifo' : 'ok'"
+        microcopy="Aprobadas — falta registrar la respuesta del proveedor"
+      >
+        <template #icono><Icon name="megaphone" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="Confirmadas por proveedor"
+        :valor="kpi.confirmadas.toLocaleString('es-EC')"
         estado-tipo="ia"
-        pie-label="CD Central / DSD"
-        :pie-valor="`${ordenes.length} registradas`"
+        microcopy="El proveedor aceptó el pedido; listas para recepción"
       >
-        <template #icono><Icon name="truck" :size="18" /></template>
+        <template #icono><Icon name="check" :size="16" /></template>
       </KpiTile>
-
       <KpiTile
-        label="Fill Rate Proveedores"
-        valor="96.4%"
-        microcopy="Cumplimiento de entrega en muelle"
-        estado="+1.8%"
-        estado-tipo="ok"
-        pie-label="SLA cumplido"
-        pie-valor="vs 94.6% mes anterior"
-      >
-        <template #icono><Icon name="chart" :size="18" /></template>
-      </KpiTile>
-
-      <KpiTile
-        label="Gasto Compra Mes"
-        :valor="money(kpiGastoMes || 4540.00)"
-        microcopy="Órdenes valorizadas en el mes"
-        estado="82% prep."
+        label="Gasto de compra del mes"
+        :valor="money(kpi.gastoMes)"
         estado-tipo="neutral"
-        pie-label="Presupuesto ejecutado"
-        pie-valor="Conforme a cupo"
+        :microcopy="`${kpi.recibidas} orden(es) recibida(s) este período`"
       >
-        <template #icono><Icon name="tag" :size="18" /></template>
-      </KpiTile>
-
-      <KpiTile
-        label="Recepciones Pendientes"
-        :valor="`${kpiPendientes} OC`"
-        microcopy="Pendientes de validación y aprobación"
-        :estado="kpiPendientes > 0 ? 'Requiere atención' : 'Al día'"
-        :estado-tipo="kpiPendientes > 0 ? 'fifo' : 'ok'"
-        pie-label="Ventana de muelle"
-        pie-valor="Hoy 09:30 y 14:00"
-      >
-        <template #icono><Icon name="clock" :size="18" /></template>
+        <template #icono><Icon name="tag" :size="16" /></template>
       </KpiTile>
     </section>
 
-    <!-- 3. MATRIZ DE SEGUIMIENTO EN TIEMPO REAL -->
-    <section class="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest shadow-xs overflow-hidden">
-      <!-- Toolbar y Filtros -->
-      <div class="flex flex-col gap-3 border-b border-outline-variant/30 p-4 lg:flex-row lg:items-center lg:justify-between">
-        <!-- Status Tabs -->
-        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0">
-          <button
-            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0"
-            :class="tabEstado === 'todas' ? 'bg-primary-container text-white shadow-xs' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'"
-            @click="tabEstado = 'todas'"
-          >
-            Todas ({{ ordenes.length }})
-          </button>
-          <button
-            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0"
-            :class="tabEstado === 'transito' ? 'bg-primary-container text-white shadow-xs' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'"
-            @click="tabEstado = 'transito'"
-          >
-            En Tránsito / Despachadas ({{ kpiTransito }})
-          </button>
-          <button
-            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0"
-            :class="tabEstado === 'pendiente' ? 'bg-primary-container text-white shadow-xs' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'"
-            @click="tabEstado = 'pendiente'"
-          >
-            Pendientes Aprobación ({{ kpiPendientes }})
-          </button>
-          <button
-            class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors shrink-0"
-            :class="tabEstado === 'recibida' ? 'bg-primary-container text-white shadow-xs' : 'bg-surface-container-low text-on-surface-variant hover:bg-surface-container'"
-            @click="tabEstado = 'recibida'"
-          >
-            Completadas / En Muelle
-          </button>
-        </div>
-
-        <!-- Filtros secundarios & Búsqueda -->
-        <div class="flex flex-wrap items-center gap-2.5">
-          <div class="inline-flex rounded-xl bg-surface-container p-0.5 text-xs border border-outline-variant/40">
-            <button
-              class="rounded-lg px-2.5 py-1 font-medium transition-colors"
-              :class="filtroOrigen === 'todos' ? 'bg-surface-container-lowest text-primary-container font-semibold shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroOrigen = 'todos'"
-            >
-              Todos los orígenes
-            </button>
-            <button
-              class="rounded-lg px-2.5 py-1 font-medium transition-colors"
-              :class="filtroOrigen === 'cd' ? 'bg-surface-container-lowest text-primary-container font-semibold shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroOrigen = 'cd'"
-            >
-              CD Lo Boza
-            </button>
-            <button
-              class="rounded-lg px-2.5 py-1 font-medium transition-colors"
-              :class="filtroOrigen === 'dsd' ? 'bg-surface-container-lowest text-primary-container font-semibold shadow-xs' : 'text-on-surface-variant hover:text-on-surface'"
-              @click="filtroOrigen = 'dsd'"
-            >
-              DSD Directos
-            </button>
-          </div>
-
-          <div class="relative">
-            <input
-              v-model="busqueda"
-              type="text"
-              placeholder="Buscar OC, proveedor..."
-              class="h-8 w-48 rounded-lg border border-outline-variant/60 bg-surface-container-low px-2.5 pl-8 text-xs text-on-surface focus:outline-none focus:border-primary-container"
-            />
-            <Icon name="search" :size="14" class="absolute left-2.5 top-2 text-outline" />
-          </div>
-
-          <button
-            class="p-1.5 rounded-lg border border-outline-variant/50 text-on-surface-variant hover:bg-surface-container"
-            title="Recargar órdenes"
-            @click="cargarDatos"
-          >
-            <Icon name="refresh" :size="16" />
-          </button>
-        </div>
+    <!-- Sugerencias del sistema -->
+    <section v-if="sugerencias.length" class="satin-card mb-6 rounded-2xl p-5 shadow-card-subtle">
+      <div class="mb-3 flex items-center gap-2">
+        <Icon name="chart" :size="16" class="text-brand-700" />
+        <h2 class="font-display text-base font-bold text-brand-950">
+          Sugerencia semanal del sistema
+        </h2>
+        <SemanticChip tipo="neutral">{{ sugerencias.length }} productos bajo su punto</SemanticChip>
       </div>
-
-      <!-- Tabla de Datos de Alta Densidad -->
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[900px]">
-          <thead>
-            <tr class="bg-surface-container-low border-b border-outline-variant/40 text-[11px] font-bold uppercase tracking-wider text-outline h-9">
-              <th class="py-2.5 px-4">N° OC &amp; Emisión</th>
-              <th class="py-2.5 px-4">Tipo &amp; Proveedor</th>
-              <th class="py-2.5 px-4">Carga (SKUs / Uds)</th>
-              <th class="py-2.5 px-4 text-right">Monto Neto</th>
-              <th class="py-2.5 px-4">Estado Operativo</th>
-              <th class="py-2.5 px-4 text-center">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-outline-variant/25 text-xs text-on-surface">
-            <tr v-if="cargando">
-              <td colspan="6" class="py-8 text-center text-on-surface-variant">
-                <span class="inline-block animate-spin mr-2">⏳</span> Cargando órdenes de compra...
-              </td>
-            </tr>
-            <tr v-else-if="!ordenesFiltradas.length">
-              <td colspan="6" class="py-8 text-center text-on-surface-variant">
-                No se encontraron órdenes de compra para el filtro seleccionado.
-              </td>
-            </tr>
-            <tr
-              v-for="o in ordenesFiltradas"
-              :key="o.orden_id"
-              class="hover:bg-surface-container-low/50 transition-colors"
-            >
-              <td class="py-3 px-4">
-                <div class="font-bold text-primary font-mono text-[13px]">OC-{{ String(o.orden_id).padStart(5, '0') }}</div>
-                <div class="text-[11px] text-on-surface-variant">{{ o.fecha || 'Hoy' }}</div>
-              </td>
-              <td class="py-3 px-4">
-                <div class="flex items-center gap-1.5">
-                  <span
-                    v-if="(o.proveedor_nombre || '').toLowerCase().includes('cd') || (o.proveedor_nombre || '').toLowerCase().includes('boza')"
-                    class="rounded px-1.5 py-0.5 text-[10px] font-bold bg-primary/10 text-primary border border-primary/20"
-                  >
-                    CD CENTRAL
-                  </span>
-                  <span
-                    v-else
-                    class="rounded px-1.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200"
-                  >
-                    DSD DIRECTO
-                  </span>
-                  <span class="font-semibold text-on-surface">{{ o.proveedor_nombre || `Proveedor #${o.proveedor_id}` }}</span>
-                </div>
-                <div class="text-[11px] text-on-surface-variant">
-                  {{ o.tipo === 'especial' ? 'Pedido Especial' : 'Reabastecimiento Planificado' }}
-                  <span v-if="o.motivo_desviacion" class="italic text-amber-700">· {{ o.motivo_desviacion }}</span>
-                </div>
-              </td>
-              <td class="py-3 px-4">
-                <div class="font-medium text-on-surface">{{ o.cantidad_skus ?? o.lineas?.length ?? 1 }} SKUs</div>
-                <div class="text-[11px] text-on-surface-variant">{{ o.total_unidades ?? '—' }} unidades</div>
-              </td>
-              <td class="py-3 px-4 text-right">
-                <div class="font-bold font-mono text-on-surface">{{ money(o.total_neto) }}</div>
-                <span class="text-[10px] text-outline">Neto</span>
-              </td>
-              <td class="py-3 px-4">
-                <SemanticChip
-                  :tipo="
-                    o.estado === 'aprobada' ? 'ia' :
-                    o.estado === 'recibida' ? 'ok' :
-                    o.estado === 'pendiente' ? 'fifo' : 'neutral'
-                  "
-                >
-                  {{
-                    o.estado === 'aprobada' ? 'En Tránsito' :
-                    o.estado === 'recibida' ? 'En Muelle / Recibida' :
-                    o.estado === 'pendiente' ? 'Pendiente Aprobación' : o.estado
-                  }}
-                </SemanticChip>
-              </td>
-              <td class="py-3 px-4 text-center">
-                <div class="flex items-center justify-center gap-1.5">
-                  <Btn
-                    v-if="o.estado === 'pendiente'"
-                    size="xs"
-                    variant="primary"
-                    @click="aprobar(o.orden_id)"
-                  >
-                    Aprobar
-                  </Btn>
-                  <RouterLink
-                    v-else-if="o.estado === 'aprobada'"
-                    to="/inventario"
-                    class="rounded-lg bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 border border-emerald-200 hover:bg-emerald-100"
-                  >
-                    Recibir
-                  </RouterLink>
-                  <Btn size="xs" variant="outline" @click="verDetalle(o)">
-                    <Icon name="chevron" :size="12" class="-rotate-90" /> Detalle
-                  </Btn>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="border-t border-outline-variant/30 bg-surface-container-low px-4 py-2 text-xs text-on-surface-variant flex items-center justify-between">
-        <span>Mostrando <strong>{{ ordenesFiltradas.length }}</strong> órdenes</span>
-        <span class="text-[11px] text-outline">Sincronizado con base de datos central SIRA</span>
-      </div>
-    </section>
-
-    <!-- 4. SECCIÓN INFERIOR ASIMÉTRICA: SUGERENCIAS MIN/MAX + BITÁCORA Y FINANZAS -->
-    <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <!-- PANEL IZQUIERDO: SUGERENCIAS ALGORÍTMICAS MIN/MAX (7 COLS) -->
-      <div class="lg:col-span-7 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-xs flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between pb-3 border-b border-outline-variant/30 mb-4">
-            <div class="flex items-center gap-2">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
-                <Icon name="sparkles" :size="16" />
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-primary">Sugerencias Automáticas por Algoritmo Min/Max</h3>
-                <p class="text-[12px] text-on-surface-variant">Predicción de quiebre en Providencia Express</p>
-              </div>
+      <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+        <div
+          v-for="s in sugerencias.slice(0, 6)"
+          :key="s.product_id"
+          class="flex items-center justify-between rounded-xl border border-brand-200 bg-white px-3 py-2"
+        >
+          <div class="min-w-0">
+            <div class="truncate text-[12px] font-semibold text-slate-800">
+              {{ s.nombre || `Producto ${s.product_id}` }}
             </div>
-            <span class="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-bold text-purple-800 border border-purple-200">
-              Motor SIRA AI
+            <div class="text-[11px] text-slate-500">
+              stock {{ s.cantidad_disponible }} · punto {{ s.punto_reposicion }} ·
+              <span class="font-semibold text-brand-800">sugerido +{{ s.cantidad_sugerida }}</span>
+            </div>
+          </div>
+          <Btn
+            v-if="puedeOperar"
+            variant="ghost"
+            class="!px-2.5 !py-1 !text-[12px]"
+            @click="pedirProducto(s)"
+          >
+            Pedir
+          </Btn>
+        </div>
+      </div>
+    </section>
+
+    <DataTable
+      titulo="Órdenes de compra"
+      subtitulo="Ciclo completo: solicitud → aprobación → respuesta del proveedor → recepción."
+      :columns="columnas"
+      :rows="filas"
+      row-key="orden_id"
+      :loading="cargando"
+      densa
+      :page="page"
+      :size="size"
+      :total="filtradas.length"
+      :search="busqueda"
+      search-placeholder="Orden, proveedor o tipo…"
+      :pills="pills"
+      :pill-activa="pill"
+      empty-text="No hay órdenes de compra"
+      @update:page="page = $event"
+      @update:size="((size = $event), (page = 1))"
+      @update:search="((busqueda = $event), (page = 1))"
+      @pill="((pill = $event), (page = 1))"
+    >
+      <template #cell:ref="{ row }">
+        <div class="leading-tight">
+          <div class="font-mono text-[12px] font-semibold text-slate-800">
+            OC-{{ String(row.orden_id).padStart(4, '0') }}
+          </div>
+          <div class="text-[10px] text-slate-400">{{ row.fecha }}</div>
+        </div>
+      </template>
+
+      <template #cell:proveedor="{ row }">
+        <div class="leading-tight">
+          <div class="flex items-center gap-1.5">
+            <span
+              class="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase"
+              :class="row.tipo === 'especial' ? 'bg-amethyst-100 text-amethyst-800' : 'bg-brand-100 text-brand-800'"
+            >
+              {{ row.tipo === 'especial' ? 'Especial' : 'Automática' }}
+            </span>
+            <span class="text-[12px] font-semibold text-slate-800">
+              {{ row.proveedor_nombre || `Proveedor ${row.proveedor_id}` }}
             </span>
           </div>
-
-          <!-- Lista de ítems críticos sugeridos -->
-          <div class="space-y-3">
-            <div
-              v-if="!sugerencias.length"
-              class="rounded-xl border border-dashed border-outline-variant/50 p-6 text-center text-xs text-on-surface-variant"
-            >
-              No hay quiebres inminentes detectados por el modelo en esta sucursal.
-            </div>
-            <div
-              v-for="s in sugerencias.slice(0, 4)"
-              :key="s.product_id"
-              class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-outline-variant/30 bg-surface-container-low/70 p-3 hover:border-secondary/30 transition-all"
-            >
-              <div class="flex items-center gap-3">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-outline-variant/40 text-primary font-bold text-xs">
-                  #{{ s.product_id }}
-                </div>
-                <div>
-                  <div class="flex items-center gap-2">
-                    <span class="font-semibold text-on-surface text-xs">SKU #{{ s.product_id }}</span>
-                    <span class="rounded px-1.5 py-0.2 text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                      Bajo stock
-                    </span>
-                  </div>
-                  <div class="text-[11px] text-on-surface-variant flex items-center gap-2">
-                    <span>Stock actual: <strong>{{ s.cantidad_disponible }} un</strong></span>
-                    <span>•</span>
-                    <span>Punto reposición: <strong>{{ s.punto_reposicion }} un</strong></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-2 self-end sm:self-center">
-                <span class="rounded-lg bg-secondary/10 px-2 py-1 text-[11px] font-bold text-secondary">
-                  Sugerido +{{ s.cantidad_sugerida }} un
-                </span>
-                <Btn size="xs" variant="primary" @click="modalCrear = true">
-                  Pedir
-                </Btn>
-              </div>
-            </div>
+          <div v-if="row.motivo_desviacion" class="mt-0.5 text-[10px] italic text-amber-700">
+            {{ row.motivo_desviacion }}
           </div>
         </div>
+      </template>
 
-        <div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-xs text-on-surface-variant">
-          <span>Basado en velocidad de rotación y estacionalidad local.</span>
-          <button class="font-bold text-secondary hover:underline flex items-center gap-1" @click="modalCrear = true">
-            Emitir pedido completo →
+      <template #cell:carga="{ row }">
+        <div class="text-[12px] text-slate-700">{{ row.cantidad_skus ?? row.lineas?.length ?? '—' }} SKUs</div>
+        <div class="text-[10px] text-slate-400">{{ row.total_unidades ?? '—' }} u</div>
+      </template>
+
+      <template #cell:monto="{ row }">
+        <span class="tabular-nums text-[13px] font-bold text-slate-900">{{ money(row.total_neto) }}</span>
+      </template>
+
+      <template #cell:estado="{ row }">
+        <SemanticChip :tipo="ESTADO[row.estado]?.tipo || 'neutral'">
+          {{ ESTADO[row.estado]?.txt || row.estado }}
+        </SemanticChip>
+        <div
+          v-if="row.respuesta_proveedor"
+          class="mt-1 text-[10px] leading-tight text-slate-500"
+          :title="row.respuesta_proveedor"
+        >
+          {{ row.canal_respuesta }}: {{ row.respuesta_proveedor }}
+        </div>
+      </template>
+
+      <template #cell:acciones="{ row }">
+        <div class="flex items-center justify-end gap-1 whitespace-nowrap">
+          <Btn
+            v-if="row.estado === 'pendiente' && puedeOperar"
+            variant="primary"
+            class="!px-2.5 !py-1 !text-[12px]"
+            @click="aprobar(row)"
+          >
+            <Icon name="check" :size="13" /> Aprobar
+          </Btn>
+          <Btn
+            v-if="row.estado === 'aprobada' && puedeOperar"
+            variant="primary"
+            class="!px-2.5 !py-1 !text-[12px]"
+            @click="abrirRespuesta(row)"
+          >
+            <Icon name="megaphone" :size="13" /> Respuesta del proveedor
+          </Btn>
+          <Btn
+            v-if="row.estado === 'confirmada' && puedeOperar"
+            variant="ghost"
+            class="!px-2.5 !py-1 !text-[12px]"
+            @click="abrirRecibir(row)"
+          >
+            <Icon name="truck" :size="13" /> Recibir
+          </Btn>
+          <button
+            type="button"
+            class="rounded-md p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-800"
+            title="Ver detalle"
+            @click="ordenDetalle = row"
+          >
+            <Icon name="chevron" :size="15" class="-rotate-90" />
           </button>
         </div>
+      </template>
+    </DataTable>
+
+    <section
+      v-if="mostrarFinanzas && puedeFinanzas"
+      class="satin-card mt-6 rounded-2xl p-5 shadow-card-subtle"
+    >
+      <h2 class="mb-4 font-display text-base font-bold text-brand-950">
+        Cuentas por pagar a proveedores
+      </h2>
+      <div class="grid gap-4 lg:grid-cols-3">
+        <ResumenCuentasPorPagar />
+        <ReporteComprasAutomaticoManual />
+        <HistorialProveedorProducto />
       </div>
-
-      <!-- PANEL DERECHO: CUENTAS POR PAGAR & HISTORIAL (5 COLS) -->
-      <div class="lg:col-span-5 rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-xs flex flex-col justify-between">
-        <div>
-          <div class="flex items-center justify-between pb-3 border-b border-outline-variant/30 mb-4">
-            <div class="flex items-center gap-2">
-              <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Icon name="card" :size="16" />
-              </div>
-              <div>
-                <h3 class="text-sm font-bold text-primary">Resumen Financiero con Proveedores</h3>
-                <p class="text-[12px] text-on-surface-variant">Facturación, pagos y compras automáticas</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="space-y-4">
-            <ResumenCuentasPorPagar />
-            <ReporteComprasAutomaticoManual />
-            <HistorialProveedorProducto />
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- DRAWER / SECCIÓN EXPANDIDA DE FACTURAS & PAGOS -->
-    <section v-if="mostrarFinanzas" class="rounded-2xl border border-outline-variant/40 bg-surface-container-lowest p-5 shadow-xs space-y-4">
-      <h3 class="text-sm font-bold text-primary">Ciclo de Facturas &amp; Pagos a Proveedores (Doble Autorización)</h3>
-      <div class="grid gap-6 lg:grid-cols-2">
+      <div class="mt-4 grid gap-6 border-t border-brand-100 pt-4 lg:grid-cols-2">
         <FormularioFacturaProveedor :empleado-id="empleadoId" />
         <FormularioPagoProveedor :empleado-autoriza-id="empleadoId" />
       </div>
     </section>
 
-    <!-- MODAL: CREAR ORDEN DE COMPRA -->
+    <!-- Modal: crear solicitud -->
     <Modal
       v-if="modalCrear"
-      titulo="Nueva Orden de Compra"
-      ancho="max-w-2xl"
-      @cerrar="modalCrear = false"
+      titulo="Crear solicitud de pedido"
+      size="lg"
+      @cerrar="((modalCrear = false), (prefillOrden = null))"
     >
       <FormularioOrdenCompra
         :tienda-id="tiendaId"
         :empleado-id="empleadoId"
+        :prefill="prefillOrden"
         @creada="ordenCreada"
+        @cerrar="((modalCrear = false), (prefillOrden = null))"
       />
     </Modal>
 
-    <!-- MODAL: DETALLE DE ORDEN SELECCIONADA -->
+    <!-- Modal: respuesta del proveedor -->
     <Modal
-      v-if="ordenSeleccionada"
-      :titulo="`Detalle de Orden OC-${String(ordenSeleccionada.orden_id).padStart(5, '0')}`"
-      ancho="max-w-2xl"
-      @cerrar="ordenSeleccionada = null"
+      v-if="modalRespuesta"
+      :titulo="`Respuesta del proveedor — OC-${String(modalRespuesta.orden_id).padStart(4, '0')}`"
+      @cerrar="modalRespuesta = null"
     >
-      <div class="space-y-4 text-xs">
-        <div class="grid grid-cols-2 gap-3 rounded-xl bg-surface-container-low p-3">
+      <p class="mb-4 text-[13px] text-slate-600">
+        Registra lo que respondió <strong>{{ modalRespuesta.proveedor_nombre }}</strong> a este pedido,
+        por el medio en que lo hizo. El motivo es obligatorio y queda como constancia.
+      </p>
+      <form class="space-y-4" @submit.prevent="enviarRespuesta">
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            class="rounded-xl border p-3 text-center text-[13px] font-bold transition"
+            :class="formResp.decision === 'aceptar' ? 'border-brand-600 bg-brand-50/60 text-brand-900 ring-1 ring-brand-500/20' : 'border-brand-200 bg-white text-slate-700 hover:border-brand-400'"
+            @click="formResp.decision = 'aceptar'"
+          >
+            <Icon name="check" :size="15" /> El proveedor acepta
+          </button>
+          <button
+            type="button"
+            class="rounded-xl border p-3 text-center text-[13px] font-bold transition"
+            :class="formResp.decision === 'rechazar' ? 'border-rose-400 bg-rose-50 text-crimson-ruby ring-1 ring-rose-300/40' : 'border-brand-200 bg-white text-slate-700 hover:border-brand-400'"
+            @click="formResp.decision = 'rechazar'"
+          >
+            <Icon name="x" :size="15" /> El proveedor rechaza
+          </button>
+        </div>
+
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Canal de la respuesta <span class="text-crimson-ruby">*</span>
+          <select
+            v-model="formResp.canal"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          >
+            <option v-for="c in CANALES" :key="c.v" :value="c.v">{{ c.t }}</option>
+          </select>
+        </label>
+
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Motivo / detalle de la respuesta <span class="text-crimson-ruby">*</span>
+          <textarea
+            v-model="formResp.motivo"
+            rows="3"
+            required
+            maxlength="500"
+            :placeholder="
+              formResp.decision === 'aceptar'
+                ? 'Ej.: confirma despacho completo el jueves, factura a 30 días.'
+                : 'Ej.: sin stock hasta marzo; sugiere traslado desde otra tienda.'
+            "
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" @click="modalRespuesta = null">Cancelar</Btn>
+          <Btn
+            :variant="formResp.decision === 'rechazar' ? 'danger' : 'primary'"
+            type="submit"
+            :disabled="enviandoResp || !formResp.motivo.trim()"
+          >
+            {{ enviandoResp ? 'Guardando…' : 'Registrar respuesta' }}
+          </Btn>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- Modal: recibir mercadería -->
+    <Modal
+      v-if="modalRecibir"
+      :titulo="`Recibir mercadería — OC-${String(modalRecibir.orden_id).padStart(4, '0')}`"
+      size="lg"
+      @cerrar="modalRecibir = null"
+    >
+      <p class="mb-4 text-[13px] text-slate-600">
+        Registra lo que llegó de <strong>{{ modalRecibir.proveedor_nombre }}</strong>. Cada línea
+        crea un lote y suma el stock a la tienda; la orden se cierra cuando todas las líneas se
+        reciben.
+      </p>
+      <form class="space-y-3" @submit.prevent="registrarRecepcion">
+        <div
+          v-for="l in lineasRecibir"
+          :key="l.product_id"
+          class="rounded-xl border border-brand-200 p-3"
+        >
+          <div class="mb-2 text-[13px] font-semibold text-slate-800">{{ l.nombre }}</div>
+          <div class="grid gap-2 sm:grid-cols-3">
+            <label class="block text-[11px] font-semibold text-slate-600">
+              Cantidad recibida
+              <input
+                v-model.number="l.cantidad"
+                type="number"
+                min="0"
+                class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-2.5 py-1.5 text-sm text-slate-800"
+              />
+            </label>
+            <label class="block text-[11px] font-semibold text-slate-600">
+              Vence (si aplica)
+              <input
+                v-model="l.fecha_vencimiento"
+                type="date"
+                class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-2.5 py-1.5 text-sm text-slate-800"
+              />
+            </label>
+            <label class="block text-[11px] font-semibold text-slate-600">
+              Lote del proveedor
+              <input
+                v-model="l.codigo_lote"
+                type="text"
+                maxlength="40"
+                class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-2.5 py-1.5 text-sm text-slate-800"
+              />
+            </label>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" @click="modalRecibir = null">Cancelar</Btn>
+          <Btn variant="primary" type="submit" :disabled="recibiendo || !lineasRecibir.length">
+            {{ recibiendo ? 'Registrando…' : 'Registrar recepción' }}
+          </Btn>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- Modal: detalle -->
+    <Modal
+      v-if="ordenDetalle"
+      :titulo="`Detalle OC-${String(ordenDetalle.orden_id).padStart(4, '0')}`"
+      size="lg"
+      @cerrar="ordenDetalle = null"
+    >
+      <div class="space-y-4 text-[13px]">
+        <div class="grid grid-cols-2 gap-3 rounded-xl border border-brand-100 bg-white p-3">
           <div>
-            <span class="text-outline text-[11px]">Proveedor:</span>
-            <div class="font-bold text-on-surface text-sm">
-              {{ ordenSeleccionada.proveedor_nombre || `Proveedor #${ordenSeleccionada.proveedor_id}` }}
+            <span class="text-[11px] font-semibold text-slate-600">Proveedor</span>
+            <div class="font-semibold text-slate-800">
+              {{ ordenDetalle.proveedor_nombre || `Proveedor ${ordenDetalle.proveedor_id}` }}
             </div>
           </div>
           <div>
-            <span class="text-outline text-[11px]">Estado:</span>
-            <div>
-              <SemanticChip :tipo="ordenSeleccionada.estado === 'aprobada' ? 'ia' : 'neutral'">
-                {{ ordenSeleccionada.estado }}
-              </SemanticChip>
-            </div>
+            <span class="text-[11px] font-semibold text-slate-600">Estado</span>
+            <div><SemanticChip :tipo="ESTADO[ordenDetalle.estado]?.tipo || 'neutral'">{{ ESTADO[ordenDetalle.estado]?.txt || ordenDetalle.estado }}</SemanticChip></div>
           </div>
           <div>
-            <span class="text-outline text-[11px]">Fecha emisión:</span>
-            <div class="font-semibold text-on-surface">{{ ordenSeleccionada.fecha }}</div>
+            <span class="text-[11px] font-semibold text-slate-600">Tipo</span>
+            <div class="font-semibold text-slate-800">{{ ordenDetalle.tipo === 'especial' ? 'Especial' : 'Automática' }}</div>
           </div>
           <div>
-            <span class="text-outline text-[11px]">Total Neto:</span>
-            <div class="font-bold text-primary font-mono text-sm">{{ money(ordenSeleccionada.total_neto) }}</div>
+            <span class="text-[11px] font-semibold text-slate-600">Total neto</span>
+            <div class="font-bold tabular-nums text-brand-900">{{ money(ordenDetalle.total_neto) }}</div>
           </div>
         </div>
 
-        <div v-if="ordenSeleccionada.motivo_desviacion" class="rounded-lg bg-amber-50 p-2.5 text-amber-900 border border-amber-200">
-          <strong>Motivo de desviación:</strong> {{ ordenSeleccionada.motivo_desviacion }}
+        <div v-if="ordenDetalle.respuesta_proveedor" class="rounded-lg border border-brand-200 bg-white p-3">
+          <span class="text-[11px] font-bold uppercase text-slate-600">
+            Respuesta del proveedor · {{ ordenDetalle.canal_respuesta }}
+          </span>
+          <p class="mt-1 text-slate-700">{{ ordenDetalle.respuesta_proveedor }}</p>
+        </div>
+        <div v-if="ordenDetalle.motivo_desviacion" class="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-amber-900">
+          <strong>Motivo de desviación:</strong> {{ ordenDetalle.motivo_desviacion }}
         </div>
 
         <div>
-          <h4 class="font-bold text-on-surface mb-2">Líneas de la orden</h4>
-          <table class="w-full text-left border-collapse">
+          <h4 class="mb-2 font-bold text-slate-800">Líneas</h4>
+          <table class="w-full text-left">
             <thead>
-              <tr class="border-b border-outline-variant/40 text-outline text-[11px] uppercase font-bold">
+              <tr class="border-b border-brand-100 text-[11px] uppercase text-slate-400">
                 <th class="py-1">Producto</th>
                 <th class="py-1 text-right">Cantidad</th>
-                <th class="py-1 text-right">Costo Unitario</th>
+                <th class="py-1 text-right">Costo unit.</th>
                 <th class="py-1 text-right">Subtotal</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-outline-variant/20">
-              <tr v-for="l in ordenSeleccionada.lineas" :key="l.product_id" class="py-2">
-                <td class="py-1.5 font-medium text-on-surface">
-                  {{ l.product_nombre || `Producto #${l.product_id}` }}
-                </td>
-                <td class="py-1.5 text-right font-mono">{{ l.cantidad }} un</td>
-                <td class="py-1.5 text-right font-mono">{{ money(l.costo_unitario) }}</td>
-                <td class="py-1.5 text-right font-bold font-mono">
+            <tbody class="divide-y divide-brand-100">
+              <tr v-for="l in ordenDetalle.lineas" :key="l.product_id">
+                <td class="py-1.5 font-medium text-slate-700">{{ l.product_nombre || `Producto ${l.product_id}` }}</td>
+                <td class="py-1.5 text-right tabular-nums">{{ l.cantidad }}</td>
+                <td class="py-1.5 text-right tabular-nums">{{ money(l.costo_unitario) }}</td>
+                <td class="py-1.5 text-right font-semibold tabular-nums">
                   {{ money(Number(l.cantidad) * Number(l.costo_unitario)) }}
                 </td>
               </tr>
@@ -621,17 +737,31 @@ onMounted(cargarDatos)
           </table>
         </div>
 
-        <div class="flex justify-end pt-2 border-t border-outline-variant/30 gap-2">
+        <div class="flex justify-end gap-2 border-t border-brand-100 pt-3">
           <Btn
-            v-if="ordenSeleccionada.estado === 'pendiente'"
+            v-if="ordenDetalle.estado === 'pendiente' && puedeOperar"
             variant="primary"
-            @click="aprobar(ordenSeleccionada.orden_id); ordenSeleccionada = null"
+            @click="aprobar(ordenDetalle)"
           >
-            Aprobar Orden
+            Aprobar orden
           </Btn>
-          <Btn variant="outline" @click="ordenSeleccionada = null">Cerrar</Btn>
+          <Btn
+            v-if="ordenDetalle.estado === 'aprobada' && puedeOperar"
+            variant="primary"
+            @click="abrirRespuesta(ordenDetalle)"
+          >
+            Registrar respuesta del proveedor
+          </Btn>
+          <Btn
+            v-if="ordenDetalle.estado === 'confirmada' && puedeOperar"
+            variant="primary"
+            @click="abrirRecibir(ordenDetalle)"
+          >
+            Recibir mercadería
+          </Btn>
+          <Btn variant="ghost" @click="ordenDetalle = null">Cerrar</Btn>
         </div>
       </div>
     </Modal>
-  </main>
+  </div>
 </template>

@@ -56,6 +56,9 @@ class ComprasService:
         await self.repo.flush()
         return proveedor
 
+    async def listar_proveedores(self, *, solo_activos: bool = True) -> list[Proveedor]:
+        return await self.repo.listar_proveedores(solo_activos=solo_activos)
+
     async def actualizar_proveedor(self, proveedor_id: int, data: ProveedorPatch) -> Proveedor:
         proveedor = await self.repo.get_proveedor(proveedor_id)
         if proveedor is None:
@@ -86,9 +89,11 @@ class ComprasService:
                 origen = "rotacion_reciente"
             cantidad = max(1, objetivo - inv.cantidad_disponible)
             proveedor_id = await self.repo.ultimo_proveedor_de(inv.product_id, tienda_id)
+            producto = await self.repo.get_producto(inv.product_id)
             sugerencias.append(
                 {
                     "product_id": inv.product_id,
+                    "nombre": getattr(producto, "nombre", None),
                     "tienda_id": tienda_id,
                     "proveedor_id": proveedor_id,
                     "cantidad_disponible": inv.cantidad_disponible,
@@ -202,6 +207,36 @@ class ComprasService:
             )
         if not enviado:
             logger.warning("Pedido especial orden %s sin correo enviado", orden_id)
+        return orden
+
+    async def registrar_respuesta_proveedor(
+        self,
+        orden_id: int,
+        *,
+        decision: str,
+        canal: str,
+        motivo: str,
+        empleado_id: int,
+    ) -> OrdenCompra:
+        """Feature 018 — un actor humano registra la respuesta del proveedor a la
+        orden (automática o especial). `aceptar` la deja `confirmada` y lista para
+        recepción; `rechazar` la deja `rechazada`. El motivo es obligatorio y
+        describe la aceptación/rechazo con sus condiciones."""
+        orden = await self.repo.get_orden_for_update(orden_id)
+        if orden is None:
+            raise NotFoundError(f"Orden {orden_id} no existe")
+        if orden.estado not in ("pendiente", "aprobada"):
+            raise BusinessRuleError(
+                f"Sólo se registra la respuesta del proveedor sobre una orden "
+                f"'pendiente' o 'aprobada' (está '{orden.estado}')"
+            )
+        orden.proveedor_confirmo = decision == "aceptar"
+        orden.canal_respuesta = canal
+        orden.respuesta_proveedor = motivo.strip()
+        orden.fecha_respuesta = _ahora()
+        orden.empleado_respuesta_id = empleado_id
+        orden.estado = "confirmada" if decision == "aceptar" else "rechazada"
+        await self.repo.flush()
         return orden
 
     # ------------------------------------------------ cuentas por pagar (FR-033/34/35)

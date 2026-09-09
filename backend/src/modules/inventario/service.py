@@ -61,9 +61,10 @@ class InventarioService:
         orden = await self.repo.get_orden_for_update(data.orden_id)
         if orden is None:
             raise NotFoundError(f"Orden de compra {data.orden_id} no existe")
-        if orden.estado != "aprobada":
+        if orden.estado not in ("aprobada", "confirmada"):
             raise BusinessRuleError(
-                f"Sólo se recibe contra una orden 'aprobada' (está '{orden.estado}')"
+                "Sólo se recibe contra una orden aprobada o confirmada por el "
+                f"proveedor (está '{orden.estado}')"
             )
         if orden.tienda_id != data.tienda_id:
             raise BusinessRuleError("La tienda de la recepción no coincide con la de la orden")
@@ -100,7 +101,9 @@ class InventarioService:
                 lote_id=lote.lote_id,
             )
         )
-        orden.estado = "recibida"
+        # la orden se cierra sólo cuando todas sus líneas tienen recepción
+        if await self.repo.lineas_sin_recibir(data.orden_id) == 0:
+            orden.estado = "recibida"
         await self.repo.flush()
 
         # Ronda 9 (FR-038): si la recepción deja el stock por encima del máximo

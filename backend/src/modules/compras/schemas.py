@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 
 FrecuenciaReposicion = Literal["semanal", "mensual", "trimestral"]
 TipoOrden = Literal["programada", "especial"]
+CanalRespuesta = Literal["correo", "whatsapp", "telefono", "presencial", "otro"]
 
 
 # --- proveedores ---
@@ -64,6 +65,16 @@ class PedidoEspecialIn(BaseModel):
     motivo: str = Field(min_length=1)
 
 
+class RespuestaProveedorIn(BaseModel):
+    """Un actor humano registra lo que el proveedor respondió a la orden —por
+    correo, WhatsApp, teléfono u otro medio— con un motivo obligatorio que
+    describe la aceptación o el rechazo (feature 018)."""
+
+    decision: Literal["aceptar", "rechazar"]
+    canal: CanalRespuesta
+    motivo: str = Field(min_length=1, max_length=500)
+
+
 class OrdenLineaOut(BaseModel):
     product_id: int
     product_nombre: str | None = None
@@ -84,6 +95,11 @@ class OrdenOut(BaseModel):
     total_neto: Decimal | None = None
     cantidad_skus: int | None = None
     total_unidades: int | None = None
+    proveedor_confirmo: bool | None = None
+    respuesta_proveedor: str | None = None
+    canal_respuesta: str | None = None
+    fecha_respuesta: datetime | None = None
+    empleado_respuesta_id: int | None = None
     lineas: list[OrdenLineaOut] = []
 
 
@@ -95,6 +111,7 @@ class DisponibilidadOtraTienda(BaseModel):
 
 class SugerenciaLinea(BaseModel):
     product_id: int
+    nombre: str | None = None
     tienda_id: int
     proveedor_id: int | None
     cantidad_disponible: int

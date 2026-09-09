@@ -8,8 +8,18 @@ export const comprasApi = {
       .then((r) => r.data)
   },
 
+  proveedores() {
+    return http.get('/api/compras/proveedores').then((r) => r.data)
+  },
+
   crearProveedor(data) {
     return http.post('/api/compras/proveedores', data).then((r) => r.data)
+  },
+
+  respuestaProveedor(ordenId, { decision, canal, motivo }) {
+    return http
+      .post(`/api/compras/ordenes/${ordenId}/respuesta-proveedor`, { decision, canal, motivo })
+      .then((r) => r.data)
   },
 
   actualizarProveedor(id, data) {

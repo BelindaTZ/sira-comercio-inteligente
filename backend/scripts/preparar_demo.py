@@ -372,6 +372,80 @@ async def _seguridad_pagos_demo() -> None:
         log.info("  protocolo: 2 versiones · política: 2 versiones · incidentes de fraude: %s", ni)
 
 
+async def _compras_demo() -> None:
+    """Da variedad al ciclo de órdenes de compra: frecuencias pactadas por
+    proveedor y órdenes en cada estado (pendiente, aprobada, confirmada por el
+    proveedor, rechazada) — el dataset sólo trae 6 aprobadas iguales."""
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        # frecuencias pactadas (FR-028) para los primeros proveedores
+        await s.execute(
+            text("""
+            UPDATE proveedores SET frecuencia_reposicion = sub.frec
+            FROM (
+                SELECT proveedor_id,
+                       (ARRAY['semanal','mensual','trimestral','semanal'])[
+                           1 + (row_number() OVER (ORDER BY proveedor_id) - 1) % 4
+                       ] AS frec
+                FROM proveedores
+            ) sub
+            WHERE proveedores.proveedor_id = sub.proveedor_id
+              AND proveedores.frecuencia_reposicion IS NULL
+        """)
+        )
+        ordenes = (
+            (await s.execute(text("SELECT orden_id FROM ordenes_compra ORDER BY orden_id")))
+            .scalars()
+            .all()
+        )
+        emp = await s.scalar(text("SELECT empleado_id FROM empleados ORDER BY empleado_id LIMIT 1"))
+        if len(ordenes) >= 4 and emp is not None:
+            # una confirmada por el proveedor, una rechazada, una vuelve a pendiente
+            await s.execute(
+                text("""
+                UPDATE ordenes_compra
+                SET estado = 'confirmada', proveedor_confirmo = true,
+                    canal_respuesta = 'whatsapp',
+                    respuesta_proveedor = 'Proveedor confirma despacho completo para el jueves.',
+                    fecha_respuesta = CURRENT_TIMESTAMP - interval '1 day',
+                    empleado_respuesta_id = :emp
+                WHERE orden_id = :o
+            """),
+                {"o": ordenes[0], "emp": emp},
+            )
+            await s.execute(
+                text("""
+                UPDATE ordenes_compra
+                SET estado = 'rechazada', proveedor_confirmo = false,
+                    canal_respuesta = 'correo',
+                    respuesta_proveedor = 'Sin stock hasta el próximo mes; sugiere traslado.',
+                    fecha_respuesta = CURRENT_TIMESTAMP - interval '2 days',
+                    empleado_respuesta_id = :emp
+                WHERE orden_id = :o
+            """),
+                {"o": ordenes[1], "emp": emp},
+            )
+            await s.execute(
+                text("UPDATE ordenes_compra SET estado = 'pendiente' WHERE orden_id = :o"),
+                {"o": ordenes[2]},
+            )
+            await s.execute(
+                text(
+                    "UPDATE ordenes_compra SET estado = 'pendiente', tipo = 'especial', "
+                    "motivo_desviacion = 'Quiebre inminente por promoción de fin de semana' "
+                    "WHERE orden_id = :o"
+                ),
+                {"o": ordenes[3]},
+            )
+        await s.commit()
+        estados = await s.execute(
+            text("SELECT estado, count(*) FROM ordenes_compra GROUP BY estado ORDER BY estado")
+        )
+        log.info("  órdenes de compra: %s", [tuple(r) for r in estados])
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -408,6 +482,9 @@ async def main() -> None:
 
     log.info("4d/5 · aperturas + cuadres horarios de demo")
     await _cuadre_demo()
+
+    log.info("4e/5 · frecuencias de proveedor + órdenes de compra en varios estados")
+    await _compras_demo()
 
     log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()

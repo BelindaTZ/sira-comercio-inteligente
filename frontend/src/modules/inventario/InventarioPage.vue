@@ -9,6 +9,7 @@
  * Pestaña "Alertas" → `GET /inventario/alertas`.
  */
 import { computed, onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { inventarioApi } from '@/services/inventarioApi'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -27,6 +28,7 @@ import FormularioUbicacion from './components/FormularioUbicacion.vue'
 import ImagenProductoModal from './components/ImagenProductoModal.vue'
 
 const sesion = useSesion()
+const router = useRouter()
 const tiendaManual = ref(null)
 const tiendaId = computed(() => sesion.tiendaId ?? tiendaManual.value ?? null)
 const empleadoId = computed(() => sesion.empleadoId ?? 1)
@@ -181,12 +183,14 @@ const reordenando = ref(null)
 async function reordenar(row) {
   reordenando.value = row.product_id
   try {
+    // deja la alerta de reposición (FR) y abre "órdenes de compra" con el pedido casi listo
     await inventarioApi.solicitarReposicion({
       productId: row.product_id,
       tiendaId: tiendaId.value,
       empleadoId: empleadoId.value,
     })
     row._reordenado = true
+    router.push({ name: 'compras', query: { nuevaOrden: row.product_id } })
   } catch (e) {
     error.value = e.response?.data?.detail || e.message
   } finally {

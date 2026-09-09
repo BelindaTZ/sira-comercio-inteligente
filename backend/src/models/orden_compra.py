@@ -1,14 +1,15 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, ForeignKey, Integer, String, Text, func
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.database import Base
 
-ORDEN_ESTADOS = ("pendiente", "aprobada", "recibida", "cancelada")
+ORDEN_ESTADOS = ("pendiente", "aprobada", "confirmada", "recibida", "rechazada", "cancelada")
 ORDEN_TIPOS = ("programada", "especial")
+CANALES_RESPUESTA = ("correo", "whatsapp", "telefono", "presencial", "otro")
 
 
 class OrdenCompra(Base):
@@ -26,3 +27,9 @@ class OrdenCompra(Base):
     fecha: Mapped[date] = mapped_column(Date, server_default=func.current_date())
     tipo: Mapped[str] = mapped_column(String(20), nullable=False, default="programada")
     motivo_desviacion: Mapped[str | None] = mapped_column(Text)
+    # feature 018 — respuesta del proveedor registrada por un actor humano
+    proveedor_confirmo: Mapped[bool | None] = mapped_column(Boolean)
+    respuesta_proveedor: Mapped[str | None] = mapped_column(Text)
+    canal_respuesta: Mapped[str | None] = mapped_column(String(20))
+    fecha_respuesta: Mapped[datetime | None] = mapped_column(DateTime)
+    empleado_respuesta_id: Mapped[int | None] = mapped_column(Integer)

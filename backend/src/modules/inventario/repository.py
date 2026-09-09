@@ -68,6 +68,23 @@ class InventarioRepository(BaseRepository[Lote]):
         stmt = select(OrdenCompra).where(OrdenCompra.orden_id == orden_id).with_for_update()
         return (await self.session.scalars(stmt)).first()
 
+    async def lineas_sin_recibir(self, orden_id: int) -> int:
+        """Cuántas líneas de la orden aún no tienen ninguna recepción registrada —
+        la orden pasa a `recibida` sólo cuando todas se recibieron (permite
+        recepción por partes de una orden multiproducto)."""
+        return await self.session.scalar(
+            text("""
+                SELECT count(*) FROM orden_compra_detalle d
+                WHERE d.orden_id = :o
+                  AND NOT EXISTS (
+                      SELECT 1 FROM recepcion_mercaderia rm
+                      JOIN lotes l ON l.lote_id = rm.lote_id
+                      WHERE rm.orden_id = :o AND l.product_id = d.product_id
+                  )
+            """),
+            {"o": orden_id},
+        )
+
     # --- inventario ---
     async def get_inventario_for_update(self, product_id: int, tienda_id: int) -> Inventario | None:
         stmt = (
