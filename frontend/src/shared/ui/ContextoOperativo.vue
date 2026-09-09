@@ -22,7 +22,12 @@ onMounted(() => {
 onBeforeUnmount(() => clearInterval(timer))
 
 const hora = computed(() =>
-  ahora.value.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  ahora.value.toLocaleTimeString('es-EC', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
 )
 const fecha = computed(() =>
   ahora.value.toLocaleDateString('es-EC', {

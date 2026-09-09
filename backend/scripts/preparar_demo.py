@@ -439,6 +439,16 @@ async def _compras_demo() -> None:
                 ),
                 {"o": ordenes[3]},
             )
+            # concentra las órdenes en la tienda del Encargado de demo (T01 / 1021)
+            # para que su pantalla de abastecimiento tenga el ciclo completo a la vista
+            tienda_demo = await s.scalar(
+                text("SELECT tienda_id FROM tiendas WHERE codigo = 'T01'")
+            )
+            if tienda_demo is not None:
+                await s.execute(
+                    text("UPDATE ordenes_compra SET tienda_id = :t WHERE orden_id = ANY(:ids)"),
+                    {"t": tienda_demo, "ids": list(ordenes[:4])},
+                )
         await s.commit()
         estados = await s.execute(
             text("SELECT estado, count(*) FROM ordenes_compra GROUP BY estado ORDER BY estado")
