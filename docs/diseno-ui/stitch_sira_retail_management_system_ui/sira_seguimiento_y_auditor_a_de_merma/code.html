@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA Retail · Marzú - Seguimiento y Auditoría de Merma</title>
+<!-- Google Fonts: Inter & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with custom config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-fixed-variant": "#254d49",
+            "on-secondary-fixed": "#25005a",
+            "on-tertiary-container": "#30ab7c",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed": "#00201d",
+            "primary-fixed-dim": "#a5cfc9",
+            "surface-tint": "#3e6561",
+            "on-tertiary-fixed-variant": "#005137",
+            "on-secondary": "#ffffff",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-surface": "#191c1e",
+            "on-tertiary-fixed": "#002114",
+            "surface-container-highest": "#e0e3e5",
+            "outline-variant": "#c0c8c6",
+            "on-background": "#191c1e",
+            "outline": "#717977",
+            "tertiary-fixed": "#85f8c4",
+            "on-surface-variant": "#414847",
+            "secondary-container": "#8a4cfc",
+            "surface-container-low": "#f2f4f6",
+            "surface-dim": "#d8dadc",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "inverse-surface": "#2d3133",
+            "inverse-primary": "#a5cfc9",
+            "surface": "#f8f9fb",
+            "on-error": "#ffffff",
+            "on-primary-container": "#779f9a",
+            "background": "#f8f9fb",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#93000a",
+            "primary": "#00201d",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "surface-bright": "#f8f9fb",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#c0ebe4",
+            "tertiary-container": "#003825",
+            "tertiary": "#002014",
+            "secondary-fixed": "#eaddff",
+            "on-secondary-container": "#fffbff",
+            "primary-container": "#0a3632",
+            "secondary": "#712ae2",
+            "surface-container": "#eceef0",
+            "surface-variant": "#e0e3e5",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-high": "#e6e8ea"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-lg": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem",
+            "space-base": "1rem",
+            "sidebar-expanded": "16.5rem",
+            "space-2xl": "3rem"
+          },
+          "fontFamily": {
+            "body-lg": ["Inter", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen flex flex-col antialiased selection:bg-primary-container selection:text-white">
+<!-- TOP APP BAR: Enterprise Horizontal Navigation Shell (Strictly Horizontal, No Sidebar) -->
+<header class="w-full sticky top-0 z-50 flex items-center justify-between px-6 py-2 bg-surface border-b border-outline-variant/30 shadow-sm backdrop-blur-md bg-opacity-95">
+<div class="flex items-center gap-6">
+<!-- Brand & Badging -->
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-sm font-headline-sm font-bold text-primary-container tracking-tight">SIRA Retail · Marzú</span>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+<span class="text-[10px] uppercase font-bold tracking-wider text-on-surface-variant font-label-sm">Control de Merma &amp; Pérdida</span>
+</div>
+</div>
+</div>
+<!-- Quick Store Selector -->
+<div class="hidden xl:flex items-center gap-2 pl-3 pr-2.5 py-1 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface hover:bg-surface-container transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[16px] text-primary-container" data-icon="storefront">storefront</span>
+<span class="text-label-md font-label-md font-medium text-on-surface">Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-[16px] text-outline" data-icon="expand_more">expand_more</span>
+</div>
+<!-- Global Search Bar -->
+<div class="relative w-72 hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]" data-icon="search">search</span>
+<input class="w-full h-9 pl-9 pr-3 rounded-xl bg-surface-container-lowest border border-outline-variant/50 text-body-sm font-body-sm placeholder-outline focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all" placeholder="Buscar folio, SKU, lote o causales..." type="text"/>
+</div>
+</div>
+<!-- Navigation Links & System Controls -->
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-5">
+<a class="text-on-surface-variant hover:text-on-surface pb-3 pt-3 flex items-center gap-1.5 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="dashboard">dashboard</span>
+<span>Visión General</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-3 pt-3 flex items-center gap-1.5 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="point_of_sale">point_of_sale</span>
+<span>Punto de Venta</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-3 pt-3 flex items-center gap-1.5 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="shelves">shelves</span>
+<span>Inventario &amp; FIFO</span>
+</a>
+<!-- ACTIVE NAVIGATION: Mermas & Auditoría -->
+<a class="text-primary-container font-semibold border-b-2 border-primary-container pb-3 pt-3 flex items-center gap-1.5 text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span>
+<span>Mermas &amp; Auditoría</span>
+</a>
+<a class="text-on-surface-variant hover:text-on-surface pb-3 pt-3 flex items-center gap-1.5 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="payments">payments</span>
+<span>Cajas &amp; Cuadraturas</span>
+</a>
+</nav>
+<!-- Trailing Action Badges & Profile -->
+<div class="flex items-center gap-3 border-l border-outline-variant/30 pl-4">
+<button class="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Alertas de Auditoría">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Asistente Predictivo SIRA">
+<span class="material-symbols-outlined text-[20px] text-secondary" data-icon="smart_toy">smart_toy</span>
+</button>
+<!-- User Badge -->
+<div class="flex items-center gap-2.5 pl-2">
+<img class="w-8 h-8 rounded-full border border-outline-variant/40 object-cover" data-alt="A refined professional studio portrait of a Chilean store manager in his late thirties wearing a sharp corporate dark emerald badge uniform with high key corporate lighting and pristine minimalist background in soft teal tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDD7zfjbBvhvz3jDZAujuky9CeRbtBRn_HIY3ZJ0rMR3yR6BUQbuLb5-892VQXZSzF1eAbTsBDqf6M03B4xn2nHaqhTFTn3zUmbodOidqPY4sr-tuqv1lnZh2e6cU34OyT56XCNLzoO2fOBxibRrTPyZgQ3EKCxQ4o-ixRYCl-cTN8dNv_68t3Tmum4Rmsfvk7JClLMrK6kTWraYyd5aptA04VKwcWPUqW2EY2jCh1X2JBubuWLlZR_ew"/>
+<div class="hidden 2xl:flex flex-col text-left">
+<span class="text-label-md font-label-md font-semibold text-on-surface leading-tight">G. González</span>
+<span class="text-[11px] font-label-sm text-outline">Encargado Tienda</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN OPERATIONAL STAGE -->
+<main class="flex-1 w-full max-w-[1720px] mx-auto px-6 py-6 space-y-6">
+<!-- OPERATIONAL BANNER / TOP CONTEXT CARD -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div class="space-y-1">
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-surface-container-low text-primary-container text-label-sm font-label-sm font-semibold border border-outline-variant/30">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified">verified</span>
+            Auditoría Activa Ciclo Q2
+          </span>
+<span class="text-on-surface-variant text-body-sm font-body-sm">|</span>
+<span class="text-on-surface-variant text-body-sm font-body-sm font-medium">Alcance: <strong class="text-on-surface font-semibold">Tienda 04 - Providencia Express</strong></span>
+<span class="text-on-surface-variant text-body-sm font-body-sm">|</span>
+<span class="text-outline text-body-sm font-body-sm">Módulo Oficial de Desmedro Operativo &amp; Merma Contable</span>
+</div>
+<h1 class="text-headline-lg font-headline-lg text-primary-container tracking-tight">Seguimiento, Registro y Mitigación de Merma</h1>
+</div>
+<!-- Action Cluster -->
+<div class="flex flex-wrap items-center gap-3">
+<button class="px-4 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/50 text-primary-container hover:bg-surface-container-low transition-all duration-150 flex items-center gap-2 text-label-md font-label-md font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" data-icon="file_download">file_download</span>
+          Exportar Informe Contable a Finanzas Central
+        </button>
+<button class="px-4 py-2 rounded-xl bg-primary-container text-white hover:bg-primary transition-all duration-150 flex items-center gap-2 text-label-md font-label-md font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]" data-icon="add_circle">add_circle</span>
+          Declarar Nueva Merma (Físico)
+        </button>
+</div>
+</section>
+<!-- SCORECARD: 4 KPI CARDS (Bento Grid) -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1: Merma Acumulada Mes -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between mb-3">
+<div class="space-y-0.5">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Pérdida Neta Acumulada</span>
+<h3 class="text-label-md font-label-md font-semibold text-on-surface-variant">Merma Acumulada Mes</h3>
+</div>
+<div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="trending_down">trending_down</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="text-tabular-metric font-tabular-metric text-on-surface tracking-tight">$1.840.500 CLP</div>
+<div class="flex items-center gap-2 pt-1 border-t border-outline-variant/20">
+<span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_downward">arrow_downward</span> 0.84%
+            </span>
+<span class="text-body-sm font-body-sm text-outline">s/ venta neta (Meta Tienda: &lt; 1.10%)</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: SKUs Críticos -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between mb-3">
+<div class="space-y-0.5">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Foco Operativo de Retiro</span>
+<h3 class="text-label-md font-label-md font-semibold text-on-surface-variant">SKUs con Merma Crítica</h3>
+</div>
+<div class="w-8 h-8 rounded-lg bg-red-50 text-error border border-red-200 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning_amber">warning_amber</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="text-tabular-metric font-tabular-metric text-on-surface tracking-tight">19 SKUs</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-on-surface-variant pt-1 border-t border-outline-variant/20">
+<span class="w-2 h-2 rounded-full bg-red-500"></span>
+<span>11 perecibles / 5 rotura / 3 hurto</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Tasa de Recuperación / Donación -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between mb-3">
+<div class="space-y-0.5">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Economía Circular &amp; Rescate</span>
+<h3 class="text-label-md font-label-md font-semibold text-on-surface-variant">Tasa de Recuperación / Donación</h3>
+</div>
+<div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="recycling">recycling</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="text-tabular-metric font-tabular-metric text-emerald-800 tracking-tight">41.5%</div>
+<div class="flex items-center gap-2 pt-1 border-t border-outline-variant/20">
+<span class="text-body-sm font-body-sm font-medium text-emerald-700">$760.000 CLP</span>
+<span class="text-body-sm font-body-sm text-outline">desviado a banco de alimentos</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Ajustes Pendientes -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-start justify-between mb-3">
+<div class="space-y-0.5">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-wider">Flujo de Aprobación</span>
+<h3 class="text-label-md font-label-md font-semibold text-on-surface-variant">Ajustes Auditados Pendientes</h3>
+</div>
+<div class="w-8 h-8 rounded-lg bg-purple-50 text-secondary border border-purple-200 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="rule">rule</span>
+</div>
+</div>
+<div class="space-y-2">
+<div class="text-tabular-metric font-tabular-metric text-on-surface tracking-tight">2 casos</div>
+<div class="flex items-center gap-1.5 text-body-sm font-body-sm text-outline pt-1 border-t border-outline-variant/20">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="schedule">schedule</span>
+<span>Requiere firma de Supervisor de Turno</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION: ANÁLISIS DE CAUSA RAÍZ & PROTOCOLO SOSTENIBLE (2:1 Grid) -->
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- DESGLOSE DE CAUSA RAÍZ (2 Columns) -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm flex flex-col justify-between">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-outline-variant/30 gap-2">
+<div class="space-y-0.5">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Desglose de Causa Raíz de la Merma</h2>
+<p class="text-body-sm font-body-sm text-outline">Análisis etiológico del desmedro para mitigar pérdidas en sala de venta y bodega</p>
+</div>
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-surface-container text-on-surface-variant text-label-sm font-label-sm border border-outline-variant/40">
+<span class="material-symbols-outlined text-[15px]" data-icon="calendar_month">calendar_month</span>
+            Ciclo Actual (Días 1 - 24)
+          </span>
+</div>
+<!-- Metric Distribution Bar -->
+<div class="my-5">
+<div class="h-3 w-full rounded-full bg-surface-container flex overflow-hidden p-0.5 gap-0.5">
+<div class="h-full bg-amber-500 rounded-l-full transition-all" style="width: 48%;" title="Vencimiento FEFO: 48%"></div>
+<div class="h-full bg-red-500 transition-all" style="width: 26%;" title="Manipulación / Rotura: 26%"></div>
+<div class="h-full bg-blue-500 transition-all" style="width: 14%;" title="Cadena de Frío: 14%"></div>
+<div class="h-full bg-purple-600 rounded-r-full transition-all" style="width: 12%;" title="Hurto Constatado: 12%"></div>
+</div>
+</div>
+<!-- 4 Detailed Cause Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Causa 1: Vencimiento -->
+<div class="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-500"></span>
+<span class="text-label-md font-label-md font-bold text-on-surface">Vencimiento / Caducidad FEFO</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-amber-700">48%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface">$883.440 CLP</span>
+<span class="text-[11px] font-label-sm text-outline">12 incidentes</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Mayor impacto en lácteos pasteurizados, masas artesanales y fiambrería fraccionada.</p>
+</div>
+<!-- Causa 2: Manipulación / Rotura -->
+<div class="p-3.5 rounded-xl border border-red-200 bg-red-50/40 space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-red-500"></span>
+<span class="text-label-md font-label-md font-bold text-on-surface">Daño en Manipulación / Rotura</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-red-700">26%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface">$478.530 CLP</span>
+<span class="text-[11px] font-label-sm text-outline">7 incidentes</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Caídas de botellas en reposición nocturna de vinos y conservas de vidrio en pasillo 3.</p>
+</div>
+<!-- Causa 3: Cadena de Frío -->
+<div class="p-3.5 rounded-xl border border-blue-200 bg-blue-50/40 space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-blue-500"></span>
+<span class="text-label-md font-label-md font-bold text-on-surface">Falla Cadena de Frío</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-blue-700">14%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface">$257.670 CLP</span>
+<span class="text-[11px] font-label-sm text-outline">1 incidente crítico</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Microcorte térmico en mural de yogures orgánicos (Temperatura superó 8°C por 3 hrs).</p>
+</div>
+<!-- Causa 4: Hurto / Pérdida -->
+<div class="p-3.5 rounded-xl border border-purple-200 bg-purple-50/40 space-y-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-purple-600"></span>
+<span class="text-label-md font-label-md font-bold text-on-surface">Hurto Externo / Pérdida</span>
+</div>
+<span class="text-label-md font-label-md font-bold text-secondary">12%</span>
+</div>
+<div class="flex items-baseline justify-between">
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface">$220.860 CLP</span>
+<span class="text-[11px] font-label-sm text-outline">3 denuncias</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Chocolatería importada premium y licores formato 750ml con tag de alarma desprendido.</p>
+</div>
+</div>
+</div>
+<!-- PROTOCOLO DE DISPOSICIÓN FINAL Y DESTINO SUSTENTABLE (1 Column) -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm flex flex-col justify-between">
+<div class="space-y-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" data-icon="eco">eco</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Disposición Sustentable</h2>
+<span class="text-label-sm font-label-sm text-outline">Convenios Activos Tienda 04</span>
+</div>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+            Conforme a la política de triple impacto de <strong>Marzú Retail Group</strong>, todo desmedro que conserve inocuidad alimentaria es reclasificado para evitar disposición en vertedero y optimizar crédito tributario LIR Art. 31.
+          </p>
+<div class="space-y-2.5 pt-2">
+<!-- Convenio 1 -->
+<div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-start gap-3">
+<span class="material-symbols-outlined text-emerald-600 mt-0.5 text-[20px]" data-icon="handshake">handshake</span>
+<div class="space-y-0.5">
+<span class="text-label-md font-label-md font-semibold text-on-surface block">Banco de Alimentos de Chile</span>
+<span class="text-body-sm font-body-sm text-outline block">Retiro programado Martes y Jueves 11:00 hrs. Lácteos y abarrotes con &gt; 48 hrs de vigencia.</span>
+<span class="inline-block mt-1 text-[11px] font-label-sm font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Retiro Hoy Confirmado</span>
+</div>
+</div>
+<!-- Convenio 2 -->
+<div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 flex items-start gap-3">
+<span class="material-symbols-outlined text-primary-container mt-0.5 text-[20px]" data-icon="compost">compost</span>
+<div class="space-y-0.5">
+<span class="text-label-md font-label-md font-semibold text-on-surface block">Planta de Compostaje Providencia</span>
+<span class="text-body-sm font-body-sm text-outline block">Residuos orgánicos frescos, frutas, verduras y molienda de panadería artesanal.</span>
+<span class="inline-block mt-1 text-[11px] font-label-sm font-medium text-primary-container bg-primary-fixed px-2 py-0.5 rounded">Capacidad: 240 kg/semana</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Summary Bar -->
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-outline">Certificado SEREMI / SAG:</span>
+<span class="font-semibold text-on-surface flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-emerald-600" data-icon="check_circle">check_circle</span> Al Día (Vig. 2025)
+          </span>
+</div>
+</div>
+</section>
+<!-- MATRIZ DE INCIDENTES DE MERMA RECIENTES -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+<!-- Table Header Bar & Filter Pills -->
+<div class="p-5 border-b border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Libro Oficial de Registro de Incidentes de Merma</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-[11px] font-label-sm font-semibold">24 Registros Este Mes</span>
+</div>
+<p class="text-body-sm font-body-sm text-outline">Trazabilidad en tiempo real de bajas físicas, muelle de descarga y mermas de sala</p>
+</div>
+<!-- Filter Pills -->
+<div class="flex flex-wrap items-center gap-1.5 bg-surface-container-low p-1 rounded-xl border border-outline-variant/40">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary-container font-semibold text-label-sm font-label-sm shadow-xs border border-outline-variant/30">
+            Todas las Mermas (24)
+          </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Vencimiento FEFO (12)
+          </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Rotura en Sala (7)
+          </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Cadena de Frío (3)
+          </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface text-label-sm font-label-sm transition-colors">
+            Desmedro Muelle (2)
+          </button>
+</div>
+</div>
+<!-- Data Table Container (Responsive Scroll) -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant/40 text-[11px] font-label-sm uppercase tracking-wider text-outline select-none">
+<th class="py-3 px-4 font-semibold">Folio / Hora</th>
+<th class="py-3 px-4 font-semibold">SKU &amp; Detalle Producto</th>
+<th class="py-3 px-4 font-semibold">Lote / Venc.</th>
+<th class="py-3 px-4 font-semibold">Ubicación</th>
+<th class="py-3 px-4 font-semibold text-right">Cant.</th>
+<th class="py-3 px-4 font-semibold text-right">Costo Unit.</th>
+<th class="py-3 px-4 font-semibold text-right">Pérdida Total</th>
+<th class="py-3 px-4 font-semibold">Causal Declarada</th>
+<th class="py-3 px-4 font-semibold">Operador</th>
+<th class="py-3 px-4 font-semibold">Estado Baja Contable</th>
+<th class="py-3 px-4 font-semibold text-center">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-body-sm">
+<!-- Row 1: Vencimiento Lácteos -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-semibold text-on-surface">#MRM-2025-0841</div>
+<div class="text-[11px] font-label-sm text-outline">Hoy, 08:35 hrs</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Leche Entera Bio 1L (Pack 6)</div>
+<div class="text-[11px] font-label-sm text-outline">SKU: 780123409811 · Lácteos Refrigerados</div>
+</td>
+<td class="py-3.5 px-4 font-tabular-data text-body-sm">
+<span class="text-on-surface">LT-992-B</span>
+<div class="text-[11px] font-label-sm text-red-600 font-semibold">Venc: Ayer (FEFO)</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-label-sm">
+<span class="material-symbols-outlined text-[13px]" data-icon="kitchen">kitchen</span> Mural Frío 02
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">14 u.</td>
+<td class="py-3.5 px-4 text-right font-tabular-data text-outline">$1.120</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">$15.680 CLP</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-label-sm font-label-sm font-medium border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Vencimiento FEFO
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface text-label-md font-label-md">C. Morales</div>
+<div class="text-[10px] text-outline font-label-sm">Reponedor Turno A</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="material-symbols-outlined text-[14px]" data-icon="task_alt">task_alt</span> Aprobada / Donación
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors" title="Ver Acta">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-outline hover:text-on-surface transition-colors" title="Imprimir Etiqueta Baja">
+<span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Rotura Vino -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-semibold text-on-surface">#MRM-2025-0840</div>
+<div class="text-[11px] font-label-sm text-outline">Ayer, 19:12 hrs</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Vino Cabernet Sauvignon Reserva 750ml</div>
+<div class="text-[11px] font-label-sm text-outline">SKU: 780443321901 · Vinos &amp; Licores</div>
+</td>
+<td class="py-3.5 px-4 font-tabular-data text-body-sm">
+<span class="text-on-surface">LT-2022-CS</span>
+<div class="text-[11px] font-label-sm text-outline">Venc: No Perecible</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-label-sm">
+<span class="material-symbols-outlined text-[13px]" data-icon="view_column">view_column</span> Pasillo 04 - Góndola
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">3 u.</td>
+<td class="py-3.5 px-4 text-right font-tabular-data text-outline">$8.990</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">$26.970 CLP</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-50 text-red-800 text-label-sm font-label-sm font-medium border border-red-200">
+<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rotura en Sala
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface text-label-md font-label-md">J. Silva</div>
+<div class="text-[10px] text-outline font-label-sm">Auxiliar de Sala</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-semibold border border-outline-variant/40">
+<span class="material-symbols-outlined text-[14px]" data-icon="delete_forever">delete_forever</span> Destrucción Física
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors" title="Ver Acta">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-outline hover:text-on-surface transition-colors" title="Imprimir Etiqueta Baja">
+<span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Cadena de Frío Compresor -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-semibold text-on-surface">#MRM-2025-0839</div>
+<div class="text-[11px] font-label-sm text-outline">Ayer, 14:05 hrs</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Yogur Griego Sin Lactosa 150g (Bandeja 24)</div>
+<div class="text-[11px] font-label-sm text-outline">SKU: 780998811233 · Lácteos Probióticos</div>
+</td>
+<td class="py-3.5 px-4 font-tabular-data text-body-sm">
+<span class="text-on-surface">LT-YG-041</span>
+<div class="text-[11px] font-label-sm text-outline">Venc: 12 Mayo 2025</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-label-sm">
+<span class="material-symbols-outlined text-[13px]" data-icon="ac_unit">ac_unit</span> Cámara Frío 01
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">72 u.</td>
+<td class="py-3.5 px-4 text-right font-tabular-data text-outline">$620</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">$44.640 CLP</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-label-sm font-label-sm font-medium border border-blue-200">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Cadena de Frío
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface text-label-md font-label-md">G. González</div>
+<div class="text-[10px] text-outline font-label-sm">Encargado Tienda</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-purple-50 text-secondary text-label-sm font-label-sm font-semibold border border-purple-200">
+<span class="material-symbols-outlined text-[14px]" data-icon="pending">pending</span> En Verificación Mermas
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors" title="Ver Acta">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-outline hover:text-on-surface transition-colors" title="Imprimir Etiqueta Baja">
+<span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Panadería Artesanal / Compost -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-semibold text-on-surface">#MRM-2025-0838</div>
+<div class="text-[11px] font-label-sm text-outline">22 May, 22:30 hrs</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Baguette Rústica Masa Madre 350g</div>
+<div class="text-[11px] font-label-sm text-outline">SKU: 780654321098 · Panadería Diaria</div>
+</td>
+<td class="py-3.5 px-4 font-tabular-data text-body-sm">
+<span class="text-on-surface">HORNEADO-22</span>
+<div class="text-[11px] font-label-sm text-red-600 font-semibold">Consumo 24h</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-label-sm">
+<span class="material-symbols-outlined text-[13px]" data-icon="bakery_dining">bakery_dining</span> Módulo Panadería
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">28 u.</td>
+<td class="py-3.5 px-4 text-right font-tabular-data text-outline">$850</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">$23.800 CLP</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-label-sm font-label-sm font-medium border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Vencimiento FEFO
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface text-label-md font-label-md">R. Bravo</div>
+<div class="text-[10px] text-outline font-label-sm">Maestro Panadero</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="material-symbols-outlined text-[14px]" data-icon="eco">eco</span> Destino Compost
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors" title="Ver Acta">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-outline hover:text-on-surface transition-colors" title="Imprimir Etiqueta Baja">
+<span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Muelle de Descarga / Caja Aplastada -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4">
+<div class="font-semibold text-on-surface">#MRM-2025-0837</div>
+<div class="text-[11px] font-label-sm text-outline">21 May, 06:45 hrs</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="font-medium text-on-surface">Conservas Palmitos Enteros 400g</div>
+<div class="text-[11px] font-label-sm text-outline">SKU: 780332211445 · Despensa Abarrotes</div>
+</td>
+<td class="py-3.5 px-4 font-tabular-data text-body-sm">
+<span class="text-on-surface">LT-PALM-99</span>
+<div class="text-[11px] font-label-sm text-outline">Venc: Nov 2026</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-label-sm">
+<span class="material-symbols-outlined text-[13px]" data-icon="local_shipping">local_shipping</span> Muelle Recepción
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">6 u.</td>
+<td class="py-3.5 px-4 text-right font-tabular-data text-outline">$1.890</td>
+<td class="py-3.5 px-4 text-right font-semibold font-tabular-data text-on-surface">$11.340 CLP</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 text-label-sm font-label-sm font-medium border border-stone-300">
+<span class="w-1.5 h-1.5 rounded-full bg-stone-600"></span> Desmedro Muelle
+                </span>
+</td>
+<td class="py-3.5 px-4">
+<div class="text-on-surface text-label-md font-label-md">F. Araya</div>
+<div class="text-[10px] text-outline font-label-sm">Recepción Bodega</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="material-symbols-outlined text-[14px]" data-icon="task_alt">task_alt</span> Aprobada / Finanzas
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors" title="Ver Acta">
+<span class="material-symbols-outlined text-[18px]" data-icon="description">description</span>
+</button>
+<button class="p-1.5 rounded-lg hover:bg-surface-container text-outline hover:text-on-surface transition-colors" title="Imprimir Etiqueta Baja">
+<span class="material-symbols-outlined text-[18px]" data-icon="print">print</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Action Status Footer -->
+<div class="px-5 py-3.5 bg-surface-container-low/40 border-t border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-body-sm font-body-sm">
+<div class="flex items-center gap-2 text-outline">
+<span>Mostrando 5 de 24 registros de merma</span>
+<span>·</span>
+<span>Sincronización SAP Retail: <strong class="text-on-surface">Hace 4 min</strong></span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 rounded-lg border border-outline-variant/40 bg-surface text-outline hover:text-on-surface text-label-sm font-label-sm disabled:opacity-50" disabled="">
+            Anterior
+          </button>
+<span class="px-2 text-label-sm font-label-sm font-bold text-primary-container">1 / 5</span>
+<button class="px-3 py-1 rounded-lg border border-outline-variant/40 bg-surface hover:bg-surface-container text-on-surface text-label-sm font-label-sm transition-colors">
+            Siguiente
+          </button>
+</div>
+</div>
+</section>
+</main>
+<!-- CORPORATE INSTITUTIONAL FOOTER -->
+<footer class="w-full mt-10 bg-surface-container-low border-t border-outline-variant/30 py-6 px-6">
+<div class="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-body-sm font-body-sm text-outline">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-md bg-primary-container text-white flex items-center justify-center font-bold text-[11px]">
+          M
+        </div>
+<span><strong>Marzú Retail Group</strong> · Sistema Integrado de Retail y Abastecimiento (SIRA v4.12.8)</span>
+</div>
+<div class="flex flex-wrap items-center gap-6 text-label-md font-label-md">
+<span class="flex items-center gap-1 text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span> Nodo Local Providencia: Conectado
+        </span>
+<span class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] text-primary-container" data-icon="cloud_sync">cloud_sync</span> ERP Central Sincronizado
+        </span>
+<a class="hover:text-primary-container transition-colors" href="#">Manual de Procedimiento de Merma</a>
+<a class="hover:text-primary-container transition-colors" href="#">Mesa de Ayuda TI</a>
+</div>
+<div class="text-[12px] text-outline">
+        © 2025 Marzú Retail S.A. Todos los derechos reservados.
+      </div>
+</div>
+</footer>
+</body></html>

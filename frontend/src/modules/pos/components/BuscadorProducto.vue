@@ -8,6 +8,7 @@
  */
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
+import { money as moneyUsd } from '@/shared/currency'
 import Icon from '@/shared/ui/Icon.vue'
 
 const props = defineProps({ tiendaId: { type: Number, required: true } })
@@ -78,8 +79,10 @@ const categorias = ref([])
 const productos = ref([])
 const total = ref(0)
 const cargando = ref(false)
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) => moneyUsd(v, { showCode: false })
 const esFoto = (u) => u && u.startsWith('http')
+const entradaEl = ref(null)
+defineExpose({ focar: () => entradaEl.value?.focus() })
 
 async function cargarProductos() {
   cargando.value = true
@@ -133,10 +136,11 @@ function elegir(p) {
       <div class="relative flex-1">
         <Icon name="search" :size="15" class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-brand-600" />
         <input
+          ref="entradaEl"
           v-model="entrada"
           autofocus
           inputmode="text"
-          placeholder="Escaneá o escribí un código y pulsá Enter"
+          placeholder="Escaneá o escribí un código y pulsá Enter  ·  F2"
           class="w-full rounded-lg border border-brand-300 bg-white py-2 pl-8 pr-3 text-[13px] text-slate-800 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20"
         />
       </div>

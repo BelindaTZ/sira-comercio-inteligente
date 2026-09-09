@@ -11,9 +11,10 @@
  * lectura de `productos`/`inventario`); mientras tanto el registro es por escáner
  * o código, que es el flujo real.
  */
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
 import { useSesion } from '@/stores/sesion'
+import { money as moneyUsd } from '@/shared/currency'
 import Icon from '@/shared/ui/Icon.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import BuscadorProducto from './components/BuscadorProducto.vue'
@@ -43,7 +44,9 @@ const error = ref('')
 const pagoTarjetaAprobado = ref(false)
 const datafonoAviso = ref('')
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) => moneyUsd(v, { showCode: false })
+const tiendaNombre = computed(() => sesionStore.tiendaNombre || `Tienda ${sesion.tiendaId}`)
+const cajeroNombre = computed(() => sesionStore.nombre || `Cajero ${sesion.cajeroId}`)
 
 const medioSeleccionado = computed(
   () => mediosPago.value.find((m) => m.medio_pago_id === medioPagoId.value) || null,
@@ -56,11 +59,12 @@ const vuelto = computed(() => {
   return r > t ? r - t : 0
 })
 const quickCash = computed(() => {
-  const t = Math.ceil(Number(venta.value?.total || 0))
-  const opts = new Set([t])
-  ;[1000, 2000, 5000, 10000, 20000].forEach((base) => {
+  const t = Number(venta.value?.total || 0)
+  if (t <= 0) return []
+  const opts = new Set([Math.ceil(t * 100) / 100])
+  for (const base of [1, 5, 10, 20, 50, 100]) {
     opts.add(Math.ceil(t / base) * base)
-  })
+  }
   return [...opts].filter((n) => n >= t).sort((a, b) => a - b).slice(0, 4)
 })
 
@@ -192,6 +196,21 @@ async function confirmar() {
   venta.value = confirmada
   window.open(ventasApi.comprobanteUrl(confirmada.venta_id), '_blank', 'noopener')
 }
+
+// --- atajos de teclado del mockup ([F2] buscar · [F4] descuento · [F12] cobrar) ---
+const buscador = ref(null)
+function atajos(e) {
+  if (e.key === 'F2') {
+    e.preventDefault()
+    if (!venta.value) return nuevaVenta()
+    buscador.value?.focar?.()
+  } else if (e.key === 'F12') {
+    e.preventDefault()
+    if (puedeConfirmar.value && !cargando.value) confirmar()
+  }
+}
+onMounted(() => window.addEventListener('keydown', atajos))
+onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
 </script>
 
 <template>
@@ -206,17 +225,26 @@ async function confirmar() {
           <SemanticChip v-else-if="venta?.estado === 'confirmada'" tipo="neutral">Confirmada</SemanticChip>
         </div>
         <p class="mt-0.5 text-[13px] font-medium text-slate-600">
-          Tienda #{{ sesion.tiendaId }}<template v-if="sesion.cajaId"> · Caja {{ sesion.cajaId }}</template>
-          · Cajero #{{ sesion.cajeroId }}
+          {{ tiendaNombre }}<template v-if="sesion.cajaId"> · Caja {{ sesion.cajaId }}</template>
+          · {{ cajeroNombre }}
         </p>
       </div>
-      <button
-        type="button"
-        class="inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2.5 text-[13px] font-bold text-white shadow-md hover:bg-brand-700"
-        @click="nuevaVenta"
-      >
-        <Icon name="plus" :size="17" /> Nueva venta
-      </button>
+      <div class="flex items-center gap-2">
+        <span
+          class="hidden items-center gap-2 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 font-mono text-[11px] font-semibold text-slate-500 sm:flex"
+        >
+          <span><b class="text-brand-700">F2</b> Buscar</span>
+          <span class="text-slate-300">·</span>
+          <span><b class="text-brand-700">F12</b> Cobrar</span>
+        </span>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2.5 text-[13px] font-bold text-white shadow-md hover:bg-brand-700"
+          @click="nuevaVenta"
+        >
+          <Icon name="plus" :size="17" /> Nueva venta
+        </button>
+      </div>
     </header>
 
     <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">{{ error }}</p>
@@ -237,6 +265,7 @@ async function confirmar() {
       <section class="space-y-4">
         <BuscadorProducto
           v-if="venta.estado === 'en_curso'"
+          ref="buscador"
           :tienda-id="sesion.tiendaId"
           @agregar="agregar"
         />

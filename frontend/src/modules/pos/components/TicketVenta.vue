@@ -10,6 +10,7 @@
  */
 import { reactive, ref, watch } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
+import { money } from '@/shared/currency'
 import { prompt } from '@/shared/ui/dialogs'
 import Icon from '@/shared/ui/Icon.vue'
 
@@ -20,11 +21,7 @@ const props = defineProps({
 
 const emit = defineEmits(['remover', 'descuento', 'incrementar'])
 
-function moneda(v) {
-  return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(
-    Number(v || 0)
-  )
-}
+const moneda = (v) => money(v, { showCode: false })
 
 // FR-003 (feature 005): recomendación de cross-sell por afinidad de canasta.
 const recomendacion = ref(null)
