@@ -61,6 +61,136 @@ class VentasRepository(BaseRepository[Venta]):
         ).first()
         return {"nombre": row.nombre, "email": row.email} if row else None
 
+    # --- Club Marzú: puntos y cupones en el POS (feature 018) ---
+    async def puntos_disponibles(self, household_id: int) -> tuple[int, Decimal]:
+        """Saldo de puntos del cliente: los ganados (≈ 1 pt por USD de compra
+        confirmada) menos los ya canjeados. Devuelve `(puntos, valor_usd)`."""
+        ganados = int(
+            await self.session.scalar(
+                text(
+                    "SELECT COALESCE(round(SUM(total)), 0) FROM ventas "
+                    "WHERE household_id = :h AND estado = 'confirmada'"
+                ),
+                {"h": household_id},
+            )
+            or 0
+        )
+        canjeados = int(
+            await self.session.scalar(
+                text("SELECT COALESCE(SUM(puntos), 0) FROM canje_puntos WHERE household_id = :h"),
+                {"h": household_id},
+            )
+            or 0
+        )
+        disponibles = max(0, ganados - canjeados)
+        return disponibles, (Decimal(disponibles) * Decimal("0.01")).quantize(Decimal("0.01"))
+
+    async def cupones_del_cliente(
+        self, household_id: int, product_ids: list[int]
+    ) -> list[dict]:
+        """Cupones vigentes y no redimidos del cliente, con el % de descuento de su
+        campaña y si su producto está en el ticket actual."""
+        rows = await self.session.execute(
+            text("""
+                SELECT DISTINCT ON (cu.coupon_upc, cu.product_id)
+                       cu.coupon_upc, cu.product_id, cu.campaign_id,
+                       p.nombre AS producto, ca.descuento_pct
+                FROM campana_cliente cc
+                JOIN cupones cu ON cu.campaign_id = cc.campaign_id
+                JOIN campanas ca ON ca.campaign_id = cc.campaign_id
+                JOIN productos p ON p.product_id = cu.product_id
+                WHERE cc.household_id = :h
+                  AND (ca.end_date IS NULL OR ca.end_date >= CURRENT_DATE)
+                  AND NOT EXISTS (SELECT 1 FROM cupon_redimido r
+                                  WHERE r.household_id = cc.household_id
+                                    AND r.coupon_upc = cu.coupon_upc)
+                ORDER BY cu.coupon_upc, cu.product_id, ca.end_date DESC NULLS LAST
+                LIMIT 40
+            """),
+            {"h": household_id},
+        )
+        pids = set(product_ids or [])
+        return [
+            {
+                "coupon_upc": r.coupon_upc,
+                "product_id": r.product_id,
+                "campaign_id": r.campaign_id,
+                "producto": r.producto,
+                "descuento_pct": Decimal(str(r.descuento_pct)),
+                "en_ticket": r.product_id in pids,
+            }
+            for r in rows
+        ]
+
+    async def cupon_valido(
+        self, household_id: int, coupon_upc: str, product_id: int
+    ) -> dict | None:
+        """Valida que el cupón sea del cliente, para ese producto y sin redimir.
+        Devuelve `{campaign_id, descuento_pct}` o None."""
+        row = (
+            await self.session.execute(
+                text("""
+                    SELECT cu.campaign_id, ca.descuento_pct
+                    FROM campana_cliente cc
+                    JOIN cupones cu ON cu.campaign_id = cc.campaign_id
+                    JOIN campanas ca ON ca.campaign_id = cc.campaign_id
+                    WHERE cc.household_id = :h AND cu.coupon_upc = :u AND cu.product_id = :p
+                      AND (ca.end_date IS NULL OR ca.end_date >= CURRENT_DATE)
+                      AND NOT EXISTS (SELECT 1 FROM cupon_redimido r
+                                      WHERE r.household_id = :h AND r.coupon_upc = :u)
+                    LIMIT 1
+                """),
+                {"h": household_id, "u": coupon_upc, "p": product_id},
+            )
+        ).first()
+        if row is None:
+            return None
+        return {"campaign_id": row.campaign_id, "descuento_pct": Decimal(str(row.descuento_pct))}
+
+    async def registrar_canje_puntos(
+        self, *, household_id: int, venta_id: int, puntos: int, valor_usd: Decimal
+    ) -> None:
+        await self.session.execute(
+            text(
+                "INSERT INTO canje_puntos (household_id, venta_id, puntos, valor_usd) "
+                "VALUES (:h, :v, :p, :val)"
+            ),
+            {"h": household_id, "v": venta_id, "p": puntos, "val": valor_usd},
+        )
+
+    async def canje_de_venta(self, venta_id: int) -> dict | None:
+        row = (
+            await self.session.execute(
+                text(
+                    "SELECT household_id, puntos, valor_usd FROM canje_puntos "
+                    "WHERE venta_id = :v"
+                ),
+                {"v": venta_id},
+            )
+        ).first()
+        return (
+            {"household_id": row.household_id, "puntos": row.puntos, "valor_usd": row.valor_usd}
+            if row
+            else None
+        )
+
+    async def borrar_canje_de_venta(self, venta_id: int) -> None:
+        await self.session.execute(
+            text("DELETE FROM canje_puntos WHERE venta_id = :v"), {"v": venta_id}
+        )
+
+    async def registrar_redencion_cupon(
+        self, *, household_id: int, coupon_upc: str, campaign_id: int
+    ) -> None:
+        await self.session.execute(
+            text(
+                "INSERT INTO cupon_redimido "
+                "(household_id, coupon_upc, campaign_id, redemption_date) "
+                "VALUES (:h, :u, :c, CURRENT_DATE)"
+            ),
+            {"h": household_id, "u": coupon_upc, "c": campaign_id},
+        )
+
     # --- productos ---
     async def get_producto(self, product_id: int) -> Producto | None:
         return await self.session.get(Producto, product_id)

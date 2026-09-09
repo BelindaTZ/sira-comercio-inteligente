@@ -55,6 +55,8 @@ const nivelesFidel = ref([])
 const ventaCobrada = ref(null)
 const emailEnviando = ref(false)
 const emailResultado = ref('')
+const beneficios = ref(null) // { puntos_disponibles, valor_canje_usd, descuento_puntos_aplicado, cupones }
+const canjeando = ref(false)
 
 // alta rápida de cliente desde el POS
 const modalNuevoCliente = ref(false)
@@ -246,6 +248,7 @@ function resetPago() {
   razonSocial.value = ''
   ventaCobrada.value = null
   emailResultado.value = ''
+  beneficios.value = null
 }
 
 async function nuevaVenta() {
@@ -257,27 +260,33 @@ async function nuevaVenta() {
   buscador.value?.focar?.()
 }
 
+async function cargarBeneficios() {
+  if (!venta.value?.venta_id || !venta.value.household_id) {
+    beneficios.value = null
+    return
+  }
+  try {
+    beneficios.value = await ventasApi.beneficiosCliente(venta.value.venta_id)
+  } catch {
+    beneficios.value = null
+  }
+}
+
 async function vincularCliente(c) {
   const nivel = nivelesFidel.value.find((n) => n.nivel_id === c.nivel_fidelizacion_id)
-  cliente.value = { ...c, nivel_nombre: nivel?.nombre || null, puntos: null, valor_canje_usd: null }
-  clientesApi
-    .ficha360(c.household_id)
-    .then((f) => {
-      if (cliente.value?.household_id === c.household_id) {
-        cliente.value = { ...cliente.value, puntos: f.puntos, valor_canje_usd: f.valor_canje_usd }
-      }
-    })
-    .catch(() => {})
+  cliente.value = { ...c, nivel_nombre: nivel?.nombre || null }
   // asocia el cliente a la venta actual (sirve incluso con líneas ya registradas)
   if (venta.value?.estado === 'en_curso') {
     venta.value = await conError(() =>
       ventasApi.vincularCliente(venta.value.venta_id, c.household_id),
     )
+    await cargarBeneficios()
   }
 }
 
 async function quitarCliente() {
   cliente.value = null
+  beneficios.value = null
   if (venta.value?.estado === 'en_curso' && venta.value.household_id) {
     venta.value = await conError(() => ventasApi.vincularCliente(venta.value.venta_id, null))
   }
@@ -296,12 +305,44 @@ async function agregar({ productId, codigoBarras, cantidad }) {
   venta.value = await conError(() =>
     ventasApi.agregarLinea(venta.value.venta_id, { productId, codigoBarras, cantidad }),
   )
+  await cargarBeneficios()
 }
+
+async function canjearPuntos() {
+  if (!venta.value || canjeando.value) return
+  canjeando.value = true
+  try {
+    venta.value = await conError(() => ventasApi.canjearPuntos(venta.value.venta_id))
+    await cargarBeneficios()
+  } finally {
+    canjeando.value = false
+  }
+}
+
+async function quitarCanjePuntos() {
+  venta.value = await conError(() => ventasApi.quitarCanjePuntos(venta.value.venta_id))
+  await cargarBeneficios()
+}
+
+async function aplicarCuponSugerido(cupon) {
+  const linea = (venta.value?.lineas || []).find((l) => l.product_id === cupon.product_id)
+  if (!linea) return
+  venta.value = await conError(() =>
+    ventasApi.aplicarCupon(venta.value.venta_id, linea.venta_detalle_id, cupon.coupon_upc),
+  )
+  await cargarBeneficios()
+  aviso.value = `Cupón aplicado: ${cupon.producto} −${Number(cupon.descuento_pct)}%.`
+}
+
+const cuponesSugeridos = computed(() =>
+  (beneficios.value?.cupones || []).filter((c) => c.en_ticket && !c.aplicado),
+)
 
 async function remover({ lineaId, autorizaEmpleadoId, autorizaPin, motivo }) {
   venta.value = await conError(() =>
     ventasApi.removerLinea(venta.value.venta_id, lineaId, { autorizaEmpleadoId, autorizaPin, motivo }),
   )
+  await cargarBeneficios()
 }
 
 async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutorizaId, autorizaPin }) {
@@ -637,35 +678,67 @@ function atajos(e) {
           <div class="border-b border-brand-100 p-3">
             <div
               v-if="cliente"
-              class="flex items-center justify-between rounded-xl border border-amethyst-200 bg-orchid-soft/60 px-3 py-2"
+              class="rounded-xl border border-amethyst-200 bg-orchid-soft/60 px-3 py-2"
             >
-              <div class="leading-tight">
-                <div class="flex items-center gap-1.5 text-[12px] font-bold text-amethyst-900">
-                  {{ cliente.nombre }}
-                  <span
-                    v-if="cliente.nivel_nombre"
-                    class="rounded-full bg-amethyst-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white"
-                  >
-                    {{ cliente.nivel_nombre }}
-                  </span>
-                </div>
-                <div class="text-[10px] text-amethyst-700">
-                  <template v-if="cliente.puntos != null">
-                    {{ cliente.puntos.toLocaleString('es-EC') }} pts
-                    <template v-if="cliente.valor_canje_usd">
-                      · {{ money(cliente.valor_canje_usd) }} canjeables
+              <div class="flex items-start justify-between">
+                <div class="leading-tight">
+                  <div class="flex items-center gap-1.5 text-[12px] font-bold text-amethyst-900">
+                    {{ cliente.nombre }}
+                    <span
+                      v-if="cliente.nivel_nombre"
+                      class="rounded-full bg-amethyst-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white"
+                    >
+                      {{ cliente.nivel_nombre }}
+                    </span>
+                  </div>
+                  <div class="text-[10px] text-amethyst-700">
+                    <template v-if="beneficios">
+                      {{ beneficios.puntos_disponibles.toLocaleString('es-EC') }} pts ·
+                      {{ money(beneficios.valor_canje_usd) }} canjeables
                     </template>
-                  </template>
-                  <template v-else>Cliente afiliado</template>
+                    <template v-else>Cliente del Club Marzú</template>
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  class="text-[11px] font-semibold text-amethyst-700 hover:underline"
+                  @click="quitarCliente"
+                >
+                  Cambiar
+                </button>
               </div>
-              <button
-                type="button"
-                class="text-[11px] font-semibold text-amethyst-700 hover:underline"
-                @click="quitarCliente"
+
+              <!-- Canje de puntos -->
+              <div
+                v-if="beneficios && venta.estado === 'en_curso'"
+                class="mt-2 flex items-center justify-between border-t border-amethyst-200/60 pt-2"
               >
-                Cambiar
-              </button>
+                <template v-if="Number(venta.descuento_puntos) > 0">
+                  <span class="text-[11px] font-bold text-emerald-700">
+                    Puntos canjeados: −{{ money(venta.descuento_puntos) }}
+                  </span>
+                  <button
+                    type="button"
+                    class="text-[11px] font-semibold text-amethyst-700 hover:underline"
+                    @click="quitarCanjePuntos"
+                  >
+                    Quitar
+                  </button>
+                </template>
+                <template v-else>
+                  <span class="text-[11px] text-amethyst-800">
+                    Canjear puntos por {{ money(beneficios.valor_canje_usd) }}
+                  </span>
+                  <button
+                    type="button"
+                    :disabled="canjeando || beneficios.puntos_disponibles <= 0 || !venta.lineas.length"
+                    class="rounded-lg bg-amethyst-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-amethyst-500 disabled:opacity-40"
+                    @click="canjearPuntos"
+                  >
+                    {{ canjeando ? 'Aplicando…' : 'Canjear' }}
+                  </button>
+                </template>
+              </div>
             </div>
             <div v-else class="flex items-start gap-2">
               <BuscadorCliente
@@ -680,6 +753,32 @@ function atajos(e) {
                 @click="modalNuevoCliente = true"
               >
                 <Icon name="plus" :size="16" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Cupones del Club sugeridos para productos del ticket -->
+          <div
+            v-if="cuponesSugeridos.length && venta.estado === 'en_curso'"
+            class="border-b border-brand-100 bg-emerald-50/60 px-3 py-2"
+          >
+            <p class="mb-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
+              Cupones del Club disponibles
+            </p>
+            <div
+              v-for="c in cuponesSugeridos"
+              :key="c.coupon_upc"
+              class="flex items-center justify-between gap-2 py-0.5"
+            >
+              <span class="truncate text-[11px] text-emerald-900">
+                {{ c.producto }} · −{{ Number(c.descuento_pct) }}%
+              </span>
+              <button
+                type="button"
+                class="shrink-0 rounded-lg bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-emerald-500"
+                @click="aplicarCuponSugerido(c)"
+              >
+                Aplicar
               </button>
             </div>
           </div>
@@ -745,6 +844,13 @@ function atajos(e) {
 
           <!-- Venta en curso: cobro -->
           <template v-else>
+            <div
+              v-if="Number(venta.descuento_puntos) > 0"
+              class="mb-1 flex items-center justify-between text-[11px] font-semibold text-emerald-700"
+            >
+              <span>Descuento por puntos del Club</span>
+              <span class="tabular-nums">−{{ money(venta.descuento_puntos) }}</span>
+            </div>
             <div class="mb-2 flex items-baseline justify-between">
               <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
               <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">

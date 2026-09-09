@@ -23,6 +23,22 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
+  // --- Club Marzú: puntos y cupones en el POS (feature 018) ---
+  beneficiosCliente(ventaId) {
+    return http.get(`/api/ventas/${ventaId}/beneficios`).then((r) => r.data)
+  },
+  canjearPuntos(ventaId) {
+    return http.post(`/api/ventas/${ventaId}/canjear-puntos`).then((r) => r.data)
+  },
+  quitarCanjePuntos(ventaId) {
+    return http.delete(`/api/ventas/${ventaId}/canjear-puntos`).then((r) => r.data)
+  },
+  aplicarCupon(ventaId, lineaId, couponUpc) {
+    return http
+      .post(`/api/ventas/${ventaId}/lineas/${lineaId}/cupon`, { coupon_upc: couponUpc })
+      .then((r) => r.data)
+  },
+
   agregarLinea(ventaId, { productId = null, codigoBarras = null, cantidad }) {
     return http
       .post(`/api/ventas/${ventaId}/lineas`, {

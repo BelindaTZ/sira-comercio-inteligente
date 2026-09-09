@@ -59,16 +59,22 @@ def _semana_iso(dt: datetime) -> int:
     return dt.isocalendar().week
 
 
-def calcular_total(lineas: Iterable[VentaDetalle]) -> Decimal:
-    """Total línea a línea: Σ (precio unitario × cantidad − descuento manual de la
-    línea). Sin redondeos intermedios — `Decimal` conserva la precisión de 2
-    decimales. `retail_disc` (feature 003) es el monto total del descuento manual
-    autorizado de esa línea; 0 en el flujo base de 001."""
+def calcular_total(
+    lineas: Iterable[VentaDetalle], descuento_venta: Decimal | float | str = 0
+) -> Decimal:
+    """Total: Σ (precio unitario × cantidad − descuentos de la línea) − descuentos
+    a nivel venta. `Decimal` conserva la precisión de 2 decimales.
+    Descuentos de línea: `retail_disc` (manual autorizado, feature 003),
+    `coupon_disc` (cupón del Club aplicado, feature 018) y `coupon_match_disc`.
+    Descuento de venta: `descuento_puntos` (canje de puntos del Club, feature 018)."""
     total = Decimal("0")
     for linea in lineas:
         total += Decimal(str(linea.sales_value)) * linea.cantidad
         total -= Decimal(str(getattr(linea, "retail_disc", 0) or 0))
-    return total.quantize(Decimal("0.01"))
+        total -= Decimal(str(getattr(linea, "coupon_disc", 0) or 0))
+        total -= Decimal(str(getattr(linea, "coupon_match_disc", 0) or 0))
+    total -= Decimal(str(descuento_venta or 0))
+    return max(Decimal("0"), total).quantize(Decimal("0.01"))
 
 
 class VentasService:
@@ -109,7 +115,116 @@ class VentasService:
         venta = await self._venta_en_curso(venta_id)
         if household_id is not None and await self.repo.cliente_de_household(household_id) is None:
             raise NotFoundError(f"El cliente {household_id} no existe")
+        # al quitar el cliente se revierte cualquier beneficio del Club ya aplicado
+        if household_id is None and venta.household_id is not None:
+            await self.repo.borrar_canje_de_venta(venta_id)
+            venta.descuento_puntos = Decimal("0")
         venta.household_id = household_id
+        await self.repo.flush()
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
+        await self.repo.flush()
+        return venta
+
+    # ---------------------------------------- Club Marzú: puntos y cupones (018)
+    async def beneficios_cliente(self, venta_id: int) -> dict:
+        """Puntos y cupones del cliente de la venta, para ofrecerlos en el POS."""
+        venta = await self.repo.get_venta(venta_id)
+        if venta is None:
+            raise NotFoundError(f"Venta {venta_id} no existe")
+        if venta.household_id is None:
+            return {
+                "tiene_cliente": False,
+                "puntos_disponibles": 0,
+                "valor_canje_usd": Decimal("0"),
+                "descuento_puntos_aplicado": venta.descuento_puntos,
+                "cupones": [],
+            }
+        puntos, valor = await self.repo.puntos_disponibles(venta.household_id)
+        lineas = await self.repo.lineas_de(venta_id)
+        cupones = await self.repo.cupones_del_cliente(
+            venta.household_id, [ln.product_id for ln in lineas]
+        )
+        aplicados = {ln.product_id for ln in lineas if ln.coupon_disc}
+        for c in cupones:
+            c["aplicado"] = c["product_id"] in aplicados
+        return {
+            "tiene_cliente": True,
+            "puntos_disponibles": puntos,
+            "valor_canje_usd": valor,
+            "descuento_puntos_aplicado": venta.descuento_puntos,
+            "cupones": cupones,
+        }
+
+    async def canjear_puntos(self, venta_id: int) -> Venta:
+        """Aplica el saldo de puntos del cliente como descuento de la venta. Sólo
+        canjea los puntos necesarios para cubrir el total (no deja el total en
+        negativo ni 'quema' puntos de más)."""
+        venta = await self._venta_en_curso(venta_id)
+        if venta.household_id is None:
+            raise BusinessRuleError("La venta no tiene un cliente del Club asociado")
+        if venta.descuento_puntos and venta.descuento_puntos > 0:
+            raise ConflictError("Esta venta ya tiene un canje de puntos aplicado")
+        puntos, valor = await self.repo.puntos_disponibles(venta.household_id)
+        if puntos <= 0:
+            raise BusinessRuleError("El cliente no tiene puntos disponibles para canjear")
+        bruto = calcular_total(await self.repo.lineas_de(venta_id))
+        descuento = min(valor, bruto)
+        if descuento <= 0:
+            raise BusinessRuleError("No hay monto sobre el que aplicar el canje")
+        puntos_usados = int(
+            (descuento * Decimal("100")).to_integral_value(rounding="ROUND_HALF_UP")
+        )
+        await self.repo.registrar_canje_puntos(
+            household_id=venta.household_id,
+            venta_id=venta_id,
+            puntos=puntos_usados,
+            valor_usd=descuento,
+        )
+        venta.descuento_puntos = descuento
+        await self.repo.flush()
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
+        await self.repo.flush()
+        return venta
+
+    async def quitar_canje_puntos(self, venta_id: int) -> Venta:
+        venta = await self._venta_en_curso(venta_id)
+        await self.repo.borrar_canje_de_venta(venta_id)
+        venta.descuento_puntos = Decimal("0")
+        await self.repo.flush()
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id))
+        await self.repo.flush()
+        return venta
+
+    async def aplicar_cupon(self, venta_id: int, linea_id: int, coupon_upc: str) -> Venta:
+        """Aplica un cupón del Club del cliente sobre la línea de su producto."""
+        venta = await self._venta_en_curso(venta_id)
+        if venta.household_id is None:
+            raise BusinessRuleError("La venta no tiene un cliente del Club asociado")
+        linea = await self.repo.get_linea(venta_id, linea_id)
+        if linea is None:
+            raise NotFoundError(f"La línea {linea_id} no existe en la venta {venta_id}")
+        info = await self.repo.cupon_valido(
+            venta.household_id, coupon_upc.strip(), linea.product_id
+        )
+        if info is None:
+            raise BusinessRuleError(
+                "El cupón no corresponde a este cliente/producto o ya fue redimido"
+            )
+        if linea.coupon_disc:
+            raise ConflictError("La línea ya tiene un cupón aplicado")
+        bruto_linea = Decimal(str(linea.sales_value)) * linea.cantidad
+        linea.coupon_disc = (bruto_linea * info["descuento_pct"] / Decimal("100")).quantize(
+            Decimal("0.01")
+        )
+        pct_txt = format(float(info["descuento_pct"]), "g")
+        linea.motivo_descuento = f"Cupón {coupon_upc} (−{pct_txt}%)"
+        await self.repo.registrar_redencion_cupon(
+            household_id=venta.household_id,
+            coupon_upc=coupon_upc.strip(),
+            campaign_id=info["campaign_id"],
+        )
+        await self.repo.flush()
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
         await self.repo.flush()
         return venta
 
@@ -175,7 +290,7 @@ class VentasService:
             self.repo.agregar(linea)
         await self.repo.flush()
 
-        venta.total = calcular_total(await self.repo.lineas_de(venta_id))
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
         await self.repo.flush()
         return venta, linea
 
@@ -226,7 +341,7 @@ class VentasService:
         )
         await self.repo.delete(linea)
 
-        venta.total = calcular_total(await self.repo.lineas_de(venta_id))
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
         await self.repo.flush()
         return venta
 
@@ -315,7 +430,7 @@ class VentasService:
         objetivo = await self._margen_objetivo_efectivo(linea.product_id)
         linea.margen_bajo_minimo = linea.margen_real is not None and linea.margen_real < objetivo
 
-        venta.total = calcular_total(await self.repo.lineas_de(venta_id))
+        venta.total = calcular_total(await self.repo.lineas_de(venta_id), venta.descuento_puntos)
         await self.repo.flush()
         return venta, linea
 
@@ -350,7 +465,7 @@ class VentasService:
         await self._descontar_inventario_fifo(venta, lineas)
         await self._calcular_margen_real_lineas(lineas)
 
-        venta.total = calcular_total(lineas)
+        venta.total = calcular_total(lineas, venta.descuento_puntos)
         venta.estado = "confirmada"
         # feature 007 (FR-015): `fecha_hora` es el momento de CONFIRMACIÓN (el
         # dataset sembrado ya la usa así); `fecha_inicio_cobro` conserva el inicio.
@@ -549,6 +664,8 @@ class VentasService:
             )
 
         venta.estado = "anulada"
+        # feature 018 — la anulación devuelve los puntos canjeados en esa venta.
+        await self.repo.borrar_canje_de_venta(venta_id)
         self.repo.agregar(
             AnulacionVenta(venta_id=venta_id, empleado_id=data.empleado_id, motivo=data.motivo)
         )

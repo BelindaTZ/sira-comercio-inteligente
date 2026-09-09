@@ -148,6 +148,13 @@ function confirmarDescuento() {
               {{ linea.motivo_descuento }}
             </span>
             <span
+              v-if="Number(linea.coupon_disc) > 0"
+              class="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
+            >
+              {{ (linea.motivo_descuento || '').startsWith('Cupón') ? linea.motivo_descuento : 'Cupón' }}
+              · −{{ moneda(linea.coupon_disc) }}
+            </span>
+            <span
               v-if="Number(linea.retail_disc) > 0"
               class="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
             >

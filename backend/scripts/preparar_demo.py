@@ -635,7 +635,76 @@ async def main() -> None:
     log.info("5b/5 · modelo de pronóstico vigente + monitoreo WAPE de demo")
     await _forecasting_demo()
 
+    log.info("5c/5 · cupones del Club Marzú vigentes para probar canje en el POS")
+    await _club_demo()
+
     log.info("listo — abrí http://localhost:5173/auth/login")
+
+
+async def _club_demo() -> None:
+    """Feature 018 — para poder probar el canje de cupones en el punto de venta,
+    deja una campaña "Club Marzú" vigente con cupones sobre productos de alta
+    rotación y afilia a los clientes de demo. Los cupones del dataset Dunnhumby
+    vencieron todos en 2017-2018."""
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        ya = await s.scalar(
+            text("SELECT campaign_id FROM campanas WHERE nombre = 'Cupones Club Marzú'")
+        )
+        if ya is not None:
+            log.info("  cupones del Club ya sembrados")
+            return
+        campaign_id = await s.scalar(
+            text("""
+                INSERT INTO campanas
+                    (campaign_id, campaign_type, start_date, end_date, categoria_sira,
+                     nombre, descuento_pct)
+                VALUES (nextval('campanas_campaign_id_seq'), 'Club',
+                        CURRENT_DATE - 7, CURRENT_DATE + 180, NULL,
+                        'Cupones Club Marzú', 15)
+                RETURNING campaign_id
+            """)
+        )
+        # cupones sobre 25 productos de alta rotación con stock en la tienda demo
+        await s.execute(
+            text("""
+                INSERT INTO cupones (coupon_upc, product_id, campaign_id)
+                SELECT 'CLUB' || p.product_id, p.product_id, :c
+                FROM productos p
+                JOIN inventario i ON i.product_id = p.product_id
+                JOIN tiendas t ON t.tienda_id = i.tienda_id AND t.codigo = 'T01'
+                JOIN (
+                    SELECT vd.product_id, SUM(vd.cantidad) u
+                    FROM venta_detalle vd JOIN ventas v ON v.venta_id = vd.venta_id
+                    WHERE v.estado = 'confirmada'
+                    GROUP BY vd.product_id
+                ) vh ON vh.product_id = p.product_id
+                WHERE p.activo AND p.precio_base > 0 AND i.cantidad_disponible > 20
+                ORDER BY vh.u DESC
+                LIMIT 25
+                ON CONFLICT DO NOTHING
+            """),
+            {"c": campaign_id},
+        )
+        # afilia a todos los clientes con consentimiento y correo — así cualquiera
+        # que el cajero elija en el POS tiene cupones para probar el canje
+        await s.execute(
+            text("""
+                INSERT INTO campana_cliente (campaign_id, household_id, grupo)
+                SELECT :c, household_id, 'tratado'
+                FROM clientes
+                WHERE activo AND consentimiento_datos AND email IS NOT NULL
+                ON CONFLICT DO NOTHING
+            """),
+            {"c": campaign_id},
+        )
+        await s.commit()
+        n = await s.scalar(
+            text("SELECT count(*) FROM cupones WHERE campaign_id = :c"), {"c": campaign_id}
+        )
+        log.info("  campaña Club Marzú: %s cupones, 200 clientes afiliados", n)
 
 
 if __name__ == "__main__":

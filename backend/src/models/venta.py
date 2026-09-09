@@ -31,6 +31,8 @@ class Venta(Base):
     fecha_hora: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     semana: Mapped[int] = mapped_column(Integer, nullable=False)
     total: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
+    # feature 018 — monto en USD que el canje de puntos del Club descuenta del total.
+    descuento_puntos: Mapped[float] = mapped_column(Numeric(12, 2), nullable=False, default=0)
     estado: Mapped[str] = mapped_column(String(20), nullable=False, default="en_curso")
     tipo_comprobante: Mapped[str] = mapped_column(String(20), nullable=False, default="nota_venta")
     identificacion_comprador: Mapped[str] = mapped_column(

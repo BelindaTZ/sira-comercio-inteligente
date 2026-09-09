@@ -22,6 +22,8 @@ from src.modules.ventas.schemas import (
     AgregarLineaIn,
     AltaMedioPagoIn,
     AnularVentaIn,
+    AplicarCuponIn,
+    BeneficiosClienteOut,
     CajaOut,
     CatalogoPosItem,
     ComprobanteEmailOut,
@@ -85,14 +87,19 @@ async def _venta_out(svc: VentasService, venta: Venta) -> VentaOut:
         razon_social_comprador=venta.razon_social_comprador,
         fecha_hora=venta.fecha_hora,
         comprobante_objeto=venta.comprobante_objeto,
+        descuento_puntos=venta.descuento_puntos or 0,
         lineas=[
             LineaOut(
                 venta_detalle_id=ln.venta_detalle_id,
                 product_id=ln.product_id,
                 cantidad=ln.cantidad,
                 sales_value=ln.sales_value,
-                subtotal=ln.sales_value * ln.cantidad - (ln.retail_disc or 0),
+                subtotal=ln.sales_value * ln.cantidad
+                - (ln.retail_disc or 0)
+                - (ln.coupon_disc or 0)
+                - (ln.coupon_match_disc or 0),
                 retail_disc=ln.retail_disc or 0,
+                coupon_disc=ln.coupon_disc or 0,
                 motivo_descuento=ln.motivo_descuento,
                 empleado_autoriza_id=ln.empleado_autoriza_id,
                 margen_real=ln.margen_real,
@@ -120,6 +127,39 @@ async def agregar_linea(
 ) -> VentaOut:
     venta, _linea = await svc.agregar_linea(venta_id, data)
     return await _venta_out(svc, venta)
+
+
+@router.get("/{venta_id}/beneficios", response_model=BeneficiosClienteOut)
+async def beneficios_cliente(
+    venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
+) -> BeneficiosClienteOut:
+    """Puntos y cupones del Club del cliente de la venta, para el POS."""
+    return BeneficiosClienteOut(**await svc.beneficios_cliente(venta_id))
+
+
+@router.post("/{venta_id}/canjear-puntos", response_model=VentaOut)
+async def canjear_puntos(
+    venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_actualizar)]
+) -> VentaOut:
+    return await _venta_out(svc, await svc.canjear_puntos(venta_id))
+
+
+@router.delete("/{venta_id}/canjear-puntos", response_model=VentaOut)
+async def quitar_canje_puntos(
+    venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_actualizar)]
+) -> VentaOut:
+    return await _venta_out(svc, await svc.quitar_canje_puntos(venta_id))
+
+
+@router.post("/{venta_id}/lineas/{linea_id}/cupon", response_model=VentaOut)
+async def aplicar_cupon(
+    venta_id: int,
+    linea_id: int,
+    data: AplicarCuponIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_linea_update)],
+) -> VentaOut:
+    return await _venta_out(svc, await svc.aplicar_cupon(venta_id, linea_id, data.coupon_upc))
 
 
 @router.patch("/{venta_id}/cliente", response_model=VentaOut)

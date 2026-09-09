@@ -24,6 +24,27 @@ class VincularClienteIn(BaseModel):
     household_id: int | None = None
 
 
+class AplicarCuponIn(BaseModel):
+    coupon_upc: str = Field(min_length=1, max_length=20)
+
+
+class CuponPosOut(BaseModel):
+    coupon_upc: str
+    product_id: int
+    producto: str | None = None
+    descuento_pct: Decimal
+    en_ticket: bool = False
+    aplicado: bool = False
+
+
+class BeneficiosClienteOut(BaseModel):
+    tiene_cliente: bool
+    puntos_disponibles: int
+    valor_canje_usd: Decimal
+    descuento_puntos_aplicado: Decimal
+    cupones: list[CuponPosOut] = []
+
+
 class AgregarLineaIn(BaseModel):
     product_id: int | None = None
     codigo_barras: str | None = None
@@ -108,6 +129,8 @@ class LineaOut(BaseModel):
     subtotal: Decimal
     # feature 003 — descuento manual / margen (None si no aplica)
     retail_disc: Decimal = Decimal("0")
+    # feature 018 — descuento por cupón del Club aplicado a la línea
+    coupon_disc: Decimal = Decimal("0")
     motivo_descuento: str | None = None
     empleado_autoriza_id: int | None = None
     margen_real: Decimal | None = None
@@ -127,6 +150,7 @@ class VentaOut(BaseModel):
     razon_social_comprador: str
     fecha_hora: datetime
     comprobante_objeto: str | None = None
+    descuento_puntos: Decimal = Decimal("0")
     lineas: list[LineaOut] = []
 
 
