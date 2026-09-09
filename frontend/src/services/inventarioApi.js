@@ -166,13 +166,26 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
-  definirStockMaximo({ productCategory, tiendaId, cantidadMaxima, empleadoId }) {
+  definirStockMaximo({
+    productCategory,
+    tiendaId,
+    cantidadMaxima,
+    empleadoId,
+    capacidadGondola,
+    stockMinimoReorden,
+    diasCobertura,
+    politicaSobrestock,
+  }) {
     return http
       .put('/api/inventario/stock-maximo', {
         product_category: productCategory,
         tienda_id: tiendaId,
         cantidad_maxima: cantidadMaxima,
         empleado_id: empleadoId,
+        capacidad_gondola: capacidadGondola || null,
+        stock_minimo_reorden: stockMinimoReorden ?? null,
+        dias_cobertura: diasCobertura || null,
+        politica_sobrestock: politicaSobrestock || null,
       })
       .then((r) => r.data)
   },
@@ -185,7 +198,18 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
-  verificacionAnaquel({ productId, tiendaId, disponible, empleadoId, fecha }) {
+  verificacionAnaquel({
+    productId,
+    tiendaId,
+    disponible,
+    empleadoId,
+    fecha,
+    facingAsignado,
+    facingReal,
+    eslOk,
+    fifoOk,
+    observaciones,
+  }) {
     return http
       .post('/api/inventario/verificacion-anaquel', {
         product_id: productId,
@@ -193,6 +217,11 @@ export const inventarioApi = {
         disponible,
         empleado_id: empleadoId,
         fecha: fecha || null,
+        facing_asignado: facingAsignado ?? null,
+        facing_real: facingReal ?? null,
+        esl_ok: eslOk ?? null,
+        fifo_ok: fifoOk ?? null,
+        observaciones: observaciones || null,
       })
       .then((r) => r.data)
   },

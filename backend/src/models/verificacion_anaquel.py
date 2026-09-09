@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, func
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.database import Base
@@ -25,4 +25,10 @@ class VerificacionAnaquel(Base):
     fecha: Mapped[date] = mapped_column(Date, server_default=func.current_date())
     disponible: Mapped[bool] = mapped_column(Boolean, nullable=False)
     empleado_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Auditoría de anaquel / planograma (migración 0023) — opcionales.
+    facing_asignado: Mapped[int | None] = mapped_column(Integer)
+    facing_real: Mapped[int | None] = mapped_column(Integer)
+    esl_ok: Mapped[bool | None] = mapped_column(Boolean)
+    fifo_ok: Mapped[bool | None] = mapped_column(Boolean)
+    observaciones: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

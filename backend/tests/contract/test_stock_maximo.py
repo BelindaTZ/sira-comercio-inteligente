@@ -26,6 +26,45 @@ async def test_put_stock_maximo_hace_upsert(client, escenario_compras, auth_jefe
     assert r2.json()["cantidad_maxima"] == 300
 
 
+async def test_put_stock_maximo_persiste_parametros_de_capacidad(
+    client, escenario_compras, auth_jefe_ops
+):
+    """Migración 0023 — capacidad de góndola, reorden, cobertura y política de
+    sobre-stock viajan en el mismo PUT y se devuelven en el Out."""
+    e = escenario_compras
+    body = {
+        "product_category": "CAT PARAMS",
+        "tienda_id": e["tienda_id"],
+        "cantidad_maxima": 300,
+        "empleado_id": e["jefe_ops_id"],
+        "capacidad_gondola": 350,
+        "stock_minimo_reorden": 75,
+        "dias_cobertura": 5,
+        "politica_sobrestock": "estricto",
+    }
+    r = await client.put("/api/inventario/stock-maximo", json=body, headers=auth_jefe_ops)
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["capacidad_gondola"] == 350
+    assert d["stock_minimo_reorden"] == 75
+    assert d["dias_cobertura"] == 5
+    assert d["politica_sobrestock"] == "estricto"
+
+    # el GET también los expone
+    g = await client.get(
+        "/api/inventario/stock-maximo",
+        params={"tienda_id": e["tienda_id"], "product_category": "CAT PARAMS"},
+        headers=auth_jefe_ops,
+    )
+    assert g.status_code == 200, g.text
+    assert g.json()["items"][0]["dias_cobertura"] == 5
+
+    # política fuera del dominio permitido → 422
+    body["politica_sobrestock"] = "flexible"
+    bad = await client.put("/api/inventario/stock-maximo", json=body, headers=auth_jefe_ops)
+    assert bad.status_code == 422, bad.text
+
+
 async def test_reponedor_no_puede_definir_stock_maximo(client, escenario_compras, auth_reponedor):
     e = escenario_compras
     resp = await client.put(

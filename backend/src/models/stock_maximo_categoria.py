@@ -23,4 +23,9 @@ class StockMaximoCategoria(Base):
     tienda_id: Mapped[int] = mapped_column(Integer, nullable=False)
     cantidad_maxima: Mapped[int] = mapped_column(Integer, nullable=False)
     empleado_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Parámetros de capacidad/reabastecimiento (migración 0023) — opcionales.
+    capacidad_gondola: Mapped[int | None] = mapped_column(Integer)
+    stock_minimo_reorden: Mapped[int | None] = mapped_column(Integer)
+    dias_cobertura: Mapped[int | None] = mapped_column(Integer)
+    politica_sobrestock: Mapped[str | None] = mapped_column(String(20))
     fecha_definicion: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())

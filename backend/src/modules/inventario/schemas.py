@@ -63,6 +63,10 @@ class StockMaximoIn(BaseModel):
     tienda_id: int
     cantidad_maxima: int = Field(gt=0)
     empleado_id: int
+    capacidad_gondola: int | None = Field(default=None, gt=0)
+    stock_minimo_reorden: int | None = Field(default=None, ge=0)
+    dias_cobertura: int | None = Field(default=None, ge=1, le=60)
+    politica_sobrestock: Literal["estricto", "autorizado"] | None = None
 
 
 class VerificacionAnaquelIn(BaseModel):
@@ -71,6 +75,11 @@ class VerificacionAnaquelIn(BaseModel):
     disponible: bool
     empleado_id: int
     fecha: date | None = None
+    facing_asignado: int | None = Field(default=None, ge=0)
+    facing_real: int | None = Field(default=None, ge=0)
+    esl_ok: bool | None = None
+    fifo_ok: bool | None = None
+    observaciones: str | None = Field(default=None, max_length=300)
 
 
 # --- salida ---
@@ -217,6 +226,10 @@ class StockMaximoOut(BaseModel):
     cantidad_maxima: int
     empleado_id: int
     fecha_definicion: datetime
+    capacidad_gondola: int | None = None
+    stock_minimo_reorden: int | None = None
+    dias_cobertura: int | None = None
+    politica_sobrestock: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -228,5 +241,10 @@ class VerificacionAnaquelOut(BaseModel):
     fecha: date
     disponible: bool
     empleado_id: int
+    facing_asignado: int | None = None
+    facing_real: int | None = None
+    esl_ok: bool | None = None
+    fifo_ok: bool | None = None
+    observaciones: str | None = None
 
     model_config = {"from_attributes": True}

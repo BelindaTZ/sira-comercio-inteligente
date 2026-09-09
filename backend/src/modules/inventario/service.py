@@ -483,6 +483,10 @@ class InventarioService:
             existente.cantidad_maxima = data.cantidad_maxima
             existente.empleado_id = data.empleado_id
             existente.fecha_definicion = _ahora()
+        existente.capacidad_gondola = data.capacidad_gondola
+        existente.stock_minimo_reorden = data.stock_minimo_reorden
+        existente.dias_cobertura = data.dias_cobertura
+        existente.politica_sobrestock = data.politica_sobrestock
         await self.repo.flush()
         return existente
 
@@ -590,5 +594,10 @@ class InventarioService:
         else:
             existente.disponible = data.disponible
             existente.empleado_id = data.empleado_id
+        existente.facing_asignado = data.facing_asignado
+        existente.facing_real = data.facing_real
+        existente.esl_ok = data.esl_ok
+        existente.fifo_ok = data.fifo_ok
+        existente.observaciones = data.observaciones
         await self.repo.flush()
         return existente

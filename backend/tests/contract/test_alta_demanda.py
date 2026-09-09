@@ -76,6 +76,36 @@ async def test_verificacion_anaquel_upsert_por_dia(
     assert filas == 1
 
 
+async def test_verificacion_anaquel_persiste_auditoria_de_planograma(
+    client, escenario_pos, auth_reponedor, db_session
+):
+    """Migración 0023 — facing asignado/real, ESL, FIFO y observaciones."""
+    e = escenario_pos
+    await _marcar_clase_a(db_session, e["product_id"])
+    payload = {
+        "product_id": e["product_id"],
+        "tienda_id": e["tienda_id"],
+        "disponible": True,
+        "empleado_id": e["encargado_id"],
+        "fecha": "2026-09-07",
+        "facing_asignado": 4,
+        "facing_real": 2,
+        "esl_ok": True,
+        "fifo_ok": False,
+        "observaciones": "Lote antiguo estaba al fondo; se adelantó.",
+    }
+    r = await client.post(
+        "/api/inventario/verificacion-anaquel", json=payload, headers=auth_reponedor
+    )
+    assert r.status_code == 201, r.text
+    d = r.json()
+    assert d["facing_asignado"] == 4
+    assert d["facing_real"] == 2
+    assert d["esl_ok"] is True
+    assert d["fifo_ok"] is False
+    assert d["observaciones"].startswith("Lote antiguo")
+
+
 async def test_quiebre_de_producto_clase_a_es_alta_demanda(
     client, escenario_pos, auth_reponedor, db_session
 ):

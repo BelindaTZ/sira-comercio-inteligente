@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Verificar y Auditar Anaquel / Góndola</title>
+<!-- Fonts: Plus Jakarta Sans & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#8a4cfc",
+            "primary-container": "#0a3632",
+            "error-container": "#ffdad6",
+            "surface-container-high": "#e6e8ea",
+            "tertiary": "#002014",
+            "on-tertiary-fixed-variant": "#005137",
+            "outline": "#717977",
+            "on-error": "#ffffff",
+            "surface-variant": "#e0e3e5",
+            "surface-tint": "#3e6561",
+            "surface-container-highest": "#e0e3e5",
+            "on-secondary-container": "#fffbff",
+            "error": "#ba1a1a",
+            "primary-fixed": "#c0ebe4",
+            "surface-container": "#eceef0",
+            "on-secondary": "#ffffff",
+            "inverse-surface": "#2d3133",
+            "inverse-on-surface": "#eff1f3",
+            "primary-fixed-dim": "#a5cfc9",
+            "surface-container-lowest": "#ffffff",
+            "on-surface-variant": "#414847",
+            "tertiary-container": "#003825",
+            "outline-variant": "#c0c8c6",
+            "primary": "#00201d",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-tertiary-container": "#30ab7c",
+            "on-primary": "#ffffff",
+            "background": "#f8f9fb",
+            "surface": "#f8f9fb",
+            "on-background": "#191c1e",
+            "secondary-fixed": "#eaddff",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-container": "#779f9a",
+            "surface-bright": "#f8f9fb",
+            "surface-container-low": "#f2f4f6",
+            "inverse-primary": "#a5cfc9",
+            "on-primary-fixed": "#00201d",
+            "tertiary-fixed": "#85f8c4",
+            "on-primary-fixed-variant": "#254d49",
+            "on-secondary-fixed": "#25005a",
+            "on-surface": "#191c1e",
+            "secondary": "#712ae2",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "surface-dim": "#d8dadc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "space-2xl": "3rem",
+            "space-md": "0.75rem",
+            "space-base": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "sidebar-expanded": "16.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "gutter-mobile": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f8fafc;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen overflow-hidden relative">
+<!-- BACKGROUND INVENTORY CANVAS (Simulated Operational Backdrop with Blur) -->
+<div class="fixed inset-0 z-0 select-none overflow-hidden filter blur-[6px] opacity-40 scale-105 pointer-events-none">
+<header class="h-16 bg-surface-container-lowest border-b border-outline-variant/40 flex items-center justify-between px-space-xl">
+<div class="flex items-center gap-space-md">
+<span class="font-headline-md text-headline-md text-primary font-bold">SIRA</span>
+<span class="text-label-sm font-label-sm bg-surface-container px-2 py-1 rounded">Marzú Retail Group</span>
+</div>
+<div class="flex items-center gap-space-sm">
+<div class="w-64 h-8 bg-surface-container-low rounded"></div>
+<div class="w-8 h-8 rounded-full bg-primary-container"></div>
+</div>
+</header>
+<div class="p-space-xl space-y-space-lg max-w-[1400px] mx-auto">
+<div class="grid grid-cols-4 gap-space-md">
+<div class="h-28 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-space-md"></div>
+<div class="h-28 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-space-md"></div>
+<div class="h-28 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-space-md"></div>
+<div class="h-28 bg-surface-container-lowest border border-outline-variant/30 rounded-xl p-space-md"></div>
+</div>
+<div class="h-96 bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-space-base space-y-3">
+<div class="h-6 w-1/3 bg-surface-container rounded"></div>
+<div class="h-8 bg-surface-container-low rounded"></div>
+<div class="h-8 bg-surface-container-low rounded"></div>
+<div class="h-8 bg-surface-container-low rounded"></div>
+<div class="h-8 bg-surface-container-low rounded"></div>
+</div>
+</div>
+</div>
+<!-- BACKDROP OVERLAY (Atmospheric Frosted Abyssal Dimmer) -->
+<div class="fixed inset-0 z-40 bg-[#001412]/60 backdrop-blur-md transition-opacity duration-200"></div>
+<!-- MODAL CONTAINER (Centered Operational Cockpit) -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+<div class="w-full max-w-[1040px] bg-surface-container-lowest rounded-xl shadow-[0_4px_8px_rgba(10,54,50,0.06),0_20px_48px_-8px_rgba(10,54,50,0.22)] border border-[rgba(10,54,50,0.12)] flex flex-col max-h-[92vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+<!-- 1. HEADER SECTION -->
+<header class="px-space-xl pt-space-lg pb-space-md border-b border-[rgba(10,54,50,0.08)] bg-gradient-to-b from-surface-bright to-surface-container-lowest relative">
+<div class="flex items-start justify-between gap-space-md">
+<div class="space-y-1.5 flex-1 pr-6">
+<!-- Badges Bar -->
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-label-sm font-label-sm bg-primary-container text-on-primary font-semibold tracking-wide shadow-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="fact_check">fact_check</span>
+                AUDITORÍA DE SALA &amp; PLANOGRAMA
+              </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-label-sm font-label-sm font-mono bg-surface-container text-on-surface-variant border border-outline-variant/60 font-semibold">
+                #ANAQUEL-PAS-04B
+              </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm bg-surface-container-low text-primary border border-[rgba(10,54,50,0.15)] font-medium">
+<span class="material-symbols-outlined text-[14px]" data-icon="storefront">storefront</span>
+                Góndola Abarrotes Premium
+              </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-label-sm font-label-sm bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                Sesión Activa
+              </span>
+</div>
+<!-- Title & Subtitle -->
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary font-bold tracking-tight">
+                Verificación de Anaquel y Planograma en Góndola
+              </h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Control físico de facing, etiquetas electrónicas de precio (ESL), rotación FIFO y detección de quiebres visuales en sala.
+              </p>
+</div>
+<!-- Location Meta -->
+<div class="flex items-center gap-2 text-label-md font-label-md text-on-surface-variant pt-1">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-medium text-primary">Pasillo 04 - Estantería B</span>
+<span class="text-outline-variant">•</span>
+<span>Nivel 2 y 3 (Altura de Ojos)</span>
+<span class="text-outline-variant">•</span>
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]" data-icon="corporate_fare">corporate_fare</span>
+                Providencia Express
+              </span>
+</div>
+</div>
+<!-- Close Modal Button (X) -->
+<button aria-label="Cerrar modal" class="p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-primary-container/20 -mt-1 -mr-1" type="button">
+<span class="material-symbols-outlined text-[22px]" data-icon="close">close</span>
+</button>
+</div>
+</header>
+<!-- MODAL SCROLLABLE CONTENT BODY -->
+<div class="flex-1 overflow-y-auto custom-scrollbar px-space-xl py-space-md space-y-space-lg bg-surface-container-low/30">
+<!-- 2. RESUMEN DE AUDITORÍA (3 Compact KPIs) -->
+<section aria-labelledby="kpi-summary-title">
+<div class="flex items-center justify-between mb-2.5">
+<h2 class="font-headline-sm text-headline-sm text-primary flex items-center gap-2 font-semibold" id="kpi-summary-title">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="analytics">analytics</span>
+              Resumen de Facing &amp; Ocupación en Góndola
+            </h2>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-mono">Actualizado hace 2 min</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-base border border-[rgba(10,54,50,0.08)] shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-primary-container/30 transition-all">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-sm text-label-sm tracking-wider uppercase font-semibold text-outline">Planograma Conforme</span>
+<span class="material-symbols-outlined text-[18px] text-emerald-700" data-icon="check_circle">check_circle</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">92%</span>
+<span class="text-label-sm font-label-sm text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">En Rango Alto</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+<span class="font-semibold text-on-surface">23 de 25</span> facings en posición asignada.
+              </p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-2.5 overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 92%;"></div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-base border border-[rgba(10,54,50,0.08)] shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-red-300 transition-all">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-sm text-label-sm tracking-wider uppercase font-semibold text-outline">Quiebres Visuales (Gaps)</span>
+<span class="material-symbols-outlined text-[18px] text-red-600" data-icon="warning">warning</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-red-700">2</span>
+<span class="text-label-sm font-label-sm text-red-700 font-medium bg-red-50 px-1.5 py-0.5 rounded border border-red-200">Acción Requerida</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+                Espacios vacíos detectados sin producto en primera línea.
+              </p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-2.5 overflow-hidden">
+<div class="bg-red-600 h-full rounded-full" style="width: 25%;"></div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-space-base border border-[rgba(10,54,50,0.08)] shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] hover:border-primary-container/30 transition-all">
+<div class="flex items-center justify-between text-on-surface-variant mb-1">
+<span class="font-label-sm text-label-sm tracking-wider uppercase font-semibold text-outline">Sincronización ESL</span>
+<span class="material-symbols-outlined text-[18px] text-emerald-700" data-icon="wifi_tethering">wifi_tethering</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">100% OK</span>
+<span class="text-label-sm font-label-sm text-emerald-700 font-medium bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Protocolo IoT OK</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">
+                Precios en pantalla digital coinciden con el POS central.
+              </p>
+<div class="w-full bg-surface-container h-1.5 rounded-full mt-2.5 overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full" style="width: 100%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. TABLA / CHECKLIST ENRIQUECIDO POR SKU -->
+<section aria-labelledby="sku-table-title" class="space-y-space-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary font-semibold flex items-center gap-2" id="sku-table-title">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="view_kanban">view_kanban</span>
+                Comprobación Detallada por SKU en el Anaquel
+              </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+                Matriz de validación física: confrontación de facing teórico vs facing real y cumplimiento FIFO.
+              </p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-sm text-on-surface-variant">Filtro:</span>
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm px-2.5 py-1 rounded bg-surface-container-lowest border border-outline-variant font-medium text-primary">
+                Todos los SKUs (3)
+              </span>
+</div>
+</div>
+<!-- Structured Table Card -->
+<div class="bg-surface-container-lowest rounded-xl border border-[rgba(10,54,50,0.1)] shadow-sm overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="h-9 bg-surface-container-low border-b border-[rgba(10,54,50,0.08)] text-label-sm font-label-sm uppercase tracking-wider text-outline">
+<th class="py-2 px-4 font-semibold" scope="col">SKU &amp; Producto</th>
+<th class="py-2 px-3 font-semibold text-center" scope="col">Planograma / Facing</th>
+<th class="py-2 px-3 font-semibold" scope="col">Precio ESL (Digital)</th>
+<th class="py-2 px-3 font-semibold" scope="col">Rotación / Lote FIFO</th>
+<th class="py-2 px-4 font-semibold text-right" scope="col">Diagnóstico &amp; Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[rgba(15,23,42,0.05)] text-body-sm font-body-sm">
+<!-- SKU 1: Aceite de Oliva Extra Virgen -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3.5 px-4 align-top">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded bg-emerald-50 border border-emerald-200 flex items-center justify-center shrink-0 text-primary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+</div>
+<div>
+<div class="font-semibold text-on-surface">Aceite de Oliva Extra Virgen 500ml Reserva</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-mono text-label-sm font-label-sm text-outline">#SKU-88210</span>
+<span class="text-outline-variant">•</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Categoría: Aceites &amp; Condimentos</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top text-center">
+<div class="inline-flex flex-col items-center">
+<div class="flex items-center gap-1.5 font-tabular-data text-tabular-data">
+<span class="text-on-surface-variant text-label-md">Asig: <strong class="text-primary font-semibold">4</strong></span>
+<span class="text-outline-variant">|</span>
+<span class="text-on-surface-variant text-label-md">Real: <strong class="text-emerald-700 font-bold">4</strong></span>
+</div>
+<div class="flex items-center gap-0.5 mt-1">
+<span class="w-2.5 h-3 bg-emerald-600 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-emerald-600 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-emerald-600 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-emerald-600 rounded-xs inline-block"></span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="flex items-center gap-1.5">
+<span class="font-tabular-data text-tabular-data font-bold text-on-surface">$5.450 CLP</span>
+<span class="material-symbols-outlined text-[16px] text-emerald-600" data-icon="sync_saved_locally" title="ESL Sincronizado vía Gateway RF">sync_saved_locally</span>
+</div>
+<span class="text-label-sm font-label-sm text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
+                        Sincronizado POS
+                      </span>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="font-mono text-label-sm font-label-sm font-semibold text-primary">L-2024-09B</div>
+<div class="flex items-center gap-1 text-label-sm font-label-sm text-emerald-800 mt-0.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="done_all">done_all</span>
+                        FIFO Correcto (Frente)
+                      </div>
+</td>
+<td class="py-3.5 px-4 align-top text-right">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+<span class="material-symbols-outlined text-[15px]" data-icon="check">check</span>
+                        Conforme
+                      </span>
+</td>
+</tr>
+<!-- SKU 2: Pasta Fettuccine De Cecco (QUIEBRE) -->
+<tr class="bg-red-50/30 hover:bg-red-50/50 transition-colors">
+<td class="py-3.5 px-4 align-top">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded bg-red-100 border border-red-200 flex items-center justify-center shrink-0 text-red-700">
+<span class="material-symbols-outlined text-[20px]" data-icon="production_quantity_limits">production_quantity_limits</span>
+</div>
+<div>
+<div class="font-semibold text-on-surface">Pasta Fettuccine De Cecco 500g</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-mono text-label-sm font-label-sm text-outline">#SKU-33102</span>
+<span class="text-outline-variant">•</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Categoría: Pastas Secas</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top text-center">
+<div class="inline-flex flex-col items-center">
+<div class="flex items-center gap-1.5 font-tabular-data text-tabular-data">
+<span class="text-on-surface-variant text-label-md">Asig: <strong class="text-primary font-semibold">3</strong></span>
+<span class="text-outline-variant">|</span>
+<span class="text-on-surface-variant text-label-md">Real: <strong class="text-red-700 font-bold">1 frente</strong></span>
+</div>
+<!-- Visual Gap Graphic -->
+<div class="flex items-center gap-1 mt-1">
+<span class="w-2.5 h-3 bg-red-500 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-red-100 border border-dashed border-red-400 rounded-xs inline-block" title="Hueco vacío"></span>
+<span class="w-2.5 h-3 bg-red-100 border border-dashed border-red-400 rounded-xs inline-block" title="Hueco vacío"></span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="flex items-center gap-1.5">
+<span class="font-tabular-data text-tabular-data font-bold text-on-surface">$2.890 CLP</span>
+<span class="material-symbols-outlined text-[16px] text-emerald-600" data-icon="sync_saved_locally">sync_saved_locally</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline bg-surface-container px-1.5 py-0.2 rounded inline-block mt-0.5">
+                        ESL OK
+                      </span>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="font-mono text-label-sm font-label-sm font-semibold text-on-surface">L-2024-11D</div>
+<div class="text-label-sm font-label-sm text-red-700 font-medium mt-0.5">
+                        Stock crítico en sala (1 un.)
+                      </div>
+</td>
+<td class="py-3.5 px-4 align-top text-right space-y-1.5">
+<div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-label-sm font-label-sm font-semibold bg-red-100 text-red-800 border border-red-200">
+<span class="material-symbols-outlined text-[15px]" data-icon="error">error</span>
+                          ¡Alerta Quiebre Visual! (Faltan 8 un.)
+                        </span>
+</div>
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-label-sm font-label-sm font-semibold bg-secondary text-on-secondary hover:bg-secondary/90 transition-colors shadow-sm focus:ring-2 focus:ring-secondary/30" type="button">
+<span class="material-symbols-outlined text-[16px]" data-icon="bolt">bolt</span>
+                        Solicitar Reposición Inmediata desde Bodega
+                      </button>
+</td>
+</tr>
+<!-- SKU 3: Salsa de Tomate Pomodoro Cirio (ADVERTENCIA FIFO) -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3.5 px-4 align-top">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0 text-amber-700">
+<span class="material-symbols-outlined text-[20px]" data-icon="soup_kitchen">soup_kitchen</span>
+</div>
+<div>
+<div class="font-semibold text-on-surface">Salsa de Tomate Pomodoro Cirio 350g</div>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="font-mono text-label-sm font-label-sm text-outline">#SKU-77419</span>
+<span class="text-outline-variant">•</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Categoría: Conservas &amp; Salsas</span>
+</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top text-center">
+<div class="inline-flex flex-col items-center">
+<div class="flex items-center gap-1.5 font-tabular-data text-tabular-data">
+<span class="text-on-surface-variant text-label-md">Asig: <strong class="text-primary font-semibold">3</strong></span>
+<span class="text-outline-variant">|</span>
+<span class="text-on-surface-variant text-label-md">Real: <strong class="text-primary font-semibold">3</strong></span>
+</div>
+<div class="flex items-center gap-0.5 mt-1">
+<span class="w-2.5 h-3 bg-amber-500 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-amber-500 rounded-xs inline-block"></span>
+<span class="w-2.5 h-3 bg-amber-500 rounded-xs inline-block"></span>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="flex items-center gap-1.5">
+<span class="font-tabular-data text-tabular-data font-bold text-on-surface">$1.690 CLP</span>
+<span class="material-symbols-outlined text-[16px] text-emerald-600" data-icon="sync_saved_locally">sync_saved_locally</span>
+</div>
+<span class="text-label-sm font-label-sm text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 inline-block mt-0.5">
+                        Sincronizado POS
+                      </span>
+</td>
+<td class="py-3.5 px-3 align-top">
+<div class="font-mono text-label-sm font-label-sm font-semibold text-amber-900">L-2024-04F vs L-2024-08A</div>
+<div class="text-label-sm font-label-sm text-amber-800 font-medium mt-0.5 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="rotate_right">rotate_right</span>
+                        Lote antiguo estaba al fondo
+                      </div>
+</td>
+<td class="py-3.5 px-4 align-top text-right space-y-1.5">
+<div>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-label-sm font-label-sm font-semibold bg-amber-50 text-amber-900 border border-amber-300">
+<span class="material-symbols-outlined text-[14px]" data-icon="published_with_changes">published_with_changes</span>
+                          Advertencia FIFO Detectada
+                        </span>
+</div>
+<div>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded text-label-sm font-label-sm font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-[15px]" data-icon="task_alt">task_alt</span>
+                          Corregido en sala (adelantado lote próximo a vencer)
+                        </span>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+<!-- 4. REGISTRO FOTOGRÁFICO DE RESPALDO Y DISPOSITIVO SCANNER -->
+<section aria-labelledby="evidence-title" class="bg-surface-container-lowest rounded-xl p-space-base border border-[rgba(10,54,50,0.1)] shadow-sm space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[rgba(10,54,50,0.06)]">
+<h3 class="font-headline-sm text-headline-sm text-primary font-semibold flex items-center gap-2" id="evidence-title">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="photo_camera_front">photo_camera_front</span>
+              Evidencia Óptica &amp; Hardware de Captura
+            </h3>
+<!-- Terminal Zebra TC26 meta pill -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-on-surface font-mono text-label-sm font-label-sm border border-outline-variant/60">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>Terminal: <strong>Zebra TC26</strong></span>
+<span class="text-outline-variant">•</span>
+<span class="text-primary font-semibold">Operador: Camila Henríquez (ID #8410)</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-space-md items-start">
+<!-- Photo thumbnail card -->
+<div class="md:col-span-4 bg-surface-container-low rounded-lg p-2 border border-outline-variant/60 relative group">
+<div class="relative w-full h-32 rounded bg-surface-container overflow-hidden flex items-center justify-center">
+<!-- Fallback/Placeholder Image with data-alt -->
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" data-alt="Fotografía nítida y profesional de un anaquel de supermercado moderno y ordenado en Providencia Express, con productos de abarrotes premium como botellas de aceite de oliva virgen y paquetes de pastas bien alineados. Etiquetas electrónicas ESL digitales visibles en el borde del estante en color blanco y negro. Iluminación limpia y homogénea de tienda de alta gama con atmósfera arquitectónica en tonos verde esmeralda y blanco." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMYFPqMa7cFr4mcacK9CEHGqusJj6Bo8wXzwbGSkq3kT1Q6qv6CKyg-zcIQLDegZ7DlL03YuSzuLuvGOdpXBpJ-Z-CBmPEE_GD9xTgQNAJQY79xzAwHx_PUh-gd9-TW-cJD_x-xytCSn3lZs6w19ZwBdTOK5fmn9DVKuddepFFlFRRoQIWM6pfZQ4TXA_b3cKJAuVpYSpXj3CRfjKSOQQ2bbf22iLFC89NUgaVE4XAXQuiBiRGv1YJvg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-transparent to-transparent opacity-80"></div>
+<button class="absolute bottom-2 right-2 p-1.5 rounded bg-surface-container-lowest/90 text-primary hover:bg-white shadow transition-all flex items-center gap-1 text-label-sm font-label-sm font-semibold" title="Abrir fotografía a resolución completa" type="button">
+<span class="material-symbols-outlined text-[16px]" data-icon="zoom_in">zoom_in</span>
+                  Ver Zoom
+                </button>
+</div>
+<div class="mt-2 flex items-center justify-between text-label-sm font-label-sm">
+<span class="font-mono text-on-surface-variant truncate max-w-[190px]" title="Foto_Gondola_Pasillo04_1435hrs.jpg">
+                  Foto_Gondola_Pasillo04_1435hrs.jpg
+                </span>
+<span class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold border border-emerald-200">
+                  Adjunto OK
+                </span>
+</div>
+</div>
+<!-- Notes and Observation Textarea -->
+<div class="md:col-span-8 flex flex-col justify-between h-full space-y-2">
+<label class="block font-label-md text-label-md text-on-surface font-semibold flex items-center gap-1.5" for="audit-obs">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="edit_note">edit_note</span>
+                Observaciones del Operador de Sala:
+              </label>
+<div class="relative">
+<textarea class="w-full rounded-lg border border-[rgba(15,23,42,0.15)] bg-surface-container-lowest p-2.5 font-body-sm text-body-sm text-on-surface focus:border-primary-container focus:ring-2 focus:ring-primary-container/15 transition-all outline-none resize-none leading-relaxed" id="audit-obs" placeholder="Ingrese incidencias detectadas en la góndola..." rows="3">Se detectó producto intruso (snack colocado por cliente), retirado y reubicado.</textarea>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified_user">verified_user</span>
+                  Registro auditado con sello de tiempo criptográfico SIRA
+                </span>
+<span>73 / 250 caracteres</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- 5. FOOTER DE ACCIONES -->
+<footer class="px-space-xl py-space-md border-t border-[rgba(10,54,50,0.08)] bg-surface-bright flex flex-col sm:flex-row items-center justify-between gap-space-md">
+<!-- Left Side: System & Mobile Sync Info -->
+<div class="flex items-center gap-2 text-label-md font-label-md text-on-surface-variant w-full sm:w-auto">
+<span class="material-symbols-outlined text-[18px] text-primary-container" data-icon="phonelink_ring">phonelink_ring</span>
+<span>Auditoría en sala <strong class="font-mono text-primary font-semibold">#VERIF-2025-0914</strong></span>
+<span class="text-outline-variant">•</span>
+<span class="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded text-label-sm font-label-sm border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+            SIRA Mobile Sync
+          </span>
+</div>
+<!-- Right Side: Action Buttons -->
+<div class="flex items-center gap-space-sm w-full sm:w-auto justify-end">
+<!-- Secondary Action 1: Descartar -->
+<button class="px-3.5 py-2 rounded-lg text-body-sm font-body-sm font-medium text-on-surface-variant hover:text-on-surface bg-transparent hover:bg-surface-container transition-colors duration-150 border border-outline-variant/50 focus:outline-none focus:ring-2 focus:ring-outline-variant/30" type="button">
+            Cancelar / Descartar
+          </button>
+<!-- Secondary Action 2: Guardar Borrador -->
+<button class="px-3.5 py-2 rounded-lg text-body-sm font-body-sm font-semibold text-primary bg-surface-container-lowest hover:bg-surface-container-low transition-colors duration-150 border border-[rgba(10,54,50,0.2)] shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container/20 flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[17px]" data-icon="save">save</span>
+            Guardar Borrador de Inspección
+          </button>
+<!-- Primary Operational: Finalizar y Validar en Verde Abisal (#0a3632) -->
+<button class="px-4 py-2 rounded-lg text-body-sm font-body-sm font-bold text-on-primary bg-primary-container hover:bg-[#0e4a44] active:scale-[0.98] transition-all duration-150 shadow-[0_2px_8px_rgba(10,54,50,0.24)] flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-container/40" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="task_alt">task_alt</span>
+            Finalizar y Validar Auditoría de Anaquel
+          </button>
+</div>
+</footer>
+</div>
+</div>
+</body></html>

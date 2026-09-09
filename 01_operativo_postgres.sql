@@ -906,7 +906,13 @@ CREATE TABLE IF NOT EXISTS stock_maximo_categoria (
     tienda_id INTEGER NOT NULL REFERENCES tiendas(tienda_id),
     cantidad_maxima INTEGER NOT NULL CHECK (cantidad_maxima > 0),
     empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
-    fecha_definicion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    fecha_definicion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Parámetros de capacidad/reabastecimiento (migración 0023) — opcionales.
+    capacidad_gondola INTEGER,      -- límite físico lineal de la góndola (unidades)
+    stock_minimo_reorden INTEGER,   -- buffer crítico: dispara solicitud prioritaria
+    dias_cobertura INTEGER,         -- días de cobertura objetivo (2-14 en la UI)
+    politica_sobrestock VARCHAR(20)
+        CHECK (politica_sobrestock IS NULL OR politica_sobrestock IN ('estricto','autorizado'))
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_stock_maximo_categoria
     ON stock_maximo_categoria(product_category, tienda_id);
@@ -919,6 +925,12 @@ CREATE TABLE IF NOT EXISTS verificacion_anaquel (
     fecha DATE NOT NULL DEFAULT CURRENT_DATE,
     disponible BOOLEAN NOT NULL,
     empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    -- Auditoría de anaquel / planograma (migración 0023) — opcionales.
+    facing_asignado INTEGER,   -- frentes que exige el planograma
+    facing_real INTEGER,       -- frentes contados en sala
+    esl_ok BOOLEAN,            -- etiqueta electrónica de precio sincronizada con POS
+    fifo_ok BOOLEAN,           -- lote más antiguo al frente
+    observaciones TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_verificacion_anaquel_dia

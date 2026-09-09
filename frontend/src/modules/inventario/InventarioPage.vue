@@ -681,14 +681,30 @@ onMounted(() => {
         @cerrar="modal = null"
       />
     </Modal>
-    <Modal v-if="modal === 'stock-max'" titulo="Stock máximo por categoría" @cerrar="modal = null">
-      <FormularioStockMaximo :tienda-id="tiendaId" :empleado-id="empleadoId" @definido="tras" />
+    <Modal
+      v-if="modal === 'stock-max'"
+      size="xl"
+      titulo="Stock Máximo, Mínimo & Parámetros de Capacidad por Categoría"
+      @cerrar="modal = null"
+    >
+      <FormularioStockMaximo
+        :tienda-id="tiendaId"
+        :empleado-id="empleadoId"
+        @definido="tras"
+        @cerrar="modal = null"
+      />
     </Modal>
-    <Modal v-if="modal === 'anaquel'" titulo="Verificación de anaquel" @cerrar="modal = null">
+    <Modal
+      v-if="modal === 'anaquel'"
+      size="xl"
+      titulo="Verificación de Anaquel y Planograma en Góndola"
+      @cerrar="modal = null"
+    >
       <FormularioVerificacionAnaquel
         :tienda-id="tiendaId"
         :empleado-id="empleadoId"
         @registrada="tras"
+        @cerrar="modal = null"
       />
     </Modal>
     <Modal v-if="ubicModal" titulo="Ubicación en sala" @cerrar="ubicModal = null">

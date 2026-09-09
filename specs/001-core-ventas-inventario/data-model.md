@@ -195,6 +195,8 @@ histórico de movimientos de góndola).
 
 **Campos clave**: `id` (PK), `product_id` (FK `productos`, debe tener `clasificacion_abc='A'` vigente al momento del registro — validado en la capa de servicio, no en el DDL, porque la clasificación puede cambiar después), `tienda_id` (FK `tiendas`), `fecha`, `disponible` (boolean), `empleado_id` (FK `empleados`, el Reponedor que la registró).
 
+**Campos de auditoría de planograma** (migración 0023, todos opcionales — la referencia de UI "Verificar y Auditar Anaquel en Góndola" los pide): `facing_asignado` / `facing_real` (frentes que exige el planograma vs. contados en sala; `real < asignado` ⇒ quiebre visual), `esl_ok` (la etiqueta electrónica de precio coincide con el POS central), `fifo_ok` (el lote más antiguo está al frente), `observaciones` (texto libre del operador, ≤300 en la API). Se registran en el mismo POST y no rompen inserts previos.
+
 **Relaciones**: N:1 con `productos`, `tiendas`, `empleados`.
 
 **Validación**: Único índice `(product_id, tienda_id, fecha)` — una sola verificación por producto/tienda/día (Edge Case: si se reintenta el mismo día, se actualiza la fila existente en vez de duplicarla).
@@ -206,6 +208,8 @@ histórico de movimientos de góndola).
 **Tabla**: `stock_maximo_categoria`
 
 **Campos clave**: `id` (PK), `product_category` (mismo dominio de texto que `productos.product_category`), `tienda_id` (FK `tiendas`), `cantidad_maxima`, `empleado_id` (FK `empleados`, quien lo definió), `fecha_definicion`.
+
+**Campos de capacidad / reabastecimiento** (migración 0023, todos opcionales — la referencia de UI "Configurar Stock Máximo por Categoría" los pide): `capacidad_gondola` (límite físico lineal en unidades), `stock_minimo_reorden` (buffer crítico que dispara la solicitud prioritaria), `dias_cobertura` (cobertura objetivo, 2-14 en la UI), `politica_sobrestock` (`CHECK IN ('estricto','autorizado')` — bloqueo estricto de OC vs. sobre-stock con autorización del Gerente Comercial).
 
 **Relaciones**: N:1 con `tiendas` y `empleados`. Sin FK a `productos` — aplica a nivel de categoría, no de producto individual, mismo criterio de granularidad que `umbral_merma_categoria` (006).
 

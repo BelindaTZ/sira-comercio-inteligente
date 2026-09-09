@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Configurar Stock Máximo y Parámetros por Categoría | Marzú Retail Group</title>
+<!-- Google Fonts: Plus Jakarta Sans & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS via CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-container": "#8a4cfc",
+            "primary-container": "#0a3632",
+            "error-container": "#ffdad6",
+            "surface-container-high": "#e6e8ea",
+            "tertiary": "#002014",
+            "on-tertiary-fixed-variant": "#005137",
+            "outline": "#717977",
+            "on-error": "#ffffff",
+            "surface-variant": "#e0e3e5",
+            "surface-tint": "#3e6561",
+            "surface-container-highest": "#e0e3e5",
+            "on-secondary-container": "#fffbff",
+            "error": "#ba1a1a",
+            "primary-fixed": "#c0ebe4",
+            "surface-container": "#eceef0",
+            "on-secondary": "#ffffff",
+            "inverse-surface": "#2d3133",
+            "inverse-on-surface": "#eff1f3",
+            "primary-fixed-dim": "#a5cfc9",
+            "surface-container-lowest": "#ffffff",
+            "on-surface-variant": "#414847",
+            "tertiary-container": "#003825",
+            "outline-variant": "#c0c8c6",
+            "primary": "#00201d",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-tertiary-container": "#30ab7c",
+            "on-primary": "#ffffff",
+            "background": "#f8f9fb",
+            "surface": "#f8f9fb",
+            "on-background": "#191c1e",
+            "secondary-fixed": "#eaddff",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-container": "#779f9a",
+            "surface-bright": "#f8f9fb",
+            "surface-container-low": "#f2f4f6",
+            "inverse-primary": "#a5cfc9",
+            "on-primary-fixed": "#00201d",
+            "tertiary-fixed": "#85f8c4",
+            "on-primary-fixed-variant": "#254d49",
+            "on-secondary-fixed": "#25005a",
+            "on-surface": "#191c1e",
+            "secondary": "#712ae2",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "surface-dim": "#d8dadc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-lg": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "space-2xl": "3rem",
+            "space-md": "0.75rem",
+            "space-base": "1rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "sidebar-expanded": "16.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "gutter-mobile": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="h-full overflow-hidden font-body-md text-on-surface antialiased bg-slate-900/40 selection:bg-primary-container selection:text-on-primary">
+<!-- ========================================================================= -->
+<!-- BACKGROUND CONTEXT: Simulación de vista de Inventario SIRA desenfocada      -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 select-none pointer-events-none filter blur-[6px] opacity-40 scale-[1.01] transition-all duration-300 z-0 overflow-hidden bg-[#f5f7f9]">
+<!-- Top Nav Placeholder -->
+<header class="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between">
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md text-primary font-bold tracking-tight">SIRA</span>
+<div class="flex gap-6 text-body-md text-slate-600">
+<span>Dashboard</span>
+<span>Punto de Venta</span>
+<span class="font-semibold text-primary">Inventario</span>
+<span>Catálogo</span>
+<span>CRM Clientes</span>
+<span>Finanzas</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="h-8 w-48 bg-slate-100 rounded-lg"></div>
+<div class="h-8 w-8 rounded-full bg-slate-300"></div>
+</div>
+</header>
+<!-- Synthetic Inventory Content Behind -->
+<main class="p-8 max-w-[1600px] mx-auto space-y-6">
+<div class="flex justify-between items-center">
+<div>
+<h1 class="text-2xl font-bold text-slate-800">Control de Existencias &amp; Parámetros Operativos</h1>
+<p class="text-sm text-slate-500">Pasillo Refrigerado 02 • Subfamilia Lácteos y Yogures</p>
+</div>
+<div class="flex gap-3">
+<div class="h-10 w-32 bg-primary-container rounded"></div>
+</div>
+</div>
+<!-- Background KPI row -->
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-28"></div>
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-28"></div>
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-28"></div>
+<div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm h-28"></div>
+</div>
+<!-- Background Table Grid -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-4 space-y-3">
+<div class="h-8 bg-slate-50 rounded"></div>
+<div class="h-12 bg-slate-100/60 rounded"></div>
+<div class="h-12 bg-white rounded"></div>
+<div class="h-12 bg-slate-100/60 rounded"></div>
+<div class="h-12 bg-white rounded"></div>
+<div class="h-12 bg-slate-100/60 rounded"></div>
+</div>
+</main>
+</div>
+<!-- ========================================================================= -->
+<!-- MODAL OVERLAY & BACKDROP (Darkened Blur + Layered Diffusion)               -->
+<!-- ========================================================================= -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 bg-slate-950/50 backdrop-blur-md overflow-y-auto">
+<!-- MODAL CONTAINER (Tier 2 Surface, Architectural Crisp Border) -->
+<div class="relative w-full max-w-[1040px] my-auto bg-surface-container-lowest rounded-xl shadow-[0_20px_60px_-15px_rgba(10,54,50,0.25),0_0_0_1px_rgba(10,54,50,0.1)] flex flex-col max-h-[92vh] overflow-hidden border border-outline-variant/40 animate-in fade-in zoom-in-95 duration-200">
+<!-- ===================================================================== -->
+<!-- 1. HEADER                                                             -->
+<!-- ===================================================================== -->
+<header class="px-space-xl pt-space-lg pb-space-md border-b border-outline-variant/30 bg-surface-bright flex-shrink-0">
+<div class="flex items-start justify-between gap-4">
+<div class="space-y-space-xs">
+<!-- Micro Badges -->
+<div class="flex flex-wrap items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-primary-container text-white font-label-sm text-label-sm tracking-wider uppercase">
+<span class="material-symbols-outlined text-[13px]" data-icon="tune">tune</span>
+                Configuración de Niveles
+              </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold border border-outline-variant/50">
+                #CAT-LÁCTEOS-02
+              </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-label-sm text-label-sm font-medium border border-emerald-200/60">
+<span class="material-symbols-outlined text-[13px] text-emerald-700" data-icon="storefront">storefront</span>
+                Sucursal: Providencia Express
+              </span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 text-purple-800 font-label-sm text-label-sm font-medium border border-purple-200/60">
+<span class="material-symbols-outlined text-[13px] text-purple-600" data-icon="auto_awesome">auto_awesome</span>
+                Motor Algorítmico Activo
+              </span>
+</div>
+<!-- Title & Subtitle -->
+<div class="pt-1">
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight font-bold">
+                Definir Stock Máximo, Mínimo &amp; Parámetros de Capacidad
+              </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                Configuración de umbrales de abastecimiento, alerta de sobrestock y políticas de reabastecimiento para la subfamilia seleccionada.
+              </p>
+</div>
+<!-- Category Active Pill Breadcrumb -->
+<div class="inline-flex items-center gap-2 text-label-md font-label-md text-primary font-semibold bg-surface-container-low px-3 py-1 rounded-md border border-outline-variant/40 mt-1">
+<span class="material-symbols-outlined text-primary-container text-[16px]" data-icon="category">category</span>
+<span>Lácteos y Derivados Frescos</span>
+<span class="text-outline">›</span>
+<span class="text-on-surface-variant font-normal">Subcategoría: Yogures y Leches Cultivadas</span>
+<span class="ml-1 text-[11px] px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant font-mono">24 SKUs</span>
+</div>
+</div>
+<!-- Close Modal Action Button -->
+<button aria-label="Cerrar modal" class="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-colors focus:outline-none focus:ring-2 focus:ring-primary-container/20" onclick="alert('Ventana cerrada')" type="button">
+<span class="material-symbols-outlined text-xl" data-icon="close">close</span>
+</button>
+</div>
+</header>
+<!-- ===================================================================== -->
+<!-- MODAL SCROLLABLE BODY                                                 -->
+<!-- ===================================================================== -->
+<div class="px-space-xl py-space-lg overflow-y-auto custom-scrollbar space-y-space-lg flex-1 bg-surface-bright">
+<!-- =================================================================== -->
+<!-- 2. BLOQUE DE CAPACIDAD FÍSICA VS. LÍMITES DE SEGURIDAD (3 Cards)    -->
+<!-- =================================================================== -->
+<section class="space-y-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px]" data-icon="straighten">straighten</span>
+<h3 class="font-headline-sm text-headline-sm text-primary font-semibold">
+                Capacidad Física Lineal vs. Umbrales de Seguridad
+              </h3>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">
+              Espacio Físico Góndola: <span class="text-primary font-bold">85.7% Proyectado</span>
+</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- CARD 1: Capacidad Máxima Físico-Lineal -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant/50 shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 bg-slate-100 rounded-full pointer-events-none opacity-60"></div>
+<div>
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Límite Físico Lineal</span>
+<span class="material-symbols-outlined text-slate-500 text-[18px]" data-icon="view_compact">view_compact</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-on-surface">Capacidad Máxima Góndola</h4>
+<p class="font-body-sm text-body-sm text-slate-500 mt-1">Facing activo en lineal frío</p>
+<div class="mt-4 flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric text-primary font-bold">350</span>
+<span class="font-label-md text-label-md text-slate-500">unidades máx.</span>
+</div>
+<p class="text-[12px] text-slate-600 mt-2 leading-tight bg-slate-50 p-2 rounded-lg border border-slate-100">
+                  Espacio físico disponible en pasillo refrigerado 02, 3 bandejas x 12 frentes lineales.
+                </p>
+</div>
+<div class="mt-4 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-amber-700 bg-amber-50/90 px-2 py-1 rounded border border-amber-200/60">
+<span class="material-symbols-outlined text-[16px] flex-shrink-0" data-icon="warning">warning</span>
+<span class="text-[11px] font-medium leading-tight">Alerta activa si reposición supera el 85% lineal (298 un.)</span>
+</div>
+</div>
+<!-- CARD 2: Stock Máximo Permitido (Umbral de Compra) con Stepper -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl border-2 border-primary-container/20 shadow-sm flex flex-col justify-between relative">
+<div class="absolute -top-2.5 right-4 bg-primary-container text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                Control Operativo
+              </div>
+<div>
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-primary font-semibold uppercase tracking-wider">Umbral de Compra</span>
+<span class="material-symbols-outlined text-primary-container text-[18px]" data-icon="shopping_cart_checkout">shopping_cart_checkout</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-primary">Stock Máximo Permitido</h4>
+<p class="font-body-sm text-body-sm text-slate-500 mt-1">Tope máximo para órdenes EDI</p>
+<!-- Stepper Interactivo -->
+<div class="mt-3 bg-surface-container-low p-2 rounded-lg border border-outline-variant/50">
+<div class="flex items-center justify-between">
+<button class="w-8 h-8 rounded bg-white hover:bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center font-bold text-slate-700 active:scale-95 transition-transform" onclick="adjustStock('max-stock', -5)" title="-5 unidades" type="button">
+                      -5
+                    </button>
+<div class="text-center px-2">
+<input class="w-20 text-center font-tabular-metric text-tabular-metric font-bold text-primary bg-transparent border-none p-0 focus:ring-0" id="max-stock" type="number" value="300"/>
+<div class="text-[11px] text-slate-500 -mt-1">unidades tope</div>
+</div>
+<button class="w-8 h-8 rounded bg-white hover:bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center font-bold text-slate-700 active:scale-95 transition-transform" onclick="adjustStock('max-stock', 5)" title="+5 unidades" type="button">
+                      +5
+                    </button>
+</div>
+<!-- Macro Stepper Chips -->
+<div class="grid grid-cols-4 gap-1 mt-2 pt-2 border-t border-slate-200/60">
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('max-stock', -20)" type="button">-20</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('max-stock', -5)" type="button">-5</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('max-stock', 5)" type="button">+5</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('max-stock', 20)" type="button">+20</button>
+</div>
+</div>
+</div>
+<div class="mt-3 text-[11px] text-primary-container font-medium bg-primary-fixed/20 p-2 rounded border border-primary-fixed">
+                Tope máximo para órdenes de compra automáticas (EDI) y solicitudes cross-docking.
+              </div>
+</div>
+<!-- CARD 3: Stock Mínimo / Punto de Reorden (Buffer) con Stepper -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant/50 shadow-sm flex flex-col justify-between relative">
+<div>
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-label-sm text-label-sm text-rose-700 font-semibold uppercase tracking-wider">Buffer Crítico</span>
+<span class="material-symbols-outlined text-rose-600 text-[18px]" data-icon="inventory_2">inventory_2</span>
+</div>
+<h4 class="font-headline-sm text-[15px] font-semibold text-on-surface">Stock Mínimo / Reorden</h4>
+<p class="font-body-sm text-body-sm text-slate-500 mt-1">Punto gatillante de reposición</p>
+<!-- Stepper Interactivo -->
+<div class="mt-3 bg-surface-container-low p-2 rounded-lg border border-outline-variant/50">
+<div class="flex items-center justify-between">
+<button class="w-8 h-8 rounded bg-white hover:bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center font-bold text-slate-700 active:scale-95 transition-transform" onclick="adjustStock('min-stock', -5)" title="-5 unidades" type="button">
+                      -5
+                    </button>
+<div class="text-center px-2">
+<input class="w-16 text-center font-tabular-metric text-tabular-metric font-bold text-primary bg-transparent border-none p-0 focus:ring-0" id="min-stock" type="number" value="75"/>
+<div class="text-[11px] text-slate-500 -mt-1">unidades buffer</div>
+</div>
+<button class="w-8 h-8 rounded bg-white hover:bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center font-bold text-slate-700 active:scale-95 transition-transform" onclick="adjustStock('min-stock', 5)" title="+5 unidades" type="button">
+                      +5
+                    </button>
+</div>
+<!-- Macro Stepper Chips -->
+<div class="grid grid-cols-4 gap-1 mt-2 pt-2 border-t border-slate-200/60">
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('min-stock', -10)" type="button">-10</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('min-stock', -5)" type="button">-5</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('min-stock', 5)" type="button">+5</button>
+<button class="text-[10px] font-semibold py-1 bg-white hover:bg-slate-100 rounded text-slate-600 border border-slate-200 text-center" onclick="adjustStock('min-stock', 10)" type="button">+10</button>
+</div>
+</div>
+</div>
+<div class="mt-3 flex items-start gap-1.5 text-rose-800 bg-rose-50/90 p-2 rounded border border-rose-200/60">
+<span class="material-symbols-outlined text-[16px] text-rose-600 flex-shrink-0 mt-0.5" data-icon="local_shipping">local_shipping</span>
+<span class="text-[11px] font-medium leading-tight">Dispara solicitud prioritaria al CD Pudahuel cuando el stock es ≤ 75 un.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- 3. REGLAS DE REABASTECIMIENTO Y DÍAS DE COBERTURA                   -->
+<!-- =================================================================== -->
+<section class="bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant/40 shadow-sm space-y-space-md">
+<div class="flex items-center justify-between border-b border-outline-variant/30 pb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]" data-icon="schedule">schedule</span>
+<h3 class="font-headline-sm text-headline-sm text-primary font-semibold">
+                Reglas de Reabastecimiento y Días de Cobertura
+              </h3>
+</div>
+<span class="font-label-sm text-label-sm text-slate-500 flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Parámetro de Caducidad Crítica (FIFO)
+            </span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Columna Izquierda: Slider Días de Cobertura -->
+<div class="lg:col-span-5 space-y-3">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface font-semibold" for="coverage-slider">
+                  Días de Cobertura Objetivo
+                </label>
+<div class="flex items-center gap-1.5 bg-secondary/10 px-2.5 py-0.5 rounded-full border border-secondary/20">
+<span class="font-bold text-secondary text-sm" id="coverage-val">5 días</span>
+<span class="text-[11px] text-slate-500">(Óptimo SIRA)</span>
+</div>
+</div>
+<div class="pt-2">
+<input class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-container" id="coverage-slider" max="14" min="2" oninput="updateCoverage(this.value)" type="range" value="5"/>
+<div class="flex justify-between text-[11px] text-slate-400 font-mono mt-1">
+<span>2d (Ultra Fresco)</span>
+<span class="font-bold text-slate-700">5 días</span>
+<span>10d</span>
+<span>14d (Riesgo Merma)</span>
+</div>
+</div>
+<div class="text-[12px] text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200/60 flex items-start gap-2">
+<span class="material-symbols-outlined text-[18px] text-slate-500 flex-shrink-0" data-icon="info">info</span>
+<span>
+                  Vida útil media del lote en góndola: <strong class="text-primary font-semibold">28 días</strong>. Cobertura de 5 días previene descarte por expiración y optimiza rotación por lote.
+                </span>
+</div>
+<!-- Frecuencia recomendada -->
+<div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-low border border-outline-variant/40">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[18px]" data-icon="event_repeat">event_repeat</span>
+<span class="font-label-md text-label-md text-slate-700">Frecuencia Recomendada:</span>
+</div>
+<span class="text-[12px] font-semibold text-primary bg-white px-2 py-0.5 rounded shadow-2xs border border-slate-200">
+                  Diaria / Turno Nocturno (04:00 hrs)
+                </span>
+</div>
+</div>
+<!-- Columna Derecha: Política de Sobre-stock (Radio Cards) -->
+<div class="lg:col-span-7 space-y-2">
+<label class="font-label-md text-label-md text-on-surface font-semibold block">
+                Política de Control de Sobre-stock (Overstocking)
+              </label>
+<div class="grid grid-cols-1 gap-2.5">
+<!-- Radio Card 1: Bloqueo estricto (Default) -->
+<label class="relative flex items-start gap-3 p-3 rounded-xl border-2 border-primary-container bg-primary-container/[0.02] cursor-pointer hover:bg-primary-container/[0.04] transition-colors">
+<input checked="" class="mt-1 h-4 w-4 text-primary-container focus:ring-primary-container border-slate-300" name="overstock-policy" type="radio" value="strict"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-primary">Bloqueo estricto de OC (Recomendado)</span>
+<span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 uppercase">Activo</span>
+</div>
+<p class="font-body-sm text-[12px] text-slate-600 mt-0.5">
+                      No autorizar pedidos ni recepciones que excedan el límite de 300 unidades. Previene saturación del rack frío y quiebre de cadena de frío por aglomeración.
+                    </p>
+</div>
+</label>
+<!-- Radio Card 2: Con autorización -->
+<label class="relative flex items-start gap-3 p-3 rounded-xl border border-outline-variant/60 bg-white cursor-pointer hover:border-slate-400 transition-colors">
+<input class="mt-1 h-4 w-4 text-primary-container focus:ring-primary-container border-slate-300" name="overstock-policy" type="radio" value="auth"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-semibold text-slate-800">Permitir sobre-stock con autorización</span>
+<span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">Excepcional</span>
+</div>
+<p class="font-body-sm text-[12px] text-slate-500 mt-0.5">
+                      Permite compras de oportunidad o promociones de proveedores previa validación digital de Gerente Comercial con tope temporal (+15%).
+                    </p>
+</div>
+</label>
+</div>
+</div>
+</div>
+</section>
+<!-- =================================================================== -->
+<!-- 4. IMPACTO FINANCIERO Y AUDITORÍA                                   -->
+<!-- =================================================================== -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-space-md">
+<!-- Tarjeta Financiera: Valorización de Stock -->
+<div class="md:col-span-4 bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-500 uppercase">Capital Inmovilizado</span>
+<span class="material-symbols-outlined text-emerald-700 text-[18px]" data-icon="payments">payments</span>
+</div>
+<div class="my-2">
+<div class="font-tabular-metric text-tabular-metric text-primary font-bold">
+                $450.000 <span class="text-xs font-normal text-slate-500 font-body-sm">CLP</span>
+</div>
+<p class="font-body-sm text-[12px] text-slate-500">Valorización proyectada al stock máximo</p>
+</div>
+<div class="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_down">trending_down</span>
+              -8.4% de costo financiero vs. mes anterior
+            </div>
+</div>
+<!-- Tarjeta Rotación: Turnover Rate -->
+<div class="md:col-span-4 bg-surface-container-lowest p-space-md rounded-xl border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-slate-500 uppercase">Velocidad de Rotación</span>
+<span class="material-symbols-outlined text-secondary text-[18px]" data-icon="sync">sync</span>
+</div>
+<div class="my-2">
+<div class="font-tabular-metric text-tabular-metric text-secondary font-bold">
+                6.2x <span class="text-xs font-normal text-slate-500 font-body-sm">veces / mes</span>
+</div>
+<p class="font-body-sm text-[12px] text-slate-500">Razón de rotación estimada de la subfamilia</p>
+</div>
+<div class="text-[11px] text-purple-700 font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="verified">verified</span>
+              Rango saludable para productos frescos
+            </div>
+</div>
+<!-- Toggle de Propagación Masiva a SKUs -->
+<div class="md:col-span-4 bg-gradient-to-br from-primary-container/[0.04] to-surface-container-lowest p-space-md rounded-xl border border-primary-container/20 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-primary-container font-semibold uppercase tracking-wider">Alcance Masivo</span>
+<span class="material-symbols-outlined text-primary-container text-[18px]" data-icon="hub">hub</span>
+</div>
+<div class="my-2">
+<label class="flex items-start gap-2.5 cursor-pointer" for="apply-all-skus">
+<input checked="" class="mt-1 h-4 w-4 rounded border-primary-container/30 text-primary-container focus:ring-primary-container/20 cursor-pointer" id="apply-all-skus" type="checkbox"/>
+<span class="font-label-md text-label-md text-primary font-bold leading-snug">
+                  Aplicar automáticamente estos umbrales a todos los 24 SKUs activos de esta subcategoría.
+                </span>
+</label>
+<p class="text-[11px] text-slate-500 mt-1 pl-6">
+                Afecta a Danone, Soprole, Nestlé y marcas propias en góndola 02.
+              </p>
+</div>
+<div class="text-[10px] text-slate-400 font-mono border-t border-slate-200/50 pt-1.5 flex justify-between">
+<span>Sincronización POS: Inmediata</span>
+<span>EDI: Próximo ciclo 00:00</span>
+</div>
+</div>
+</section>
+</div>
+<!-- ===================================================================== -->
+<!-- 5. FOOTER DE ACCIONES                                                 -->
+<!-- ===================================================================== -->
+<footer class="px-space-xl py-space-md bg-surface-container-lowest border-t border-outline-variant/40 flex-shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4">
+<!-- Audit metadata on the left -->
+<div class="flex items-center gap-2 text-slate-500 font-mono text-[12px] w-full sm:w-auto">
+<span class="material-symbols-outlined text-slate-400 text-[16px]" data-icon="fingerprint">fingerprint</span>
+<span>ID Regla: <strong class="text-slate-700">#RULE-CAT-889</strong></span>
+<span class="text-slate-300">•</span>
+<span>Última modif.: <strong class="text-slate-700">Carlos M. (02 Feb 2025)</strong></span>
+</div>
+<!-- Action Button Cluster on the right -->
+<div class="flex items-center gap-3 w-full sm:w-auto justify-end">
+<!-- Secondary: Descartar / Cancelar -->
+<button class="px-4 py-2 rounded-lg text-body-md font-body-md font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-slate-200" onclick="alert('Cambios cancelados')" type="button">
+            Cancelar / Descartar
+          </button>
+<!-- Secondary: Restablecer Valores Base -->
+<button class="px-3.5 py-2 rounded-lg text-body-md font-body-md font-medium text-primary-container bg-surface-container-low border border-outline-variant/60 hover:bg-surface-container active:scale-[0.98] transition-all flex items-center gap-1.5 focus:outline-none focus:ring-2 focus:ring-primary-container/20" onclick="resetDefaults()" type="button">
+<span class="material-symbols-outlined text-[16px]" data-icon="restart_alt">restart_alt</span>
+            Restablecer Valores Base
+          </button>
+<!-- Primary: Guardar Umbrales en Verde Abisal (#0a3632) -->
+<button class="px-5 py-2 rounded-lg text-body-md font-body-md font-semibold text-white bg-primary-container hover:bg-[#0e4a44] active:scale-[0.98] shadow-sm hover:shadow transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-container focus:ring-offset-2" onclick="saveThresholds()" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+            Guardar Umbrales y Aplicar Parámetros
+          </button>
+</div>
+</footer>
+</div>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+    function adjustStock(elementId, delta) {
+      const input = document.getElementById(elementId);
+      if (!input) return;
+      let val = parseInt(input.value, 10) || 0;
+      val = Math.max(0, val + delta);
+      input.value = val;
+    }
+
+    function updateCoverage(val) {
+      const display = document.getElementById('coverage-val');
+      if (display) {
+        display.innerText = val + ' días';
+      }
+    }
+
+    function resetDefaults() {
+      document.getElementById('max-stock').value = 300;
+      document.getElementById('min-stock').value = 75;
+      const slider = document.getElementById('coverage-slider');
+      slider.value = 5;
+      updateCoverage(5);
+      document.getElementById('apply-all-skus').checked = true;
+      alert('Parámetros restablecidos a la norma algorítmica SIRA (300 máx / 75 min / 5 días).');
+    }
+
+    function saveThresholds() {
+      const maxVal = document.getElementById('max-stock').value;
+      const minVal = document.getElementById('min-stock').value;
+      const days = document.getElementById('coverage-slider').value;
+      const propagate = document.getElementById('apply-all-skus').checked;
+
+      alert(`✅ Parámetros Guardados Exitosamente para Lácteos y Yogures:\n\n• Stock Máximo: ${maxVal} un.\n• Buffer Mínimo: ${minVal} un.\n• Días de Cobertura: ${days} días\n• Propagar a 24 SKUs: ${propagate ? 'Sí' : 'No'}\n\nNueva regla registrada bajo ID #RULE-CAT-889.`);
+    }
+  </script>
+</body></html>
