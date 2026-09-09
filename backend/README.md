@@ -40,9 +40,15 @@ python -m scripts.preparar_demo
 
 `scripts.enriquecer_catalogo` (paso 2 de `preparar_demo`, también ejecutable
 suelto) rellena de forma determinista lo que el dataset Dunnhumby no trae:
-`nombre`/`marca` de producto, `costo`/`precio_base` sintéticos por categoría
-(y normaliza a CLP los precios reales que venían en USD), 8 proveedores genéricos,
-`codigo_lote_proveedor` y vencimientos de lotes frescos relativos a hoy.
+`nombre`/`marca` de producto, `costo`/`precio_base` sintéticos por categoría con
+margen variado (y normaliza a CLP los precios reales que venían en USD), 8
+proveedores genéricos, `codigo_lote_proveedor` y vencimientos de lotes frescos
+relativos a hoy.
+
+`scripts.enriquecer_crm` (paso 2b) hace lo mismo para el CRM: identidad chilena
+sintética de los clientes (nombre + RUT + email + teléfono + fecha de nacimiento)
+y `cliente_clv` calculado sobre todo el histórico de ventas (el job real usa una
+ventana de 180 días que, con ventas de 2017, queda vacía).
 
 `preparar_demo` deja una cuenta por rol RBAC (`demo.gerente`, `demo.ti`,
 `demo.comercial`, `demo.marketing`, `demo.operaciones`, `demo.finanzas`, `demo.rrhh`,

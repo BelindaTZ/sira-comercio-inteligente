@@ -9,6 +9,16 @@
 - **Relaciones**: 1:1 con Datos Demográficos; 1:N con CLV histórico, Score de Churn, Ventas (household_id en `ventas`, ya resuelto en 001), Eventos de Cliente, Redenciones de Cupón; N:M con Campañas vía `campana_cliente`.
 - **Validación**: `email` único; registro nuevo rechazado solo si el email ya existe, o si `documento_identidad` ya existe cuando se proporciona (FR-001). El consentimiento se captura obligatoriamente en el alta — no tiene default a nivel de aplicación para clientes nuevos (el default `true` de la columna es exclusivamente para grandfathering de datos sembrados, ver `research.md` §5 y Assumptions de `spec.md`). `consentimiento_datos` es editable después del alta vía `PATCH` (FR-002) — cada cambio actualiza `fecha_consentimiento_datos`. `documento_identidad` es editable después del alta vía `PATCH`, igual que el resto de datos de contacto (research.md §6).
 - **Transiciones de estado**: `activo=true` → `activo=false` + anonimización de `nombre`/`email`/`telefono`/`fecha_nacimiento` al darse de baja (FR-003, UPDATE real, conserva `household_id`). No hay transición inversa (un cliente anonimizado no se reactiva; si vuelve a comprar, se trata como alta nueva — Assumption ya documentada). Independiente de esa transición, `consentimiento_datos` alterna libremente `true ⇄ false` mientras el cliente sigue `activo` (revocar/otorgar, FR-002) — no anonimiza nada, solo activa/desactiva el gating de FR-001.
+- **Datos de demo**: el dataset Dunnhumby es anónimo. `scripts/enriquecer_crm.py` rellena identidad chilena sintética (nombre + RUT módulo 11 + email + teléfono + fecha de nacimiento, determinista por `household_id`, sólo columnas NULL) y calcula `cliente_clv` sobre TODO el histórico de ventas — el job real usa una ventana de 180 días que, con ventas de 2017, no devuelve nada (mismo criterio que la clasificación ABC de la carga inicial).
+
+### 1.1 Pantalla CRM — directorio, ficha 360° y KPIs (feature 013)
+
+La pantalla "Gestión de Clientes & Programa de Lealtad Club Marzú" no agrega tablas: son consultas de sólo lectura (`DirectorioRepository`) sobre las tablas existentes.
+
+- **`GET /clientes/directorio`** — fila por cliente con: nivel del Club (del `cliente_clv` más reciente), `severidad_churn`, LTV histórico (`Σ ventas.total`), frecuencia (visitas/semana sobre su período activo), sucursal habitual y **puntos** (ver abajo). Ordenado por LTV.
+- **`GET /clientes/{id}/ficha360`** — saldo de puntos + valor de canje, cupones del Club asignados y no redimidos (`campana_cliente` ⋈ `cupones`, menos `cupon_redimido`), distribución de consumo por categoría y últimas 3 compras.
+- **`GET /clientes/resumen-crm`** — base activa, ticket medio de los tiers Oro/Platino vs. el resto, tasa de redención (clientes que canjearon / clientes con cupón asignado) y conteo por nivel.
+- **Puntos "Club Marzú"**: no hay ledger. Se derivan del gasto — ~1 punto por cada `_PTS_DIV` pesos gastados (saldo mostrado; 1 punto = 1 CLP de canje). El histórico del dataset está en dólares y se muestra en CLP con un factor fijo (`_CLP`), mismo criterio que el enriquecimiento del catálogo.
 
 ## 2. Datos Demográficos
 

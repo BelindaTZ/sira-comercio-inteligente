@@ -154,6 +154,11 @@ async def main() -> None:
 
     await enriquecer()
 
+    log.info("2b/5 · enriquecimiento del CRM (identidad chilena sintética + CLV)")
+    from scripts.enriquecer_crm import main as enriquecer_crm
+
+    await enriquecer_crm()
+
     log.info("3/5 · precios de competencia sintéticos")
     from scripts.seed_precio_competencia_sintetico import main as seed_competencia
 

@@ -6,6 +6,31 @@ export const clientesApi = {
     return http.get('/api/clientes', { params }).then((r) => r.data)
   },
 
+  /** Directorio enriquecido de la pantalla CRM (LTV, frecuencia, puntos, nivel). */
+  directorio({ search, nivelId, activo, page = 1, size = 25 } = {}) {
+    return http
+      .get('/api/clientes/directorio', {
+        params: {
+          search: search || undefined,
+          nivel_id: nivelId || undefined,
+          activo: activo === undefined ? undefined : activo,
+          page,
+          size,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  /** KPIs + reglas de segmentación de la cabecera CRM. */
+  resumenCrm() {
+    return http.get('/api/clientes/resumen-crm').then((r) => r.data)
+  },
+
+  /** Ficha 360° del cliente (puntos, cupones, consumo, últimas compras). */
+  ficha360(householdId) {
+    return http.get(`/api/clientes/${householdId}/ficha360`).then((r) => r.data)
+  },
+
   detalle(householdId) {
     return http.get(`/api/clientes/${householdId}`).then((r) => r.data)
   },

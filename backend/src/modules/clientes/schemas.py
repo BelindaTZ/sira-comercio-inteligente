@@ -83,6 +83,77 @@ class ClienteDetalleOut(ClienteOut):
     datos_demograficos: DatosDemograficosOut | None = None
 
 
+# --- pantalla CRM: directorio enriquecido + ficha 360° + KPIs ---
+class DirectorioItemOut(BaseModel):
+    household_id: int
+    nombre: str | None
+    documento_identidad: str | None
+    email: str | None
+    telefono: str | None
+    activo: bool
+    clv_score: Decimal | None
+    nivel_id: int | None
+    nivel_nombre: str | None
+    severidad_churn: str | None
+    tickets: int
+    ultima_compra: date | None
+    ultimo_ticket: int | None
+    ltv: Decimal
+    puntos: int
+    frecuencia_sem: Decimal
+    sucursal: str | None
+
+
+class CuponClienteOut(BaseModel):
+    coupon_upc: str
+    producto: str | None
+    categoria: str | None
+    end_date: date | None
+
+
+class ConsumoCategoriaOut(BaseModel):
+    categoria: str
+    monto: Decimal
+
+
+class CompraRecienteOut(BaseModel):
+    venta_id: int
+    fecha_hora: datetime
+    tienda: str | None
+    total: Decimal
+    puntos: int
+    items: int
+
+
+class Ficha360Out(BaseModel):
+    household_id: int
+    puntos: int
+    valor_canje_clp: int
+    ltv: float
+    tickets: int
+    cupones: list[CuponClienteOut]
+    consumo: list[ConsumoCategoriaOut]
+    compras: list[CompraRecienteOut]
+
+
+class NivelConteoOut(BaseModel):
+    nivel_id: int
+    nombre: str
+    umbral_clv_min: Decimal
+    clientes: int
+
+
+class ResumenCrmOut(BaseModel):
+    base_activos: int
+    ticket_club: Decimal | None
+    ticket_no_club: Decimal | None
+    uplift_pct: float | None
+    tasa_redencion_pct: float | None
+    redimidos: int
+    con_clv: int
+    niveles: list[NivelConteoOut]
+
+
 # --- niveles de fidelización (US2) ---
 class NivelFidelizacionOut(BaseModel):
     nivel_id: int

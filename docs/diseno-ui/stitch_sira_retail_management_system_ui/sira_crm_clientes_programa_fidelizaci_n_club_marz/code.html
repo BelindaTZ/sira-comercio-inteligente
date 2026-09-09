@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background text-on-surface antialiased" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - CRM Clientes, Club Marzú &amp; Fidelización Retail | Marzú Retail Group</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-primary": "#a5cfc9",
+            "primary-fixed": "#c0ebe4",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary": "#712ae2",
+            "primary-container": "#0a3632",
+            "on-primary-container": "#779f9a",
+            "on-surface-variant": "#414847",
+            "secondary-container": "#8a4cfc",
+            "surface-container-lowest": "#ffffff",
+            "on-background": "#191c1e",
+            "tertiary-container": "#003825",
+            "primary-fixed-dim": "#a5cfc9",
+            "error": "#ba1a1a",
+            "surface-variant": "#e0e3e5",
+            "on-tertiary-container": "#30ab7c",
+            "error-container": "#ffdad6",
+            "surface-dim": "#d8dadc",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-error": "#ffffff",
+            "primary": "#00201d",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed": "#25005a",
+            "surface-container-highest": "#e0e3e5",
+            "surface-container-low": "#f2f4f6",
+            "inverse-surface": "#2d3133",
+            "inverse-on-surface": "#eff1f3",
+            "on-surface": "#191c1e",
+            "on-primary-fixed-variant": "#254d49",
+            "tertiary": "#002014",
+            "surface-bright": "#f8f9fb",
+            "on-primary": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "surface-tint": "#3e6561",
+            "tertiary-fixed": "#85f8c4",
+            "surface-container": "#eceef0",
+            "on-secondary-container": "#fffbff",
+            "surface-container-high": "#e6e8ea",
+            "surface": "#f8f9fb",
+            "on-primary-fixed": "#00201d",
+            "background": "#f8f9fb",
+            "on-tertiary-fixed": "#002114",
+            "outline": "#717977",
+            "outline-variant": "#c0c8c6",
+            "secondary-fixed": "#eaddff",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem",
+            "space-xs": "0.25rem",
+            "sidebar-expanded": "16.5rem",
+            "space-sm": "0.5rem",
+            "gutter-mobile": "1rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-lg": "1.5rem",
+            "space-2xl": "3rem",
+            "space-base": "1rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "monospace"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .hairline-border {
+      border: 1px solid rgba(10, 54, 50, 0.08);
+    }
+    .tier-card {
+      background: #ffffff;
+      border: 1px solid rgba(10, 54, 50, 0.07);
+      box-shadow: 0 1px 2px rgba(10, 54, 50, 0.03), 0 4px 12px rgba(10, 54, 50, 0.04);
+    }
+    .amethyst-card {
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.16), 0 8px 24px -4px rgba(124, 58, 237, 0.08);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(10, 54, 50, 0.15);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col font-body-md text-on-surface bg-background antialiased selection:bg-secondary-fixed selection:text-secondary">
+<!-- ========================================================================= -->
+<!-- SHARED COMPONENT: TopNavBar (Institucional Verde Abisal Nórdico #0a3632) -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-50 w-full bg-primary-container text-white shadow-sm border-b border-primary-container">
+<div class="flex items-center justify-between px-space-lg w-full max-w-[1680px] mx-auto h-16">
+<!-- Brand & Left Cluster -->
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="h-9 w-9 rounded-lg bg-surface-container-lowest/10 border border-white/15 flex items-center justify-center text-primary-fixed">
+<span class="material-symbols-outlined text-[20px]" data-icon="storefront">storefront</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-headline-md font-bold tracking-tight text-white">SIRA</span>
+<span class="text-[9px] font-bold tracking-widest uppercase px-1.5 py-0.5 rounded bg-white/10 text-primary-fixed border border-white/10">ENTERPRISE OS</span>
+</div>
+<span class="text-[11px] text-on-primary-container tracking-wide font-medium">Marzú Retail Group</span>
+</div>
+</div>
+<!-- Search Bar -->
+<div class="relative hidden lg:block w-72">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-[18px]" data-icon="search">search</span>
+<input class="w-full h-9 pl-9 pr-3 text-body-sm font-body-sm bg-white/10 border border-white/15 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-secondary/40 focus:border-secondary transition-all" placeholder="Buscar RUT, cliente o ticket..." type="text"/>
+</div>
+</div>
+<!-- Main Navigation Links -->
+<nav class="hidden md:flex items-center gap-6 h-full">
+<a class="text-white/70 hover:text-white py-3 font-body-md text-body-md transition-colors flex items-center gap-1.5" href="#">
+          Dashboard
+        </a>
+<a class="text-white/70 hover:text-white py-3 font-body-md text-body-md transition-colors flex items-center gap-1.5" href="#">
+          Punto de Venta
+        </a>
+<a class="text-white/70 hover:text-white py-3 font-body-md text-body-md transition-colors flex items-center gap-1.5" href="#">
+          Inventario
+        </a>
+<a class="text-white/70 hover:text-white py-3 font-body-md text-body-md transition-colors flex items-center gap-1.5" href="#">
+          Catálogo
+        </a>
+<!-- ACTIVE TAB: CRM Clientes -->
+<a class="text-white border-b-2 border-primary-fixed font-semibold py-3 flex items-center gap-2" href="#">
+<span>CRM Clientes</span>
+<span class="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-secondary text-white shadow-xs">VIP 360°</span>
+</a>
+<a class="text-white/70 hover:text-white py-3 font-body-md text-body-md transition-colors flex items-center gap-1.5" href="#">
+          Finanzas
+        </a>
+</nav>
+<!-- Trailing Cluster & Profile -->
+<div class="flex items-center gap-space-md">
+<!-- Store Selector Pill -->
+<div class="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/10 hover:bg-white/15 cursor-pointer transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary-fixed" data-icon="storefront">storefront</span>
+<div class="flex flex-col text-left">
+<span class="text-[11px] leading-tight text-white font-medium">Tienda 04 - Providencia Express</span>
+<span class="text-[9px] leading-tight text-primary-fixed-dim flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> SAP HANA En Línea
+            </span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-white/60 ml-1" data-icon="swap_horiz">swap_horiz</span>
+</div>
+<!-- Secondary Action: Apertura de Caja -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-body-sm font-label-md bg-white/10 hover:bg-white/20 text-white border border-white/15 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[16px]" data-icon="point_of_sale">point_of_sale</span>
+<span>Apertura de Caja</span>
+</button>
+<!-- Notifications -->
+<button class="relative p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-primary-container"></span>
+</button>
+<!-- User Profile Avatar -->
+<div class="flex items-center gap-2 pl-2 border-l border-white/15">
+<img class="w-9 h-9 rounded-lg object-cover ring-1 ring-white/30" data-alt="Fotografía de perfil de usuario activo con rol de Gerente General en Marzú Retail, mujer profesional chilena de 34 años sonriente con vestimenta corporativa elegante en tonos verde bosque profundo y ambiente de tienda gourmet de fondo." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKNwyxUn2OyanNAgt-mmadMr5GxU_KMeyrPBARjArCOU6fJlAro1tX87r2Q9gDPeRNnetLtSAtLa3hPMDb4VHUbMixqWv2mShGMUqb5wYywA8N8ScJTcpiTS8KP4CpswVqJMn0Q9VyCRnbhvBuV9k55J6toWZSxtnoTSh6jwQ1aJAWlX1DfzFhgSnM4du4sT6ByoQYMXrmZvEgQyrZ0JO1hTTl8yISLFOekMSVXrj3h7SutCmEMf9I7Q"/>
+<div class="hidden 2xl:flex flex-col text-left">
+<span class="text-body-sm font-headline-sm text-white leading-tight">Camila Valenzuela</span>
+<span class="text-[11px] text-primary-fixed-dim leading-tight">Encargada de Tienda</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN WORKSPACE & COCKPIT CANVAS -->
+<!-- ========================================================================= -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-space-lg py-space-lg flex flex-col gap-space-lg">
+<!-- 1. BREADCRUMB & HEADER CONTEXT -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-on-surface-variant">
+<span>Marzú Retail Group</span>
+<span class="material-symbols-outlined text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span>Ecosistema Omnicanal</span>
+<span class="material-symbols-outlined text-[12px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-secondary font-semibold">CRM Clientes &amp; Club Marzú</span>
+</div>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-lg text-headline-lg text-on-surface font-bold">
+            Gestión de Clientes &amp; Programa de Lealtad "Club Marzú"
+          </h1>
+<span class="px-2.5 py-1 rounded-full text-label-sm font-semibold bg-secondary-fixed text-on-secondary-fixed border border-secondary/20 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="stars" style="font-variation-settings: 'FILL' 1;">stars</span>
+            Fidelización Activa v4.2
+          </span>
+</div>
+</div>
+<!-- Primary Action Buttons -->
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="tune">tune</span>
+<span>Configuración Puntos</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-on-surface hover:bg-surface-container-low font-label-md text-label-md transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="file_download">file_download</span>
+<span>Exportar Segmentos</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-secondary text-white hover:bg-secondary/90 font-label-md text-label-md transition-all shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]" data-icon="loyalty">loyalty</span>
+<span>Nueva Campaña de Cupones</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-white hover:bg-primary font-label-md text-label-md transition-all shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]" data-icon="person_add">person_add</span>
+<span>+ Registrar Cliente VIP</span>
+</button>
+</div>
+</div>
+<!-- 2. STRATEGIC METRICS / KPI BENTO -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-base">
+<!-- KPI 1 -->
+<div class="tier-card p-4 rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Base de Clientes Activos</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="groups">groups</span>
+</div>
+</div>
+<div class="mt-2">
+<div class="font-tabular-metric text-tabular-metric font-bold text-on-surface tracking-tight">42.850</div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+<span class="material-symbols-outlined text-[12px]" data-icon="trending_up">trending_up</span>
+              +8.4%
+            </span>
+<span class="font-body-sm text-[12px] text-on-surface-variant">este trimestre • 68% recurrentes</span>
+</div>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="tier-card p-4 rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Ticket Promedio Club Marzú</span>
+<div class="w-8 h-8 rounded-lg bg-secondary-fixed/50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="payments">payments</span>
+</div>
+</div>
+<div class="mt-2">
+<div class="font-tabular-metric text-tabular-metric font-bold text-on-surface tracking-tight">$18.450 <span class="text-xs font-normal text-on-surface-variant">CLP</span></div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+              +64.7% uplift
+            </span>
+<span class="font-body-sm text-[12px] text-on-surface-variant">vs. $11.200 no inscritos</span>
+</div>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="tier-card p-4 rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Tasa de Redención Cupones</span>
+<div class="w-8 h-8 rounded-lg bg-surface-container-low text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="confirmation_number">confirmation_number</span>
+</div>
+</div>
+<div class="mt-2">
+<div class="font-tabular-metric text-tabular-metric font-bold text-on-surface tracking-tight">41.2%</div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              3.240 canjes
+            </span>
+<span class="font-body-sm text-[12px] text-on-surface-variant">en caja en últimos 30 días</span>
+</div>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="tier-card p-4 rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Índice NPS &amp; Satisfacción</span>
+<div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="sentiment_very_satisfied">sentiment_very_satisfied</span>
+</div>
+</div>
+<div class="mt-2">
+<div class="font-tabular-metric text-tabular-metric font-bold text-on-surface tracking-tight">74 <span class="text-xs font-normal text-on-surface-variant">pts</span></div>
+<div class="flex items-center gap-1.5 mt-1.5">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+              Nivel Excelente
+            </span>
+<span class="font-body-sm text-[12px] text-on-surface-variant">post-compra en POS táctil</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. MAIN DUAL-PANE OPERATIONAL WORKSPACE -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- =================================================================== -->
+<!-- LEFT / CENTRAL PANEL: Directorio & Segmentación (65% ~ 8 cols)    -->
+<!-- =================================================================== -->
+<div class="lg:col-span-8 flex flex-col gap-space-md">
+<div class="tier-card rounded-xl overflow-hidden flex flex-col">
+<!-- Filters and Search Toolbar -->
+<div class="p-4 border-b border-outline-variant/30 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between bg-surface-container-lowest">
+<!-- Quick Search Input -->
+<div class="relative flex-1 max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" data-icon="search">search</span>
+<input class="w-full h-10 pl-9 pr-3 text-body-sm font-body-sm bg-surface-container-low/60 border border-outline-variant/60 rounded-lg text-on-surface placeholder-on-surface-variant focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container transition-all" placeholder="Buscar por RUT chileno, nombre, teléfono o email..." type="text" value="Valentina Silva"/>
+</div>
+<!-- Segmentation Tabs / Pills -->
+<div class="flex items-center gap-1 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-primary-container text-white shadow-xs">
+                Todos (42.8k)
+              </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-purple-700"></span> Black Gourmet
+              </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-slate-400"></span> Platinum
+              </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-amber-500"></span> Gold
+              </button>
+<button class="px-3 py-1.5 rounded-lg text-label-sm font-semibold bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors">
+                Nuevos
+              </button>
+</div>
+</div>
+<!-- Active Segments Meta Bar -->
+<div class="px-4 py-2 bg-surface-container-low/40 border-b border-outline-variant/20 flex items-center justify-between text-[12px] text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span class="font-medium text-on-surface">Mostrando 6 de 1.420 clientes activos en Providencia</span>
+<span class="inline-block w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-secondary font-medium">Algoritmo predictivo de fidelidad: Calibrado</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 hover:text-on-surface cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="filter_list">filter_list</span> Filtros avanzados
+              </span>
+<span class="flex items-center gap-1 hover:text-on-surface cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="swap_vert">swap_vert</span> Ordenar: Mayor LTV
+              </span>
+</div>
+</div>
+<!-- Clients Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="h-9 bg-slate-50 text-slate-500 text-[11px] font-semibold uppercase tracking-wider border-b border-outline-variant/30">
+<th class="py-2 px-4">Cliente &amp; RUT</th>
+<th class="py-2 px-3">Nivel Club</th>
+<th class="py-2 px-3 text-right">Puntos Vigentes</th>
+<th class="py-2 px-3 text-center">Frecuencia</th>
+<th class="py-2 px-3">Sucursal Habitual</th>
+<th class="py-2 px-3">Última Compra</th>
+<th class="py-2 px-4 text-right">LTV Histórico</th>
+<th class="py-2 px-2 text-center">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 font-body-sm text-on-surface">
+<!-- ROW 1: ACTIVE / SELECTED (Valentina Silva) -->
+<tr class="bg-purple-50/50 hover:bg-purple-50/80 transition-colors cursor-pointer border-l-4 border-l-secondary">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-purple-200 text-purple-900 font-bold text-xs flex items-center justify-center ring-2 ring-purple-300">
+                        VS
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-bold text-on-surface leading-tight flex items-center gap-1.5">
+                          Valentina Silva Larraín
+                          <span class="material-symbols-outlined text-[14px] text-secondary" data-icon="verified" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<div class="text-[11px] text-slate-500 font-tabular-data">16.894.321-4 • valentina.silva@empresa.cl</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-200">
+<span class="material-symbols-outlined text-[12px] text-purple-700" data-icon="diamond" style="font-variation-settings: 'FILL' 1;">diamond</span>
+                      Black Gourmet
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-secondary text-sm">8.450 pts</div>
+<div class="text-[10px] text-slate-400">Vence Dic 2025</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      3.2 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Providencia Exp.
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>Hoy, 13:42</div>
+<div class="text-[10px] text-emerald-700 font-medium">Ticket #48291</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$2.840.500</div>
+<div class="text-[10px] text-slate-400">Top 1% retail</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-secondary text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 2 -->
+<tr class="hover:bg-slate-50/80 transition-colors cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center">
+                        RE
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-semibold text-on-surface leading-tight">
+                          Rodrigo Edwards Matte
+                        </div>
+<div class="text-[11px] text-slate-500 font-tabular-data">14.230.118-K • r.edwards@matte.cl</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
+<span class="material-symbols-outlined text-[12px] text-slate-600" data-icon="workspace_premium">workspace_premium</span>
+                      Platinum
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">4.120 pts</div>
+<div class="text-[10px] text-slate-400">Vence Nov 2025</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      1.8 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Providencia Exp.
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>Ayer, 18:20</div>
+<div class="text-[10px] text-slate-400">Ticket #48110</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$1.492.300</div>
+<div class="text-[10px] text-slate-400">Top 5% retail</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-slate-400 text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 3 -->
+<tr class="hover:bg-slate-50/80 transition-colors cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-amber-100 text-amber-900 font-bold text-xs flex items-center justify-center">
+                        FP
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-semibold text-on-surface leading-tight">
+                          Francisca Puelma Lyon
+                        </div>
+<div class="text-[11px] text-slate-500 font-tabular-data">18.441.902-3 • fpuelma@arquitectura.cl</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
+<span class="material-symbols-outlined text-[12px] text-amber-600" data-icon="military_tech">military_tech</span>
+                      Gold
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">2.890 pts</div>
+<div class="text-[10px] text-slate-400">Vence Ene 2026</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      2.4 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Las Condes Hub
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>12 Feb, 2025</div>
+<div class="text-[10px] text-slate-400">Ticket #47904</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$980.200</div>
+<div class="text-[10px] text-slate-400">Top 12% retail</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-slate-400 text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 4 -->
+<tr class="hover:bg-slate-50/80 transition-colors cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-purple-100 text-purple-900 font-bold text-xs flex items-center justify-center">
+                        AG
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-semibold text-on-surface leading-tight">
+                          Álvaro Guzmán Vial
+                        </div>
+<div class="text-[11px] text-slate-500 font-tabular-data">12.503.771-8 • a.guzman@inversiones.cl</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 text-purple-900 border border-purple-200">
+<span class="material-symbols-outlined text-[12px] text-purple-700" data-icon="diamond" style="font-variation-settings: 'FILL' 1;">diamond</span>
+                      Black Gourmet
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-secondary text-sm">9.120 pts</div>
+<div class="text-[10px] text-slate-400">Vence Mar 2026</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      4.1 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Vitacura Gourmet
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>11 Feb, 2025</div>
+<div class="text-[10px] text-slate-400">Ticket #47652</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$3.110.000</div>
+<div class="text-[10px] text-slate-400">Top 1% retail</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-slate-400 text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 5 -->
+<tr class="hover:bg-slate-50/80 transition-colors cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-slate-100 text-slate-800 font-bold text-xs flex items-center justify-center">
+                        CL
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-semibold text-on-surface leading-tight">
+                          Catalina Larraín Bunster
+                        </div>
+<div class="text-[11px] text-slate-500 font-tabular-data">17.652.889-1 • cl@diseno.cl</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-800 border border-slate-300">
+<span class="material-symbols-outlined text-[12px] text-slate-600" data-icon="workspace_premium">workspace_premium</span>
+                      Platinum
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">3.740 pts</div>
+<div class="text-[10px] text-slate-400">Vence Dic 2025</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      1.5 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Providencia Exp.
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>10 Feb, 2025</div>
+<div class="text-[10px] text-slate-400">Ticket #47419</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$1.215.400</div>
+<div class="text-[10px] text-slate-400">Top 8% retail</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-slate-400 text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+<!-- ROW 6 -->
+<tr class="hover:bg-slate-50/80 transition-colors cursor-pointer">
+<td class="py-3 px-4">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-900 font-bold text-xs flex items-center justify-center">
+                        MO
+                      </div>
+<div>
+<div class="font-headline-sm text-body-md font-semibold text-on-surface leading-tight">
+                          Matías Ossa Donoso
+                        </div>
+<div class="text-[11px] text-slate-500 font-tabular-data">20.104.561-2 • matias.ossa@gmail.com</div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-900 border border-emerald-300">
+<span class="material-symbols-outlined text-[12px] text-emerald-600" data-icon="new_releases">new_releases</span>
+                      Nuevo Club
+                    </span>
+</td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">450 pts</div>
+<div class="text-[10px] text-slate-400">Bienvenida</div>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                      0.8 vis/sem
+                    </span>
+</td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+                    Providencia Exp.
+                  </td>
+<td class="py-3 px-3 text-[12px] text-slate-600">
+<div>09 Feb, 2025</div>
+<div class="text-[10px] text-slate-400">Ticket #47112</div>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="font-tabular-data font-bold text-on-surface text-sm">$84.900</div>
+<div class="text-[10px] text-slate-400">En aceleración</div>
+</td>
+<td class="py-3 px-2 text-center">
+<span class="material-symbols-outlined text-slate-400 text-[18px]" data-icon="chevron_right">chevron_right</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="px-4 py-3 border-t border-outline-variant/30 flex items-center justify-between bg-surface-container-lowest text-xs text-on-surface-variant">
+<div class="flex items-center gap-2">
+<span>Filas por página: <strong>10</strong></span>
+<span>• Página 1 de 142</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded border border-outline-variant/40 hover:bg-surface-container text-slate-600 disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="px-2 py-1 rounded bg-primary-container text-white font-semibold">1</button>
+<button class="px-2 py-1 rounded hover:bg-surface-container text-slate-700">2</button>
+<button class="px-2 py-1 rounded hover:bg-surface-container text-slate-700">3</button>
+<span class="px-1">...</span>
+<button class="px-2 py-1 rounded hover:bg-surface-container text-slate-700">142</button>
+<button class="p-1 rounded border border-outline-variant/40 hover:bg-surface-container text-slate-600">
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Operational Micro-Card: Algorithmic Insight -->
+<div class="p-4 rounded-xl border border-secondary/20 bg-secondary-fixed/20 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-secondary text-white flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<div>
+<h4 class="font-headline-sm text-body-md font-bold text-on-surface">Motor Predictivo de Recompra Marzú AI</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                Se detectaron 84 clientes Gourmet con probabilidad de visita este fin de semana en Providencia Express.
+              </p>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-secondary text-white text-label-md font-semibold hover:bg-secondary/90 transition-all flex items-center gap-1.5 active:scale-[0.98]">
+<span>Activar Triggers WhatsApp</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- =================================================================== -->
+<!-- RIGHT PANEL: Ficha 360° en Vivo del Cliente (35% ~ 4 cols)        -->
+<!-- =================================================================== -->
+<div class="lg:col-span-4 flex flex-col gap-space-md">
+<!-- FICHA CLIENTE 360 CARD -->
+<div class="tier-card amethyst-card rounded-xl overflow-hidden flex flex-col">
+<!-- Top Header Banner & Avatar -->
+<div class="p-5 bg-gradient-to-br from-primary-container via-[#0e4a44] to-[#123834] text-white relative">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3.5">
+<div class="w-14 h-14 rounded-xl bg-purple-200 text-purple-950 font-bold text-xl flex items-center justify-center ring-4 ring-white/20 shadow-md">
+                  VS
+                </div>
+<div>
+<div class="flex items-center gap-1.5">
+<h3 class="font-headline-md text-headline-sm font-bold text-white leading-tight">
+                      Valentina Silva Larraín
+                    </h3>
+</div>
+<div class="text-xs text-primary-fixed-dim font-tabular-data mt-0.5">RUT: 16.894.321-4</div>
+<div class="inline-flex items-center gap-1 mt-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary text-white border border-white/20">
+<span class="material-symbols-outlined text-[12px]" data-icon="diamond" style="font-variation-settings: 'FILL' 1;">diamond</span>
+                    Cliente Black Gourmet • Top 1% Gasto
+                  </div>
+</div>
+</div>
+<!-- Live Badge -->
+<span class="flex items-center gap-1 text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-full">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> POS Activo
+              </span>
+</div>
+<!-- Fast Contact Row -->
+<div class="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/15 text-[11px] text-white/80">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed" data-icon="phone_iphone">phone_iphone</span>
+<span>+56 9 8492 1104</span>
+</div>
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-primary-fixed" data-icon="mail">mail</span>
+<span>valentina.silva@empresa.cl</span>
+</div>
+</div>
+</div>
+<!-- Points Balance Card Section -->
+<div class="p-4 bg-purple-50/70 border-b border-purple-100 flex items-center justify-between">
+<div class="flex flex-col">
+<span class="text-[11px] uppercase font-bold tracking-wider text-purple-900">Saldo Puntos Club Marzú</span>
+<div class="flex items-baseline gap-2 mt-0.5">
+<span class="text-2xl font-bold font-tabular-metric text-secondary">8.450 pts</span>
+<span class="text-xs font-semibold text-purple-700">= $8.450 CLP para canje</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-secondary text-white font-label-md text-xs hover:bg-secondary/90 transition-all flex items-center gap-1 shadow-xs active:scale-[0.98]">
+<span class="material-symbols-outlined text-[14px]" data-icon="redeem">redeem</span>
+<span>Canjear en POS</span>
+</button>
+</div>
+<!-- Cupones Personalizados Activos -->
+<div class="p-4 border-b border-outline-variant/30 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary" data-icon="local_offer">local_offer</span>
+<span class="font-headline-sm text-body-sm font-bold text-on-surface">Cupones Personalizados Activos (3)</span>
+</div>
+<span class="text-[11px] text-secondary font-semibold hover:underline cursor-pointer">+ Asignar Otro</span>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Coupon 1 -->
+<div class="p-2.5 rounded-lg border border-purple-200 bg-white hover:bg-purple-50/40 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-xs">
+                    %
+                  </div>
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">15% Dcto en Vinos Reserva &amp; Gran Reserva</div>
+<div class="text-[10px] text-slate-500">Válido en Providencia Express • Vence en 5 días</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Listo en Caja</span>
+</div>
+<!-- Coupon 2 -->
+<div class="p-2.5 rounded-lg border border-amber-200 bg-white hover:bg-amber-50/40 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs">
+                    2x1
+                  </div>
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">2x1 en Café de Especialidad en Grano (250g)</div>
+<div class="text-[10px] text-slate-500">Origen Etiopía &amp; Colombia • Vence en 12 días</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Listo en Caja</span>
+</div>
+<!-- Coupon 3 -->
+<div class="p-2.5 rounded-lg border border-purple-200 bg-white hover:bg-purple-50/40 transition-colors flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="cake">cake</span>
+</div>
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">Regalo Cumpleaños: Torta Artesanal Marzú</div>
+<div class="text-[10px] text-slate-500">Mes Aniversario • Válido hasta fin de mes</div>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Cortesía VIP</span>
+</div>
+</div>
+</div>
+<!-- Top Categorías Consumidas -->
+<div class="p-4 border-b border-outline-variant/30 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary-container" data-icon="pie_chart">pie_chart</span>
+                Distribución de Consumo Habitual
+              </span>
+<span class="text-[11px] text-slate-500">Últimos 90 días</span>
+</div>
+<!-- Distribution Multi-segment Progress Bar -->
+<div class="w-full h-3 rounded-full bg-slate-100 overflow-hidden flex">
+<div class="h-full bg-primary-container" style="width: 45%" title="Quesos &amp; Vinos (45%)"></div>
+<div class="h-full bg-emerald-500" style="width: 30%" title="Frutas Orgánicas (30%)"></div>
+<div class="h-full bg-amber-500" style="width: 25%" title="Panadería Artesanal (25%)"></div>
+</div>
+<!-- Legend Pills -->
+<div class="grid grid-cols-3 gap-1 pt-1 text-[11px]">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary-container"></span>
+<span class="text-slate-700 font-medium">Quesos/Vinos (45%)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-emerald-500"></span>
+<span class="text-slate-700 font-medium">Orgánicos (30%)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span>
+<span class="text-slate-700 font-medium">Panadería (25%)</span>
+</div>
+</div>
+</div>
+<!-- Historial de Últimas Compras -->
+<div class="p-4 flex flex-col gap-2.5">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant" data-icon="receipt_long">receipt_long</span>
+                Últimas 3 Compras en Sucursal
+              </span>
+<span class="text-[11px] text-secondary font-semibold hover:underline cursor-pointer">Ver todas (84)</span>
+</div>
+<div class="flex flex-col gap-2">
+<!-- Purchase 1 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low/50 border border-outline-variant/30 flex items-center justify-between">
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">Hoy, 13:42 • Ticket #48291</div>
+<div class="text-[10px] text-slate-500">Providencia Express • Cajero: Marco A. (POS 02)</div>
+</div>
+<div class="text-right flex items-center gap-2">
+<div>
+<div class="font-tabular-data font-bold text-on-surface text-xs">$34.900</div>
+<div class="text-[9px] text-emerald-700 font-semibold">+349 pts sumados</div>
+</div>
+<button class="p-1 rounded hover:bg-slate-200 text-slate-600" title="Descargar Ticket PDF">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Purchase 2 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low/50 border border-outline-variant/30 flex items-center justify-between">
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">10 Feb, 19:15 • Ticket #47810</div>
+<div class="text-[10px] text-slate-500">Providencia Express • Cajero: Sofia V. (POS 01)</div>
+</div>
+<div class="text-right flex items-center gap-2">
+<div>
+<div class="font-tabular-data font-bold text-on-surface text-xs">$22.400</div>
+<div class="text-[9px] text-purple-700 font-semibold">Usó Cupón 10%</div>
+</div>
+<button class="p-1 rounded hover:bg-slate-200 text-slate-600" title="Descargar Ticket PDF">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Purchase 3 -->
+<div class="p-2.5 rounded-lg bg-surface-container-low/50 border border-outline-variant/30 flex items-center justify-between">
+<div>
+<div class="font-headline-sm text-xs font-bold text-on-surface">06 Feb, 14:02 • Ticket #47290</div>
+<div class="text-[10px] text-slate-500">Las Condes Hub • Autoservicio POS 04</div>
+</div>
+<div class="text-right flex items-center gap-2">
+<div>
+<div class="font-tabular-data font-bold text-on-surface text-xs">$58.900</div>
+<div class="text-[9px] text-emerald-700 font-semibold">+589 pts sumados</div>
+</div>
+<button class="p-1 rounded hover:bg-slate-200 text-slate-600" title="Descargar Ticket PDF">
+<span class="material-symbols-outlined text-[16px]" data-icon="download">download</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Action Buttons for the Profile -->
+<div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-outline-variant/20">
+<button class="w-full py-2 px-3 rounded-lg border border-outline-variant/60 hover:bg-surface-container text-xs font-semibold text-on-surface flex items-center justify-center gap-1.5 transition-all">
+<span class="material-symbols-outlined text-[14px]" data-icon="edit_note">edit_note</span>
+<span>Editar Contacto</span>
+</button>
+<button class="w-full py-2 px-3 rounded-lg bg-primary-container text-white text-xs font-semibold hover:bg-primary flex items-center justify-center gap-1.5 transition-all shadow-xs">
+<span class="material-symbols-outlined text-[14px]" data-icon="card_giftcard">card_giftcard</span>
+<span>Asignar Cupón</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Secondary Card: Club Marzú Tiers Rules Reference -->
+<div class="tier-card p-4 rounded-xl flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-body-sm font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-amber-600" data-icon="military_tech">military_tech</span>
+              Reglas de Segmentación Club Marzú
+            </span>
+<span class="text-[10px] text-slate-500 uppercase tracking-wide">Q1 2025</span>
+</div>
+<div class="space-y-2 text-xs">
+<div class="flex items-center justify-between p-1.5 rounded bg-purple-50 text-purple-950 font-medium">
+<span>Tier Black Gourmet</span>
+<span class="font-tabular-data font-bold">&gt; $2.000.000 CLP / año</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-slate-100 text-slate-800 font-medium">
+<span>Tier Platinum</span>
+<span class="font-tabular-data font-bold">$1.000.000 - $2.000.000</span>
+</div>
+<div class="flex items-center justify-between p-1.5 rounded bg-amber-50 text-amber-900 font-medium">
+<span>Tier Gold</span>
+<span class="font-tabular-data font-bold">$400.000 - $1.000.000</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- INSTITUTIONAL ENTERPRISE FOOTER -->
+<!-- ========================================================================= -->
+<footer class="mt-auto border-t border-outline-variant/30 bg-white py-3 px-space-lg text-xs text-on-surface-variant">
+<div class="max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5 text-slate-700 font-medium">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>Sincronización Omnicanal: En tiempo real con 18 cajas físicas y Ecommerce</span>
+</div>
+<span class="hidden md:inline text-slate-300">|</span>
+<div class="flex items-center gap-1.5 text-slate-500">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span>
+<span>Cumplimiento Ley de Protección de Datos Personales N° 19.628 (Chile)</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-slate-500 font-medium">
+<span>SIRA v5.4.1 Retail OS</span>
+<span>•</span>
+<span>Nodo Providencia Exp. (SCL-04)</span>
+<span>•</span>
+<span class="text-primary-container font-semibold">Marzú Retail Group S.A.</span>
+</div>
+</div>
+</footer>
+<!-- Micro-Interactions Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simple interactive row selection to demonstrate active state
+      const rows = document.querySelectorAll('tbody tr');
+      rows.forEach(row => {
+        row.addEventListener('click', () => {
+          rows.forEach(r => {
+            r.classList.remove('bg-purple-50/50', 'border-l-4', 'border-l-secondary');
+          });
+          row.classList.add('bg-purple-50/50', 'border-l-4', 'border-l-secondary');
+        });
+      });
+    });
+  </script>
+</body></html>

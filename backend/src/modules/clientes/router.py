@@ -15,9 +15,14 @@ from src.core.database import get_session
 from src.core.security import Principal, require_permission
 from src.modules.clientes.campanas_repository import CampanasRepository
 from src.modules.clientes.campanas_service import CampanasService
+from src.modules.clientes.directorio_repository import DirectorioRepository
 from src.modules.clientes.repository import ClientesRepository
 from src.modules.clientes.schemas import (
     CampanaDetalleOut,
+    DirectorioItemOut,
+    Ficha360Out,
+    NivelConteoOut,
+    ResumenCrmOut,
     CampanaReactivacionIn,
     CampanaResumenOut,
     ClienteDetalleOut,
@@ -160,6 +165,72 @@ async def listar_riesgo_fuga(
         total=data["total"],
         page=data["page"],
         size=data["size"],
+    )
+
+
+# --- pantalla CRM: directorio + ficha 360 + KPIs (prefijo fijo antes de /{id}) ---
+def _directorio(session: SessionDep) -> DirectorioRepository:
+    return DirectorioRepository(session)
+
+
+DirectorioDep = Annotated[DirectorioRepository, Depends(_directorio)]
+
+
+@router.get("/directorio", response_model=Page[DirectorioItemOut])
+async def directorio_clientes(
+    repo: DirectorioDep,
+    _: Annotated[Principal, Depends(_ver)],
+    params: Annotated[PageParams, Depends(page_params)],
+    search: str | None = None,
+    nivel_id: int | None = None,
+    activo: bool | None = True,
+) -> Page[DirectorioItemOut]:
+    """Directorio enriquecido: LTV, frecuencia, puntos, sucursal habitual y nivel
+    del Club Marzú — el operador nunca deriva esto a mano (Principio XII)."""
+    filas, total = await repo.directorio(
+        search=search, nivel_id=nivel_id, activo=activo,
+        offset=params.offset, limit=params.limit,
+    )
+    return Page[DirectorioItemOut](
+        items=[DirectorioItemOut(**f) for f in filas],
+        total=total, page=params.page, size=params.size,
+    )
+
+
+@router.get("/resumen-crm", response_model=ResumenCrmOut)
+async def resumen_crm(
+    repo: DirectorioDep, _: Annotated[Principal, Depends(_ver)]
+) -> ResumenCrmOut:
+    d = await repo.resumen_crm()
+    niveles = await repo.conteo_por_nivel()
+    club = float(d.get("ticket_club") or 0)
+    no_club = float(d.get("ticket_no_club") or 0)
+    asignados = d.get("asignados") or 0
+    return ResumenCrmOut(
+        base_activos=d.get("base_activos", 0),
+        ticket_club=d.get("ticket_club"),
+        ticket_no_club=d.get("ticket_no_club"),
+        uplift_pct=round((club / no_club - 1) * 100, 1) if no_club else None,
+        tasa_redencion_pct=(
+            round(d["redimidos"] / asignados * 100, 1) if asignados else None
+        ),
+        redimidos=d.get("redimidos", 0),
+        con_clv=d.get("con_clv", 0),
+        niveles=[NivelConteoOut(**n) for n in niveles],
+    )
+
+
+@router.get("/{household_id}/ficha360", response_model=Ficha360Out)
+async def ficha_360(
+    household_id: int, repo: DirectorioDep, _: Annotated[Principal, Depends(_ver)]
+) -> Ficha360Out:
+    """Panel 360° del cliente: saldo de puntos, cupones activos, distribución de
+    consumo por categoría y últimas compras."""
+    d = await repo.ficha_360(household_id)
+    return Ficha360Out(
+        household_id=household_id,
+        valor_canje_clp=d["puntos"],  # 1 punto = 1 CLP de canje
+        **d,
     )
 
 
