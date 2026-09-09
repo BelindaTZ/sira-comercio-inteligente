@@ -20,6 +20,7 @@ import FormularioCampana from './components/FormularioCampana.vue'
 
 const sesion = useSesion()
 const puedeVer = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'churn_score'))
+const puedeAccionar = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'campanas'))
 
 const severidad = ref('') // '' | 'en_riesgo' | 'inactivo'
 const page = ref(1)
@@ -149,7 +150,7 @@ onMounted(() => {
           <Icon name="users" :size="16" /> Directorio
         </RouterLink>
         <Btn variant="ghost" @click="modal = 'export'"><Icon name="download" :size="16" /> Exportar lista</Btn>
-        <Btn variant="primary" @click="modal = 'campana'">
+        <Btn v-if="puedeAccionar" variant="primary" @click="modal = 'campana'">
           <Icon name="bolt" :size="16" /> Ejecutar estrategia de retención
         </Btn>
       </template>

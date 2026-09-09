@@ -5,8 +5,12 @@
  * Se permite para cualquier empleado; sólo los puestos críticos alimentan el KPI
  * de OT-8.1.
  */
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { rrhhApi } from '@/services/rrhhApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.rol === 'Jefe_RRHH')
 
 const nueva = reactive({
   empleado_id: '',
@@ -55,6 +59,7 @@ async function consultar() {
     </p>
 
     <form
+      v-if="puedeEditar"
       class="mb-6 grid gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:grid-cols-2"
       @submit.prevent="registrar"
     >

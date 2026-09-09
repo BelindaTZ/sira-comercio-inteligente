@@ -23,6 +23,9 @@ import DataTable from '@/shared/DataTable.vue'
 
 const sesion = useSesion()
 const tiendaId = computed(() => sesion.tiendaId ?? (Number(localStorage.getItem("sira_tienda_id")) || 1))
+// apertura y cuadre los registra el Cajero (RBAC); el Encargado y la Gerencia
+// consultan el histórico en modo lectura.
+const puedeOperar = computed(() => sesion.puedeEditarTabla('Finanzas', 'apertura_caja'))
 
 const cajas = ref([])
 const cierres = ref([])
@@ -178,8 +181,11 @@ onMounted(cargar)
       {{ aviso }}
     </p>
 
-    <div class="grid items-start gap-6 2xl:grid-cols-[400px_minmax(0,1fr)]">
-      <div class="space-y-4">
+    <div
+      class="grid items-start gap-6"
+      :class="puedeOperar ? '2xl:grid-cols-[400px_minmax(0,1fr)]' : ''"
+    >
+      <div v-if="puedeOperar" class="space-y-4">
         <!-- Apertura -->
         <section class="satin-card rounded-2xl p-5 shadow-card-subtle">
           <div class="mb-3 flex items-center gap-2">
@@ -199,7 +205,7 @@ onMounted(cargar)
               </select>
             </label>
             <label class="block text-[12px] font-semibold text-slate-600">
-              Fondo inicial (CLP)
+              Fondo inicial (USD)
               <input
                 v-model="apertura.fondoInicial"
                 type="number"

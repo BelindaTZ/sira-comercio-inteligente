@@ -4,8 +4,12 @@
  * consulta de su efecto en ventas frente a un periodo de referencia (FR-016), sin
  * atribución causal automática — la lectura la hace el usuario.
  */
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeRegistrar = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'promociones'))
 
 const hoy = new Date()
 const form = reactive({
@@ -78,6 +82,7 @@ onMounted(cargar)
     </p>
 
     <form
+      v-if="puedeRegistrar"
       class="mb-6 grid gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:grid-cols-3"
       @submit.prevent="registrar"
     >

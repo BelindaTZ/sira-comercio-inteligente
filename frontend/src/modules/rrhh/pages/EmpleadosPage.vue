@@ -4,9 +4,13 @@
  * baja — el Jefe de RRHH. Al dar de baja, el trigger de PostgreSQL inhabilita la
  * cuenta asociada automáticamente (research.md Decisión 4).
  */
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { rrhhApi } from '@/services/rrhhApi'
 import { prompt } from '@/shared/ui/dialogs'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.rol === 'Jefe_RRHH')
 
 const nuevo = reactive({
   nombre: '',
@@ -78,6 +82,7 @@ async function darBaja(emp) {
     </p>
 
     <form
+      v-if="puedeEditar"
       class="mb-6 grid gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:grid-cols-2"
       @submit.prevent="crear"
     >
@@ -144,7 +149,7 @@ async function darBaja(emp) {
         <span v-if="consultado.fecha_baja"> · baja {{ consultado.fecha_baja }}</span>
       </p>
       <button
-        v-if="consultado.activo"
+        v-if="consultado.activo && puedeEditar"
         type="button"
         class="mt-3 rounded-lg bg-error-container px-3 py-1.5 text-xs font-semibold text-on-error-container"
         @click="darBaja(consultado)"

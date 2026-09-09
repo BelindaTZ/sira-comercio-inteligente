@@ -26,7 +26,7 @@ import DataTable from '@/shared/DataTable.vue'
 const sesion = useSesion()
 // FR-006 (registrar/editar el inventario) es del Jefe de TI; fuera de servicio /
 // restablecer (007 US1) los hace también el Encargado (permiso UPDATE).
-const puedeGestionar = computed(() => sesion.esGerente || sesion.rol === 'Jefe_TI')
+const puedeGestionar = computed(() => sesion.rol === 'Jefe_TI')
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Finanzas', 'datafonos'))
 const puedeEditarEstandar = computed(() =>
   sesion.puedeEditarTabla('Finanzas', 'configuracion_seguridad_pagos'),

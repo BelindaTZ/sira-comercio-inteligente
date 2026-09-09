@@ -77,10 +77,14 @@ export const useSesion = defineStore('sesion', {
       return Boolean(this._modulos[modulo]?.puede_editar)
     },
 
-    /** ¿El rol puede editar esta tabla concreta? Más fino que `puedeEditar(modulo)`. */
+    /**
+     * ¿El rol puede editar esta tabla concreta? Más fino que `puedeEditar(modulo)`.
+     * El `Gerente_General` es de lectura total (migración 0027): ve todo pero no
+     * escribe nada — no se le muestran acciones de escritura que devolverían 403.
+     */
     puedeEditarTabla(modulo, tabla) {
       if (!this.perfil) return false
-      if (this.esGerente) return true
+      if (this.esGerente) return false
       return this._tablasEditables.has(`${modulo}/${tabla}`)
     },
 

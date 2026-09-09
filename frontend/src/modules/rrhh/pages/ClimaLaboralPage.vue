@@ -6,8 +6,12 @@
  * calculada por el backend desde `empleados.fecha_baja`. Un periodo sin encuesta
  * no muestra ningún indicador — se informa como sin datos.
  */
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { rrhhApi } from '@/services/rrhhApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.rol === 'Jefe_RRHH')
 
 const nuevo = reactive({ tienda_id: '', periodo: '', resultado_promedio: '' })
 const consulta = reactive({ tienda_id: '', periodo: '' })
@@ -54,6 +58,7 @@ async function verCruce() {
     </p>
 
     <form
+      v-if="puedeEditar"
       class="mb-6 grid gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:grid-cols-3"
       @submit.prevent="registrar"
     >

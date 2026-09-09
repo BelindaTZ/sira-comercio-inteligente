@@ -24,6 +24,7 @@ const sesion = useSesion()
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'clientes'))
 const puedeChurn = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'churn_score'))
 const puedeCampanas = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'campanas'))
+const puedeCrearCampana = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'campanas'))
 
 const busqueda = ref('')
 const nivel = ref('') // '' | nivel_id
@@ -339,7 +340,8 @@ onMounted(() => {
             to="/clientes/campanas"
             class="inline-flex items-center gap-1.5 rounded-lg bg-amethyst-600 px-3 py-1.5 text-[12px] font-bold text-white hover:bg-amethyst-500"
           >
-            Crear campaña <Icon name="chevron" :size="12" class="-rotate-90" />
+            {{ puedeCrearCampana ? 'Crear campaña' : 'Ver campañas' }}
+            <Icon name="chevron" :size="12" class="-rotate-90" />
           </RouterLink>
         </div>
       </div>

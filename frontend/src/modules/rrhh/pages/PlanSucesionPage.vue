@@ -4,8 +4,12 @@
  * candidatos internos para puestos críticos; el sistema señala explícitamente,
  * con un badge de alerta no bloqueante, los puestos críticos sin ningún candidato.
  */
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { rrhhApi } from '@/services/rrhhApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.rol === 'Jefe_RRHH')
 
 const nuevo = reactive({ puesto_id: '', empleado_candidato_id: '' })
 const cobertura = ref([])
@@ -49,6 +53,7 @@ onMounted(cargar)
     </p>
 
     <form
+      v-if="puedeEditar"
       class="mb-6 flex flex-wrap items-end gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
       @submit.prevent="registrar"
     >

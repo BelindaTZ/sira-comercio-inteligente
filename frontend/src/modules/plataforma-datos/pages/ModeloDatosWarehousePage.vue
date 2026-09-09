@@ -5,8 +5,12 @@
  * sólo procesa entidades activas (research.md Decisión 1). Toda la regla vive en
  * el backend.
  */
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { plataformaDatosApi } from '@/services/plataformaDatosApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.puedeEditarTabla('TI', 'modelo_datos_warehouse'))
 
 const entidades = ref([])
 const error = ref('')
@@ -114,7 +118,7 @@ onMounted(cargar)
       </p>
     </section>
 
-    <section class="rounded-xl border border-outline-variant p-4">
+    <section v-if="puedeEditar" class="rounded-xl border border-outline-variant p-4">
       <h2 class="mb-3 text-sm font-semibold text-on-surface">Registrar una entidad</h2>
       <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="registrar">
         <label class="text-xs text-on-surface-variant">

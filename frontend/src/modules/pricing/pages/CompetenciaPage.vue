@@ -5,8 +5,13 @@
  * desviación (generadas por el job semanal). Open Prices se captura solo para
  * productos en vivo con barcode real, sin UI propia (research.md §5).
  */
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { pricingApi } from '@/services/pricingApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+// captura de competencia = Jefe Comercial; el resto (incl. Gerencia) consulta
+const puedeRegistrar = computed(() => sesion.puedeEditarTabla('Comercial', 'precio_competencia'))
 
 const competidores = ref([])
 const alertas = ref([])
@@ -132,7 +137,7 @@ onMounted(cargar)
         </div>
       </section>
 
-      <aside class="space-y-4">
+      <aside v-if="puedeRegistrar" class="space-y-4">
         <form
           class="space-y-2 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
           @submit.prevent="crearCompetidor"

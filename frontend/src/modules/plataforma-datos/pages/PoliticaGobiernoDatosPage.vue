@@ -4,8 +4,12 @@
  * de gobierno de datos. Append-only: registrar una nueva versión nunca reemplaza
  * la anterior, que queda en el historial (mismo criterio que 006/007).
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { plataformaDatosApi } from '@/services/plataformaDatosApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+const puedeEditar = computed(() => sesion.puedeEditarTabla('TI', 'politica_gobierno_datos'))
 
 const vigente = ref(null)
 const historial = ref([])
@@ -76,7 +80,7 @@ onMounted(cargar)
       </article>
     </section>
 
-    <section class="rounded-xl border border-outline-variant p-4">
+    <section v-if="puedeEditar" class="rounded-xl border border-outline-variant p-4">
       <h2 class="mb-2 text-sm font-semibold text-on-surface">Registrar nueva versión</h2>
       <form @submit.prevent="registrar">
         <textarea

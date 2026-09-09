@@ -3,8 +3,13 @@
  * Cuentas de usuario (feature 008, FR-007/FR-008/FR-012). El Jefe de TI crea la
  * cuenta de un empleado ya registrado y asigna/revoca su rol con efecto inmediato.
  */
-import { reactive, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { sistemaApi } from '@/services/sistemaApi'
+import { useSesion } from '@/stores/sesion'
+
+const sesion = useSesion()
+// Sólo el Jefe de TI administra cuentas; el resto (incl. Gerencia) consulta.
+const puedeAdministrar = computed(() => sesion.rol === 'Jefe_TI')
 
 const nueva = reactive({ empleado_id: '', username: '', password_inicial: '', role_id: '' })
 const creada = ref(null)
@@ -59,6 +64,7 @@ async function cambiarRol() {
     </p>
 
     <form
+      v-if="puedeAdministrar"
       class="mb-6 grid gap-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4 sm:grid-cols-2"
       @submit.prevent="crear"
     >

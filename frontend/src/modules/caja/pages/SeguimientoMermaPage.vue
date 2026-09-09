@@ -30,6 +30,8 @@ const puedeEditarUmbrales = computed(() => {
     (sesion._tablasEditables && sesion._tablasEditables.has('Finanzas/umbral_merma_categoria'))
   )
 })
+// visar/rechazar una merma es del Encargado o Reponedor; la Gerencia sólo consulta
+const puedeValidar = computed(() => sesion.puedeEditarTabla('Operaciones', 'mermas'))
 
 // Formateador estándar de moneda en USD
 const money = (v) =>
@@ -65,13 +67,8 @@ const causasCatalogo = computed(() => {
   const caducidadCount = Number(desglose.caducidad?.cantidad ?? 0)
 
   const roturaValor = Number(desglose.rotura?.valor ?? 0)
-  const roturaCount = Number(desglose.rotura?.cantidad ?? 0)
-
   const roboValor = Number(desglose.robo?.valor ?? 0)
-  const roboCount = Number(desglose.robo?.cantidad ?? 0)
-
   const errorValor = Number(desglose.error_humano?.valor ?? 0)
-  const errorCount = Number(desglose.error_humano?.cantidad ?? 0)
 
   const sumValor = caducidadValor + roturaValor + roboValor + errorValor
   const tieneDatos = sumValor > 0
@@ -442,11 +439,15 @@ onMounted(() => {
           <Icon name="file_download" :size="16" />
           Exportar Informe a Finanzas
         </Btn>
-        <Btn variant="secondary" @click="() => { cargarUmbrales(); modalUmbrales = true }">
+        <Btn
+          v-if="puedeEditarUmbrales"
+          variant="secondary"
+          @click="() => { cargarUmbrales(); modalUmbrales = true }"
+        >
           <Icon name="sliders" :size="16" />
           Umbrales por Categoría
         </Btn>
-        <Btn variant="primary" @click="modalDeclarar = true">
+        <Btn v-if="puedeValidar" variant="primary" @click="modalDeclarar = true">
           <Icon name="alert" :size="16" />
           Declarar Nueva Merma
         </Btn>
@@ -819,7 +820,7 @@ onMounted(() => {
               <td class="py-3 px-4 text-center">
                 <div class="flex items-center justify-center gap-1">
                   <!-- Acciones de Encargado si está pendiente -->
-                  <template v-if="m.estado_validacion === 'pendiente'">
+                  <template v-if="m.estado_validacion === 'pendiente' && puedeValidar">
                     <button
                       class="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold shadow-xs transition-all"
                       title="Aprobar y dar de baja en inventario"

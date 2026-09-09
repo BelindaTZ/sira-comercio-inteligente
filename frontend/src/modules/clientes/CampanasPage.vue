@@ -25,6 +25,7 @@ const ETIQUETA_HITO = {
 
 const sesion = useSesion()
 const puedeVer = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'campanas'))
+const puedeCrear = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'campanas'))
 
 const hito = ref([])
 const campanas = ref([])
@@ -116,7 +117,7 @@ onMounted(() => {
         >
           <Icon name="alert" :size="16" /> Riesgo de fuga
         </RouterLink>
-        <Btn v-if="puedeVer" variant="primary" @click="modal = 'nueva'">
+        <Btn v-if="puedeCrear" variant="primary" @click="modal = 'nueva'">
           <Icon name="plus" :size="17" /> Nueva campaña de reactivación
         </Btn>
       </template>

@@ -10,7 +10,7 @@
  *  - Matriz predictiva de reabastecimiento por SKU con filtros por categoría y sugerencia de cuota.
  *  - Modal / Drawer de gobernanza para aprobación/rechazo de modelos de machine learning (SC-002).
  */
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { use } from 'echarts/core'
 import { LineChart } from 'echarts/charts'
 import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components'
@@ -29,7 +29,10 @@ import Modal from '@/shared/ui/Modal.vue'
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, MarkLineComponent])
 
 const sesion = useSesion()
-const tiendaId = computed(() => sesion.tiendaId ?? 1)
+// aprobar/rechazar un modelo es del Jefe de TI; la Gerencia audita en lectura
+const puedeAuditar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('TI', 'modelo_demanda'),
+)
 
 const filtroEstado = ref('aprobado')
 const modelos = ref([])
@@ -681,12 +684,14 @@ onMounted(cargar)
               </td>
               <td class="py-3 px-4 text-right">
                 <Btn
+                  v-if="puedeAuditar"
                   size="xs"
                   :variant="item.coberturaNivel === 'critico' ? 'primary' : 'outline'"
                   @click="accionCuota(item)"
                 >
                   {{ item.accionRecomendada }}
                 </Btn>
+                <span v-else class="text-[11px] text-outline">{{ item.accionRecomendada }}</span>
               </td>
             </tr>
           </tbody>
@@ -749,11 +754,16 @@ onMounted(cargar)
                   </SemanticChip>
                 </td>
                 <td class="py-2 px-3 text-center">
-                  <div v-if="m.estado === 'pendiente'" class="flex items-center justify-center gap-1">
+                  <div
+                    v-if="m.estado === 'pendiente' && puedeAuditar"
+                    class="flex items-center justify-center gap-1"
+                  >
                     <Btn size="xs" variant="primary" @click.stop="aprobar(m)">Aprobar</Btn>
                     <Btn size="xs" variant="danger" @click.stop="rechazar(m)">Rechazar</Btn>
                   </div>
-                  <span v-else class="text-outline text-[11px]">Auditado</span>
+                  <span v-else class="text-outline text-[11px]">
+                    {{ m.estado === 'pendiente' ? 'Pendiente' : 'Auditado' }}
+                  </span>
                 </td>
               </tr>
             </tbody>
