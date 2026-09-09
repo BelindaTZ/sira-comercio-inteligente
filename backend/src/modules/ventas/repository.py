@@ -52,6 +52,15 @@ class VentasRepository(BaseRepository[Venta]):
         ).where(VentaDetalle.venta_id == venta_id)
         return Decimal(str(await self.session.scalar(stmt) or 0))
 
+    async def cliente_de_household(self, household_id: int) -> dict | None:
+        row = (
+            await self.session.execute(
+                text("SELECT nombre, email FROM clientes WHERE household_id = :h"),
+                {"h": household_id},
+            )
+        ).first()
+        return {"nombre": row.nombre, "email": row.email} if row else None
+
     # --- productos ---
     async def get_producto(self, product_id: int) -> Producto | None:
         return await self.session.get(Producto, product_id)

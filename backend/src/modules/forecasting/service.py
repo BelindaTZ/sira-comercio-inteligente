@@ -231,6 +231,15 @@ class ForecastingService:
         fila = await self.repo.pronostico_vigente_proximo(product_id, tienda_id)
         return float(fila.cantidad_pronosticada) if fila is not None else None
 
+    async def opciones_producto_pronostico(self, search: str | None) -> list[dict]:
+        modelo = await self.repo.modelo_aprobado()
+        return await self.repo.productos_con_pronostico(
+            modelo.modelo_id if modelo else None, search
+        )
+
+    async def opciones_tienda_pronostico(self) -> list[dict]:
+        return await self.repo.tiendas_para_pronostico()
+
     async def consulta_pronostico(self, product_id: int, tienda_id: int, semana: int, anio: int):
         fila = await self.repo.pronostico_vigente(product_id, tienda_id, semana, anio)
         if fila is None:

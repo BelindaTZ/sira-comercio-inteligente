@@ -207,39 +207,79 @@ async function rechazar(m) {
 
 // ---- consulta puntual de pronóstico por SKU (US2) ---------------------
 const modalConsulta = ref(false)
-const consulta = ref({ productId: '', tiendaId: sesion.tiendaId ?? '', semana: '', anio: '' })
+const consulta = ref({ tiendaId: sesion.tiendaId ?? '', semana: '', anio: '' })
 const consultando = ref(false)
 const resultadoConsulta = ref(null)
 const errorConsulta = ref('')
+
+// autocompletado de producto + catálogo de tiendas
+const tiendasOpc = ref([])
+const productoTexto = ref('')
+const productoOpciones = ref([])
+const productoElegido = ref(null)
+const buscandoProducto = ref(false)
+let debProducto
 
 function abrirConsulta() {
   const iso = new Date()
   const inicio = new Date(iso.getFullYear(), 0, 1)
   consulta.value = {
-    productId: '',
     tiendaId: sesion.tiendaId ?? '',
     semana: Math.ceil(((iso - inicio) / 86400000 + inicio.getDay() + 1) / 7),
     anio: iso.getFullYear(),
   }
+  productoTexto.value = ''
+  productoOpciones.value = []
+  productoElegido.value = null
   resultadoConsulta.value = null
   errorConsulta.value = ''
   modalConsulta.value = true
+  if (!tiendasOpc.value.length) {
+    forecastingApi.tiendasPronostico().then((t) => (tiendasOpc.value = t)).catch(() => {})
+  }
+}
+
+function buscarProducto() {
+  productoElegido.value = null
+  clearTimeout(debProducto)
+  const q = productoTexto.value.trim()
+  if (q.length < 2) {
+    productoOpciones.value = []
+    return
+  }
+  debProducto = setTimeout(async () => {
+    buscandoProducto.value = true
+    try {
+      productoOpciones.value = await forecastingApi.opcionesProductoPronostico(q)
+    } catch {
+      productoOpciones.value = []
+    } finally {
+      buscandoProducto.value = false
+    }
+  }, 250)
+}
+
+function elegirProducto(p) {
+  productoElegido.value = p
+  productoTexto.value = `${p.nombre || 'Producto'} · #${p.product_id}`
+  productoOpciones.value = []
 }
 
 async function ejecutarConsulta() {
   errorConsulta.value = ''
   resultadoConsulta.value = null
-  const { productId, tiendaId, semana, anio } = consulta.value
-  if (!productId || !tiendaId || !semana || !anio) {
-    errorConsulta.value = 'Completa producto, tienda, semana y año.'
+  const { tiendaId, semana, anio } = consulta.value
+  if (!productoElegido.value || !tiendaId || !semana || !anio) {
+    errorConsulta.value = 'Elegí un producto de la lista y completá tienda, semana y año.'
     return
   }
   consultando.value = true
   try {
-    resultadoConsulta.value = await forecastingApi.pronostico(Number(productId), Number(tiendaId), {
-      semana: Number(semana),
-      anio: Number(anio),
-    })
+    resultadoConsulta.value = await forecastingApi.pronostico(
+      productoElegido.value.product_id,
+      Number(tiendaId),
+      { semana: Number(semana), anio: Number(anio) },
+    )
   } catch (e) {
     errorConsulta.value = msg(e)
   } finally {
@@ -464,24 +504,53 @@ onMounted(() => cargar())
         (FR-008).
       </p>
       <form class="space-y-3" @submit.prevent="ejecutarConsulta">
-        <div class="grid grid-cols-2 gap-3">
+        <div class="relative">
           <label class="block text-[12px] font-semibold text-slate-600">
-            Producto (ID)
+            Producto
             <input
-              v-model="consulta.productId"
-              type="number"
-              required
-              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+              v-model="productoTexto"
+              placeholder="Buscá por nombre o ID…"
+              autocomplete="off"
+              class="mt-1 block w-full rounded-lg border px-3 py-2 text-sm text-slate-800"
+              :class="productoElegido ? 'border-emerald-400 bg-emerald-50/40' : 'border-brand-300 bg-white'"
+              @input="buscarProducto"
             />
           </label>
-          <label class="block text-[12px] font-semibold text-slate-600">
-            Tienda (ID)
-            <input
+          <ul
+            v-if="productoOpciones.length"
+            class="absolute z-10 mt-1 max-h-52 w-full overflow-y-auto rounded-lg border border-brand-200 bg-white shadow-tier-2"
+          >
+            <li
+              v-for="p in productoOpciones"
+              :key="p.product_id"
+              class="cursor-pointer px-3 py-2 text-[13px] hover:bg-brand-50"
+              @click="elegirProducto(p)"
+            >
+              <span class="font-semibold text-slate-800">{{ p.nombre || 'Producto sin nombre' }}</span>
+              <span class="ml-1.5 font-mono text-[11px] text-slate-400">#{{ p.product_id }}</span>
+              <span v-if="p.product_category" class="block text-[11px] text-slate-400">{{ p.product_category }}</span>
+            </li>
+          </ul>
+          <p
+            v-else-if="productoTexto.trim().length >= 2 && !buscandoProducto && !productoElegido"
+            class="mt-1 text-[11px] text-slate-400"
+          >
+            Sin productos con pronóstico que coincidan.
+          </p>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <label class="col-span-3 block text-[12px] font-semibold text-slate-600 sm:col-span-1">
+            Tienda
+            <select
               v-model="consulta.tiendaId"
-              type="number"
               required
               class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-            />
+            >
+              <option value="" disabled>Elegí una tienda…</option>
+              <option v-for="t in tiendasOpc" :key="t.tienda_id" :value="t.tienda_id">
+                {{ t.nombre }}
+              </option>
+            </select>
           </label>
           <label class="block text-[12px] font-semibold text-slate-600">
             Semana ISO

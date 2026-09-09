@@ -16,7 +16,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.core.database import get_session
 from src.core.security import Principal, require_permission
-from src.integrations import reportlab_invoice
 from src.models.venta import Venta
 from src.modules.ventas.repository import VentasRepository
 from src.modules.ventas.schemas import (
@@ -25,6 +24,7 @@ from src.modules.ventas.schemas import (
     AnularVentaIn,
     CajaOut,
     CatalogoPosItem,
+    ComprobanteEmailOut,
     ConfirmarVentaIn,
     DatafonoDisponibleOut,
     DescuentoManualIn,
@@ -40,9 +40,10 @@ from src.modules.ventas.schemas import (
     TiempoCobroMensualItem,
     TiempoCobroSemanalOut,
     VentaOut,
+    VincularClienteIn,
 )
 from src.modules.ventas.service import VentasService
-from src.shared.exceptions import ForbiddenError, NotFoundError
+from src.shared.exceptions import ForbiddenError
 from src.shared.pagination import Page, PageParams, page_params
 
 router = APIRouter(prefix="/ventas", tags=["ventas"])
@@ -118,6 +119,19 @@ async def agregar_linea(
     _: Annotated[Principal, Depends(_linea_insert)],
 ) -> VentaOut:
     venta, _linea = await svc.agregar_linea(venta_id, data)
+    return await _venta_out(svc, venta)
+
+
+@router.patch("/{venta_id}/cliente", response_model=VentaOut)
+async def vincular_cliente(
+    venta_id: int,
+    data: VincularClienteIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_actualizar)],
+) -> VentaOut:
+    """Asocia (o quita) el cliente de una venta en curso, incluso con líneas ya
+    registradas — para poder añadir un cliente durante la venta."""
+    venta = await svc.vincular_cliente(venta_id, data.household_id)
     return await _venta_out(svc, venta)
 
 
@@ -215,17 +229,20 @@ async def registrar_devolucion(
 async def comprobante(
     venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_ver)]
 ) -> Response:
-    venta = await svc.repo.get_venta(venta_id)
-    if venta is None:
-        raise NotFoundError(f"Venta {venta_id} no existe")
-    if not venta.comprobante_objeto:
-        raise NotFoundError("La venta aún no tiene comprobante emitido")
-    pdf = reportlab_invoice.descargar_comprobante(venta.comprobante_objeto)
+    pdf = await svc.comprobante_pdf(venta_id)
     return Response(
         content=pdf,
         media_type="application/pdf",
         headers={"Content-Disposition": f'inline; filename="venta-{venta_id}.pdf"'},
     )
+
+
+@router.post("/{venta_id}/comprobante/email", response_model=ComprobanteEmailOut)
+async def enviar_comprobante_email(
+    venta_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_actualizar)]
+) -> ComprobanteEmailOut:
+    """Envía el comprobante (PDF adjunto) al correo del cliente registrado."""
+    return ComprobanteEmailOut(**await svc.enviar_comprobante_por_correo(venta_id))
 
 
 # ==================================================== feature 007: pagos y seguridad

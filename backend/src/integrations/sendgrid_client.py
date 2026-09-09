@@ -7,8 +7,10 @@ correo se entregue (Principio II).
 
 from __future__ import annotations
 
+import base64
+
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from sendgrid.helpers.mail import Attachment, Disposition, FileContent, FileName, FileType, Mail
 
 from src.core.config import settings
 
@@ -21,7 +23,14 @@ def _client() -> SendGridAPIClient:
     return SendGridAPIClient(settings.sendgrid_api_key)
 
 
-def enviar_correo(*, to: str, subject: str, html: str) -> bool:
+def enviar_correo(
+    *,
+    to: str,
+    subject: str,
+    html: str,
+    adjunto_pdf: bytes | None = None,
+    adjunto_nombre: str = "adjunto.pdf",
+) -> bool:
     """Devuelve True si SendGrid aceptó el mensaje (2xx). Nunca lanza hacia el
     caller: un fallo del proveedor no debe abortar la operación de negocio."""
     if not is_configured():
@@ -33,6 +42,13 @@ def enviar_correo(*, to: str, subject: str, html: str) -> bool:
             subject=subject,
             html_content=html,
         )
+        if adjunto_pdf is not None:
+            message.attachment = Attachment(
+                FileContent(base64.b64encode(adjunto_pdf).decode()),
+                FileName(adjunto_nombre),
+                FileType("application/pdf"),
+                Disposition("attachment"),
+            )
         response = _client().send(message)
         return 200 <= response.status_code < 300
     except Exception:  # noqa: BLE001 - se degrada silenciosamente por diseño

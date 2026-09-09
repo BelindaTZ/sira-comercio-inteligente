@@ -11,7 +11,7 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from src.integrations import reportlab_invoice, stripe_client
+from src.integrations import reportlab_invoice, sendgrid_client, stripe_client
 from src.models.anulacion_venta import AnulacionVenta
 from src.models.devolucion import Devolucion
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
@@ -101,6 +101,16 @@ class VentasService:
             raise NotFoundError(f"Venta {venta_id} no existe")
         if venta.estado != "en_curso":
             raise BusinessRuleError(f"La venta {venta_id} está '{venta.estado}', no admite cambios")
+        return venta
+
+    async def vincular_cliente(self, venta_id: int, household_id: int | None) -> Venta:
+        """Asocia (o desasocia) un cliente a una venta en curso — permite añadir
+        el cliente cuando la venta ya tiene líneas, sin reiniciarla."""
+        venta = await self._venta_en_curso(venta_id)
+        if household_id is not None and await self.repo.cliente_de_household(household_id) is None:
+            raise NotFoundError(f"El cliente {household_id} no existe")
+        venta.household_id = household_id
+        await self.repo.flush()
         return venta
 
     async def agregar_linea(
@@ -360,7 +370,9 @@ class VentasService:
             except Exception:  # noqa: BLE001
                 logger.exception("No se pudo evaluar la venta %s para cupón de afinidad", venta_id)
 
-        venta.comprobante_objeto = await self._emitir_comprobante(venta, lineas)
+        # El comprobante NO se emite en línea: el cajero no espera al almacén de
+        # archivos. Se genera (y archiva, si MinIO responde) al pedirlo en
+        # `GET /comprobante` (Principio II — un fallo del almacén no bloquea la venta).
         await self.repo.flush()
         return venta
 
@@ -404,41 +416,93 @@ class VentasService:
 
         await self.repo.flush()
 
-    async def _emitir_comprobante(self, venta: Venta, lineas: list[VentaDetalle]) -> str | None:
-        try:
-            items = []
-            for ln in lineas:
-                prod = await self.repo.get_producto(ln.product_id)
+    async def _datos_comprobante(
+        self, venta: Venta, lineas: list[VentaDetalle]
+    ) -> reportlab_invoice.DatosComprobante:
+        items = []
+        for ln in lineas:
+            prod = await self.repo.get_producto(ln.product_id)
+            desc = f"Producto {ln.product_id}"
+            if prod:
                 desc = (
-                    (prod.product_type or prod.product_category or f"Producto {ln.product_id}")
-                    if prod
-                    else f"Producto {ln.product_id}"
+                    prod.nombre
+                    or prod.product_type
+                    or prod.product_category
+                    or desc
                 )
-                items.append(
-                    reportlab_invoice.LineaComprobante(
-                        descripcion=desc,
-                        cantidad=ln.cantidad,
-                        precio_unitario=Decimal(str(ln.sales_value)),
-                    )
+            items.append(
+                reportlab_invoice.LineaComprobante(
+                    descripcion=desc,
+                    cantidad=ln.cantidad,
+                    precio_unitario=Decimal(str(ln.sales_value)),
                 )
-            datos = reportlab_invoice.DatosComprobante(
-                venta_id=venta.venta_id,
-                tienda=f"Tienda {venta.tienda_id}",
-                fecha_hora=venta.fecha_hora,
-                tipo_comprobante=venta.tipo_comprobante,
-                identificacion_comprador=venta.identificacion_comprador,
-                razon_social_comprador=venta.razon_social_comprador,
-                lineas=items,
-                total=Decimal(str(venta.total)),
             )
-            return reportlab_invoice.generar_y_subir_comprobante(datos)
-        except Exception:  # noqa: BLE001
-            # Principio II: la venta ya es un registro real; un fallo del servicio
-            # de archivos no la revierte. El comprobante se puede regenerar luego.
-            logger.exception(
-                "No se pudo emitir/subir el comprobante de la venta %s", venta.venta_id
+        return reportlab_invoice.DatosComprobante(
+            venta_id=venta.venta_id,
+            tienda=f"Tienda {venta.tienda_id}",
+            fecha_hora=venta.fecha_hora,
+            tipo_comprobante=venta.tipo_comprobante,
+            identificacion_comprador=venta.identificacion_comprador,
+            razon_social_comprador=venta.razon_social_comprador,
+            lineas=items,
+            total=Decimal(str(venta.total)),
+        )
+
+    async def comprobante_pdf(self, venta_id: int) -> bytes:
+        """PDF del comprobante — SIEMPRE devuelve bytes al momento, re-renderizando
+        desde los datos de la venta. La impresión no puede depender de MinIO ni
+        hacer esperar al cajero (Principio II). El archivo del bucket, si existe,
+        se sirve tal cual se emitió (Principio III); si no, se genera al vuelo."""
+        venta = await self.repo.get_venta(venta_id)
+        if venta is None:
+            raise NotFoundError(f"Venta {venta_id} no existe")
+        if venta.estado != "confirmada":
+            raise BusinessRuleError("La venta todavía no está confirmada")
+        if venta.comprobante_objeto:
+            try:
+                return reportlab_invoice.descargar_comprobante(venta.comprobante_objeto)
+            except Exception:  # noqa: BLE001
+                logger.warning(
+                    "No se pudo descargar el comprobante %s; se re-renderiza",
+                    venta.comprobante_objeto,
+                )
+        lineas = await self.repo.lineas_de(venta_id)
+        datos = await self._datos_comprobante(venta, lineas)
+        return reportlab_invoice.render_pdf(datos)
+
+    async def enviar_comprobante_por_correo(self, venta_id: int) -> dict:
+        """Envía el comprobante (PDF adjunto) al correo del cliente registrado en
+        la venta. FR-004 + petición 018. Se degrada limpio si no hay proveedor de
+        correo configurado."""
+        venta = await self.repo.get_venta(venta_id)
+        if venta is None:
+            raise NotFoundError(f"Venta {venta_id} no existe")
+        if venta.estado != "confirmada":
+            raise BusinessRuleError("La venta todavía no está confirmada")
+        if venta.household_id is None:
+            raise BusinessRuleError(
+                "La venta no está asociada a un cliente registrado al que enviar el comprobante"
             )
-            return None
+        cliente = await self.repo.cliente_de_household(venta.household_id)
+        if not cliente or not cliente.get("email"):
+            raise BusinessRuleError("El cliente de la venta no tiene un correo registrado")
+
+        pdf = await self.comprobante_pdf(venta_id)
+        etiqueta = "factura" if venta.tipo_comprobante == "factura" else "nota de venta"
+        enviado = sendgrid_client.enviar_correo(
+            to=cliente["email"],
+            subject=f"Tu {etiqueta} N° {venta.venta_id} — Marzú Retail Group",
+            html=(
+                f"<p>Hola {cliente.get('nombre') or ''},</p>"
+                f"<p>Adjuntamos tu {etiqueta} por la compra N° {venta.venta_id}, "
+                f"por un total de ${venta.total}.</p>"
+                "<p>Gracias por tu compra.</p>"
+            ),
+            adjunto_pdf=pdf,
+            adjunto_nombre=f"venta-{venta.venta_id}.pdf",
+        )
+        motivo = None if enviado else "El servicio de correo no está configurado o rechazó el envío"
+        return {"enviado": enviado, "email": cliente["email"], "motivo": motivo}
 
     async def anular_venta(self, venta_id: int, data: AnularVentaIn) -> Venta:
         venta = await self.repo.get_venta(venta_id)

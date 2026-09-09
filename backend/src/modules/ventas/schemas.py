@@ -20,6 +20,10 @@ class IniciarVentaIn(BaseModel):
     household_id: int | None = None
 
 
+class VincularClienteIn(BaseModel):
+    household_id: int | None = None
+
+
 class AgregarLineaIn(BaseModel):
     product_id: int | None = None
     codigo_barras: str | None = None
@@ -124,6 +128,12 @@ class VentaOut(BaseModel):
     fecha_hora: datetime
     comprobante_objeto: str | None = None
     lineas: list[LineaOut] = []
+
+
+class ComprobanteEmailOut(BaseModel):
+    enviado: bool
+    email: str | None = None
+    motivo: str | None = None
 
 
 class PagoTarjetaOut(BaseModel):

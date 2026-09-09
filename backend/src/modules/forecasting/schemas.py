@@ -40,6 +40,17 @@ class PronosticoOut(BaseModel):
     anio: int | None = None
 
 
+class OpcionProductoPronostico(BaseModel):
+    product_id: int
+    nombre: str | None = None
+    product_category: str | None = None
+
+
+class OpcionTiendaPronostico(BaseModel):
+    tienda_id: int
+    nombre: str
+
+
 class MonitoreoOut(BaseModel):
     semana: int
     anio: int

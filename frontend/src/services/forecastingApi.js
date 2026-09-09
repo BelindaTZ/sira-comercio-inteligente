@@ -37,6 +37,17 @@ export const forecastingApi = {
   },
 
   // --- consulta de pronóstico (FR-006 a FR-010) ---
+  /** Autocompletado de productos que el modelo vigente pronostica (nombre o id). */
+  opcionesProductoPronostico(search) {
+    return http
+      .get('/api/forecasting/pronostico/productos', { params: { search: search || undefined } })
+      .then((r) => r.data)
+  },
+
+  tiendasPronostico() {
+    return http.get('/api/forecasting/pronostico/tiendas').then((r) => r.data)
+  },
+
   pronostico(productId, tiendaId, { semana, anio }) {
     return http
       .get(`/api/forecasting/productos/${productId}/tiendas/${tiendaId}/pronostico`, {

@@ -28,6 +28,8 @@ from src.modules.forecasting.schemas import (
     ModeloDetalleOut,
     ModeloOut,
     MonitoreoOut,
+    OpcionProductoPronostico,
+    OpcionTiendaPronostico,
     PronosticoOut,
     RechazoModeloIn,
 )
@@ -94,6 +96,25 @@ async def rechazar_modelo(
 
 
 # =================================================== consulta de pronóstico
+@router.get("/pronostico/productos", response_model=list[OpcionProductoPronostico])
+async def opciones_producto_pronostico(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver_pronostico)],
+    search: str | None = None,
+) -> list[OpcionProductoPronostico]:
+    """Autocompletado: productos que el modelo vigente pronostica (por nombre o id)."""
+    return [
+        OpcionProductoPronostico(**o) for o in await svc.opciones_producto_pronostico(search)
+    ]
+
+
+@router.get("/pronostico/tiendas", response_model=list[OpcionTiendaPronostico])
+async def opciones_tienda_pronostico(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ver_pronostico)]
+) -> list[OpcionTiendaPronostico]:
+    return [OpcionTiendaPronostico(**o) for o in await svc.opciones_tienda_pronostico()]
+
+
 @router.get("/productos/{product_id}/tiendas/{tienda_id}/pronostico", response_model=PronosticoOut)
 async def consultar_pronostico(
     product_id: int,

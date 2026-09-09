@@ -14,6 +14,7 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
+import urllib3
 from minio import Minio
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
@@ -50,11 +51,18 @@ class DatosComprobante:
 
 
 def minio_client() -> Minio:
+    # Falla rápido: si MinIO no está, el comprobante se re-renderiza al vuelo y no
+    # se debe hacer esperar al cajero (Principio II). Sin reintentos, timeout corto.
+    http_client = urllib3.PoolManager(
+        timeout=urllib3.Timeout(connect=2.0, read=4.0),
+        retries=urllib3.Retry(total=0),
+    )
     return Minio(
         settings.minio_endpoint,
         access_key=settings.minio_access_key,
         secret_key=settings.minio_secret_key,
         secure=settings.minio_secure,
+        http_client=http_client,
     )
 
 

@@ -52,6 +52,14 @@ const pagoTarjetaAprobado = ref(false)
 const datafonoAviso = ref('')
 const ticketsPausados = ref([])
 const nivelesFidel = ref([])
+const ventaCobrada = ref(null)
+const emailEnviando = ref(false)
+const emailResultado = ref('')
+
+// alta rápida de cliente desde el POS
+const modalNuevoCliente = ref(false)
+const formCliente = reactive({ nombre: '', email: '', documento: '', consentimiento: true })
+const guardandoCliente = ref(false)
 
 // ---- turno de caja -------------------------------------------------------
 const cajas = ref([])
@@ -224,12 +232,14 @@ async function conError(fn) {
 }
 
 function resetPago() {
+  // el medio de pago se conserva entre ventas (casi siempre efectivo): un paso menos
   pagoTarjetaAprobado.value = false
-  medioPagoId.value = null
   efectivoRecibido.value = ''
   tipoComprobante.value = 'nota_venta'
   identificacion.value = ''
   razonSocial.value = ''
+  ventaCobrada.value = null
+  emailResultado.value = ''
 }
 
 async function nuevaVenta() {
@@ -238,6 +248,7 @@ async function nuevaVenta() {
   venta.value = await conError(() =>
     ventasApi.iniciar({ tiendaId: sesion.tiendaId, cajeroId: sesion.cajeroId }),
   )
+  buscador.value?.focar?.()
 }
 
 async function vincularCliente(c) {
@@ -251,14 +262,18 @@ async function vincularCliente(c) {
       }
     })
     .catch(() => {})
-  if (venta.value?.estado === 'en_curso' && !venta.value.lineas.length) {
+  // asocia el cliente a la venta actual (sirve incluso con líneas ya registradas)
+  if (venta.value?.estado === 'en_curso') {
     venta.value = await conError(() =>
-      ventasApi.iniciar({
-        tiendaId: sesion.tiendaId,
-        cajeroId: sesion.cajeroId,
-        householdId: c.household_id,
-      }),
+      ventasApi.vincularCliente(venta.value.venta_id, c.household_id),
     )
+  }
+}
+
+async function quitarCliente() {
+  cliente.value = null
+  if (venta.value?.estado === 'en_curso' && venta.value.household_id) {
+    venta.value = await conError(() => ventasApi.vincularCliente(venta.value.venta_id, null))
   }
 }
 
@@ -310,6 +325,7 @@ async function cobrarTarjeta({ escenario, onResultado }) {
 }
 
 async function confirmar() {
+  if (!puedeConfirmar.value || cargando.value) return
   const confirmada = await conError(() =>
     ventasApi.confirmar(venta.value.venta_id, {
       medioPagoId: medioPagoId.value,
@@ -319,9 +335,56 @@ async function confirmar() {
     }),
   )
   venta.value = confirmada
-  aviso.value = `Venta #${confirmada.venta_id} confirmada.`
-  window.open(ventasApi.comprobanteUrl(confirmada.venta_id), '_blank', 'noopener')
+  ventaCobrada.value = confirmada
+  emailResultado.value = ''
+  aviso.value = ''
   await cargarTurno()
+}
+
+function imprimirComprobante() {
+  if (!ventaCobrada.value) return
+  window.open(ventasApi.comprobanteUrl(ventaCobrada.value.venta_id), '_blank', 'noopener')
+}
+
+async function enviarComprobantePorCorreo() {
+  if (!ventaCobrada.value) return
+  emailEnviando.value = true
+  emailResultado.value = ''
+  try {
+    const r = await ventasApi.enviarComprobanteEmail(ventaCobrada.value.venta_id)
+    emailResultado.value = r.enviado
+      ? `Comprobante enviado a ${r.email}.`
+      : `No se pudo enviar por correo: ${r.motivo || 'servicio no disponible'}.`
+  } catch (e) {
+    emailResultado.value = msg(e)
+  } finally {
+    emailEnviando.value = false
+  }
+}
+
+async function crearCliente() {
+  if (!formCliente.nombre.trim() || !formCliente.email.trim()) {
+    error.value = 'El nombre y el correo del cliente son obligatorios.'
+    return
+  }
+  guardandoCliente.value = true
+  error.value = ''
+  try {
+    const c = await clientesApi.crear({
+      nombre: formCliente.nombre.trim(),
+      email: formCliente.email.trim(),
+      documentoIdentidad: formCliente.documento.trim() || null,
+      consentimientoDatos: formCliente.consentimiento,
+    })
+    modalNuevoCliente.value = false
+    Object.assign(formCliente, { nombre: '', email: '', documento: '', consentimiento: true })
+    await vincularCliente(c)
+    aviso.value = `Cliente ${c.nombre} registrado y vinculado a la venta.`
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    guardandoCliente.value = false
+  }
 }
 
 // ---- pausar / anular --------------------------------------------------
@@ -385,14 +448,16 @@ const buscador = ref(null)
 function atajos(e) {
   if (e.key === 'F2') {
     e.preventDefault()
-    if (!venta.value) return nuevaVenta()
+    if (!venta.value || ventaCobrada.value) return nuevaVenta()
     buscador.value?.focar?.()
   } else if (e.key === 'F6') {
     e.preventDefault()
     pausarTicket()
   } else if (e.key === 'F12') {
     e.preventDefault()
-    if (puedeConfirmar.value && !cargando.value) confirmar()
+    // tras cobrar, F12 arranca la venta siguiente — bucle rápido sin tocar el mouse
+    if (ventaCobrada.value) nuevaVenta()
+    else if (puedeConfirmar.value && !cargando.value) confirmar()
   }
 }
 </script>
@@ -570,17 +635,26 @@ function atajos(e) {
               <button
                 type="button"
                 class="text-[11px] font-semibold text-amethyst-700 hover:underline"
-                @click="cliente = null"
+                @click="quitarCliente"
               >
                 Cambiar
               </button>
             </div>
-            <BuscadorCliente
-              v-else
-              :seleccionado-id="null"
-              class="!p-0 !shadow-none !bg-transparent"
-              @seleccionar="vincularCliente"
-            />
+            <div v-else class="flex items-start gap-2">
+              <BuscadorCliente
+                :seleccionado-id="null"
+                class="!p-0 !shadow-none !bg-transparent flex-1"
+                @seleccionar="vincularCliente"
+              />
+              <button
+                type="button"
+                title="Registrar un cliente nuevo"
+                class="mt-0.5 shrink-0 rounded-lg border border-amethyst-300 bg-amethyst-50 p-2 text-amethyst-700 hover:bg-amethyst-100"
+                @click="modalNuevoCliente = true"
+              >
+                <Icon name="plus" :size="16" />
+              </button>
+            </div>
           </div>
 
           <TicketVenta
@@ -594,112 +668,151 @@ function atajos(e) {
 
         <!-- Cobro -->
         <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
-          <div class="mb-2 flex items-baseline justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
-            <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">
-              {{ money(venta.total) }}
-            </span>
-          </div>
-          <p class="mb-3 text-right text-[10px] text-slate-400">Comprobante electrónico</p>
+          <!-- Venta cobrada: comprobante + siguiente venta -->
+          <template v-if="ventaCobrada">
+            <div class="mb-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+              <Icon name="check" :size="18" class="shrink-0 text-emerald-600" />
+              <div class="leading-tight">
+                <p class="text-[13px] font-bold text-emerald-900">
+                  Venta #{{ ventaCobrada.venta_id }} cobrada · {{ money(ventaCobrada.total) }}
+                </p>
+                <p class="text-[11px] text-emerald-700">
+                  {{ ventaCobrada.tipo_comprobante === 'factura' ? 'Factura' : 'Nota de venta' }} emitida.
+                </p>
+              </div>
+            </div>
 
-          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            Medio de pago
-          </label>
-          <div class="mb-3 grid grid-cols-3 gap-1.5">
-            <button
-              v-for="m in mediosPago"
-              :key="m.medio_pago_id"
-              type="button"
-              :disabled="venta.estado !== 'en_curso'"
-              class="flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-semibold transition disabled:opacity-40"
-              :class="
-                medioPagoId === m.medio_pago_id
-                  ? 'border-brand-600 bg-brand-50 text-brand-900'
-                  : 'border-brand-200 bg-white text-slate-600 hover:border-brand-400'
-              "
-              @click="((medioPagoId = m.medio_pago_id), (pagoTarjetaAprobado = false))"
-            >
-              <Icon :name="ICONO_MEDIO(m.nombre)" :size="15" /> {{ m.nombre }}
-            </button>
-          </div>
-
-          <p
-            v-if="datafonoAviso"
-            class="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800"
-          >
-            <Icon name="alert" :size="13" class="mt-px shrink-0" /> {{ datafonoAviso }}
-          </p>
-
-          <template v-if="esEfectivo">
-            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
-              Pago con efectivo
-            </label>
-            <input
-              v-model="efectivoRecibido"
-              type="number"
-              min="0"
-              placeholder="Monto recibido"
-              class="mb-1.5 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-            />
-            <div class="mb-2 flex flex-wrap gap-1.5">
+            <div class="grid gap-2">
               <button
-                v-for="q in quickCash"
-                :key="q"
                 type="button"
-                class="rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-400"
-                @click="efectivoRecibido = String(q)"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-white px-4 py-2.5 text-[13px] font-bold text-brand-800 hover:bg-brand-50"
+                @click="imprimirComprobante"
               >
-                {{ money(q) }}
+                <Icon name="download" :size="15" /> Ver / imprimir comprobante
+              </button>
+              <button
+                v-if="cliente"
+                type="button"
+                :disabled="emailEnviando"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-amethyst-300 bg-amethyst-50 px-4 py-2.5 text-[13px] font-bold text-amethyst-800 hover:bg-amethyst-100 disabled:opacity-50"
+                @click="enviarComprobantePorCorreo"
+              >
+                <Icon name="megaphone" :size="15" />
+                {{ emailEnviando ? 'Enviando…' : 'Enviar comprobante por correo' }}
+              </button>
+              <button
+                type="button"
+                class="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-brand-800 to-amethyst-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:brightness-110"
+                @click="nuevaVenta"
+              >
+                <Icon name="plus" :size="15" /> Nueva venta
+                <span class="ml-1 font-mono text-white/70">F12</span>
               </button>
             </div>
-            <p v-if="vuelto > 0" class="mb-3 text-right text-[12px] font-bold text-emerald-700">
-              Vuelto: {{ money(vuelto) }}
+            <p v-if="emailResultado" class="mt-2 text-center text-[12px] font-semibold text-brand-800">
+              {{ emailResultado }}
             </p>
           </template>
 
-          <p v-if="esDigital" class="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-[11px] text-brand-800">
-            Muestra el QR al cliente y confirma cuando el pago aparezca aprobado.
-          </p>
+          <!-- Venta en curso: cobro -->
+          <template v-else>
+            <div class="mb-2 flex items-baseline justify-between">
+              <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
+              <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">
+                {{ money(venta.total) }}
+              </span>
+            </div>
 
-          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
-            Comprobante
-          </label>
-          <select
-            v-model="tipoComprobante"
-            class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-          >
-            <option value="nota_venta">Nota de venta</option>
-            <option value="factura">Factura</option>
-          </select>
+            <div class="mb-3 grid grid-cols-3 gap-1.5">
+              <button
+                v-for="m in mediosPago"
+                :key="m.medio_pago_id"
+                type="button"
+                :disabled="venta.estado !== 'en_curso'"
+                class="flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-semibold transition disabled:opacity-40"
+                :class="
+                  medioPagoId === m.medio_pago_id
+                    ? 'border-brand-600 bg-brand-50 text-brand-900'
+                    : 'border-brand-200 bg-white text-slate-600 hover:border-brand-400'
+                "
+                @click="((medioPagoId = m.medio_pago_id), (pagoTarjetaAprobado = false))"
+              >
+                <Icon :name="ICONO_MEDIO(m.nombre)" :size="15" /> {{ m.nombre }}
+              </button>
+            </div>
 
-          <template v-if="tipoComprobante === 'factura'">
-            <input
-              v-model="identificacion"
-              placeholder="Identificación del comprador"
-              class="mb-2 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-            />
-            <input
-              v-model="razonSocial"
-              placeholder="Razón social"
-              class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-            />
+            <p
+              v-if="datafonoAviso"
+              class="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800"
+            >
+              <Icon name="alert" :size="13" class="mt-px shrink-0" /> {{ datafonoAviso }}
+            </p>
+
+            <template v-if="esEfectivo">
+              <input
+                v-model="efectivoRecibido"
+                type="number"
+                min="0"
+                placeholder="Efectivo recibido (opcional)"
+                class="mb-1.5 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+                @keydown.enter.prevent="confirmar"
+              />
+              <div class="mb-2 flex flex-wrap gap-1.5">
+                <button
+                  v-for="q in quickCash"
+                  :key="q"
+                  type="button"
+                  class="rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-400"
+                  @click="efectivoRecibido = String(q)"
+                >
+                  {{ money(q) }}
+                </button>
+              </div>
+              <p v-if="vuelto > 0" class="mb-3 text-right text-[12px] font-bold text-emerald-700">
+                Vuelto: {{ money(vuelto) }}
+              </p>
+            </template>
+
+            <p v-if="esDigital" class="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-[11px] text-brand-800">
+              Muestra el QR al cliente y confirma cuando el pago aparezca aprobado.
+            </p>
+
+            <div class="mb-3 flex gap-1.5">
+              <button
+                v-for="t in [{ v: 'nota_venta', l: 'Nota de venta' }, { v: 'factura', l: 'Factura' }]"
+                :key="t.v"
+                type="button"
+                class="flex-1 rounded-lg border px-2 py-1.5 text-[12px] font-semibold transition"
+                :class="tipoComprobante === t.v ? 'border-brand-600 bg-brand-50 text-brand-900' : 'border-brand-200 bg-white text-slate-600 hover:border-brand-400'"
+                @click="tipoComprobante = t.v"
+              >
+                {{ t.l }}
+              </button>
+            </div>
+
+            <template v-if="tipoComprobante === 'factura'">
+              <input
+                v-model="identificacion"
+                placeholder="Identificación del comprador"
+                class="mb-2 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+              />
+              <input
+                v-model="razonSocial"
+                placeholder="Razón social"
+                class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+              />
+            </template>
+
+            <button
+              type="button"
+              :disabled="!puedeConfirmar || cargando"
+              class="w-full rounded-xl bg-gradient-to-r from-brand-800 to-amethyst-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:brightness-110 disabled:opacity-40"
+              @click="confirmar"
+            >
+              {{ cargando ? 'Procesando…' : `Cobrar ${money(venta.total)}` }}
+              <span class="ml-1 font-mono text-white/70">F12</span>
+            </button>
           </template>
-
-          <button
-            type="button"
-            :disabled="!puedeConfirmar || cargando"
-            class="w-full rounded-xl bg-gradient-to-r from-brand-800 to-amethyst-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:brightness-110 disabled:opacity-40"
-            @click="confirmar"
-          >
-            {{ cargando ? 'Procesando…' : `Cobrar ${money(venta.total)} — Imprimir boleta` }}
-            <span class="ml-1 font-mono text-white/70">F12</span>
-          </button>
-          <p
-            v-if="venta.estado === 'confirmada'"
-            class="mt-2 text-center text-[13px] font-bold text-emerald-700"
-          >
-            Venta #{{ venta.venta_id }} confirmada
-          </p>
         </div>
 
         <SimuladorDatafono
@@ -724,6 +837,64 @@ function atajos(e) {
       <span class="text-slate-300">·</span>
       <span><b class="text-brand-700">F12</b> Cobro</span>
     </div>
+
+    <!-- Modal: alta rápida de cliente -->
+    <Modal
+      v-if="modalNuevoCliente"
+      titulo="Registrar un cliente nuevo"
+      @cerrar="modalNuevoCliente = false"
+    >
+      <p class="mb-4 text-[13px] text-slate-600">
+        Queda vinculado a esta venta al guardarlo. Los datos completos se pueden editar luego en
+        Clientes / CRM.
+      </p>
+      <form class="space-y-3" @submit.prevent="crearCliente">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Nombre
+          <input
+            v-model="formCliente.nombre"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Correo electrónico
+          <input
+            v-model="formCliente.email"
+            type="email"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Identificación (opcional)
+          <input
+            v-model="formCliente.documento"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <label class="flex items-start gap-2 text-[12px] text-slate-600">
+          <input v-model="formCliente.consentimiento" type="checkbox" class="mt-0.5" />
+          <span>El cliente autoriza el tratamiento de sus datos para el programa de fidelización.</span>
+        </label>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <button
+            type="button"
+            class="rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+            @click="modalNuevoCliente = false"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            :disabled="guardandoCliente || !formCliente.consentimiento"
+            class="rounded-xl bg-brand-800 px-4 py-2 text-[13px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+          >
+            {{ guardandoCliente ? 'Guardando…' : 'Guardar y vincular' }}
+          </button>
+        </div>
+      </form>
+    </Modal>
 
     <!-- Modal: abrir / cerrar caja -->
     <Modal

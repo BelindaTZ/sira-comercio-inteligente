@@ -16,6 +16,13 @@ export const ventasApi = {
       .then((r) => r.data)
   },
 
+  /** Asocia (o quita, con null) un cliente a la venta en curso — sirve con líneas ya cargadas. */
+  vincularCliente(ventaId, householdId) {
+    return http
+      .patch(`/api/ventas/${ventaId}/cliente`, { household_id: householdId ?? null })
+      .then((r) => r.data)
+  },
+
   agregarLinea(ventaId, { productId = null, codigoBarras = null, cantidad }) {
     return http
       .post(`/api/ventas/${ventaId}/lineas`, {
@@ -87,6 +94,11 @@ export const ventasApi = {
   comprobanteUrl(ventaId) {
     const base = import.meta.env.VITE_API_BASE_URL || ''
     return `${base}/api/ventas/${ventaId}/comprobante`
+  },
+
+  /** Envía el comprobante (PDF) al correo del cliente registrado en la venta. */
+  enviarComprobanteEmail(ventaId) {
+    return http.post(`/api/ventas/${ventaId}/comprobante/email`).then((r) => r.data)
   },
 
   listar(params = {}) {

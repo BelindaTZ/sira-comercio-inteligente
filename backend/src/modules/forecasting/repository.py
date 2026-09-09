@@ -167,6 +167,50 @@ class ForecastingRepository(BaseRepository[ModeloDemanda]):
         )
         return (await self.session.scalars(stmt)).first()
 
+    async def productos_con_pronostico(
+        self, modelo_id: int | None, search: str | None, limite: int = 20
+    ) -> list[dict]:
+        """Productos que el modelo vigente pronostica, para el autocompletado de
+        la consulta puntual. Filtra por nombre o por id."""
+        binds: dict = {"lim": limite}
+        cond_modelo = "TRUE"
+        if modelo_id is not None:
+            cond_modelo = "pd.modelo_id = :m"
+            binds["m"] = modelo_id
+        cond_busqueda = ""
+        if search and search.strip():
+            binds["q"] = f"%{search.strip()}%"
+            cond_busqueda = "AND (p.nombre ILIKE :q OR CAST(p.product_id AS TEXT) LIKE :q)"
+        rows = await self.session.execute(
+            text(
+                f"""
+                SELECT p.product_id, p.nombre, p.product_category
+                FROM productos p
+                WHERE EXISTS (
+                    SELECT 1 FROM pronostico_demanda pd
+                    WHERE pd.product_id = p.product_id AND {cond_modelo}
+                )
+                {cond_busqueda}
+                ORDER BY p.nombre NULLS LAST, p.product_id
+                LIMIT :lim
+                """  # noqa: S608 - condiciones internas, sin entrada del cliente
+            ),
+            binds,
+        )
+        return [
+            {"product_id": r.product_id, "nombre": r.nombre, "product_category": r.product_category}
+            for r in rows
+        ]
+
+    async def tiendas_para_pronostico(self) -> list[dict]:
+        rows = await self.session.execute(
+            text(
+                "SELECT tienda_id, nombre FROM tiendas "
+                "WHERE activa AND codigo <> 'DEMO' ORDER BY nombre"
+            )
+        )
+        return [{"tienda_id": r.tienda_id, "nombre": r.nombre} for r in rows]
+
     async def pronostico_vigente(
         self, product_id: int, tienda_id: int, semana: int, anio: int
     ) -> PronosticoDemanda | None:
