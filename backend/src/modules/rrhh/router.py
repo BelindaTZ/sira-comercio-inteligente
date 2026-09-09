@@ -35,6 +35,7 @@ from src.modules.rrhh.schemas import (
     CumplimientoCapacitacionItem,
     EmpleadoCapacitacionOut,
     EmpleadoIn,
+    EmpleadoListItem,
     EmpleadoOut,
     EmpleadoPatch,
     MarcarCriticoIn,
@@ -80,6 +81,26 @@ async def crear_empleado(
     data: EmpleadoIn, svc: ServiceDep, _: Annotated[Principal, Depends(_crea)]
 ) -> EmpleadoOut:
     return EmpleadoOut.model_validate(await svc.crear_empleado(data))
+
+
+@router.get("/empleados", response_model=list[EmpleadoListItem])
+async def listar_empleados(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve)],
+    search: str | None = None,
+    activo: bool | None = None,
+) -> list[EmpleadoListItem]:
+    """Directorio de empleados con puesto, tienda y estado de cuenta."""
+    return [
+        EmpleadoListItem(**e) for e in await svc.listar_empleados(search=search, activo=activo)
+    ]
+
+
+@router.get("/puestos", response_model=list[PuestoOut])
+async def listar_puestos(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve)]
+) -> list[PuestoOut]:
+    return [PuestoOut.model_validate(p) for p in await svc.listar_puestos()]
 
 
 @router.get("/empleados/{empleado_id}", response_model=EmpleadoOut)

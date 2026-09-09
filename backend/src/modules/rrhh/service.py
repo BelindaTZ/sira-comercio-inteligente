@@ -63,6 +63,12 @@ class RRHHService:
             raise NotFoundError(f"Empleado {empleado_id} no existe")
         return empleado
 
+    async def listar_empleados(self, *, search: str | None, activo: bool | None) -> list[dict]:
+        return await self.repo.listar_empleados(search=search, activo=activo)
+
+    async def listar_puestos(self) -> list[RolPuesto]:
+        return await self.repo.listar_puestos()
+
     # ============================================================ 011 US1: retención
     async def marcar_puesto_critico(self, puesto_id: int, es_critico: bool) -> RolPuesto:
         """FR-001 — marca/desmarca un puesto como crítico para toda la red."""

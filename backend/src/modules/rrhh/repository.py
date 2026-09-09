@@ -51,6 +51,44 @@ class RRHHRepository:
         await self.session.refresh(empleado)
         return empleado
 
+    async def listar_empleados(
+        self, *, search: str | None, activo: bool | None
+    ) -> list[dict]:
+        """Directorio de empleados con el nombre del puesto y de la tienda y si
+        tiene cuenta de usuario activa — para la pantalla de RRHH (feature 018)."""
+        cond = ["1 = 1"]
+        binds: dict = {}
+        if search and search.strip():
+            cond.append(
+                "(e.nombre ILIKE :q OR e.email ILIKE :q "
+                "OR CAST(e.empleado_id AS TEXT) LIKE :q)"
+            )
+            binds["q"] = f"%{search.strip()}%"
+        if activo is not None:
+            cond.append("e.activo = :activo")
+            binds["activo"] = activo
+        rows = await self.session.execute(
+            text(f"""
+                SELECT e.empleado_id, e.nombre, e.puesto_id, rp.nombre AS puesto_nombre,
+                       e.tienda_id, t.nombre AS tienda_nombre,
+                       e.email, e.telefono, e.fecha_contratacion, e.fecha_baja, e.activo,
+                       rp.es_critico AS puesto_critico,
+                       EXISTS (SELECT 1 FROM usuarios u
+                               WHERE u.empleado_id = e.empleado_id AND u.activo) AS tiene_cuenta
+                FROM empleados e
+                LEFT JOIN roles_puesto rp ON rp.puesto_id = e.puesto_id
+                LEFT JOIN tiendas t ON t.tienda_id = e.tienda_id
+                WHERE {" AND ".join(cond)}
+                ORDER BY e.activo DESC, e.nombre
+            """),  # noqa: S608 - condiciones internas, sin entrada del cliente
+            binds,
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def listar_puestos(self) -> list[RolPuesto]:
+        stmt = select(RolPuesto).order_by(RolPuesto.nombre)
+        return list((await self.session.scalars(stmt)).all())
+
     # ---------------------------------------------------------------- puestos críticos (011)
     async def get_puesto(self, puesto_id: int) -> RolPuesto | None:
         return await self.session.get(RolPuesto, puesto_id)

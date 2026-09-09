@@ -24,6 +24,18 @@ export const rrhhApi = {
     return http.get(`/api/rrhh/empleados/${empleadoId}`).then((r) => r.data)
   },
 
+  listarEmpleados({ search, activo } = {}) {
+    return http
+      .get('/api/rrhh/empleados', {
+        params: { search: search || undefined, activo: activo === undefined ? undefined : activo },
+      })
+      .then((r) => r.data)
+  },
+
+  listarPuestos() {
+    return http.get('/api/rrhh/puestos').then((r) => r.data)
+  },
+
   actualizarEmpleado(empleadoId, cambios) {
     return http.patch(`/api/rrhh/empleados/${empleadoId}`, cambios).then((r) => r.data)
   },

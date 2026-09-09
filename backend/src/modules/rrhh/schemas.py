@@ -48,6 +48,22 @@ class EmpleadoOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EmpleadoListItem(BaseModel):
+    empleado_id: int
+    nombre: str
+    puesto_id: int
+    puesto_nombre: str | None = None
+    puesto_critico: bool = False
+    tienda_id: int | None = None
+    tienda_nombre: str | None = None
+    email: str | None = None
+    telefono: str | None = None
+    fecha_contratacion: date
+    fecha_baja: date | None = None
+    activo: bool
+    tiene_cuenta: bool = False
+
+
 # ============================================================ 011: puestos críticos
 class MarcarCriticoIn(BaseModel):
     es_critico: bool
