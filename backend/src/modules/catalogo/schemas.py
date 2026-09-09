@@ -72,6 +72,9 @@ class PrecioMatrizItem(BaseModel):
     activo: bool
     costo: Decimal | None
     precio_base: Decimal | None
+    precio_neto: Decimal | None = None
+    iva_monto: Decimal | None = None
+    iva_porcentaje: Decimal = Decimal("15.00")
     margen_pct: float | None
     margen_objetivo_pct: Decimal | None
     estado_margen: EstadoMargen

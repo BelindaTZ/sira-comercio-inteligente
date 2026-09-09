@@ -34,6 +34,25 @@ La pantalla de Catálogo es de **gestión de precios y márgenes**, no multicana
 
 **Transiciones de estado** (`estado`): `en_curso` → `confirmada` (al cobrar, FR-001/FR-004) → `anulada` (solo antes del cierre de caja de esa jornada, revierte el descuento de inventario asociado, no elimina el registro; genera fila en `anulaciones_venta` con motivo — FR-007). No hay transición de vuelta desde `anulada`.
 
+### 2.1 Configuración de Impuestos y Desglose de Factura SRI Ecuador
+
+**Tabla**: `configuracion_impuestos`
+
+- **Campos clave**: `clave` (PK, string), `valor` (Decimal 10,4), `descripcion` (string).
+- **Semilla inicial**:
+  * `iva_porcentaje_vigente`: `15.0000` (Tarifa general de IVA 15% Ecuador, vigente desde abril 2024).
+  * `iva_codigo_sri`: `4.0000` (Código oficial SRI para IVA 15%).
+- **Seguridad**: Solo lectura (`can_select = true`) para roles de consulta operativa y comercial. **No editable desde la interfaz gráfica (UI)** para preservar la integridad fiscal; cualquier actualización de alícuota se efectúa directamente a nivel de base de datos (`SQL`).
+- **Desglose SRI**: Los precios de venta al público (PVP) incluyen IVA (15%). Al emitir comprobantes (RIDE / Factura) y en la visualización del POS, el sistema desglosa:
+  * `Subtotal 15%` (base imponible gravada = `(PVP_total - Descuentos) / 1.15`).
+  * `Subtotal 0%` ($0.00).
+  * `Subtotal no objeto de IVA` ($0.00) / `Subtotal exento` ($0.00).
+  * `Subtotal sin impuestos` (suma de bases imponibles netas).
+  * `Total Descuento` (descuentos comerciales y cupones desglosados sin IVA).
+  * `IVA 15%` (`Subtotal 15% * 0.15`).
+  * `Total` (`Subtotal sin impuestos + IVA 15%`).
+
+
 ## 3. Línea de Venta
 
 **Tabla**: `venta_detalle`

@@ -8,7 +8,7 @@
  *    sin excepción por monto. Si el margen resultante cae bajo el mínimo, la línea
  *    se marca para revisión sin bloquear la venta (FR-010).
  */
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
 import { money } from '@/shared/currency'
 import { prompt } from '@/shared/ui/dialogs'
@@ -22,6 +22,43 @@ const props = defineProps({
 const emit = defineEmits(['remover', 'descuento', 'incrementar'])
 
 const moneda = (v) => money(v, { showCode: false })
+
+const desglose = computed(() => {
+  const v = props.venta
+  if (!v || !v.lineas || !v.lineas.length) return null
+  const tarifaIva = Number(v.tarifa_iva_pct || 15)
+  const divisor = 1 + tarifaIva / 100
+
+  let subtotalBruto = 0
+  let totalDescuento = 0
+
+  for (const ln of v.lineas) {
+    const pvp = Number(ln.sales_value || 0)
+    const cant = Number(ln.cantidad || 0)
+    const pNeto = ln.precio_neto != null ? Number(ln.precio_neto) : pvp / divisor
+    const descConIva = Number(ln.retail_disc || 0) + Number(ln.coupon_disc || 0)
+    const descNeto = ln.descuento != null ? Number(ln.descuento) : descConIva / divisor
+
+    subtotalBruto += pNeto * cant
+    totalDescuento += descNeto
+  }
+
+  const descPuntosConIva = Number(v.descuento_puntos || 0)
+  const descPuntosNeto = descPuntosConIva / divisor
+  totalDescuento += descPuntosNeto
+
+  const total = Number(v.total || 0)
+  const subtotalSinImp = Math.max(0, subtotalBruto - totalDescuento)
+  const iva = Math.max(0, total - subtotalSinImp)
+
+  return {
+    tarifaIva,
+    subtotalSinImpuestos: subtotalSinImp,
+    totalDescuento,
+    iva,
+    total,
+  }
+})
 
 // FR-003 (feature 005): recomendación de cross-sell por afinidad de canasta.
 const recomendacion = ref(null)
@@ -207,7 +244,45 @@ function confirmarDescuento() {
           </td>
         </tr>
       </tbody>
-      <tfoot>
+      <tfoot v-if="desglose" class="divide-y divide-brand-200 border-t-2 border-brand-200 bg-brand-50/40 text-[12px]">
+        <tr>
+          <td :colspan="removible ? 3 : 2" class="px-4 py-1.5 text-right font-medium text-slate-600">
+            Subtotal sin IVA:
+          </td>
+          <td class="px-4 py-1.5 text-right font-semibold tabular-nums text-slate-800">
+            {{ moneda(desglose.subtotalSinImpuestos) }}
+          </td>
+          <td v-if="removible" />
+        </tr>
+        <tr v-if="desglose.totalDescuento > 0" class="text-emerald-700">
+          <td :colspan="removible ? 3 : 2" class="px-4 py-1.5 text-right font-medium">
+            Descuento total (sin IVA):
+          </td>
+          <td class="px-4 py-1.5 text-right font-semibold tabular-nums">
+            −{{ moneda(desglose.totalDescuento) }}
+          </td>
+          <td v-if="removible" />
+        </tr>
+        <tr>
+          <td :colspan="removible ? 3 : 2" class="px-4 py-1.5 text-right font-medium text-slate-600">
+            IVA ({{ desglose.tarifaIva }}%):
+          </td>
+          <td class="px-4 py-1.5 text-right font-semibold tabular-nums text-slate-800">
+            {{ moneda(desglose.iva) }}
+          </td>
+          <td v-if="removible" />
+        </tr>
+        <tr class="bg-brand-100/60 font-bold">
+          <td :colspan="removible ? 3 : 2" class="px-4 py-2 text-right text-[11px] uppercase tracking-wide text-brand-900">
+            Total a pagar (con IVA)
+          </td>
+          <td class="px-4 py-2 text-right font-display text-lg font-extrabold tabular-nums text-brand-950">
+            {{ moneda(desglose.total) }}
+          </td>
+          <td v-if="removible" />
+        </tr>
+      </tfoot>
+      <tfoot v-else>
         <tr class="border-t-2 border-brand-200 bg-brand-50/60">
           <td :colspan="removible ? 3 : 2" class="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-slate-600">
             Total

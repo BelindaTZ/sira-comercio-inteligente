@@ -90,9 +90,9 @@ const columnas = [
   { key: 'sku', label: 'SKU / EAN-13', width: '128px' },
   { key: 'producto', label: 'Producto & formato' },
   { key: 'categoria', label: 'Categoría' },
-  { key: 'costo', label: 'Costo neto', align: 'right', width: '110px' },
+  { key: 'costo', label: 'Costo adquisición', align: 'right', width: '120px' },
   { key: 'margen', label: 'Margen real / obj.', align: 'right', width: '120px' },
-  { key: 'pvp', label: 'PVP actual', align: 'right', width: '124px' },
+  { key: 'pvp', label: 'PVP Final / Neto', align: 'right', width: '145px' },
   { key: 'estado', label: 'Estado', align: 'center', width: '140px' },
   { key: 'acciones', label: '', align: 'center', width: '96px' },
 ]
@@ -372,7 +372,10 @@ onMounted(() => {
           </div>
         </template>
 
-        <template #cell:costo="{ row }">{{ money(row.costo) }}</template>
+        <template #cell:costo="{ row }">
+          <div class="font-medium tabular-nums text-slate-700">{{ money(row.costo) }}</div>
+          <div class="text-[10px] text-slate-400">adquisición</div>
+        </template>
 
         <template #cell:margen="{ row }">
           <div
@@ -394,7 +397,10 @@ onMounted(() => {
 
         <template #cell:pvp="{ row }">
           <div class="font-bold tabular-nums text-slate-900">{{ money(row.precio_base) }}</div>
-          <div v-if="row.costo != null" class="text-[10px] text-slate-400">neto {{ money(row.costo) }}</div>
+          <div class="text-[10px] font-medium text-slate-500">
+            neto {{ money(row.precio_neto ?? (row.precio_base != null ? row.precio_base / 1.15 : null)) }}
+            <span class="text-slate-400">(IVA 15%)</span>
+          </div>
         </template>
 
         <template #cell:estado="{ row }">
@@ -477,7 +483,7 @@ onMounted(() => {
     >
       <form class="space-y-3" @submit.prevent="guardarEdicion">
         <label class="block text-[12px] font-semibold text-slate-600">
-          Costo neto
+          Costo adquisición
           <input
             v-model="edicion.costo"
             type="number"
@@ -486,7 +492,7 @@ onMounted(() => {
           />
         </label>
         <label class="block text-[12px] font-semibold text-slate-600">
-          PVP físico (base)
+          PVP final (con IVA 15% incluido)
           <input
             v-model="edicion.precio_base"
             type="number"
@@ -494,6 +500,10 @@ onMounted(() => {
             class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
         </label>
+        <div v-if="edicion.precio_base != null && edicion.precio_base > 0" class="flex items-center justify-between rounded-lg bg-brand-50/70 p-2.5 text-xs text-brand-900 border border-brand-200/60">
+          <span class="text-slate-600 font-medium">Equivalente neto (sin IVA):</span>
+          <span class="font-bold tabular-nums text-brand-800">{{ money(Number(edicion.precio_base) / 1.15) }}</span>
+        </div>
         <button
           type="submit"
           class="w-full rounded-xl bg-brand-800 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700"

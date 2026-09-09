@@ -54,6 +54,13 @@
 - **Relaciones**: ninguna (tabla de configuración global, sin FK).
 - **Validación**: se prefiere una tabla clave/valor genérica sobre 3 columnas sueltas en alguna tabla existente o 3 tablas de una sola fila cada una — evita elegir un "dueño" artificial para valores que no pertenecen a ninguna categoría/producto en particular (Principio VIII). Jefe_Comercial la edita vía un endpoint simple de configuración, no requiere una pantalla por valor.
 
+### 7.1 Configuración de Impuestos y Precios Netos / PVP con IVA
+
+- **Tabla**: `configuracion_impuestos` (clave/valor para parámetros tributarios generales, tarifa de IVA `iva_porcentaje_vigente = 15.0000` y código SRI `iva_codigo_sri = 4.0000`).
+- **PVP y Precio Neto**: En el catálogo maestro y punto de venta, `precio_base` representa el **PVP Final (con IVA incluido del 15%)**. El precio neto sin impuestos se calcula dinámicamente: `precio_neto = precio_base / (1 + iva_pct / 100)`. La pantalla 'Catálogo Maestro de Productos & Precios' expone tanto el PVP Final (+ IVA) como el Precio Neto (sin IVA) para visualización de los roles autorizados (incluido `Encargado_Tienda`).
+- **Seguridad**: `configuracion_impuestos` no es editable en la UI para evitar alteraciones no autorizadas; se parametriza únicamente a nivel de base de datos.
+
+
 ## 8. Competidor
 
 - **Tabla**: `competidores` (**nueva** — el spec original solo pedía "precio de referencia de competencia" sin identificar al competidor; la investigación de mercado que aportó el usuario muestra que las herramientas reales del sector (Prisync, Price2Spy, Dealavo) siempre capturan por competidor nombrado, no un precio suelto sin origen).

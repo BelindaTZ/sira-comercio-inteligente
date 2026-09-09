@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Auditoría y Análisis de Demanda Perdida (Stock-Out Loss) | Marzú Retail Group</title>
+<!-- Material Symbols Outlined Font -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Plus Jakarta Sans & Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#d2bbff",
+            "primary": "#00201d",
+            "surface-container-high": "#e6e8ea",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#f2f4f6",
+            "surface-container": "#eceef0",
+            "surface-container-highest": "#e0e3e5",
+            "on-error": "#ffffff",
+            "surface-tint": "#3e6561",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-fixed-variant": "#254d49",
+            "on-background": "#191c1e",
+            "tertiary": "#002014",
+            "outline-variant": "#c0c8c6",
+            "on-secondary-fixed": "#25005a",
+            "inverse-on-surface": "#eff1f3",
+            "on-surface-variant": "#414847",
+            "on-tertiary": "#ffffff",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-primary-fixed": "#00201d",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#003825",
+            "on-primary-container": "#779f9a",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#005137",
+            "primary-fixed": "#c0ebe4",
+            "on-tertiary-container": "#30ab7c",
+            "on-secondary-container": "#fffbff",
+            "on-tertiary-fixed": "#002114",
+            "inverse-surface": "#2d3133",
+            "on-primary": "#ffffff",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary": "#ffffff",
+            "surface": "#f8f9fb",
+            "primary-container": "#0a3632",
+            "secondary-fixed": "#eaddff",
+            "on-surface": "#191c1e",
+            "surface-bright": "#f8f9fb",
+            "secondary-container": "#8a4cfc",
+            "inverse-primary": "#a5cfc9",
+            "surface-dim": "#d8dadc",
+            "surface-variant": "#e0e3e5",
+            "error-container": "#ffdad6",
+            "error": "#ba1a1a",
+            "secondary": "#712ae2",
+            "background": "#f8f9fb",
+            "outline": "#717977"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "sidebar-expanded": "16.5rem",
+            "space-2xs": "0.125rem",
+            "space-xs": "0.25rem",
+            "space-base": "1rem",
+            "space-2xl": "3rem",
+            "gutter-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- TOP APP BAR - FULL HORIZONTAL UNIFIED WORKSPACE (NO VERTICAL SIDEBAR) -->
+<header class="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm transition-all duration-200">
+<div class="w-full max-w-[1760px] mx-auto px-6 h-16 flex items-center justify-between gap-4">
+<!-- Brand & Store Context Cluster -->
+<div class="flex items-center gap-4 shrink-0">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary font-headline-md font-bold tracking-tight shadow-sm">
+            S
+          </div>
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary">SIRA</span>
+</div>
+<span class="h-5 w-px bg-outline-variant/50"></span>
+<!-- System Specialty Badge -->
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#ffe4e6] text-[#be123c] border border-[#e11d48]/20 text-label-sm font-label-sm uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-[#be123c] animate-pulse"></span>
+          VENTA NO CONCRETADA &amp; STOCK-OUT
+        </span>
+<!-- Branch / Store Selector -->
+<div class="relative group">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface border border-outline-variant/40 transition-colors text-body-sm font-medium">
+<span class="material-symbols-outlined text-primary text-[18px]">storefront</span>
+<span>Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-outline text-[16px]">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Quick Search for Stock-Outs & Incidents -->
+<div class="flex-1 max-w-md mx-4">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-8 py-1.5 bg-surface-container-lowest border border-outline-variant/50 rounded-lg text-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all" placeholder="Buscar SKU, EAN o incidente de góndola..." type="text"/>
+<span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-outline border border-outline-variant px-1 rounded">⌘K</span>
+</div>
+</div>
+<!-- Global Horizontal Navigation Links -->
+<nav class="flex items-center gap-6 shrink-0 h-16">
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">Dashboard</a>
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">Punto de Venta</a>
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">Inventario</a>
+<!-- Active Tab: Demanda Perdida -->
+<a class="text-primary border-b-2 border-primary-container font-semibold py-3 text-body-md flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[18px] text-primary-container" style="font-variation-settings: 'FILL' 1;">trending_down</span>
+          Demanda Perdida
+        </a>
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">Catálogo</a>
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">CRM Clientes</a>
+<a class="text-secondary hover:text-on-surface py-3 text-body-md transition-colors font-medium" href="#">Finanzas</a>
+</nav>
+<!-- Trailing Quick Controls & Active Manager Profile -->
+<div class="flex items-center gap-3 shrink-0 pl-3 border-l border-outline-variant/40">
+<!-- Notification Center -->
+<button class="p-2 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors relative" title="Notificaciones de Quiebre">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#be123c]"></span>
+</button>
+<button class="p-2 rounded-lg text-outline hover:text-on-surface hover:bg-surface-container-low transition-colors" title="Cambio Rápido de Terminal">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2.5 pl-2">
+<img class="w-8 h-8 rounded-full object-cover border border-outline-variant/60" data-alt="Fotografía corporativa de perfil de un encargado de tienda retail masculino chileno de 38 años, vistiendo camisa ejecutiva formal con el logo de Marzú Retail, iluminación nítida de estudio en tonos suaves y fondo arquitectónico corporativo moderno y profesional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNmJsVPQMpdcnUo6cS-hbLZf0KAju2Qhm8seCpV1Ss4oCvtV6_4a7eMublH28AtAMNEaSJcUp1M3DdfqY2czfHZ6qtV_5NyqtYKiauTZX1dt4ADRxKKhT1mWm6CbL0XibXm5lnKPkDaan0IA_9sl_hUt1O2t5tkKJ27IgD8fI5eQ_RyQqyWO8H1SGzlFdf6E3Lu1LL0lbsa81LZSd88UAaG8mLe23oxszSe1BYEU4g335H6WxAwLwb6g"/>
+<div class="flex flex-col text-left leading-tight">
+<span class="text-body-sm font-semibold text-on-surface">G. González</span>
+<span class="text-[11px] text-outline">Encargado de Tienda</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN OPERATIONAL STAGE - FULL WIDTH CONTAINER -->
+<main class="flex-1 w-full max-w-[1760px] mx-auto px-6 py-6 space-y-6">
+<!-- CONTEXTUAL INTELLIGENCE BANNER -->
+<div class="bg-surface-container-lowest border border-primary-container/15 rounded-xl p-5 shadow-sm relative overflow-hidden flex flex-col xl:flex-row xl:items-center justify-between gap-5">
+<!-- Decorative Emerald Gradient Aura -->
+<div class="absolute -right-20 -top-20 w-80 h-80 bg-primary-container/5 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex items-start gap-4 z-10 max-w-4xl">
+<div class="w-11 h-11 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-[24px]">troubleshoot</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2.5 flex-wrap">
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary">
+              Monitoreo de Oportunidades de Venta Perdidas por Quiebre de Stock
+            </h1>
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-[11px] font-mono font-semibold">
+              Algoritmo v4.2 • Góndola vs Caja POS
+            </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+            Detección continua mediante telemetría en verificadores de precios (Price Checkers), búsquedas sin resultado en tablet de pasillo, y vacíos estadísticos de transacciones en horas de alto tráfico comercial en góndolas clave.
+          </p>
+</div>
+</div>
+<!-- Quick Executive Action CTAs -->
+<div class="flex items-center gap-3 shrink-0 z-10">
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant hover:border-primary-container text-primary text-body-sm font-medium hover:bg-surface-container-low transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+          Ajustar Búfer de Seguridad Local
+        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#0e4a44] text-on-primary text-body-sm font-semibold transition-all shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">send_and_archive</span>
+          Descargar Informe de Oportunidad a CD Central
+        </button>
+</div>
+</div>
+<!-- KPI CARDS: IMPACTO FINANCIERO Y COMERCIAL -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+<!-- KPI 1: Venta Estimada Perdida -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline mb-2">
+<span class="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant">Venta Estimada Perdida</span>
+<span class="material-symbols-outlined text-[20px] text-[#be123c]">price_change</span>
+</div>
+<div class="my-2">
+<div class="text-tabular-metric font-tabular-metric text-primary">$3.890.400 CLP</div>
+<div class="text-body-sm text-outline mt-0.5">Últimos 30 días acumulados</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<span class="inline-flex items-center gap-1 text-[12px] font-semibold text-[#be123c] bg-[#ffe4e6] px-2 py-0.5 rounded">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+            -2.3%
+          </span>
+<span class="text-body-sm text-outline">del potencial sucursal</span>
+</div>
+</div>
+<!-- KPI 2: Incidentes de Quiebre -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline mb-2">
+<span class="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant">Incidentes de Quiebre</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container">production_quantity_limits</span>
+</div>
+<div class="my-2">
+<div class="text-tabular-metric font-tabular-metric text-primary">42 Eventos</div>
+<div class="text-body-sm text-outline mt-0.5">Detecciones auditadas en sala</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-body-sm">
+<span class="text-[#b45309] font-medium font-body-sm">26 en bodega sin reponer</span>
+<span class="text-outline">/ 16 agotados CD</span>
+</div>
+</div>
+<!-- KPI 3: Tasa de Fuga de Clientes -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline mb-2">
+<span class="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant">Tasa de Fuga por Quiebre</span>
+<span class="material-symbols-outlined text-[20px] text-[#712ae2]">person_cancel</span>
+</div>
+<div class="my-2">
+<div class="text-tabular-metric font-tabular-metric text-primary">11.8%</div>
+<div class="text-body-sm text-outline mt-0.5">Abandono de carro o sin compra</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<span class="inline-flex items-center gap-1 text-[12px] font-semibold text-[#6b21a8] bg-[#f3e8ff] px-2 py-0.5 rounded">
+            Sin sustitución
+          </span>
+<span class="text-body-sm text-outline">Pérdida neta de ticket</span>
+</div>
+</div>
+<!-- KPI 4: SKU Crítico Más Afectado -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div class="flex items-center justify-between text-outline mb-2">
+<span class="text-label-md font-label-md uppercase tracking-wider text-on-surface-variant">SKU Crítico Impactado</span>
+<span class="material-symbols-outlined text-[20px] text-[#be123c]">warning</span>
+</div>
+<div class="my-1">
+<div class="text-headline-sm font-headline-sm font-bold text-primary truncate" title="Leche Descremada 1L Tetrapack">
+            Leche Descremada 1L
+          </div>
+<div class="text-body-sm font-semibold text-[#be123c] mt-0.5">$480.000 CLP de venta perdida</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between text-body-sm">
+<span class="inline-flex items-center gap-1 text-[#b45309] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#b45309]"></span>
+            48h sin abastecimiento
+          </span>
+<span class="text-outline text-label-sm font-mono">EAN: 780123456</span>
+</div>
+</div>
+</div>
+<!-- SECCIÓN CENTRAL: DIAGNÓSTICO CAUSA RAÍZ + MATRIX OPERATIVA -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+<!-- 1. PANEL DE DIAGNÓSTICO CAUSA RAÍZ (4 COLUMNAS) -->
+<section class="xl:col-span-4 bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm flex flex-col h-full">
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant/30">
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">Causa Raíz de Demanda Perdida</h2>
+<p class="text-body-sm font-body-sm text-outline">Desglose porcentual atribuible por telemetría</p>
+</div>
+<span class="material-symbols-outlined text-outline">analytics</span>
+</div>
+<!-- Diagnostic Breakdown Bars -->
+<div class="mt-6 space-y-5 flex-1">
+<!-- Factor 1: Stock Fantasma -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-body-sm">
+<span class="font-semibold text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#be123c]"></span>
+                Stock Fantasma / Descuadre de Conteo
+              </span>
+<span class="font-tabular-data text-primary font-bold">38%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-[#be123c] h-full rounded-full" style="width: 38%"></div>
+</div>
+<p class="text-[12px] text-outline leading-tight">
+              Sistema indicaba 12 unidades teóricas; auditoría física constató góndola vacía por merma o error de recepción.
+            </p>
+</div>
+<!-- Factor 2: Quiebre de Góndola con Stock en Bodega -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-body-sm">
+<span class="font-semibold text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#d97706]"></span>
+                Quiebre de Góndola (In-Store Out)
+              </span>
+<span class="font-tabular-data text-primary font-bold">32%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-[#d97706] h-full rounded-full" style="width: 32%"></div>
+</div>
+<p class="text-[12px] text-outline leading-tight">
+              Producto disponible en bodega posterior de tienda, pero no repuesto en góndola a tiempo por el reponedor.
+            </p>
+</div>
+<!-- Factor 3: Retraso Proveedor / Fill Rate CD -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-body-sm">
+<span class="font-semibold text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#712ae2]"></span>
+                Retraso Proveedor / Fill Rate CD
+              </span>
+<span class="font-tabular-data text-primary font-bold">22%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-[#712ae2] h-full rounded-full" style="width: 22%"></div>
+</div>
+<p class="text-[12px] text-outline leading-tight">
+              CD Lo Boza demoró despacho programado en 36h por quiebre de proveedor primario.
+            </p>
+</div>
+<!-- Factor 4: Aumento Inesperado de Demanda (Spike) -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center text-body-sm">
+<span class="font-semibold text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary-container"></span>
+                Pico Inesperado de Demanda (Spike)
+              </span>
+<span class="font-tabular-data text-primary font-bold">8%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 8%"></div>
+</div>
+<p class="text-[12px] text-outline leading-tight">
+              Venta inusualmente concentrada en bloque horario vespertino que superó el lote de seguridad.
+            </p>
+</div>
+</div>
+<!-- AI Recommendation Pill Box -->
+<div class="mt-6 p-3.5 rounded-lg bg-[#f3e8ff] border border-[#7c3aed]/20 text-[#6b21a8] text-body-sm space-y-1.5">
+<div class="flex items-center gap-1.5 font-semibold text-[13px]">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+            Dictamen Predictivo de Reposición
+          </div>
+<p class="text-[12px] text-[#581c87] leading-relaxed">
+            El 70% de la venta perdida actual se resuelve internamente en tienda (Stock Fantasma y Góndola vacía) sin depender de camiones del Centro de Distribución.
+          </p>
+</div>
+</section>
+<!-- 2. MATRIZ OPERATIVA DE SKUs CON MAYOR DEMANDA PERDIDA (8 COLUMNAS) -->
+<section class="xl:col-span-8 bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm flex flex-col">
+<!-- Table Toolbar: Title & Temporal/Category Filters -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-outline-variant/30">
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">Matriz de SKUs con Mayor Demanda Perdida</h2>
+<p class="text-body-sm font-body-sm text-outline">Providencia Express • Detección en tiempo real</p>
+</div>
+<!-- Time & Filter Controls -->
+<div class="flex items-center gap-2 flex-wrap">
+<div class="inline-flex p-0.5 bg-surface-container-low rounded-lg border border-outline-variant/40 text-label-md">
+<button class="px-2.5 py-1 rounded bg-surface-container-lowest text-primary font-semibold shadow-xs">Últimas 24h</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface">Semana Actual</button>
+<button class="px-2.5 py-1 rounded text-outline hover:text-on-surface">Mes Corriente</button>
+</div>
+<select class="py-1 px-3 bg-surface-container-lowest border border-outline-variant/50 rounded-lg text-body-sm text-on-surface focus:outline-none focus:border-primary-container">
+<option>Todas las Categorías</option>
+<option>Lácteos y Frescos</option>
+<option>Bebidas y Licores</option>
+<option>Despensa &amp; Abarrotes</option>
+<option>Cuidado Personal</option>
+</select>
+</div>
+</div>
+<!-- High-Density Operational Data Grid -->
+<div class="mt-4 overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse min-w-[1050px]">
+<thead>
+<tr class="bg-surface-container-low/70 border-b border-outline-variant/40 text-[11px] font-label-sm uppercase tracking-wider text-outline">
+<th class="py-2.5 px-3 font-semibold">SKU / Producto &amp; EAN</th>
+<th class="py-2.5 px-3 font-semibold">Ubicación Sala</th>
+<th class="py-2.5 px-3 font-semibold text-center">Horas Quiebre</th>
+<th class="py-2.5 px-3 font-semibold text-right">Uds. Perdidas/h</th>
+<th class="py-2.5 px-3 font-semibold text-right">Venta Perdida (CLP)</th>
+<th class="py-2.5 px-3 font-semibold">Causal Identificada</th>
+<th class="py-2.5 px-3 font-semibold">Comportamiento Cliente</th>
+<th class="py-2.5 px-3 font-semibold text-center">Acción Inmediata</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-body-sm">
+<!-- Row 1: Leche Descremada -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3 px-3">
+<div class="font-semibold text-on-surface">Leche Descremada 1L Tetra</div>
+<div class="text-[11px] text-outline font-mono">SKU-7721 • 780123456789</div>
+</td>
+<td class="py-3 px-3 text-on-surface-variant font-medium">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-outline">kitchen</span>
+                    Nevera Lácteos 02
+                  </span>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#ffe4e6] text-[#be123c] border border-[#e11d48]/20">
+                    48.2 hrs
+                  </span>
+</td>
+<td class="py-3 px-3 text-right font-tabular-data font-semibold text-primary">
+                  14.5 u/h
+                </td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-[#be123c]">$480.000</div>
+<div class="text-[11px] text-outline">Margen: $144.000</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#fef3c7] text-[#b45309] border border-[#d97706]/20">
+                    Góndola vacía / Stock bodega (48u)
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="w-28 space-y-1">
+<div class="flex justify-between text-[10px] font-mono text-outline">
+<span class="text-primary font-bold">Sust. 65%</span>
+<span class="text-[#be123c]">Fuga 35%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 65%"></div>
+<div class="bg-[#be123c] h-full" style="width: 35%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3 text-center">
+<button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-primary-container hover:bg-[#0e4a44] text-on-primary text-[11px] font-semibold transition-all shadow-2xs">
+<span class="material-symbols-outlined text-[14px]">forklift</span>
+                    Reponer de Bodega
+                  </button>
+</td>
+</tr>
+<!-- Row 2: Café Instantáneo Gold -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3 px-3">
+<div class="font-semibold text-on-surface">Café Liofilizado Gold 200g</div>
+<div class="text-[11px] text-outline font-mono">SKU-3104 • 780442190812</div>
+</td>
+<td class="py-3 px-3 text-on-surface-variant font-medium">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-outline">shelves</span>
+                    Pasillo 03 - Módulo B
+                  </span>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#ffe4e6] text-[#be123c] border border-[#e11d48]/20">
+                    26.0 hrs
+                  </span>
+</td>
+<td class="py-3 px-3 text-right font-tabular-data font-semibold text-primary">
+                  6.2 u/h
+                </td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-[#be123c]">$324.800</div>
+<div class="text-[11px] text-outline">Margen: $113.680</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#ffe4e6] text-[#be123c] border border-[#e11d48]/20">
+                    Stock Fantasma (Teórico: 8u)
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="w-28 space-y-1">
+<div class="flex justify-between text-[10px] font-mono text-outline">
+<span class="text-primary font-bold">Sust. 40%</span>
+<span class="text-[#be123c]">Fuga 60%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 40%"></div>
+<div class="bg-[#be123c] h-full" style="width: 60%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3 text-center">
+<button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-surface-container-low border border-outline-variant hover:border-primary-container text-primary text-[11px] font-semibold transition-all">
+<span class="material-symbols-outlined text-[14px]">checklist</span>
+                    Conteo Rápido
+                  </button>
+</td>
+</tr>
+<!-- Row 3: Detergente Líquido 3L -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3 px-3">
+<div class="font-semibold text-on-surface">Detergente Líquido Concentrado 3L</div>
+<div class="text-[11px] text-outline font-mono">SKU-9941 • 780889211029</div>
+</td>
+<td class="py-3 px-3 text-on-surface-variant font-medium">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-outline">shelves</span>
+                    Pasillo 07 - Cabecera
+                  </span>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#fef3c7] text-[#b45309] border border-[#d97706]/20">
+                    14.5 hrs
+                  </span>
+</td>
+<td class="py-3 px-3 text-right font-tabular-data font-semibold text-primary">
+                  4.8 u/h
+                </td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-[#be123c]">$289.900</div>
+<div class="text-[11px] text-outline">Margen: $86.970</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#f3e8ff] text-[#6b21a8] border border-[#7c3aed]/20">
+                    Agotado Total CD Lo Boza
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="w-28 space-y-1">
+<div class="flex justify-between text-[10px] font-mono text-outline">
+<span class="text-primary font-bold">Sust. 80%</span>
+<span class="text-[#be123c]">Fuga 20%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 80%"></div>
+<div class="bg-[#be123c] h-full" style="width: 20%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3 text-center">
+<button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-surface-container-low border border-outline-variant hover:border-secondary text-[#712ae2] text-[11px] font-semibold transition-all">
+<span class="material-symbols-outlined text-[14px]">local_shipping</span>
+                    Alertar a CD
+                  </button>
+</td>
+</tr>
+<!-- Row 4: Pan de Molde Integral 550g -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3 px-3">
+<div class="font-semibold text-on-surface">Pan Molde Integral Artesanal 550g</div>
+<div class="text-[11px] text-outline font-mono">SKU-1823 • 780512899120</div>
+</td>
+<td class="py-3 px-3 text-on-surface-variant font-medium">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-outline">shelves</span>
+                    Pasillo 01 - Panadería
+                  </span>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-[#fef3c7] text-[#b45309] border border-[#d97706]/20">
+                    8.0 hrs
+                  </span>
+</td>
+<td class="py-3 px-3 text-right font-tabular-data font-semibold text-primary">
+                  18.0 u/h
+                </td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-[#be123c]">$216.000</div>
+<div class="text-[11px] text-outline">Margen: $75.600</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#fef3c7] text-[#b45309] border border-[#d97706]/20">
+                    Góndola vacía / Stock bodega (24u)
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="w-28 space-y-1">
+<div class="flex justify-between text-[10px] font-mono text-outline">
+<span class="text-primary font-bold">Sust. 50%</span>
+<span class="text-[#be123c]">Fuga 50%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 50%"></div>
+<div class="bg-[#be123c] h-full" style="width: 50%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3 text-center">
+<button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-primary-container hover:bg-[#0e4a44] text-on-primary text-[11px] font-semibold transition-all shadow-2xs">
+<span class="material-symbols-outlined text-[14px]">forklift</span>
+                    Reponer de Bodega
+                  </button>
+</td>
+</tr>
+<!-- Row 5: Agua Mineral con Gas 1.5L -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3 px-3">
+<div class="font-semibold text-on-surface">Agua Mineral con Gas Vertiente 1.5L</div>
+<div class="text-[11px] text-outline font-mono">SKU-4402 • 780992341122</div>
+</td>
+<td class="py-3 px-3 text-on-surface-variant font-medium">
+<span class="inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-outline">kitchen</span>
+                    Nevera Bebidas 01
+                  </span>
+</td>
+<td class="py-3 px-3 text-center">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-surface-container text-on-surface-variant">
+                    5.5 hrs
+                  </span>
+</td>
+<td class="py-3 px-3 text-right font-tabular-data font-semibold text-primary">
+                  12.2 u/h
+                </td>
+<td class="py-3 px-3 text-right">
+<div class="font-tabular-data font-bold text-[#be123c]">$145.200</div>
+<div class="text-[11px] text-outline">Margen: $58.080</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#e0e3e5] text-primary">
+                    Pico de Demanda Inesperado
+                  </span>
+</td>
+<td class="py-3 px-3">
+<div class="w-28 space-y-1">
+<div class="flex justify-between text-[10px] font-mono text-outline">
+<span class="text-primary font-bold">Sust. 88%</span>
+<span class="text-[#be123c]">Fuga 12%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden flex">
+<div class="bg-primary-container h-full" style="width: 88%"></div>
+<div class="bg-[#be123c] h-full" style="width: 12%"></div>
+</div>
+</div>
+</td>
+<td class="py-3 px-3 text-center">
+<button class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-surface-container-low border border-outline-variant hover:border-primary-container text-primary text-[11px] font-semibold transition-all">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+                    Subir Búfer Góndola
+                  </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination & Bulk Operations -->
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-body-sm text-outline">
+<div class="flex items-center gap-2">
+<span>Mostrando 5 de 42 incidentes priorizados por pérdida económica</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1 rounded bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/40 text-label-md font-medium">
+              Exportar Matriz CSV
+            </button>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded flex items-center justify-center bg-surface-container-low text-outline disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-primary-container text-on-primary font-semibold text-[12px]">
+                1
+              </button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface text-[12px]">
+                2
+              </button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface text-[12px]">
+                3
+              </button>
+<button class="w-8 h-8 rounded flex items-center justify-center hover:bg-surface-container-low text-on-surface">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- OPERATIONAL TICKETS & INCIDENT RESOLUTION STATUS -->
+<div class="bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-5 shadow-sm">
+<div class="flex items-center justify-between pb-3 border-b border-outline-variant/20 mb-4">
+<div class="flex items-center gap-2.5">
+<span class="material-symbols-outlined text-primary-container">sync_problem</span>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary">Protocolo de Cierre de Quiebres en Turno Actual</h3>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Turno: Tarde (14:00 - 22:00)</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="p-3.5 rounded-lg bg-surface-container-low/60 border border-outline-variant/30 flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-[#d1fae5] text-[#047857] flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div>
+<div class="text-body-sm font-semibold text-on-surface">18 Tareas de Reposición Cerradas</div>
+<p class="text-[12px] text-outline">Recuperados $1.240.000 CLP de venta potencial en sala durante las últimas 4 horas.</p>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low/60 border border-outline-variant/30 flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-[#fef3c7] text-[#b45309] flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">pending_actions</span>
+</div>
+<div>
+<div class="text-body-sm font-semibold text-on-surface">8 Reposiciones en Curso</div>
+<p class="text-[12px] text-outline">Operador de pasillo asignado en Nevera Lácteos y Pasillo 01 Panadería.</p>
+</div>
+</div>
+<div class="p-3.5 rounded-lg bg-surface-container-low/60 border border-outline-variant/30 flex items-start gap-3">
+<div class="w-7 h-7 rounded-full bg-[#ffe4e6] text-[#be123c] flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]">report</span>
+</div>
+<div>
+<div class="text-body-sm font-semibold text-on-surface">16 Alertas Pendientes con CD</div>
+<p class="text-[12px] text-outline">En espera de confirmación de despacho extraordinario desde Centro Lo Boza.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- OPERATIONAL FOOTER -->
+<footer class="w-full bg-surface-container-lowest border-t border-outline-variant/30 mt-auto py-3 px-6">
+<div class="w-full max-w-[1760px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[12px] text-outline">
+<div class="flex items-center gap-4">
+<span>© 2025 Marzú Retail Group • SIRA Enterprise v4.8</span>
+<span class="h-3 w-px bg-outline-variant/40"></span>
+<span>Módulo de Control de Pérdida por Desabastecimiento</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="inline-flex items-center gap-1.5 text-primary">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+          Telemetría POS en Línea (Latencia 120ms)
+        </span>
+</div>
+</div>
+</footer>
+<script>
+    // Lightweight interactive state handler for filter toggles
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        // Subtle micro-interaction feedback
+        this.classList.add('scale-[0.98]');
+        setTimeout(() => {
+          this.classList.remove('scale-[0.98]');
+        }, 120);
+      });
+    });
+  </script>
+</body></html>

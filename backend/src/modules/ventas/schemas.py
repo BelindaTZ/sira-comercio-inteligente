@@ -135,6 +135,11 @@ class LineaOut(BaseModel):
     empleado_autoriza_id: int | None = None
     margen_real: Decimal | None = None
     margen_bajo_minimo: bool = False
+    # Desglose tributario SRI
+    precio_neto: Decimal | None = None
+    descuento: Decimal = Decimal("0")
+    iva_porcentaje: Decimal = Decimal("15.00")
+    iva_monto: Decimal = Decimal("0")
 
 
 class VentaOut(BaseModel):
@@ -151,6 +156,15 @@ class VentaOut(BaseModel):
     fecha_hora: datetime
     comprobante_objeto: str | None = None
     descuento_puntos: Decimal = Decimal("0")
+    # Desglose tributario oficial SRI (Ecuador IVA 15%)
+    subtotal_sin_impuestos: Decimal = Decimal("0")
+    subtotal_15: Decimal = Decimal("0")
+    subtotal_0: Decimal = Decimal("0")
+    subtotal_no_objeto: Decimal = Decimal("0")
+    subtotal_exento: Decimal = Decimal("0")
+    total_descuento: Decimal = Decimal("0")
+    iva_15: Decimal = Decimal("0")
+    tarifa_iva_pct: Decimal = Decimal("15.00")
     lineas: list[LineaOut] = []
 
 

@@ -357,14 +357,14 @@ async def main() -> None:
 
         await s.commit()
 
-    await _imagenes_unsplash(limite=90)
+    await _imagenes_unsplash(limite=40)
     log.info("catálogo enriquecido")
 
 
 async def _imagenes_unsplash(limite: int) -> None:
     """Best-effort: pide unas pocas fotos a Unsplash para los SKU con inventario
     que aún tienen el placeholder. El tier Demo son 50 req/hora, así que se hace
-    en tandas chicas; el resto queda con el ícono por categoría."""
+    en tandas chicas (≤40) respetando cuotas; el resto queda con el ícono por categoría."""
     from src.integrations import unsplash_client
 
     if not unsplash_client.is_configured():
@@ -374,25 +374,41 @@ async def _imagenes_unsplash(limite: int) -> None:
         filas = (
             await s.execute(
                 text("""
-                SELECT DISTINCT p.product_id, p.nombre
-                FROM productos p JOIN inventario i ON i.product_id = p.product_id
-                WHERE p.imagen_url LIKE 'producto-imagenes/placeholder/%'
-                ORDER BY p.product_id
+                SELECT p.product_id, p.nombre, p.product_category, p.product_type
+                FROM productos p
+                WHERE EXISTS (SELECT 1 FROM inventario i WHERE i.product_id = p.product_id)
+                  AND p.imagen_url LIKE 'producto-imagenes/placeholder/%'
+                ORDER BY p.updated_at ASC NULLS FIRST, p.product_id ASC
                 LIMIT :lim
             """),
                 {"lim": limite},
             )
         ).all()
         n = 0
-        for product_id, nombre in filas:
-            url = await unsplash_client.buscar_imagen(nombre or "")
+        for product_id, nombre, cat, tipo in filas:
+            cuota = unsplash_client.obtener_estado_cuota()
+            if cuota.get("remaining") is not None and cuota["remaining"] <= 1:
+                log.warning("Cuota Unsplash casi agotada, deteniendo tanda de imágenes")
+                break
+
+            url = await unsplash_client.buscar_imagen_producto(
+                nombre=nombre,
+                categoria=cat,
+                tipo=tipo,
+            )
             if url:
                 await s.execute(
-                    text("UPDATE productos SET imagen_url = :u WHERE product_id = :p"),
+                    text("UPDATE productos SET imagen_url = :u, updated_at = CURRENT_TIMESTAMP WHERE product_id = :p"),
                     {"u": url, "p": product_id},
                 )
                 n += 1
-        await s.commit()
+            else:
+                await s.execute(
+                    text("UPDATE productos SET updated_at = CURRENT_TIMESTAMP WHERE product_id = :p"),
+                    {"p": product_id},
+                )
+            await s.commit()
+            await asyncio.sleep(0.5)
         log.info("imágenes Unsplash: %s/%s", n, len(filas))
 
 

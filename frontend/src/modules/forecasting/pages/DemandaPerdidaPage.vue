@@ -6,7 +6,7 @@
  * agregados por SKU y por categoría. Cada SKU afectado ofrece la acción concreta
  * de solicitar su reposición (abre "órdenes de compra" con el pedido casi listo).
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { forecastingApi } from '@/services/forecastingApi'
@@ -17,6 +17,8 @@ import Btn from '@/shared/ui/Btn.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import DataTable from '@/shared/DataTable.vue'
+import Modal from '@/shared/ui/Modal.vue'
+import ProductoPicker from '@/shared/ui/ProductoPicker.vue'
 
 const sesion = useSesion()
 const router = useRouter()
@@ -24,6 +26,46 @@ const tiendaId = computed(() => sesion.tiendaId ?? 1)
 const puedeSolicitar = computed(
   () => !sesion.esGerente && sesion.puedeEditarTabla('Operaciones', 'ordenes_compra'),
 )
+const puedeRegistrar = computed(
+  () =>
+    !sesion.esGerente &&
+    (sesion.puedeEditarTabla('Operaciones', 'eventos_quiebre_stock') ||
+      sesion.puedeEditar('Operaciones')),
+)
+
+const modalQuiebre = ref(false)
+const formQuiebre = reactive({ productId: null, demanda: 1 })
+const guardandoQuiebre = ref(false)
+
+function abrirModalQuiebre() {
+  formQuiebre.productId = null
+  formQuiebre.demanda = 1
+  error.value = ''
+  modalQuiebre.value = true
+}
+
+async function guardarQuiebre() {
+  if (!formQuiebre.productId) return
+  guardandoQuiebre.value = true
+  error.value = ''
+  try {
+    const res = await inventarioApi.registrarQuiebre({
+      productId: formQuiebre.productId,
+      tiendaId: tiendaId.value,
+      empleadoId: sesion.empleadoId ?? 1,
+      demanda: formQuiebre.demanda ? Number(formQuiebre.demanda) : null,
+    })
+    modalQuiebre.value = false
+    aviso.value = res.es_alta_demanda
+      ? `Quiebre registrado para el producto #${res.product_id} (Clase A: notificación prioritaria de alta demanda enviada a Operaciones).`
+      : `Quiebre registrado para el producto #${res.product_id}.`
+    await cargar(true)
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    guardandoQuiebre.value = false
+  }
+}
 
 const hoy = new Date()
 const mes = ref(`${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`)
@@ -147,6 +189,9 @@ onMounted(() => cargar())
         </SemanticChip>
       </template>
       <template #acciones>
+        <Btn v-if="puedeRegistrar" variant="primary" @click="abrirModalQuiebre">
+          <Icon name="plus" :size="16" /> Registrar quiebre de stock
+        </Btn>
         <label
           class="flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600"
         >
@@ -292,5 +337,49 @@ onMounted(() => cargar())
         </table>
       </div>
     </section>
+
+    <!-- Modal Registrar Quiebre de Stock -->
+    <Modal
+      :abierto="modalQuiebre"
+      titulo="Registrar evento de quiebre de stock en sala"
+      @cerrar="modalQuiebre = false"
+    >
+      <form class="space-y-4" @submit.prevent="guardarQuiebre">
+        <p class="text-xs text-slate-500 leading-relaxed">
+          Registra un producto agotado cuando un cliente lo solicita en tienda o se detecta anaquel vacío,
+          indicando las unidades solicitadas (FR-022). Si es clase A, se notificará de inmediato a Operaciones (FR-043).
+        </p>
+
+        <ProductoPicker
+          v-model="formQuiebre.productId"
+          :tienda-id="tiendaId"
+          label="Producto agotado en tienda"
+          required
+        />
+
+        <div>
+          <label class="mb-1 block text-xs font-semibold text-slate-700">
+            Unidades no satisfechas (solicitadas por el cliente)
+          </label>
+          <input
+            v-model.number="formQuiebre.demanda"
+            type="number"
+            min="1"
+            placeholder="Ej: 2"
+            class="w-full rounded-lg border border-brand-200 bg-white px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:outline-none"
+          />
+          <span class="mt-1 block text-[11px] text-slate-400">
+            Indica cuántas unidades solicitó el cliente o se estiman perdidas en este evento.
+          </span>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-brand-100">
+          <Btn variant="ghost" type="button" @click="modalQuiebre = false">Cancelar</Btn>
+          <Btn variant="primary" type="submit" :disabled="!formQuiebre.productId || guardandoQuiebre">
+            {{ guardandoQuiebre ? 'Registrando…' : 'Registrar evento' }}
+          </Btn>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>

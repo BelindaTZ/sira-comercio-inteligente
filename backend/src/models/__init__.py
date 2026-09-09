@@ -26,6 +26,7 @@ from src.models.cliente_demografico import ClienteDemografico
 from src.models.clima_laboral import ClimaLaboral
 from src.models.competidor import Competidor
 from src.models.configuracion_caja import ConfiguracionCaja
+from src.models.configuracion_impuestos import ConfiguracionImpuestos
 from src.models.configuracion_inventario import ConfiguracionInventario
 from src.models.configuracion_pricing import ConfiguracionPricing
 from src.models.configuracion_promociones import ConfiguracionPromociones
@@ -108,6 +109,7 @@ __all__ = [
     "ClienteDemografico",
     "Competidor",
     "ConfiguracionCaja",
+    "ConfiguracionImpuestos",
     "ConfiguracionInventario",
     "ConfiguracionPricing",
     "ConfiguracionPromociones",

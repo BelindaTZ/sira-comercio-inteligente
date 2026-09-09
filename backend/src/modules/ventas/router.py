@@ -44,7 +44,7 @@ from src.modules.ventas.schemas import (
     VentaOut,
     VincularClienteIn,
 )
-from src.modules.ventas.service import VentasService
+from src.modules.ventas.service import VentasService, calcular_desglose_venta
 from src.shared.exceptions import ForbiddenError
 from src.shared.pagination import Page, PageParams, page_params
 
@@ -74,21 +74,15 @@ ServiceDep = Annotated[VentasService, Depends(_svc)]
 
 async def _venta_out(svc: VentasService, venta: Venta) -> VentaOut:
     lineas = await svc.repo.lineas_de(venta.venta_id)
-    return VentaOut(
-        venta_id=venta.venta_id,
-        tienda_id=venta.tienda_id,
-        cajero_id=venta.cajero_id,
-        household_id=venta.household_id,
-        estado=venta.estado,
-        total=venta.total,
-        medio_pago_id=venta.medio_pago_id,
-        tipo_comprobante=venta.tipo_comprobante,
-        identificacion_comprador=venta.identificacion_comprador,
-        razon_social_comprador=venta.razon_social_comprador,
-        fecha_hora=venta.fecha_hora,
-        comprobante_objeto=venta.comprobante_objeto,
-        descuento_puntos=venta.descuento_puntos or 0,
-        lineas=[
+    tarifa_iva = await svc.obtener_tarifa_iva()
+    desglose = calcular_desglose_venta(
+        lineas, venta.descuento_puntos, tarifa_iva=tarifa_iva
+    )
+
+    items_out = []
+    for d in desglose["lineas"]:
+        ln = d["linea"]
+        items_out.append(
             LineaOut(
                 venta_detalle_id=ln.venta_detalle_id,
                 product_id=ln.product_id,
@@ -104,9 +98,36 @@ async def _venta_out(svc: VentasService, venta: Venta) -> VentaOut:
                 empleado_autoriza_id=ln.empleado_autoriza_id,
                 margen_real=ln.margen_real,
                 margen_bajo_minimo=ln.margen_bajo_minimo,
+                precio_neto=d["precio_neto"],
+                descuento=d["descuento"],
+                iva_porcentaje=d["tarifa_iva"],
+                iva_monto=d["iva_monto"],
             )
-            for ln in lineas
-        ],
+        )
+
+    return VentaOut(
+        venta_id=venta.venta_id,
+        tienda_id=venta.tienda_id,
+        cajero_id=venta.cajero_id,
+        household_id=venta.household_id,
+        estado=venta.estado,
+        total=venta.total,
+        medio_pago_id=venta.medio_pago_id,
+        tipo_comprobante=venta.tipo_comprobante,
+        identificacion_comprador=venta.identificacion_comprador,
+        razon_social_comprador=venta.razon_social_comprador,
+        fecha_hora=venta.fecha_hora,
+        comprobante_objeto=venta.comprobante_objeto,
+        descuento_puntos=venta.descuento_puntos or 0,
+        subtotal_sin_impuestos=desglose["subtotal_sin_impuestos"],
+        subtotal_15=desglose["subtotal_15"],
+        subtotal_0=desglose["subtotal_0"],
+        subtotal_no_objeto=desglose["subtotal_no_objeto"],
+        subtotal_exento=desglose["subtotal_exento"],
+        total_descuento=desglose["total_descuento"],
+        iva_15=desglose["iva_15"],
+        tarifa_iva_pct=desglose["tarifa_iva_pct"],
+        lineas=items_out,
     )
 
 

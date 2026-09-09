@@ -2081,6 +2081,29 @@ WHERE r.nombre = 'Jefe_TI'
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
 
 -- ============================================================================
+-- CONFIGURACIÓN TRIBUTARIA GENERAL (IVA 15% ECUADOR)
+-- ============================================================================
+CREATE TABLE configuracion_impuestos (
+    clave VARCHAR(60) PRIMARY KEY,
+    valor DECIMAL(10,4) NOT NULL,
+    descripcion VARCHAR(250)
+);
+
+INSERT INTO configuracion_impuestos (clave, valor, descripcion) VALUES
+    ('iva_porcentaje_vigente', 15.0000, 'Tarifa general vigente del IVA en Ecuador (15%). No editable en la UI; configurable únicamente en base de datos.'),
+    ('iva_codigo_sri', 4.0000, 'Código de porcentaje SRI para tarifa de IVA vigente (código 4 = 15% según Ficha Técnica v2.26 del SRI).')
+ON CONFLICT (clave) DO NOTHING;
+
+-- RBAC: Lectura exclusiva (can_select) para Ventas y Comercial. Zero write en UI.
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla, can_select, can_insert, can_update, can_delete)
+SELECT r.role_id, m.modulo_id, 'configuracion_impuestos', true, false, false, false
+FROM roles r
+JOIN modulos m ON m.nombre IN ('Ventas', 'Comercial')
+JOIN role_permisos_modulo rpm ON rpm.role_id = r.role_id AND rpm.modulo_id = m.modulo_id
+WHERE r.nombre IN ('Cajero', 'Encargado_Tienda', 'Jefe_Comercial', 'Jefe_Operaciones', 'Jefe_Finanzas', 'Jefe_TI', 'Auditor_Interno')
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
 -- Feature 013: Gerente_General — lectura (select) sobre toda tabla que cualquier
 -- otro rol pueda leer, dentro de un módulo que el Gerente ya ve. Zero write.
 -- (Debe ir al final: todas las features ya sembraron sus role_permisos_tabla.)

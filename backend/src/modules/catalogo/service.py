@@ -145,6 +145,21 @@ class CatalogoService:
             return "ajustado"
         return "bajo"
 
+    async def obtener_tarifa_iva(self) -> Decimal:
+        """Obtiene la alícuota de IVA vigente desde `configuracion_impuestos` (default 15.00%)."""
+        try:
+            from src.models.configuracion_impuestos import (
+                CLAVE_IVA_VIGENTE_PCT,
+                ConfiguracionImpuestos,
+            )
+
+            fila = await self.repo.session.get(ConfiguracionImpuestos, CLAVE_IVA_VIGENTE_PCT)
+            if fila and fila.valor is not None:
+                return Decimal(str(fila.valor)).quantize(Decimal("0.01"))
+        except Exception:
+            pass
+        return Decimal("15.00")
+
     async def matriz_precios(self, params, *, search, categoria, margen, activo) -> dict:
         filas, total = await self.repo.matriz_precios(
             search=search,
@@ -154,10 +169,25 @@ class CatalogoService:
             offset=params.offset,
             limit=params.limit,
         )
+        t_iva = await self.obtener_tarifa_iva()
+        divisor = Decimal("1") + (t_iva / Decimal("100"))
+
         for f in filas:
             f["estado_margen"] = self._estado_margen(
                 f.get("margen_pct"), f.get("margen_objetivo_pct")
             )
+            pb = f.get("precio_base")
+            if pb is not None and Decimal(str(pb)) > 0:
+                pb_dec = Decimal(str(pb))
+                p_neto = (pb_dec / divisor).quantize(Decimal("0.01"))
+                f["precio_neto"] = p_neto
+                f["iva_monto"] = pb_dec - p_neto
+                f["iva_porcentaje"] = t_iva
+            else:
+                f["precio_neto"] = None
+                f["iva_monto"] = None
+                f["iva_porcentaje"] = t_iva
+
         return {"items": filas, "total": total, "page": params.page, "size": params.size}
 
     async def resumen(self) -> dict:
@@ -172,20 +202,39 @@ class CatalogoService:
             search=search, categoria=categoria, margen=margen, activo=activo,
             offset=0, limit=5000,
         )
+        t_iva = await self.obtener_tarifa_iva()
+        divisor = Decimal("1") + (t_iva / Decimal("100"))
+
         for f in filas:
             f["estado_margen"] = self._estado_margen(
                 f.get("margen_pct"), f.get("margen_objetivo_pct")
             )
             if f.get("margen_pct") is not None:
                 f["margen_pct"] = round(f["margen_pct"], 1)
+
+            pb = f.get("precio_base")
+            if pb is not None and Decimal(str(pb)) > 0:
+                pb_dec = Decimal(str(pb))
+                p_neto = (pb_dec / divisor).quantize(Decimal("0.01"))
+                f["precio_neto"] = p_neto
+                f["iva_monto"] = pb_dec - p_neto
+                f["iva_porcentaje"] = t_iva
+            else:
+                f["precio_neto"] = None
+                f["iva_monto"] = None
+                f["iva_porcentaje"] = t_iva
+
+        tarifa_str = f"{t_iva:.0f}" if t_iva % 1 == 0 else f"{t_iva:.2f}"
         columnas = [
             ("product_id", "SKU"),
             ("codigo_barras", "EAN-13"),
             ("nombre", "Producto"),
             ("marca", "Marca"),
             ("product_category", "Categoría"),
-            ("costo", "Costo neto"),
-            ("precio_base", "PVP"),
+            ("costo", "Costo adquisición"),
+            ("precio_neto", "PVP Neto (sin IVA)"),
+            ("iva_monto", f"IVA ({tarifa_str}%)"),
+            ("precio_base", "PVP Final (+ IVA)"),
             ("margen_pct", "Margen %"),
             ("margen_objetivo_pct", "Margen objetivo %"),
             ("estado_margen", "Estado"),
@@ -243,8 +292,11 @@ class CatalogoService:
         producto = await self.repo.get_producto(product_id)
         if producto is None:
             raise NotFoundError(f"Producto {product_id} no existe")
-        consulta = producto.nombre or producto.product_type or producto.product_category
-        url = await unsplash_client.buscar_imagen(consulta or "")
+        url = await unsplash_client.buscar_imagen_producto(
+            nombre=producto.nombre,
+            categoria=producto.product_category,
+            tipo=producto.product_type,
+        )
         if url:
             producto.imagen_url = url
             producto.updated_at = _ahora()

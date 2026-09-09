@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Pronóstico de Demanda &amp; Planificación Predictiva | Marzú Retail Group</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "secondary-fixed-dim": "#d2bbff",
+            "primary": "#00201d",
+            "surface-container-high": "#e6e8ea",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#f2f4f6",
+            "surface-container": "#eceef0",
+            "surface-container-highest": "#e0e3e5",
+            "on-error": "#ffffff",
+            "surface-tint": "#3e6561",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-fixed-variant": "#254d49",
+            "on-background": "#191c1e",
+            "tertiary": "#002014",
+            "outline-variant": "#c0c8c6",
+            "on-secondary-fixed": "#25005a",
+            "inverse-on-surface": "#eff1f3",
+            "on-surface-variant": "#414847",
+            "on-tertiary": "#ffffff",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-primary-fixed": "#00201d",
+            "tertiary-fixed": "#85f8c4",
+            "tertiary-container": "#003825",
+            "on-primary-container": "#779f9a",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#005137",
+            "primary-fixed": "#c0ebe4",
+            "on-tertiary-container": "#30ab7c",
+            "on-secondary-container": "#fffbff",
+            "on-tertiary-fixed": "#002114",
+            "inverse-surface": "#2d3133",
+            "on-primary": "#ffffff",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary": "#ffffff",
+            "surface": "#f8f9fb",
+            "primary-container": "#0a3632",
+            "secondary-fixed": "#eaddff",
+            "on-surface": "#191c1e",
+            "surface-bright": "#f8f9fb",
+            "secondary-container": "#8a4cfc",
+            "inverse-primary": "#a5cfc9",
+            "surface-dim": "#d8dadc",
+            "surface-variant": "#e0e3e5",
+            "error-container": "#ffdad6",
+            "error": "#ba1a1a",
+            "secondary": "#712ae2",
+            "background": "#f8f9fb",
+            "outline": "#717977"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "sidebar-expanded": "16.5rem",
+            "space-2xs": "0.125rem",
+            "space-xs": "0.25rem",
+            "space-base": "1rem",
+            "space-2xl": "3rem",
+            "gutter-mobile": "1rem",
+            "space-lg": "1.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Hairline micro-borders and soft ambient shadows */
+    .hairline-card {
+      border: 1px solid rgba(10, 54, 50, 0.08);
+      box-shadow: 0 1px 3px rgba(10, 54, 50, 0.03), 0 6px 16px -2px rgba(10, 54, 50, 0.04);
+    }
+    .ai-accent-card {
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.14), 0 8px 24px -4px rgba(124, 58, 237, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- UNIFIED FULL-WIDTH TOP NAVIGATION BAR (Shared Components JSON Anchor) -->
+<header class="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl border-b border-outline-variant/40 shadow-sm">
+<div class="flex items-center justify-between px-gutter-desktop w-full max-w-[1720px] mx-auto h-16 gap-space-lg">
+<!-- Brand, Badge & Store Context -->
+<div class="flex items-center gap-space-md shrink-0">
+<div class="flex items-center gap-space-xs">
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary-container">SIRA</span>
+<span class="px-space-xs py-space-2xs bg-secondary/10 text-secondary text-label-sm font-label-sm rounded-lg flex items-center gap-1 border border-secondary/20">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+            IA PREDICTIVA &amp; DEMANDA
+          </span>
+</div>
+<div class="h-5 w-[1px] bg-outline-variant/60 mx-1"></div>
+<!-- Store Branch Selector -->
+<button class="flex items-center gap-space-xs px-space-sm py-1.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-primary-container text-body-sm font-body-sm font-medium border border-outline-variant/30 transition-colors">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="storefront">storefront</span>
+<span>Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-[16px] text-outline">expand_more</span>
+</button>
+</div>
+<!-- Predictive SKU & Model Search -->
+<div class="flex-1 max-w-md hidden lg:block">
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</span>
+<input class="w-full h-[38px] pl-9 pr-20 bg-surface-container-lowest border border-outline-variant/70 rounded-xl text-body-sm font-body-sm placeholder:text-on-surface-variant/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" placeholder="Buscar SKU, categoría o proyección (ej. 'Leche Entera', 'Promo Lunes')..." type="text"/>
+<div class="absolute inset-y-0 right-1 flex items-center pr-2">
+<kbd class="px-1.5 py-0.5 text-[10px] font-label-sm bg-surface-container text-outline rounded border border-outline-variant/50">⌘K</kbd>
+</div>
+</div>
+</div>
+<!-- Horizontal Navigation Tabs (Full Width Operational Layout) -->
+<nav class="hidden xl:flex items-center gap-space-base h-full">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">Dashboard</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">Punto de Venta</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">Inventario</a>
+<!-- ACTIVE STATE INTENT MATCH -->
+<a class="text-primary border-b-2 border-primary font-semibold py-3 flex items-center gap-1.5 text-body-sm font-body-sm" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+          Pronóstico de Demanda
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">Catálogo</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">CRM Clientes</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface py-3 transition-colors text-body-sm font-body-sm" href="#">Finanzas</a>
+</nav>
+<!-- Trailing Profile & Global Actions -->
+<div class="flex items-center gap-space-sm shrink-0">
+<button class="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Notificaciones de Quiebre">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest"></span>
+</button>
+<button class="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Sincronizar Modelos">
+<span class="material-symbols-outlined text-[20px]" data-icon="swap_horiz">swap_horiz</span>
+</button>
+<div class="h-6 w-[1px] bg-outline-variant/60 mx-1"></div>
+<!-- Active User Profile Card -->
+<div class="flex items-center gap-space-sm pl-1">
+<div class="relative w-8 h-8 rounded-full overflow-hidden border border-outline-variant/60 shadow-sm bg-primary-container text-on-primary flex items-center justify-center font-headline-sm text-label-md">
+<span>GG</span>
+</div>
+<div class="hidden 2xl:block leading-tight text-left">
+<p class="text-body-sm font-body-sm font-semibold text-on-surface">G. González</p>
+<p class="text-label-sm font-label-sm text-outline">Encargado de Tienda</p>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline hidden 2xl:block">unfold_more</span>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN OPERATIONAL STAGE -->
+<main class="flex-1 w-full max-w-[1720px] mx-auto px-gutter-desktop py-space-lg flex flex-col gap-space-lg">
+<!-- CONTEXTUAL BANNER / SIRA ML ENGINE CONTROLS -->
+<section class="hairline-card bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg flex flex-col md:flex-row md:items-center justify-between gap-space-md relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-primary-container via-secondary to-tertiary-container"></div>
+<div class="flex items-start md:items-center gap-space-md pl-2">
+<div class="w-10 h-10 rounded-xl bg-primary-container/5 border border-primary-container/10 flex items-center justify-center text-primary-container shrink-0">
+<span class="material-symbols-outlined text-[24px]">model_training</span>
+</div>
+<div>
+<div class="flex flex-wrap items-center gap-2">
+<h1 class="text-headline-sm font-headline-sm font-bold text-primary">Modelo Predictivo SIRA ML v4.6</h1>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-medium">Horizon: Próximos 14 Días</span>
+<span class="px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] border border-[rgba(5,150,105,0.2)] text-label-sm font-label-sm font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
+              Calibración Activa
+            </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+            Calibrado con estacionalidad horaria de Providencia, microclima metropolitano y eventos masivos de fin de semana.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm pl-2 md:pl-0 shrink-0">
+<button class="px-3.5 py-2 rounded-xl bg-surface-container-lowest border border-outline-variant/60 text-primary-container hover:bg-surface-container-low text-body-sm font-body-sm font-semibold flex items-center gap-1.5 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+          Recalcular con Nuevas Variables
+        </button>
+<button class="px-4 py-2 rounded-xl bg-primary-container text-on-primary hover:bg-[#0e4a44] text-body-sm font-body-sm font-semibold flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+          Exportar Plan de Compra Sugerido
+        </button>
+</div>
+</section>
+<!-- KPI CARDS: INTELIGENCIA DE DEMANDA -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- KPI 1: Precisión del Modelo -->
+<div class="hairline-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col justify-between hover:translate-y-[-1px] transition-transform">
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-md font-label-md tracking-wider">PRECISIÓN DEL MODELO (WAPE)</span>
+<span class="material-symbols-outlined text-[18px] text-tertiary-container">verified</span>
+</div>
+<div class="my-space-sm">
+<div class="text-tabular-metric font-tabular-metric text-primary">94.2%</div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">Top 200 SKUs alta rotación</div>
+</div>
+<div class="flex items-center gap-1.5 pt-space-xs border-t border-outline-variant/20">
+<span class="px-1.5 py-0.5 rounded bg-[#d1fae5] text-[#047857] text-label-sm font-label-sm font-bold">+1.8%</span>
+<span class="text-label-sm font-label-sm text-outline">vs promedio red Marzú</span>
+</div>
+</div>
+<!-- KPI 2: Demanda Proyectada Próximos 7 Días -->
+<div class="hairline-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col justify-between hover:translate-y-[-1px] transition-transform">
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-md font-label-md tracking-wider">DEMANDA 7 DÍAS PROYECTADA</span>
+<span class="material-symbols-outlined text-[18px] text-secondary">trending_up</span>
+</div>
+<div class="my-space-sm">
+<div class="text-tabular-metric font-tabular-metric text-primary">$18.420.000 <span class="text-headline-sm text-outline font-normal">CLP</span></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">+6.5% vs semana anterior</div>
+</div>
+<div class="flex items-center gap-1.5 pt-space-xs border-t border-outline-variant/20">
+<span class="px-1.5 py-0.5 rounded bg-[#f3e8ff] text-[#6b21a8] text-label-sm font-label-sm font-bold">Impulso Clima</span>
+<span class="text-label-sm font-label-sm text-outline">Finde largo + calor estival</span>
+</div>
+</div>
+<!-- KPI 3: SKUs con Quiebre Proyectado -->
+<div class="hairline-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col justify-between hover:translate-y-[-1px] transition-transform border-l-4 border-l-error">
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-md font-label-md tracking-wider">RIESGO DE ROTURA DE STOCK</span>
+<span class="material-symbols-outlined text-[18px] text-error">warning</span>
+</div>
+<div class="my-space-sm">
+<div class="text-tabular-metric font-tabular-metric text-error">14 SKUs</div>
+<div class="text-body-sm font-body-sm text-error/90 font-medium">Rotura estimada &lt; 72 horas</div>
+</div>
+<div class="flex items-center gap-1.5 pt-space-xs border-t border-outline-variant/20">
+<span class="px-1.5 py-0.5 rounded bg-[#ffe4e6] text-[#be123c] text-label-sm font-label-sm font-bold">Crítico</span>
+<span class="text-label-sm font-label-sm text-outline">8 lácteos y 6 bebidas isotónicas</span>
+</div>
+</div>
+<!-- KPI 4: Elasticidad Precio -->
+<div class="hairline-card bg-surface-container-lowest rounded-xl p-space-md flex flex-col justify-between hover:translate-y-[-1px] transition-transform">
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-md font-label-md tracking-wider">COEFICIENTE ELASTICIDAD</span>
+<span class="material-symbols-outlined text-[18px] text-primary-container">price_change</span>
+</div>
+<div class="my-space-sm">
+<div class="text-tabular-metric font-tabular-metric text-primary">1.34 <span class="text-headline-sm text-outline font-normal">ε</span></div>
+<div class="text-body-sm font-body-sm text-on-surface-variant">Alta sensibilidad promocional</div>
+</div>
+<div class="flex items-center gap-1.5 pt-space-xs border-t border-outline-variant/20">
+<span class="px-1.5 py-0.5 rounded bg-[#fef3c7] text-[#b45309] text-label-sm font-label-sm font-bold">Oportunidad</span>
+<span class="text-label-sm font-label-sm text-outline">Bundles snack + bebida al 15%</span>
+</div>
+</div>
+</section>
+<!-- SECCIÓN GRÁFICA & PREDICTIVA DUAL-PANE -->
+<section class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg">
+<!-- Panel Curva de Demanda Real vs Pronosticada (8 cols) -->
+<div class="xl:col-span-8 hairline-card bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg flex flex-col justify-between">
+<!-- Header con selector de bandas y métricas de estacionalidad -->
+<div class="flex flex-col sm:flex-row sm:items-center justify-between pb-space-md border-b border-outline-variant/20 gap-space-sm">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary">Curva de Demanda Real vs Proyección ML</h2>
+<span class="px-2 py-0.5 rounded bg-surface-container text-outline text-label-sm font-label-sm">Resolución: Horaria</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+              Identificación de picos comerciales: Almuerzo (12:30 - 14:30) y After-Office (18:30 - 20:30).
+            </p>
+</div>
+<div class="flex items-center gap-4 text-label-sm font-label-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-0.5 bg-[#0a3632]"></span>
+<span class="text-on-surface-variant">Demanda Real</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-0.5 bg-[#712ae2] border-t border-dashed"></span>
+<span class="text-secondary font-medium">Pronóstico SIRA ML</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-2 rounded bg-secondary/15"></span>
+<span class="text-outline">Banda Confianza (±5%)</span>
+</div>
+</div>
+</div>
+<!-- SVG High-Fidelity Data Chart Container -->
+<div class="relative w-full h-[280px] my-space-md pt-2">
+<!-- Confidence Band & Smooth Vector Projection Curves -->
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 800 240">
+<defs>
+<!-- Gradient for confidence interval -->
+<lineargradient id="confidenceGrad" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#712ae2" stop-opacity="0.22"></stop>
+<stop offset="100%" stop-color="#712ae2" stop-opacity="0.03"></stop>
+</lineargradient>
+<!-- Subtle grid pattern -->
+<pattern height="40" id="gridPattern" patternunits="userSpaceOnUse" width="100">
+<line stroke="#eceef0" stroke-width="1" x1="0" x2="100" y1="40" y2="40"></line>
+<line stroke="#eceef0" stroke-dasharray="2 2" stroke-width="0.8" x1="100" x2="100" y1="0" y2="40"></line>
+</pattern>
+</defs>
+<!-- Background Grid -->
+<rect fill="url(#gridPattern)" height="200" width="800"></rect>
+<!-- Peak zone overlays (highlighting lunchtime and evening) -->
+<rect fill="#0a3632" fill-opacity="0.03" height="190" rx="4" width="130" x="290" y="10"></rect>
+<text class="fill-primary text-[10px] font-medium" text-anchor="middle" x="355" y="24">PICO ALMUERZO</text>
+<rect fill="#712ae2" fill-opacity="0.04" height="190" rx="4" width="140" x="520" y="10"></rect>
+<text class="fill-secondary text-[10px] font-semibold" text-anchor="middle" x="590" y="24">PICO AFTER-OFFICE</text>
+<!-- Confidence Interval Area Polygon (±5% deviation band) -->
+<polygon fill="url(#confidenceGrad)" points="
+              0,150 70,165 140,140 210,110 280,85 340,42 410,75 480,115 540,55 610,38 680,85 750,120 800,140
+              800,165 750,148 680,115 610,68 540,82 480,142 410,105 340,70 280,115 210,138 140,165 70,188 0,175
+            "></polygon>
+<!-- Real Historical Sales Curve (Abyssal Emerald solid line) up to 410px (Current Time: 15:00) -->
+<path d="M 0 162 Q 70 178 140 152 T 280 98 T 340 56 T 410 90" fill="none" stroke="#0a3632" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Current Time Marker Line -->
+<line stroke="#0a3632" stroke-dasharray="3 3" stroke-width="1.5" x1="410" x2="410" y1="20" y2="200"></line>
+<circle cx="410" cy="90" fill="#0a3632" r="4.5" stroke="#ffffff" stroke-width="2"></circle>
+<rect fill="#0a3632" height="18" rx="3" width="60" x="380" y="0"></rect>
+<text class="text-[9px] font-semibold tracking-wider" fill="#ffffff" text-anchor="middle" x="410" y="12">AHORA 15:00</text>
+<!-- ML Predictive Projection Curve (Amethyst line with subtle glow) -->
+<path d="M 410 90 Q 480 128 540 68 T 610 52 T 680 100 T 750 134 T 800 152" fill="none" stroke="#712ae2" stroke-dasharray="4 3" stroke-linecap="round" stroke-width="2.5"></path>
+<circle cx="610" cy="52" fill="#712ae2" r="4.5" stroke="#ffffff" stroke-width="2"></circle>
+</svg>
+<!-- Floating Micro Tooltip at Peak Evening -->
+<div class="absolute top-12 right-[18%] bg-inverse-surface text-inverse-on-surface px-2.5 py-1.5 rounded-lg shadow-lg text-[11px] font-body-sm pointer-events-none hidden md:block">
+<span class="font-semibold text-secondary-fixed">Proyección 19:30 hrs</span>: 248 transacciones/hr
+            <div class="text-[10px] text-outline-variant">+38% sobre promedio de martes</div>
+</div>
+</div>
+<!-- Horizontal Timeline Axis -->
+<div class="grid grid-cols-8 text-center text-label-sm font-label-sm text-outline pt-2 border-t border-outline-variant/30">
+<div>08:00</div>
+<div>10:00</div>
+<div>12:00</div>
+<div class="font-bold text-primary">14:00 (Pico 1)</div>
+<div>16:00</div>
+<div class="font-bold text-secondary">18:00 (Pico 2)</div>
+<div>20:00</div>
+<div>22:00</div>
+</div>
+</div>
+<!-- Panel Lateral: Variables Exógenas Detectadas por IA (4 cols) -->
+<div class="xl:col-span-4 hairline-card ai-accent-card bg-surface-container-lowest rounded-xl p-space-md lg:p-space-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-space-sm border-b border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary">Variables Exógenas IA</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-label-sm font-label-sm font-semibold">3 Factores Clave</span>
+</div>
+<!-- List of exogenous signals -->
+<div class="mt-space-md space-y-space-md">
+<!-- Factor 1: Clima -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-[#fef3c7] text-[#b45309] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">sunny</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm font-semibold text-on-surface">Ola de Calor Providencia (28°C)</span>
+<span class="text-label-sm font-label-sm font-bold text-[#047857]">+35% Demanda</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+                    Impacto directo en Bebidas Frías, Cervezas Artesanales y Heladería Express durante tardes.
+                  </p>
+</div>
+</div>
+</div>
+<!-- Factor 2: Fin de Semana Largo -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-[#f3e8ff] text-[#6b21a8] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">celebration</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm font-semibold text-on-surface">Víspera de Feriado Bancario</span>
+<span class="text-label-sm font-label-sm font-bold text-[#6b21a8]">+22% Vinos &amp; Snacks</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+                    Anticipo en canasta de conveniencia el día jueves a partir de las 17:30 hrs.
+                  </p>
+</div>
+</div>
+</div>
+<!-- Factor 3: Obras viales Av. Providencia -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/30">
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-[#ffe4e6] text-[#be123c] flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">traffic</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-body-sm font-semibold text-on-surface">Cierre Parcial Av. Providencia</span>
+<span class="text-label-sm font-label-sm font-bold text-[#be123c]">-8% Flujo Matutino</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+                    Obras viales reducen paso peatonal entre 07:30 y 09:30. Café take-away se traslada a mediodía.
+                  </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-space-md border-t border-outline-variant/20 mt-space-md flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-outline">Última inferencia: hace 4 min</span>
+<button class="text-secondary hover:text-[#5a00c6] text-label-sm font-label-sm font-semibold flex items-center gap-1 transition-colors">
+            Ajustar Ponderación Algorítmica
+            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- SECCIÓN INFERIOR: MATRIZ DE DEMANDA PROYECTADA POR CATEGORÍA Y TOP SKUs -->
+<section class="hairline-card bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col mb-space-xl">
+<!-- Table Header Bar & Category Tabs -->
+<div class="p-space-md border-b border-outline-variant/30 flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-low/40">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary">Matriz Predictiva de Reabastecimiento por SKU</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Top referencias con mayor criticidad de stock y sensibilidad a variables de entorno.</p>
+</div>
+<!-- Filter Chips: Categories -->
+<div class="flex flex-wrap items-center gap-1.5">
+<button class="px-3 py-1.5 rounded-xl bg-primary-container text-on-primary text-label-sm font-label-sm font-medium shadow-sm">
+            Todos (142 SKUs)
+          </button>
+<button class="px-3 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/40 transition-colors">
+            Lácteos &amp; Frescos (28)
+          </button>
+<button class="px-3 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/40 transition-colors">
+            Panadería Gourmet (19)
+          </button>
+<button class="px-3 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/40 transition-colors">
+            Bebidas &amp; Snacks (45)
+          </button>
+<button class="px-3 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/40 transition-colors">
+            Vinos &amp; Cervezas (31)
+          </button>
+<button class="px-3 py-1.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/40 transition-colors">
+            Abarrotes Finos (19)
+          </button>
+</div>
+</div>
+<!-- High-Density Responsive Operational Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="h-9 bg-[#f8fafc] border-b border-outline-variant/30 text-label-sm font-label-sm text-[#64748b] tracking-wider">
+<th class="px-space-md">PRODUCTO / SKU / PRESENTACIÓN</th>
+<th class="px-space-md text-right">HISTÓRICO (7D)</th>
+<th class="px-space-md text-right">PRONÓSTICO 7D (UNID / CLP)</th>
+<th class="px-space-md">FACTOR AJUSTE IA</th>
+<th class="px-space-md text-right">STOCK TIENDA (SALA+BOD)</th>
+<th class="px-space-md text-center">COBERTURA RESTANTE</th>
+<th class="px-space-md text-right">ACCIÓN RECOMENDADA</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-body-sm">
+<!-- ROW 1: Quiebre Crítico Lácteo -->
+<tr class="h-14 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md py-2">
+<div class="flex items-center gap-2.5">
+<div class="w-2 h-2 rounded-full bg-error" title="Riesgo de Quiebre Inminente"></div>
+<div>
+<span class="font-semibold text-primary block leading-tight">Leche Entera Selección 1L</span>
+<span class="text-label-sm font-label-sm text-outline">SKU-779024 • Tetrapack • Lácteos &amp; Frescos</span>
+</div>
+</div>
+</td>
+<td class="px-space-md text-right font-tabular-data text-on-surface-variant">
+                540 un
+              </td>
+<td class="px-space-md text-right">
+<span class="font-bold text-primary font-tabular-data block leading-tight">680 un</span>
+<span class="text-label-sm font-label-sm text-outline">$945.200 CLP</span>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#f3e8ff] text-[#6b21a8] text-label-sm font-label-sm font-semibold border border-secondary/20">
+<span class="material-symbols-outlined text-[13px]">trending_up</span>
+                  +25.9% (Desayuno + Promo)
+                </span>
+</td>
+<td class="px-space-md text-right font-tabular-data">
+<span class="font-semibold text-error">92 un</span>
+<span class="text-[11px] text-outline block">(Sala: 32 / Bod: 60)</span>
+</td>
+<td class="px-space-md text-center">
+<span class="px-2 py-1 rounded bg-[#ffe4e6] text-[#be123c] font-bold text-label-sm font-label-sm border border-[rgba(225,29,72,0.2)]">
+                  0.9 Días (Crítico)
+                </span>
+</td>
+<td class="px-space-md text-right">
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-[#0e4a44] text-label-sm font-label-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
+                  Aprobar Aumento de Cuota +25%
+                </button>
+</td>
+</tr>
+<!-- ROW 2: Bebidas Frías (Impulso Clima) -->
+<tr class="h-14 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md py-2">
+<div class="flex items-center gap-2.5">
+<div class="w-2 h-2 rounded-full bg-secondary" title="Impulsado por Clima"></div>
+<div>
+<span class="font-semibold text-primary block leading-tight">Agua Mineral Gasificada 500ml</span>
+<span class="text-label-sm font-label-sm text-outline">SKU-440182 • Botella PET • Bebidas &amp; Snacks</span>
+</div>
+</div>
+</td>
+<td class="px-space-md text-right font-tabular-data text-on-surface-variant">
+                1.120 un
+              </td>
+<td class="px-space-md text-right">
+<span class="font-bold text-primary font-tabular-data block leading-tight">1.580 un</span>
+<span class="text-label-sm font-label-sm text-outline">$1.738.000 CLP</span>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#fef3c7] text-[#b45309] text-label-sm font-label-sm font-semibold border border-[rgba(217,119,6,0.2)]">
+<span class="material-symbols-outlined text-[13px]">wb_sunny</span>
+                  +41.0% (Clima 28°C)
+                </span>
+</td>
+<td class="px-space-md text-right font-tabular-data">
+<span class="font-semibold text-primary">310 un</span>
+<span class="text-[11px] text-outline block">(Sala: 90 / Bod: 220)</span>
+</td>
+<td class="px-space-md text-center">
+<span class="px-2 py-1 rounded bg-[#fef3c7] text-[#b45309] font-bold text-label-sm font-label-sm border border-[rgba(217,119,6,0.2)]">
+                  1.4 Días (Alerta)
+                </span>
+</td>
+<td class="px-space-md text-right">
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-[#0e4a44] text-label-sm font-label-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
+                  Aprobar Aumento de Cuota +25%
+                </button>
+</td>
+</tr>
+<!-- ROW 3: Panadería Gourmet (Demanda Estable) -->
+<tr class="h-14 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md py-2">
+<div class="flex items-center gap-2.5">
+<div class="w-2 h-2 rounded-full bg-[#047857]" title="Stock Saludable"></div>
+<div>
+<span class="font-semibold text-primary block leading-tight">Baguette Rústico Masa Madre</span>
+<span class="text-label-sm font-label-sm text-outline">SKU-892110 • Horneado Sala • Panadería Gourmet</span>
+</div>
+</div>
+</td>
+<td class="px-space-md text-right font-tabular-data text-on-surface-variant">
+                420 un
+              </td>
+<td class="px-space-md text-right">
+<span class="font-bold text-primary font-tabular-data block leading-tight">435 un</span>
+<span class="text-label-sm font-label-sm text-outline">$826.500 CLP</span>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-medium">
+<span class="material-symbols-outlined text-[13px]">horizontal_rule</span>
+                  +3.5% (Tendencia habitual)
+                </span>
+</td>
+<td class="px-space-md text-right font-tabular-data">
+<span class="font-semibold text-primary">260 un</span>
+<span class="text-[11px] text-outline block">(Congelado pre-bake)</span>
+</td>
+<td class="px-space-md text-center">
+<span class="px-2 py-1 rounded bg-[#d1fae5] text-[#047857] font-bold text-label-sm font-label-sm border border-[rgba(5,150,105,0.2)]">
+                  4.2 Días (Óptimo)
+                </span>
+</td>
+<td class="px-space-md text-right">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-primary-container hover:bg-surface-container-low text-label-sm font-label-sm font-semibold transition-all">
+                  Mantener Pedido Habitual
+                </button>
+</td>
+</tr>
+<!-- ROW 4: Vinos & Cervezas (Festividad Próxima) -->
+<tr class="h-14 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md py-2">
+<div class="flex items-center gap-2.5">
+<div class="w-2 h-2 rounded-full bg-secondary" title="Impulso Evento"></div>
+<div>
+<span class="font-semibold text-primary block leading-tight">Pack Cerveza IPA Artesanal 4x330cc</span>
+<span class="text-label-sm font-label-sm text-outline">SKU-312905 • Pack Vidrio • Vinos &amp; Cervezas</span>
+</div>
+</div>
+</td>
+<td class="px-space-md text-right font-tabular-data text-on-surface-variant">
+                290 packs
+              </td>
+<td class="px-space-md text-right">
+<span class="font-bold text-primary font-tabular-data block leading-tight">380 packs</span>
+<span class="text-label-sm font-label-sm text-outline">$2.470.000 CLP</span>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#f3e8ff] text-[#6b21a8] text-label-sm font-label-sm font-semibold border border-secondary/20">
+<span class="material-symbols-outlined text-[13px]">celebration</span>
+                  +31.0% (Finde Largo)
+                </span>
+</td>
+<td class="px-space-md text-right font-tabular-data">
+<span class="font-semibold text-primary">115 packs</span>
+<span class="text-[11px] text-outline block">(Sala: 45 / Bod: 70)</span>
+</td>
+<td class="px-space-md text-center">
+<span class="px-2 py-1 rounded bg-[#fef3c7] text-[#b45309] font-bold text-label-sm font-label-sm border border-[rgba(217,119,6,0.2)]">
+                  2.1 Días (Riesgo Finde)
+                </span>
+</td>
+<td class="px-space-md text-right">
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-[#0e4a44] text-label-sm font-label-sm font-semibold transition-all active:scale-[0.98] shadow-sm">
+                  Aprobar Aumento de Cuota +25%
+                </button>
+</td>
+</tr>
+<!-- ROW 5: Abarrotes Finos (Sobre-stock o Reducción) -->
+<tr class="h-14 hover:bg-surface-container-low/60 transition-colors">
+<td class="px-space-md py-2">
+<div class="flex items-center gap-2.5">
+<div class="w-2 h-2 rounded-full bg-outline" title="Demanda Contraída"></div>
+<div>
+<span class="font-semibold text-primary block leading-tight">Café de Grano Etiopía 250g</span>
+<span class="text-label-sm font-label-sm text-outline">SKU-109483 • Bolsa Valvular • Abarrotes Finos</span>
+</div>
+</div>
+</td>
+<td class="px-space-md text-right font-tabular-data text-on-surface-variant">
+                115 un
+              </td>
+<td class="px-space-md text-right">
+<span class="font-bold text-primary font-tabular-data block leading-tight">95 un</span>
+<span class="text-label-sm font-label-sm text-outline">$855.000 CLP</span>
+</td>
+<td class="px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant text-label-sm font-label-sm font-medium">
+<span class="material-symbols-outlined text-[13px]">trending_down</span>
+                  -17.4% (Estacionalidad estival)
+                </span>
+</td>
+<td class="px-space-md text-right font-tabular-data">
+<span class="font-semibold text-primary">180 un</span>
+<span class="text-[11px] text-outline block">(Sala: 30 / Bod: 150)</span>
+</td>
+<td class="px-space-md text-center">
+<span class="px-2 py-1 rounded bg-[#d1fae5] text-[#047857] font-bold text-label-sm font-label-sm border border-[rgba(5,150,105,0.2)]">
+                  13.2 Días (Excedente)
+                </span>
+</td>
+<td class="px-space-md text-right">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest border border-error/30 text-error hover:bg-[#ffe4e6]/30 text-label-sm font-label-sm font-semibold transition-all">
+                  Reducir Orden (-40%)
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Footer / Pagination & Bulk Approval -->
+<div class="p-space-md border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-space-sm bg-surface-container-lowest text-label-sm font-label-sm">
+<div class="flex items-center gap-2 text-outline">
+<span>Mostrando 5 de 142 referencias calibradas por SIRA ML v4.6</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<a class="text-primary font-semibold hover:underline" href="#">Ver matriz completa con historial de mermas</a>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant/60 text-on-surface hover:bg-surface-container-low transition-colors">
+            Página Anterior
+          </button>
+<span class="text-on-surface font-semibold">1 / 29</span>
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant/60 text-on-surface hover:bg-surface-container-low transition-colors">
+            Página Siguiente
+          </button>
+<div class="h-4 w-[1px] bg-outline-variant/50 mx-1"></div>
+<button class="px-3.5 py-1.5 rounded-lg bg-secondary text-on-secondary hover:bg-[#5a00c6] font-semibold transition-all flex items-center gap-1 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+            Aprobar Lote Sugerido (14 SKUs)
+          </button>
+</div>
+</div>
+</section>
+</main>
+<!-- MICRO INTERACTION SCRIPTS -->
+<script>
+    // Keyboard shortcut handler for quick SKU query
+    document.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[type="text"]');
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    });
+  </script>
+</body></html>

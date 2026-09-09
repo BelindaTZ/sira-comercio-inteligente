@@ -104,13 +104,16 @@ async function aplicar() {
           {{ producto.nombre || `Producto ${producto.product_id}` }}
         </p>
         <div class="mt-1 flex items-center justify-between text-[11px] text-slate-600">
-          <span>PVP actual: <strong class="text-slate-900">{{ money(producto.precio_base) }}</strong></span>
+          <span>PVP actual (+IVA): <strong class="text-slate-900">{{ money(producto.precio_base) }}</strong></span>
           <span>
             Margen:
             <strong :class="(producto.margen_pct ?? 0) >= 30 ? 'text-emerald-700' : 'text-amber-700'">
               {{ producto.margen_pct != null ? producto.margen_pct.toFixed(1) + '%' : '—' }}
             </strong>
           </span>
+        </div>
+        <div class="mt-0.5 text-[10px] text-slate-500">
+          Neto sin IVA: <strong class="text-slate-700">{{ money(producto.precio_neto ?? (producto.precio_base != null ? producto.precio_base / 1.15 : null)) }}</strong>
         </div>
       </div>
 
@@ -149,7 +152,7 @@ async function aplicar() {
           <Icon name="chart" :size="13" /> Proyección mensual
         </div>
         <p class="text-[11px] leading-relaxed text-emerald-950">
-          A {{ money(sim.pvp_nuevo) }} ({{ delta > 0 ? '+' : '' }}{{ Number(delta).toFixed(1) }}%) el
+          A <strong>{{ money(sim.pvp_nuevo) }}</strong> con IVA (neto: {{ money(Number(sim.pvp_nuevo) / 1.15) }}, {{ delta > 0 ? '+' : '' }}{{ Number(delta).toFixed(1) }}%) el
           margen pasa a
           <strong>{{ sim.margen_nuevo_pct != null ? sim.margen_nuevo_pct.toFixed(1) + '%' : '—' }}</strong>
           y la ganancia bruta mensual proyectada cambia en:

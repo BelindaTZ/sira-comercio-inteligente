@@ -57,6 +57,83 @@ const emailEnviando = ref(false)
 const emailResultado = ref('')
 const beneficios = ref(null) // { puntos_disponibles, valor_canje_usd, descuento_puntos_aplicado, cupones }
 const canjeando = ref(false)
+const modalFactura = ref(false)
+
+const desgloseTributario = computed(() => {
+  const v = venta.value
+  if (!v || !v.lineas || !v.lineas.length) return null
+  const tarifaIva = Number(v.tarifa_iva_pct || 15)
+  const divisor = 1 + tarifaIva / 100
+
+  let subtotalBruto = 0
+  let totalDescuento = 0
+
+  for (const ln of v.lineas) {
+    const pvp = Number(ln.sales_value || 0)
+    const cant = Number(ln.cantidad || 0)
+    const pNeto = ln.precio_neto != null ? Number(ln.precio_neto) : pvp / divisor
+    const descConIva = Number(ln.retail_disc || 0) + Number(ln.coupon_disc || 0)
+    const descNeto = ln.descuento != null ? Number(ln.descuento) : descConIva / divisor
+
+    subtotalBruto += pNeto * cant
+    totalDescuento += descNeto
+  }
+
+  const descPuntosConIva = Number(v.descuento_puntos || 0)
+  const descPuntosNeto = descPuntosConIva / divisor
+  totalDescuento += descPuntosNeto
+
+  const total = Number(v.total || 0)
+  const subtotalSinImp = Math.max(0, subtotalBruto - totalDescuento)
+  const iva = Math.max(0, total - subtotalSinImp)
+
+  return {
+    tarifaIva,
+    subtotalSinImpuestos: subtotalSinImp,
+    subtotal15: subtotalSinImp,
+    totalDescuento,
+    iva,
+    total,
+  }
+})
+
+const desgloseCobrada = computed(() => {
+  const v = ventaCobrada.value
+  if (!v) return null
+  const tarifaIva = Number(v.tarifa_iva_pct || 15)
+  const divisor = 1 + tarifaIva / 100
+
+  let subtotalBruto = 0
+  let totalDescuento = 0
+
+  for (const ln of v.lineas || []) {
+    const pvp = Number(ln.sales_value || 0)
+    const cant = Number(ln.cantidad || 0)
+    const pNeto = ln.precio_neto != null ? Number(ln.precio_neto) : pvp / divisor
+    const descConIva = Number(ln.retail_disc || 0) + Number(ln.coupon_disc || 0)
+    const descNeto = ln.descuento != null ? Number(ln.descuento) : descConIva / divisor
+
+    subtotalBruto += pNeto * cant
+    totalDescuento += descNeto
+  }
+
+  const descPuntosConIva = Number(v.descuento_puntos || 0)
+  const descPuntosNeto = descPuntosConIva / divisor
+  totalDescuento += descPuntosNeto
+
+  const total = Number(v.total || 0)
+  const subtotalSinImp = Math.max(0, subtotalBruto - totalDescuento)
+  const iva = Math.max(0, total - subtotalSinImp)
+
+  return {
+    tarifaIva,
+    subtotalSinImpuestos: subtotalSinImp,
+    subtotal15: subtotalSinImp,
+    totalDescuento,
+    iva,
+    total,
+  }
+})
 
 // alta rápida de cliente desde el POS
 const modalNuevoCliente = ref(false)
@@ -869,6 +946,14 @@ function atajos(e) {
                 {{ imprimiendo ? 'Abriendo…' : 'Ver / imprimir comprobante' }}
               </button>
               <button
+                type="button"
+                class="flex items-center justify-center gap-1.5 rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-[13px] font-bold text-brand-900 hover:bg-brand-100"
+                @click="modalFactura = true"
+              >
+                <Icon name="tag" :size="15" />
+                Detalle y desglose SRI
+              </button>
+              <button
                 v-if="cliente"
                 type="button"
                 :disabled="emailEnviando"
@@ -901,8 +986,25 @@ function atajos(e) {
               <span>Descuento por puntos del Club</span>
               <span class="tabular-nums">−{{ money(venta.descuento_puntos) }}</span>
             </div>
+
+            <!-- Desglose tributario SRI en curso -->
+            <div v-if="desgloseTributario" class="mb-2.5 space-y-1 rounded-xl bg-brand-50/70 p-2.5 text-[11px]">
+              <div class="flex justify-between text-slate-600">
+                <span>Subtotal sin IVA:</span>
+                <span class="font-semibold tabular-nums text-slate-800">{{ money(desgloseTributario.subtotalSinImpuestos) }}</span>
+              </div>
+              <div v-if="desgloseTributario.totalDescuento > 0" class="flex justify-between text-emerald-700">
+                <span>Descuento total (sin IVA):</span>
+                <span class="font-semibold tabular-nums">−{{ money(desgloseTributario.totalDescuento) }}</span>
+              </div>
+              <div class="flex justify-between text-slate-600">
+                <span>IVA ({{ desgloseTributario.tarifaIva }}%):</span>
+                <span class="font-semibold tabular-nums text-slate-800">{{ money(desgloseTributario.iva) }}</span>
+              </div>
+            </div>
+
             <div class="mb-2 flex items-baseline justify-between">
-              <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
+              <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar (con IVA)</span>
               <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">
                 {{ money(venta.total) }}
               </span>
@@ -1203,6 +1305,145 @@ function atajos(e) {
           </button>
         </div>
       </form>
+    </Modal>
+
+    <!-- Modal: Detalle y Desglose Factura Electrónica SRI Ecuador (RIDE) -->
+    <Modal
+      v-if="modalFactura && ventaCobrada"
+      :titulo="`Comprobante Electrónico SRI — Venta #${ventaCobrada.venta_id}`"
+      @cerrar="modalFactura = false"
+    >
+      <div class="space-y-4 text-slate-800">
+        <!-- Encabezado Emisor / SRI -->
+        <div class="grid gap-3 sm:grid-cols-2 rounded-xl border border-brand-200 bg-brand-50/40 p-3.5 text-[12px]">
+          <div>
+            <p class="font-bold text-brand-900 text-sm">Marzú Retail Group S.A.</p>
+            <p class="text-slate-600">Marzú Supermercados · RUC: 1792345678001</p>
+            <p class="text-slate-500">Matriz: Av. Amazonas N24-196 y Luis Cordero, Quito</p>
+            <p class="text-slate-500">Sucursal: {{ tiendaNombre }}</p>
+            <p class="mt-1 font-semibold text-brand-800">Obligado a llevar contabilidad: SÍ</p>
+          </div>
+          <div class="border-t sm:border-t-0 sm:border-l sm:pl-3.5 border-brand-200">
+            <p class="font-bold text-brand-900 uppercase">
+              {{ ventaCobrada.tipo_comprobante === 'factura' ? 'Factura Electrónica' : 'Nota de Venta' }}
+            </p>
+            <p class="font-mono text-slate-700">No. 001-001-{{ String(ventaCobrada.venta_id).padStart(9, '0') }}</p>
+            <p class="text-slate-500 text-[11px] mt-1">Ambiente: PRODUCCIÓN · Emisión: NORMAL</p>
+            <p class="text-[11px] font-semibold text-slate-600 mt-1">Fecha de emisión:</p>
+            <p class="text-[11px] text-slate-700">{{ new Date(ventaCobrada.fecha_hora).toLocaleString('es-EC') }}</p>
+          </div>
+        </div>
+
+        <!-- Datos del Receptor / Cliente -->
+        <div class="rounded-xl border border-slate-200 bg-white p-3 text-[12px]">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <span class="text-slate-500 font-medium">Razón Social / Comprador:</span>
+              <p class="font-bold text-slate-900">{{ ventaCobrada.razon_social_comprador || 'CONSUMIDOR FINAL' }}</p>
+            </div>
+            <div>
+              <span class="text-slate-500 font-medium">Identificación (RUC / Cédula):</span>
+              <p class="font-mono font-bold text-slate-900">{{ ventaCobrada.identificacion_comprador || '9999999999999' }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla de ítems con desglose -->
+        <div class="overflow-x-auto rounded-xl border border-brand-200">
+          <table class="w-full text-left text-[11px]">
+            <thead class="bg-brand-900 text-white font-bold">
+              <tr>
+                <th class="px-3 py-2">SKU</th>
+                <th class="px-3 py-2 text-right">Cant.</th>
+                <th class="px-3 py-2">Descripción</th>
+                <th class="px-3 py-2 text-right">P. Unit. (sin IVA)</th>
+                <th class="px-3 py-2 text-right">Descuento</th>
+                <th class="px-3 py-2 text-right">Precio Total</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 bg-white">
+              <tr v-for="ln in ventaCobrada.lineas" :key="ln.venta_detalle_id">
+                <td class="px-3 py-1.5 font-mono text-slate-500">#{{ ln.product_id }}</td>
+                <td class="px-3 py-1.5 text-right font-semibold">{{ ln.cantidad }}</td>
+                <td class="px-3 py-1.5">Producto #{{ ln.product_id }}</td>
+                <td class="px-3 py-1.5 text-right font-mono">{{ money(ln.precio_neto || (ln.sales_value / 1.15)) }}</td>
+                <td class="px-3 py-1.5 text-right font-mono text-emerald-700">
+                  {{ Number(ln.descuento || 0) > 0 ? `−${money(ln.descuento)}` : '0.00' }}
+                </td>
+                <td class="px-3 py-1.5 text-right font-mono font-bold">
+                  {{ money(((ln.precio_neto || (ln.sales_value / 1.15)) * ln.cantidad) - (ln.descuento || 0)) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Desglose de totales oficial SRI -->
+        <div v-if="desgloseCobrada" class="flex flex-col sm:flex-row justify-between gap-4 pt-2">
+          <div class="sm:w-1/2 text-[11px] space-y-2 text-slate-600">
+            <div class="rounded-xl border border-brand-100 bg-brand-50/40 p-3">
+              <p class="font-bold text-brand-900 mb-1">Forma de Pago SRI</p>
+              <p>01 - SIN UTILIZACION DEL SISTEMA FINANCIERO</p>
+              <p>Total: <strong class="text-slate-900">{{ money(desgloseCobrada.total) }}</strong> · Plazo: 0 días</p>
+            </div>
+            <div class="rounded-xl border border-brand-100 bg-brand-50/40 p-3">
+              <p class="font-bold text-brand-900 mb-0.5">Normativa Tributaria</p>
+              <p>Emisión conforme a Resolución SRI con tarifa general vigente de IVA (15%).</p>
+            </div>
+          </div>
+
+          <div class="sm:w-1/2 rounded-xl border border-brand-200 bg-brand-50/50 p-3 text-[12px] space-y-1.5">
+            <div class="flex justify-between">
+              <span class="text-slate-600">SUBTOTAL {{ desgloseCobrada.tarifaIva }}%:</span>
+              <span class="font-semibold tabular-nums text-slate-900">{{ money(desgloseCobrada.subtotal15) }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600">SUBTOTAL 0%:</span>
+              <span class="font-semibold tabular-nums text-slate-900">$0.00</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600">SUBTOTAL NO OBJETO / EXENTO:</span>
+              <span class="font-semibold tabular-nums text-slate-900">$0.00</span>
+            </div>
+            <div class="flex justify-between border-t border-brand-200 pt-1 font-semibold">
+              <span class="text-slate-700">SUBTOTAL SIN IMPUESTOS:</span>
+              <span class="tabular-nums text-slate-900">{{ money(desgloseCobrada.subtotalSinImpuestos) }}</span>
+            </div>
+            <div v-if="desgloseCobrada.totalDescuento > 0" class="flex justify-between text-emerald-700 font-semibold">
+              <span>TOTAL DESCUENTO:</span>
+              <span class="tabular-nums">−{{ money(desgloseCobrada.totalDescuento) }}</span>
+            </div>
+            <div class="flex justify-between border-t border-brand-200 pt-1 font-semibold text-slate-800">
+              <span>IVA {{ desgloseCobrada.tarifaIva }}%:</span>
+              <span class="tabular-nums">{{ money(desgloseCobrada.iva) }}</span>
+            </div>
+            <div class="flex justify-between border-t-2 border-brand-300 pt-1 text-[13px] font-bold text-brand-950">
+              <span>VALOR TOTAL:</span>
+              <span class="tabular-nums text-base">{{ money(desgloseCobrada.total) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones del modal -->
+        <div class="flex justify-end gap-2 border-t border-slate-100 pt-3">
+          <button
+            type="button"
+            class="rounded-xl border border-brand-200 bg-white px-4 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+            @click="modalFactura = false"
+          >
+            Cerrar
+          </button>
+          <button
+            type="button"
+            :disabled="imprimiendo"
+            class="flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2 text-[13px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+            @click="imprimirComprobante"
+          >
+            <Icon name="download" :size="14" />
+            Descargar PDF (RIDE)
+          </button>
+        </div>
+      </div>
     </Modal>
   </div>
 </template>

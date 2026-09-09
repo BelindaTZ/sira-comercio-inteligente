@@ -6,13 +6,19 @@ lógica.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from collections.abc import Iterable
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from sqlalchemy import text
 from src.integrations import reportlab_invoice, sendgrid_client, stripe_client
 from src.models.anulacion_venta import AnulacionVenta
+from src.models.configuracion_impuestos import (
+    CLAVE_IVA_VIGENTE_PCT,
+    ConfiguracionImpuestos,
+)
 from src.models.devolucion import Devolucion
 from src.models.intento_pago_tarjeta import IntentoPagoTarjeta
 from src.models.linea_venta_removida import LineaVentaRemovida
@@ -75,6 +81,72 @@ def calcular_total(
         total -= Decimal(str(getattr(linea, "coupon_match_disc", 0) or 0))
     total -= Decimal(str(descuento_venta or 0))
     return max(Decimal("0"), total).quantize(Decimal("0.01"))
+
+
+def calcular_desglose_venta(
+    lineas: Iterable[VentaDetalle],
+    descuento_venta: Decimal | float | str = 0,
+    tarifa_iva: Decimal | float = Decimal("15.00"),
+) -> dict:
+    """Calcula el desglose tributario oficial SRI para comprobantes y punto de venta.
+
+    Considera que `sales_value` es el PVP con IVA incluido.
+    Desglosa el subtotal neto sin impuestos, descuentos y el valor de IVA.
+    """
+    t_iva = Decimal(str(tarifa_iva or "15.00"))
+    divisor = Decimal("1") + (t_iva / Decimal("100"))
+
+    subtotal_bruto_neto = Decimal("0")
+    total_descuento_neto = Decimal("0")
+    lineas_res = []
+
+    for ln in lineas:
+        pvp_unit = Decimal(str(ln.sales_value))
+        precio_neto = (pvp_unit / divisor).quantize(Decimal("0.01"))
+
+        desc_con_iva = (
+            Decimal(str(getattr(ln, "retail_disc", 0) or 0))
+            + Decimal(str(getattr(ln, "coupon_disc", 0) or 0))
+            + Decimal(str(getattr(ln, "coupon_match_disc", 0) or 0))
+        )
+        desc_neto = (desc_con_iva / divisor).quantize(Decimal("0.01"))
+
+        subtotal_neto = max(Decimal("0"), (precio_neto * ln.cantidad) - desc_neto)
+        iva_monto = (subtotal_neto * t_iva / Decimal("100")).quantize(Decimal("0.01"))
+
+        subtotal_bruto_neto += (precio_neto * ln.cantidad)
+        total_descuento_neto += desc_neto
+
+        lineas_res.append({
+            "linea": ln,
+            "precio_neto": precio_neto,
+            "descuento": desc_neto,
+            "subtotal": subtotal_neto,
+            "iva_monto": iva_monto,
+            "tarifa_iva": t_iva,
+            "pvp_unitario": pvp_unit,
+        })
+
+    desc_puntos_con_iva = Decimal(str(descuento_venta or 0))
+    desc_puntos_neto = (desc_puntos_con_iva / divisor).quantize(Decimal("0.01"))
+    total_descuento_neto += desc_puntos_neto
+
+    total_con_iva = calcular_total(lineas, descuento_venta)
+    subtotal_sin_impuestos = max(Decimal("0"), subtotal_bruto_neto - total_descuento_neto).quantize(Decimal("0.01"))
+    iva_15 = max(Decimal("0"), total_con_iva - subtotal_sin_impuestos).quantize(Decimal("0.01"))
+
+    return {
+        "tarifa_iva_pct": t_iva,
+        "subtotal_sin_impuestos": subtotal_sin_impuestos,
+        "subtotal_15": subtotal_sin_impuestos,
+        "subtotal_0": Decimal("0.00"),
+        "subtotal_no_objeto": Decimal("0.00"),
+        "subtotal_exento": Decimal("0.00"),
+        "total_descuento": total_descuento_neto,
+        "iva_15": iva_15,
+        "total": total_con_iva,
+        "lineas": lineas_res,
+    }
 
 
 class VentasService:
@@ -544,11 +616,27 @@ class VentasService:
 
         await self.repo.flush()
 
+    async def obtener_tarifa_iva(self) -> Decimal:
+        """Obtiene la alícuota de IVA vigente desde `configuracion_impuestos` (default 15.00%)."""
+        try:
+            fila = await self.repo.session.get(ConfiguracionImpuestos, CLAVE_IVA_VIGENTE_PCT)
+            if fila and fila.valor is not None:
+                return Decimal(str(fila.valor)).quantize(Decimal("0.01"))
+        except Exception:
+            pass
+        return Decimal("15.00")
+
     async def _datos_comprobante(
         self, venta: Venta, lineas: list[VentaDetalle]
     ) -> reportlab_invoice.DatosComprobante:
+        tarifa_iva = await self.obtener_tarifa_iva()
+        desglose = calcular_desglose_venta(
+            lineas, venta.descuento_puntos, tarifa_iva=tarifa_iva
+        )
+
         items = []
-        for ln in lineas:
+        for d in desglose["lineas"]:
+            ln = d["linea"]
             prod = await self.repo.get_producto(ln.product_id)
             desc = f"Producto {ln.product_id}"
             if prod:
@@ -560,20 +648,77 @@ class VentasService:
                 )
             items.append(
                 reportlab_invoice.LineaComprobante(
+                    codigo=str(ln.product_id),
                     descripcion=desc,
                     cantidad=ln.cantidad,
-                    precio_unitario=Decimal(str(ln.sales_value)),
+                    precio_unitario=d["precio_neto"],
+                    descuento=d["descuento"],
+                    subtotal=d["subtotal"],
+                    tarifa_iva=d["tarifa_iva"],
+                    iva_monto=d["iva_monto"],
+                    pvp_unitario=d["pvp_unitario"],
                 )
             )
+
+        # Información de tienda
+        tienda_str = f"Tienda {venta.tienda_id}"
+        with contextlib.suppress(Exception):
+            res_t = await self.repo.session.execute(
+                text("SELECT nombre, direccion, ciudad FROM tiendas WHERE tienda_id = :tid"),
+                {"tid": venta.tienda_id},
+            )
+            row_t = res_t.first()
+            if row_t:
+                partes = [p for p in [row_t[0], row_t[1], row_t[2]] if p]
+                if partes:
+                    tienda_str = " - ".join(partes)
+
+        # Forma de pago SRI
+        forma_pago_str = "01 - SIN UTILIZACION DEL SISTEMA FINANCIERO"
+        if venta.medio_pago_id:
+            with contextlib.suppress(Exception):
+                res_mp = await self.repo.session.execute(
+                    text("SELECT nombre FROM medios_pago WHERE medio_pago_id = :mid"),
+                    {"mid": venta.medio_pago_id},
+                )
+                row_mp = res_mp.first()
+                if row_mp:
+                    nom_mp = str(row_mp[0]).lower()
+                    if "tarjeta" in nom_mp:
+                        forma_pago_str = "19 - TARJETA DE CREDITO / DEBITO"
+                    elif "digital" in nom_mp:
+                        forma_pago_str = "20 - OTROS CON UTILIZACION DEL SISTEMA FINANCIERO"
+
+        # Información de contacto del cliente
+        email_cliente = ""
+        telefono_cliente = ""
+        if venta.household_id:
+            with contextlib.suppress(Exception):
+                cl = await self.repo.cliente_de_household(venta.household_id)
+                if cl:
+                    email_cliente = cl.get("email") or ""
+                    telefono_cliente = cl.get("telefono") or ""
+
         return reportlab_invoice.DatosComprobante(
             venta_id=venta.venta_id,
-            tienda=f"Tienda {venta.tienda_id}",
+            tienda=tienda_str,
             fecha_hora=venta.fecha_hora,
             tipo_comprobante=venta.tipo_comprobante,
             identificacion_comprador=venta.identificacion_comprador,
             razon_social_comprador=venta.razon_social_comprador,
+            email_comprador=email_cliente,
+            telefono_comprador=telefono_cliente,
             lineas=items,
-            total=Decimal(str(venta.total)),
+            subtotal_15=desglose["subtotal_15"],
+            subtotal_0=desglose["subtotal_0"],
+            subtotal_no_objeto=desglose["subtotal_no_objeto"],
+            subtotal_exento=desglose["subtotal_exento"],
+            subtotal_sin_impuestos=desglose["subtotal_sin_impuestos"],
+            total_descuento=desglose["total_descuento"],
+            iva_15=desglose["iva_15"],
+            tarifa_iva_pct=desglose["tarifa_iva_pct"],
+            total=desglose["total"],
+            forma_pago=forma_pago_str,
         )
 
     async def comprobante_pdf(self, venta_id: int) -> bytes:
