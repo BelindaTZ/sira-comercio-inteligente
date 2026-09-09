@@ -375,7 +375,12 @@ class InventarioService:
             inv = await self.repo.get_inventario_for_update(product_id, t_id)
             if inv is None:
                 continue
-            inv.cantidad_minima = punto
+            # El punto dinámico reemplaza al mínimo operativo SÓLO cuando hay señal
+            # de demanda (`punto > 0`). Con un dataset histórico sin ventas recientes
+            # el punto es 0 para todo — no se rebaja el umbral ya configurado, que
+            # dejaría la alerta de quiebre sin efecto (Principio VII / arranque en frío).
+            if punto > 0:
+                inv.cantidad_minima = punto
 
             if (
                 punto > 0

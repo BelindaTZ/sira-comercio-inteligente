@@ -58,6 +58,7 @@ function abrir(tipo, contexto = {}) {
 const kpi = ref({
   skus: 0,
   quiebre: 0,
+  vencido: 0,
   por_vencer: 0,
   sobre_stock: 0,
   normal: 0,
@@ -69,15 +70,20 @@ const kpi = ref({
 const pillsStock = computed(() => [
   { value: 'todos', label: 'Todos', count: kpi.value.skus },
   { value: 'quiebre', label: 'Quiebre de stock', count: kpi.value.quiebre },
+  { value: 'vencido', label: 'Lote vencido', count: kpi.value.vencido },
   { value: 'por_vencer', label: 'Próximos a vencer FIFO', count: kpi.value.por_vencer },
   { value: 'sobre_stock', label: 'Sobre stock', count: kpi.value.sobre_stock },
   { value: 'en_transito', label: 'En tránsito', count: kpi.value.ordenes_transito },
   { value: 'normal', label: 'Stock normal', count: kpi.value.normal },
 ])
 const pillsAlertas = computed(() => [
-  { value: 'todos', label: 'Todas', count: kpi.value.quiebre + kpi.value.por_vencer },
+  {
+    value: 'todos',
+    label: 'Todas',
+    count: kpi.value.quiebre + kpi.value.vencido + kpi.value.por_vencer,
+  },
   { value: 'reposicion', label: 'Reposición', count: kpi.value.quiebre },
-  { value: 'vencimiento', label: 'Vencimiento', count: kpi.value.por_vencer },
+  { value: 'vencimiento', label: 'Vencimiento', count: kpi.value.vencido + kpi.value.por_vencer },
 ])
 
 const columnasStock = [
@@ -292,12 +298,12 @@ onMounted(() => {
         </KpiTile>
 
         <KpiTile
-          label="Vencimiento FIFO < 7 d"
-          :valor="kpi.por_vencer"
+          label="Vencimiento FIFO"
+          :valor="kpi.vencido + kpi.por_vencer"
           unidad="SKUs"
-          :estado="kpi.por_vencer ? 'alerta' : 'al día'"
-          :estado-tipo="kpi.por_vencer ? 'fifo' : 'ok'"
-          microcopy="Lote más próximo dentro de 7 días"
+          :estado="kpi.vencido ? `${kpi.vencido} vencidos` : kpi.por_vencer ? 'alerta' : 'al día'"
+          :estado-tipo="kpi.vencido ? 'quiebre' : kpi.por_vencer ? 'fifo' : 'ok'"
+          :microcopy="`${kpi.vencido} con lote vencido · ${kpi.por_vencer} vencen en ≤ 7 días`"
         >
           <template #icono><Icon name="clock" :size="16" /></template>
           <template #cuerpo>
@@ -584,18 +590,17 @@ onMounted(() => {
         <template #cell:estado="{ value }">
           <SemanticChip
             :tipo="
-              value === 'quiebre'
+              value === 'quiebre' || value === 'vencido'
                 ? 'quiebre'
-                : value === 'por_vencer'
+                : value === 'por_vencer' || value === 'sobre_stock'
                   ? 'fifo'
-                  : value === 'sobre_stock'
-                    ? 'fifo'
-                    : 'ok'
+                  : 'ok'
             "
           >
             {{
               {
                 quiebre: 'Quiebre crítico',
+                vencido: 'Lote vencido',
                 por_vencer: 'Próximo a vencer',
                 sobre_stock: 'Sobre stock',
                 normal: 'Suficiente',

@@ -152,7 +152,7 @@ class StockItemOut(BaseModel):
     lote_urgente: str | None
     fecha_vencimiento: date | None
     dias_para_vencer: int | None
-    estado: Literal["quiebre", "por_vencer", "sobre_stock", "normal"]
+    estado: Literal["quiebre", "vencido", "por_vencer", "sobre_stock", "normal"]
 
 
 class RecepcionOut(BaseModel):

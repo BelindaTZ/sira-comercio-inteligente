@@ -150,6 +150,7 @@ async def test_resumen_stock_kpis(client, escenario_pos, auth_encargado, db_sess
     assert set(d) >= {
         "skus",
         "quiebre",
+        "vencido",
         "por_vencer",
         "sobre_stock",
         "normal",

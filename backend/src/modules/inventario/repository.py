@@ -194,13 +194,15 @@ class InventarioRepository(BaseRepository[Lote]):
             CASE
                 WHEN i.cantidad_disponible <= i.cantidad_minima THEN 'quiebre'
                 WHEN lote.fecha_vencimiento IS NOT NULL
+                     AND lote.fecha_vencimiento < CURRENT_DATE THEN 'vencido'
+                WHEN lote.fecha_vencimiento IS NOT NULL
                      AND lote.fecha_vencimiento <= CURRENT_DATE + 7 THEN 'por_vencer'
                 WHEN i.cantidad_maxima IS NOT NULL
                      AND i.cantidad_disponible > i.cantidad_maxima THEN 'sobre_stock'
                 ELSE 'normal'
             END
         """
-        if estado in {"quiebre", "por_vencer", "sobre_stock", "normal"}:
+        if estado in {"quiebre", "vencido", "por_vencer", "sobre_stock", "normal"}:
             params["estado"] = estado
             base = base + f" AND {estado_expr.strip()} = :estado"
         elif estado == "en_transito":
@@ -226,8 +228,8 @@ class InventarioRepository(BaseRepository[Lote]):
             {base}
             ORDER BY
                 CASE {estado_expr}
-                     WHEN 'quiebre' THEN 0 WHEN 'por_vencer' THEN 1
-                     WHEN 'sobre_stock' THEN 2 ELSE 3 END,
+                     WHEN 'quiebre' THEN 0 WHEN 'vencido' THEN 1 WHEN 'por_vencer' THEN 2
+                     WHEN 'sobre_stock' THEN 3 ELSE 4 END,
                 p.nombre
             OFFSET :offset LIMIT :limit
             """),
@@ -243,6 +245,7 @@ class InventarioRepository(BaseRepository[Lote]):
                 SELECT
                     CASE
                         WHEN i.cantidad_disponible <= i.cantidad_minima THEN 'quiebre'
+                        WHEN lote.fv IS NOT NULL AND lote.fv < CURRENT_DATE THEN 'vencido'
                         WHEN lote.fv IS NOT NULL AND lote.fv <= CURRENT_DATE + 7 THEN 'por_vencer'
                         WHEN i.cantidad_maxima IS NOT NULL
                              AND i.cantidad_disponible > i.cantidad_maxima THEN 'sobre_stock'
@@ -276,6 +279,7 @@ class InventarioRepository(BaseRepository[Lote]):
             SELECT
                 (SELECT count(*) FROM s) AS skus,
                 (SELECT count(*) FROM s WHERE estado = 'quiebre') AS quiebre,
+                (SELECT count(*) FROM s WHERE estado = 'vencido') AS vencido,
                 (SELECT count(*) FROM s WHERE estado = 'por_vencer') AS por_vencer,
                 (SELECT count(*) FROM s WHERE estado = 'sobre_stock') AS sobre_stock,
                 (SELECT count(*) FROM s WHERE estado = 'normal') AS normal,

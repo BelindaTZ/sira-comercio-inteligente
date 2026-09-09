@@ -84,7 +84,17 @@ async def _inventario_demo() -> None:
 
     async with AsyncSessionLocal() as s:
         if await s.scalar(text("SELECT count(*) FROM inventario")):
-            log.info("  inventario ya poblado, se omite")
+            # Re-ejecutable: el job de reposición pone `cantidad_minima = 0` para
+            # productos sin ventas recientes (dataset histórico). Se restaura el
+            # umbral operativo para que la pantalla de quiebres tenga sentido.
+            restauradas = await s.execute(
+                text(
+                    "UPDATE inventario SET cantidad_minima = 20 + (product_id % 40) "
+                    "WHERE cantidad_minima = 0"
+                )
+            )
+            await s.commit()
+            log.info("  inventario ya poblado — mínimos restaurados: %s", restauradas.rowcount)
             return
         await s.execute(
             text("""
