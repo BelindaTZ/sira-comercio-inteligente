@@ -228,6 +228,38 @@ onMounted(() => {
       </KpiTile>
     </section>
 
+    <!-- Cómo se sube de nivel en el Club -->
+    <section v-if="kpi.niveles.length" class="mb-6 satin-card rounded-2xl p-4 shadow-card-subtle">
+      <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 class="font-display text-[14px] font-bold text-brand-950">Niveles del Club Marzú</h2>
+        <p class="max-w-xl text-[12px] text-slate-600">
+          El nivel se recalcula cada semana a partir del <strong>valor de vida del cliente (CLV)</strong>:
+          combina su frecuencia de compra y el margen real que genera en los últimos 180 días,
+          comparado con el resto de la cartera (0 a 1). Al subir de nivel, el cliente recibe un
+          correo de felicitación con sus cupones.
+        </p>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          v-for="(n, i) in [...kpi.niveles].sort((a, b) => a.umbral_clv_min - b.umbral_clv_min)"
+          :key="n.nivel_id"
+          class="rounded-xl border border-brand-200 bg-white p-3"
+        >
+          <div class="flex items-center gap-2">
+            <span class="h-2.5 w-2.5 rounded-full" :class="TIER_DOT[n.nombre] || 'bg-slate-300'" />
+            <span class="text-[13px] font-bold text-slate-800">{{ n.nombre }}</span>
+          </div>
+          <p class="mt-1 text-[11px] text-slate-500">
+            <template v-if="i === 0">CLV desde 0 — todo cliente afiliado entra aquí</template>
+            <template v-else>CLV ≥ {{ Number(n.umbral_clv_min).toFixed(2) }}</template>
+          </p>
+          <p class="mt-1.5 text-[12px] font-semibold text-brand-800">
+            {{ n.clientes.toLocaleString('es-EC') }} clientes
+          </p>
+        </div>
+      </div>
+    </section>
+
     <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">
       {{ error }}
     </p>
