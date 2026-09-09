@@ -92,6 +92,48 @@ class SistemaRepository:
         await self.session.flush()
 
     # ---------------------------------------------------------- RBAC
+    async def listar_usuarios(self, search: str | None) -> list[dict]:
+        """Cuentas de usuario con el nombre del empleado y del rol — para la
+        pantalla de administración (feature 018)."""
+        cond = ["1 = 1"]
+        binds: dict = {}
+        if search and search.strip():
+            cond.append("(u.username ILIKE :q OR e.nombre ILIKE :q)")
+            binds["q"] = f"%{search.strip()}%"
+        rows = await self.session.execute(
+            text(f"""
+                SELECT u.usuario_id, u.username, u.empleado_id, u.role_id, u.activo,
+                       u.ultimo_login, e.nombre AS empleado_nombre, r.nombre AS rol_nombre
+                FROM usuarios u
+                LEFT JOIN empleados e ON e.empleado_id = u.empleado_id
+                LEFT JOIN roles r ON r.role_id = u.role_id
+                WHERE {" AND ".join(cond)}
+                ORDER BY u.activo DESC, u.username
+            """),  # noqa: S608 - condiciones internas, sin entrada del cliente
+            binds,
+        )
+        return [dict(x._mapping) for x in rows]
+
+    async def listar_roles(self) -> list[dict]:
+        rows = await self.session.execute(
+            text("SELECT role_id, nombre FROM roles ORDER BY nombre")
+        )
+        return [{"role_id": x.role_id, "nombre": x.nombre} for x in rows]
+
+    async def empleados_sin_cuenta(self) -> list[dict]:
+        rows = await self.session.execute(
+            text("""
+                SELECT e.empleado_id, e.nombre, e.email
+                FROM empleados e
+                WHERE e.activo
+                  AND NOT EXISTS (SELECT 1 FROM usuarios u WHERE u.empleado_id = e.empleado_id)
+                ORDER BY e.nombre
+            """)
+        )
+        return [
+            {"empleado_id": x.empleado_id, "nombre": x.nombre, "email": x.email} for x in rows
+        ]
+
     async def role_existe(self, role_id: int) -> bool:
         return (
             await self.session.scalar(

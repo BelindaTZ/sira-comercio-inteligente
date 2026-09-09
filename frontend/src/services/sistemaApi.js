@@ -17,6 +17,20 @@ export const sistemaApi = {
     return http.get(`/api/sistema/usuarios/${usuarioId}`).then((r) => r.data)
   },
 
+  listarUsuarios(search) {
+    return http
+      .get('/api/sistema/usuarios', { params: { search: search || undefined } })
+      .then((r) => r.data)
+  },
+
+  listarRoles() {
+    return http.get('/api/sistema/roles').then((r) => r.data)
+  },
+
+  empleadosSinCuenta() {
+    return http.get('/api/sistema/empleados-sin-cuenta').then((r) => r.data)
+  },
+
   asignarRol(usuarioId, roleId) {
     return http
       .patch(`/api/sistema/usuarios/${usuarioId}/rol`, { role_id: roleId })

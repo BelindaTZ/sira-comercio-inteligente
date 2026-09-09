@@ -29,6 +29,7 @@ from src.modules.sistema.schemas import (
     CambiarPasswordIn,
     ConfirmarRecuperacionIn,
     CrearUsuarioIn,
+    EmpleadoSinCuentaItem,
     LoginIn,
     LoginOut,
     PerfilOut,
@@ -38,6 +39,8 @@ from src.modules.sistema.schemas import (
     PermisoTablaOut,
     RecuperarPasswordIn,
     ReporteAuditoriaItem,
+    RolItem,
+    UsuarioListItem,
     UsuarioOut,
 )
 from src.modules.sistema.service import SistemaService
@@ -150,6 +153,31 @@ async def crear_usuario(
             role_id=data.role_id,
         )
     )
+
+
+@sistema_router.get("/usuarios", response_model=list[UsuarioListItem])
+async def listar_usuarios(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_admin_usuarios_ver)],
+    search: str | None = None,
+) -> list[UsuarioListItem]:
+    """Cuentas de usuario con nombre del empleado y del rol."""
+    return [UsuarioListItem(**u) for u in await svc.listar_usuarios(search)]
+
+
+@sistema_router.get("/roles", response_model=list[RolItem])
+async def listar_roles(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_admin_usuarios_ver)]
+) -> list[RolItem]:
+    return [RolItem(**r) for r in await svc.listar_roles()]
+
+
+@sistema_router.get("/empleados-sin-cuenta", response_model=list[EmpleadoSinCuentaItem])
+async def empleados_sin_cuenta(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_admin_usuarios_crear)]
+) -> list[EmpleadoSinCuentaItem]:
+    """Empleados activos que todavía no tienen cuenta de usuario."""
+    return [EmpleadoSinCuentaItem(**e) for e in await svc.empleados_sin_cuenta()]
 
 
 @sistema_router.get("/usuarios/{usuario_id}", response_model=UsuarioOut)

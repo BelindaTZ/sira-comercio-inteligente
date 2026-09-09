@@ -144,6 +144,15 @@ class SistemaService:
             raise NotFoundError(f"Usuario {usuario_id} no existe")
         return usuario
 
+    async def listar_usuarios(self, search: str | None) -> list[dict]:
+        return await self.repo.listar_usuarios(search)
+
+    async def listar_roles(self) -> list[dict]:
+        return await self.repo.listar_roles()
+
+    async def empleados_sin_cuenta(self) -> list[dict]:
+        return await self.repo.empleados_sin_cuenta()
+
     # ============================================================ US4: RBAC admin
     async def asignar_rol(self, usuario_id: int, role_id: int) -> Usuario:
         """FR-012 — efecto inmediato: el JWT sólo lleva `usuario_id`, el rol se

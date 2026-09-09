@@ -95,6 +95,28 @@ class UsuarioOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UsuarioListItem(BaseModel):
+    usuario_id: int
+    username: str
+    empleado_id: int
+    empleado_nombre: str | None = None
+    role_id: int
+    rol_nombre: str | None = None
+    activo: bool
+    ultimo_login: datetime | None = None
+
+
+class RolItem(BaseModel):
+    role_id: int
+    nombre: str
+
+
+class EmpleadoSinCuentaItem(BaseModel):
+    empleado_id: int
+    nombre: str | None = None
+    email: str | None = None
+
+
 # ---------------------------------------------------------------- RBAC admin
 class PermisoModuloOut(BaseModel):
     modulo_id: int
