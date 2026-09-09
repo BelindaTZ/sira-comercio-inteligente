@@ -19,6 +19,7 @@ from src.models.merma import Merma
 from src.models.orden_compra import OrdenCompra
 from src.models.producto import Producto
 from src.models.stock_maximo_categoria import StockMaximoCategoria
+from src.models.ubicacion_producto import UbicacionProducto
 from src.models.venta import Venta
 from src.models.venta_detalle import VentaDetalle
 from src.models.verificacion_anaquel import VerificacionAnaquel
@@ -382,10 +383,17 @@ class InventarioRepository(BaseRepository[Lote]):
                 Lote.codigo_lote_proveedor.label("lote_numero"),
                 Lote.fecha_vencimiento.label("lote_vencimiento"),
                 Empleado.nombre.label("empleado_nombre"),
+                UbicacionProducto.pasillo.label("ubic_pasillo"),
+                UbicacionProducto.gondola.label("ubic_gondola"),
             )
             .join(Producto, Producto.product_id == Merma.product_id)
             .outerjoin(Lote, Lote.lote_id == Merma.lote_id)
             .outerjoin(Empleado, Empleado.empleado_id == Merma.empleado_id)
+            .outerjoin(
+                UbicacionProducto,
+                (UbicacionProducto.product_id == Merma.product_id)
+                & (UbicacionProducto.tienda_id == Merma.tienda_id),
+            )
         )
         if tienda_id is not None:
             stmt = stmt.where(Merma.tienda_id == tienda_id)
@@ -407,8 +415,12 @@ class InventarioRepository(BaseRepository[Lote]):
         resultado = []
         for r in rows:
             m = r.Merma
-            cat = getattr(r, "product_categoria", "") or ""
-            ubicacion = "Mural Frío 02" if cat in ("Lácteos", "Carnes y Pescados", "Bebidas") else "Pasillo 04 - Góndola"
+            if r.ubic_pasillo:
+                ubicacion = r.ubic_pasillo
+                if r.ubic_gondola:
+                    ubicacion = f"{r.ubic_pasillo} · {r.ubic_gondola}"
+            else:
+                ubicacion = None
             resultado.append({
                 "merma_id": m.merma_id,
                 "product_id": m.product_id,
@@ -480,13 +492,41 @@ class InventarioRepository(BaseRepository[Lote]):
                 "valor": Decimal(str(c.valor)),
             }
 
-        recuperacion_monto = total_valor * Decimal("0.415")
+        # Recuperación real: valor de la merma del mes cuyo destino permite
+        # aprovechar la unidad (donación a red de alimentos, devolución con nota
+        # de crédito del proveedor). Destrucción y cuarentena no recuperan.
+        stmt_recup = select(func.coalesce(func.sum(Merma.valor), 0)).where(
+            Merma.tienda_id == tienda_id,
+            Merma.fecha >= func.date_trunc("month", func.current_date()),
+            Merma.destino.in_(("donacion", "devolucion")),
+        )
+        recuperacion_monto = Decimal(str(await self.session.scalar(stmt_recup) or 0))
+        tasa_recuperacion_pct = (
+            (recuperacion_monto / total_valor * Decimal("100")).quantize(Decimal("0.1"))
+            if total_valor > 0
+            else Decimal("0")
+        )
+
+        # Tasa de merma sobre venta: valor de merma del mes / venta confirmada del
+        # mes en la misma tienda (ambos reales).
+        stmt_venta = select(func.coalesce(func.sum(Venta.total), 0)).where(
+            Venta.tienda_id == tienda_id,
+            Venta.estado == "confirmada",
+            Venta.fecha_hora >= func.date_trunc("month", func.current_date()),
+        )
+        venta_mes = Decimal(str(await self.session.scalar(stmt_venta) or 0))
+        tasa_merma_pct = (
+            (total_valor / venta_mes * Decimal("100")).quantize(Decimal("0.01"))
+            if venta_mes > 0
+            else Decimal("0")
+        )
 
         return {
             "merma_acumulada_mes": total_valor,
-            "tasa_merma_pct": Decimal("0.84"),
+            "tasa_merma_pct": tasa_merma_pct,
+            "venta_mes": venta_mes,
             "skus_criticos_count": skus_criticos,
-            "tasa_recuperacion_pct": Decimal("41.5"),
+            "tasa_recuperacion_pct": tasa_recuperacion_pct,
             "recuperacion_monto": recuperacion_monto,
             "pendientes_count": pendientes,
             "causas_desglose": causas_dict,

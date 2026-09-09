@@ -208,8 +208,9 @@ class MermaDetalleOut(MermaOut):
 class MermasKpisOut(BaseModel):
     merma_acumulada_mes: Decimal = Decimal("0")
     tasa_merma_pct: Decimal = Decimal("0")
+    venta_mes: Decimal = Decimal("0")
     skus_criticos_count: int = 0
-    tasa_recuperacion_pct: Decimal = Decimal("41.5")
+    tasa_recuperacion_pct: Decimal = Decimal("0")
     recuperacion_monto: Decimal = Decimal("0")
     pendientes_count: int = 0
     causas_desglose: dict[str, dict[str, Any]] = Field(default_factory=dict)

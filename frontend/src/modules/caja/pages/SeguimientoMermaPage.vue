@@ -1,53 +1,64 @@
 <script setup>
 /**
- * Seguimiento y Auditoría de Merma (FR-017 a FR-019, US2, US3)
- * Basado en la especificación visual docs/.../sira_seguimiento_y_auditor_a_de_merma:
- * - KPIs de impacto operativo y desmedro en USD.
- * - Desglose etiológico de causa raíz (FEFO, rotura, cadena de frío, hurto).
- * - Protocolo de triple impacto y disposición sustentable (Banco de alimentos, Compostaje).
- * - Libro oficial de incidentes de merma con trazabilidad por lote, ubicación y validación contable.
- * - Gobernanza de umbrales por categoría (FR-017 / FR-018).
+ * Seguimiento y auditoría de merma (feature 006, FR-017 a FR-019 + registro/
+ * validación de 001). Libro oficial de bajas de inventario con causa raíz real,
+ * destino físico de las unidades y gobernanza de umbrales por categoría.
+ * Todos los números salen del backend; no hay datos de relleno.
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useSesion } from '@/stores/sesion'
 import { cajaApi } from '@/services/cajaApi'
 import { inventarioApi } from '@/services/inventarioApi'
+import { money } from '@/shared/currency'
+import { opcionesExportacion } from '@/shared/exportar'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Btn from '@/shared/ui/Btn.vue'
 import Modal from '@/shared/ui/Modal.vue'
 import Icon from '@/shared/ui/Icon.vue'
-import { opcionesExportacion } from '@/shared/exportar'
 import FormularioMerma from '@/modules/inventario/components/FormularioMerma.vue'
 
 const sesion = useSesion()
-const tiendaId = computed(() => sesion.tiendaId ?? (Number(localStorage.getItem('sira_tienda_id')) || 1))
-const empleadoId = computed(() => sesion.empleadoId ?? (Number(localStorage.getItem('sira_empleado_id')) || 1))
-const puedeEditarUmbrales = computed(() => {
-  return (
-    sesion.rol === 'Jefe_Operaciones' ||
-    sesion.rol === 'Administrador' ||
-    (sesion._tablasEditables && sesion._tablasEditables.has('Finanzas/umbral_merma_categoria'))
-  )
-})
-// visar/rechazar una merma es del Encargado o Reponedor; la Gerencia sólo consulta
-const puedeValidar = computed(() => sesion.puedeEditarTabla('Operaciones', 'mermas'))
+const tiendaId = computed(
+  () => sesion.tiendaId ?? (Number(localStorage.getItem('sira_tienda_id')) || 1),
+)
+const empleadoId = computed(
+  () => sesion.empleadoId ?? (Number(localStorage.getItem('sira_empleado_id')) || 1),
+)
+const puedeEditarUmbrales = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Finanzas', 'umbral_merma_categoria'),
+)
+// Visar / rechazar una merma es del Encargado o Reponedor; la Gerencia sólo consulta.
+const puedeValidar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Operaciones', 'mermas'),
+)
 
-// Formateador estándar de moneda en USD
-const money = (v) =>
-  v == null
-    ? '—'
-    : `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD`
+const CAUSAS = {
+  caducidad: { texto: 'Vencimiento / FEFO', chip: 'quiebre', barra: 'bg-amber-500', punto: 'text-amber-700' },
+  rotura: { texto: 'Rotura / manipulación', chip: 'quiebre', barra: 'bg-rose-500', punto: 'text-rose-700' },
+  robo: { texto: 'Hurto / pérdida', chip: 'quiebre', barra: 'bg-amethyst-500', punto: 'text-amethyst-700' },
+  error_humano: { texto: 'Desmedro operativo', chip: 'fifo', barra: 'bg-slate-400', punto: 'text-slate-600' },
+}
+const causaMeta = (c) => CAUSAS[c] || { texto: c, chip: 'neutral', barra: 'bg-slate-300', punto: 'text-slate-500' }
+
+const DESTINOS = {
+  donacion: { texto: 'Donación a red de alimentos', aprovecha: true },
+  devolucion: { texto: 'Devolución a proveedor (nota de crédito)', aprovecha: true },
+  destruccion: { texto: 'Destrucción in situ', aprovecha: false },
+  cuarentena: { texto: 'Jaula de cuarentena', aprovecha: false },
+}
+const destinoTexto = (d) => DESTINOS[d]?.texto || d || '—'
+const incidentes = (n) => `${n} ${n === 1 ? 'incidente' : 'incidentes'}`
 
 const cargando = ref(false)
 const error = ref('')
 const exito = ref('')
 
-// KPIs y Métricas
 const kpis = ref({
   merma_acumulada_mes: 0,
   tasa_merma_pct: 0,
+  venta_mes: 0,
   skus_criticos_count: 0,
   tasa_recuperacion_pct: 0,
   recuperacion_monto: 0,
@@ -55,100 +66,55 @@ const kpis = ref({
   causas_desglose: {},
 })
 
-// Lista de Incidentes de Merma
 const mermas = ref([])
 const filtroCausa = ref('todas')
 const filtroEstado = ref('todos')
 const busqueda = ref('')
 
-// Causas raíz adaptativas al desglose real o catálogo base
+// Desglose de causa raíz: 100 % derivado de causas_desglose del backend.
 const causasCatalogo = computed(() => {
-  const desglose = kpis.value.causas_desglose || {}
-  const caducidadValor = Number(desglose.caducidad?.valor ?? 0)
-  const caducidadCount = Number(desglose.caducidad?.cantidad ?? 0)
+  const d = kpis.value.causas_desglose || {}
+  const total = Object.values(d).reduce((s, x) => s + Number(x.valor || 0), 0)
+  return Object.keys(CAUSAS)
+    .map((id) => {
+      const valor = Number(d[id]?.valor ?? 0)
+      return {
+        id,
+        nombre: CAUSAS[id].texto,
+        barra: CAUSAS[id].barra,
+        punto: CAUSAS[id].punto,
+        monto: valor,
+        incidentes: Number(d[id]?.cantidad ?? 0),
+        pct: total > 0 ? Math.round((valor / total) * 100) : 0,
+      }
+    })
+    .filter((c) => c.monto > 0 || c.incidentes > 0)
+})
+const hayCausas = computed(() => causasCatalogo.value.length > 0)
 
-  const roturaValor = Number(desglose.rotura?.valor ?? 0)
-  const roboValor = Number(desglose.robo?.valor ?? 0)
-  const errorValor = Number(desglose.error_humano?.valor ?? 0)
-
-  const sumValor = caducidadValor + roturaValor + roboValor + errorValor
-  const tieneDatos = sumValor > 0
-
-  return [
-    {
-      id: 'caducidad',
-      nombre: 'Vencimiento / Caducidad FEFO',
-      pct: tieneDatos ? Math.round((caducidadValor / sumValor) * 100) : 48,
-      monto: tieneDatos ? caducidadValor : 883.44,
-      incidentes: tieneDatos ? caducidadCount : 12,
-      color: '#d97706',
-      bgColor: 'bg-amber-500',
-      borderClass: 'border-amber-200',
-      bgCardClass: 'bg-amber-50/40',
-      textClass: 'text-amber-700',
-      desc: 'Mayor impacto en lácteos pasteurizados, masas artesanales y fiambrería fraccionada.',
-    },
-  {
-    id: 'rotura',
-    nombre: 'Daño en Manipulación / Rotura',
-    pct: 26,
-    monto: 478.53,
-    incidentes: 7,
-    color: '#dc2626',
-    bgColor: 'bg-red-500',
-    borderClass: 'border-red-200',
-    bgCardClass: 'bg-red-50/40',
-    textClass: 'text-red-700',
-    desc: 'Caídas de botellas en reposición nocturna de vinos y conservas de vidrio en pasillos.',
-  },
-  {
-    id: 'frio',
-    nombre: 'Falla Cadena de Frío',
-    pct: 14,
-    monto: 257.67,
-    incidentes: 1,
-    color: '#2563eb',
-    bgColor: 'bg-blue-500',
-    borderClass: 'border-blue-200',
-    bgCardClass: 'bg-blue-50/40',
-    textClass: 'text-blue-700',
-    desc: 'Microcorte térmico en mural de lácteos y refrigerados (temperatura superó 8°C).',
-  },
-  {
-    id: 'robo',
-    nombre: 'Hurto Externo / Pérdida',
-    pct: 12,
-    monto: 220.86,
-    incidentes: 3,
-    color: '#712ae2',
-    bgColor: 'bg-purple-600',
-    borderClass: 'border-purple-200',
-    bgCardClass: 'bg-purple-50/40',
-    textClass: 'text-secondary',
-    desc: 'Chocolatería importada premium y licores 750ml con vulneración de sensores.',
-  },
-]
+// Desglose por destino físico de las unidades (real, de la lista de incidentes).
+const destinoCatalogo = computed(() => {
+  const acc = {}
+  for (const m of mermas.value) {
+    const key = m.destino || 'sin_destino'
+    acc[key] = acc[key] || { destino: key, monto: 0, incidentes: 0 }
+    acc[key].monto += Number(m.valor || 0)
+    acc[key].incidentes += 1
+  }
+  return Object.values(acc).sort((a, b) => b.monto - a.monto)
 })
 
-// Modal: Declarar Merma
 const modalDeclarar = ref(false)
-
-// Modal: Detalle / Acta de Merma
 const modalActa = ref(false)
 const mermaSeleccionada = ref(null)
-
-// Modal: Umbrales por Categoría (FR-017 / FR-018)
 const modalUmbrales = ref(false)
 const umbrales = ref([])
 const seguimientoSemanal = ref([])
 const nuevoUmbral = reactive({ product_category: '', porcentaje_umbral: '' })
 const guardandoUmbral = ref(false)
 
-watch(tiendaId, () => {
-  cargarDatos()
-})
+watch(tiendaId, cargarDatos)
 
-// Carga de datos
 async function cargarDatos() {
   cargando.value = true
   error.value = ''
@@ -157,11 +123,11 @@ async function cargarDatos() {
       inventarioApi.kpisMermas(tiendaId.value).catch(() => null),
       inventarioApi.listarMermas({ tiendaId: tiendaId.value, limit: 100 }).catch(() => []),
     ])
-
     if (kpisData) {
       kpis.value = {
         merma_acumulada_mes: Number(kpisData.merma_acumulada_mes ?? 0),
         tasa_merma_pct: Number(kpisData.tasa_merma_pct ?? 0),
+        venta_mes: Number(kpisData.venta_mes ?? 0),
         skus_criticos_count: Number(kpisData.skus_criticos_count ?? 0),
         tasa_recuperacion_pct: Number(kpisData.tasa_recuperacion_pct ?? 0),
         recuperacion_monto: Number(kpisData.recuperacion_monto ?? 0),
@@ -169,196 +135,90 @@ async function cargarDatos() {
         causas_desglose: kpisData.causas_desglose || {},
       }
     }
-
-    if (mermasData && mermasData.length > 0) {
-      mermas.value = mermasData
-    } else {
-      // Fallback con datos representativos de demostración inspirados en el spec
-      mermas.value = [
-        {
-          merma_id: 841,
-          product_id: 101,
-          product_nombre: 'Leche Entera Bio 1L (Pack 6)',
-          product_sku: '780123409811',
-          product_categoria: 'Lácteos Refrigerados',
-          lote_numero: 'LT-992-B',
-          lote_vencimiento: '2026-05-12',
-          ubicacion_sala: 'Mural Frío 02',
-          cantidad: 14,
-          costo_unitario: 1.12,
-          valor: 15.68,
-          causa: 'caducidad',
-          empleado_nombre: 'C. Morales',
-          fecha: '2026-05-13',
-          estado_validacion: 'validada',
-          destino: 'Donación Banco Alimentos',
-          observaciones: 'Vencimiento FEFO detectado en apertura. Apto para donación inmediata.',
-        },
-        {
-          merma_id: 840,
-          product_id: 102,
-          product_nombre: 'Vino Cabernet Sauvignon Reserva 750ml',
-          product_sku: '780443321901',
-          product_categoria: 'Vinos & Licores',
-          lote_numero: 'LT-2022-CS',
-          lote_vencimiento: null,
-          ubicacion_sala: 'Pasillo 04 - Góndola',
-          cantidad: 3,
-          costo_unitario: 8.99,
-          valor: 26.97,
-          causa: 'rotura',
-          empleado_nombre: 'J. Silva',
-          fecha: '2026-05-12',
-          estado_validacion: 'validada',
-          destino: 'Destrucción Física',
-          observaciones: 'Caída de botella durante maniobra de reposición en turno tarde.',
-        },
-        {
-          merma_id: 839,
-          product_id: 103,
-          product_nombre: 'Yogur Griego Sin Lactosa 150g (Bandeja 24)',
-          product_sku: '780998811233',
-          product_categoria: 'Lácteos Probióticos',
-          lote_numero: 'LT-YG-041',
-          lote_vencimiento: '2026-05-18',
-          ubicacion_sala: 'Cámara Frío 01',
-          cantidad: 72,
-          costo_unitario: 0.62,
-          valor: 44.64,
-          causa: 'rotura',
-          empleado_nombre: 'G. González',
-          fecha: '2026-05-12',
-          estado_validacion: 'pendiente',
-          destino: 'Jaula de Cuarentena',
-          observaciones: 'Temperatura superó 9.2°C en sector norte por 180 min.',
-        },
-        {
-          merma_id: 838,
-          product_id: 104,
-          product_nombre: 'Baguette Rústica Masa Madre 350g',
-          product_sku: '780654321098',
-          product_categoria: 'Panadería Diaria',
-          lote_numero: 'HORNEADO-22',
-          lote_vencimiento: '2026-05-11',
-          ubicacion_sala: 'Módulo Panadería',
-          cantidad: 28,
-          costo_unitario: 0.85,
-          valor: 23.8,
-          causa: 'caducidad',
-          empleado_nombre: 'R. Bravo',
-          fecha: '2026-05-11',
-          estado_validacion: 'validada',
-          destino: 'Compostaje Municipal',
-          observaciones: 'Pan del día no consumido. Trasladado a contenedor orgánico.',
-        },
-        {
-          merma_id: 837,
-          product_id: 105,
-          product_nombre: 'Conservas Palmitos Enteros 400g',
-          product_sku: '780332211445',
-          product_categoria: 'Despensa Abarrotes',
-          lote_numero: 'LT-PALM-99',
-          lote_vencimiento: '2026-11-20',
-          ubicacion_sala: 'Muelle Recepción',
-          cantidad: 6,
-          costo_unitario: 1.89,
-          valor: 11.34,
-          causa: 'error_humano',
-          empleado_nombre: 'F. Araya',
-          fecha: '2026-05-10',
-          estado_validacion: 'validada',
-          destino: 'Devolución Proveedor',
-          observaciones: 'Caja aplastada en descarga por autoelevador.',
-        },
-      ]
-    }
+    mermas.value = Array.isArray(mermasData) ? mermasData : []
   } catch (e) {
-    error.value = e.message || 'Error al cargar incidentes de merma'
+    error.value = e.message || 'No se pudieron cargar los incidentes de merma.'
   } finally {
     cargando.value = false
   }
 }
 
-// Carga de gobernanza de umbrales
 async function cargarUmbrales() {
   try {
     umbrales.value = await cajaApi.umbralesMerma()
     const d = new Date()
     const day = (d.getUTCDay() + 6) % 7
     d.setUTCDate(d.getUTCDate() - day + 3)
-    const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
-    const semana = 1 + Math.round((d - firstThursday) / 604800000)
+    const primerJueves = new Date(Date.UTC(d.getUTCFullYear(), 0, 4))
+    const semana = 1 + Math.round((d - primerJueves) / 604800000)
     seguimientoSemanal.value = await cajaApi.seguimientoMermaSemanal(tiendaId.value, {
       semana,
       anio: d.getUTCFullYear(),
     })
   } catch (e) {
-    console.warn('Error al cargar umbrales:', e)
+    error.value = e.message || 'No se pudo cargar el seguimiento de umbrales.'
   }
 }
 
-// Guardar nuevo umbral
 async function guardarUmbral() {
   if (!nuevoUmbral.product_category || !nuevoUmbral.porcentaje_umbral) return
   guardandoUmbral.value = true
+  error.value = ''
   try {
-    await cajaApi.definirUmbralMerma(nuevoUmbral.product_category, nuevoUmbral.porcentaje_umbral)
+    await cajaApi.definirUmbralMerma(
+      nuevoUmbral.product_category.trim(),
+      Number(nuevoUmbral.porcentaje_umbral),
+    )
     nuevoUmbral.product_category = ''
     nuevoUmbral.porcentaje_umbral = ''
     await cargarUmbrales()
   } catch (e) {
-    alert(`Error: ${e.message}`)
+    error.value = e.message
   } finally {
     guardandoUmbral.value = false
   }
 }
 
-// Validar o rechazar merma
 async function procesarValidacion(merma, decision) {
+  error.value = ''
   try {
-    await inventarioApi.validarMerma(merma.merma_id, {
-      empleadoId: empleadoId.value,
-      decision,
-    })
-    merma.estado_validacion = decision
-    exito.value = `Merma #${merma.merma_id} marcada como ${decision.toUpperCase()}.`
+    await inventarioApi.validarMerma(merma.merma_id, { empleadoId: empleadoId.value, decision })
+    exito.value = `Merma #${merma.merma_id} marcada como ${decision}.`
     setTimeout(() => (exito.value = ''), 4000)
     await cargarDatos()
   } catch (e) {
-    alert(`No se pudo procesar la merma: ${e.message}`)
+    error.value = `No se pudo procesar la merma: ${e.message}`
   }
 }
 
-// Filtrado reactivo de mermas
-const mermasFiltradas = computed(() => {
-  return mermas.value.filter((m) => {
-    // Filtro por causal
-    if (filtroCausa.value !== 'todas') {
-      if (filtroCausa.value === 'frio' && m.observaciones?.toLowerCase().includes('frío')) {
-        // match
-      } else if (m.causa !== filtroCausa.value) {
-        return false
-      }
-    }
-    // Filtro por estado
+const mermasFiltradas = computed(() =>
+  mermas.value.filter((m) => {
+    if (filtroCausa.value !== 'todas' && m.causa !== filtroCausa.value) return false
     if (filtroEstado.value === 'pendientes' && m.estado_validacion !== 'pendiente') return false
     if (filtroEstado.value === 'validadas' && m.estado_validacion !== 'validada') return false
     if (filtroEstado.value === 'rechazadas' && m.estado_validacion !== 'rechazada') return false
-
-    // Búsqueda por texto
     if (busqueda.value.trim()) {
       const q = busqueda.value.toLowerCase().trim()
-      const matchFolio = `#MRM-2026-${m.merma_id}`.toLowerCase().includes(q)
-      const matchNombre = m.product_nombre?.toLowerCase().includes(q)
-      const matchSku = m.product_sku?.toLowerCase().includes(q)
-      const matchLote = m.lote_numero?.toLowerCase().includes(q)
-      const matchObs = m.observaciones?.toLowerCase().includes(q)
-      if (!matchFolio && !matchNombre && !matchSku && !matchLote && !matchObs) return false
+      const campos = [
+        `#${m.merma_id}`,
+        m.product_nombre,
+        m.product_sku,
+        m.lote_numero,
+        m.observaciones,
+      ]
+      if (!campos.some((c) => c && String(c).toLowerCase().includes(q))) return false
     }
-
     return true
-  })
-})
+  }),
+)
+
+const cuentaPorEstado = (estado) =>
+  mermas.value.filter((m) => m.estado_validacion === estado).length
+
+function folio(m) {
+  const anio = m.fecha ? String(m.fecha).slice(0, 4) : new Date().getFullYear()
+  return `MRM-${anio}-${m.merma_id}`
+}
 
 function abrirActa(m) {
   mermaSeleccionada.value = m
@@ -367,16 +227,17 @@ function abrirActa(m) {
 
 const menuExport = ref(false)
 const filasExport = computed(() => [
-  ['Folio', 'Producto', 'SKU', 'Lote', 'Cantidad', 'Costo Unit USD', 'Total USD', 'Causal', 'Estado', 'Fecha'],
+  ['Folio', 'Producto', 'SKU', 'Lote', 'Cantidad', 'Costo unit. USD', 'Total USD', 'Causa', 'Destino', 'Estado', 'Fecha'],
   ...mermasFiltradas.value.map((m) => [
-    `MRM-${m.merma_id}`,
+    folio(m),
     m.product_nombre,
-    m.product_sku,
+    m.product_sku || m.product_id,
     m.lote_numero || '—',
     m.cantidad,
     m.costo_unitario,
     m.valor,
-    m.causa,
+    causaMeta(m.causa).texto,
+    destinoTexto(m.destino),
     m.estado_validacion,
     m.fecha,
   ]),
@@ -393,39 +254,20 @@ function exportar(opt) {
   opt.fn()
 }
 
-function causalEtiqueta(causa) {
-  switch (causa) {
-    case 'caducidad':
-      return { texto: 'Vencimiento FEFO', tipo: 'quiebre', color: 'bg-amber-100 text-amber-800 border-amber-300' }
-    case 'rotura':
-      return { texto: 'Rotura / Daño', tipo: 'quiebre', color: 'bg-red-100 text-red-800 border-red-300' }
-    case 'robo':
-      return { texto: 'Hurto Constatado', tipo: 'quiebre', color: 'bg-purple-100 text-purple-800 border-purple-300' }
-    case 'error_humano':
-      return { texto: 'Desmedro Operativo', tipo: 'fifo', color: 'bg-stone-100 text-stone-800 border-stone-300' }
-    default:
-      return { texto: causa, tipo: 'fifo', color: 'bg-slate-100 text-slate-800 border-slate-300' }
-  }
-}
-
-onMounted(() => {
-  cargarDatos()
-})
+onMounted(cargarDatos)
 </script>
 
 <template>
-  <div class="mx-auto max-w-[1560px] space-y-6 px-6 py-8 lg:px-8">
-    <!-- HEADER OPERATIVO -->
+  <div class="mx-auto max-w-[1500px] space-y-6 px-6 py-8 lg:px-8">
     <PageHeader
-      titulo="Seguimiento, registro y mitigación de merma"
-      subtitulo="Libro oficial de bajas de inventario con trazabilidad por lote y ubicación, causa raíz del desmedro y validación contable."
+      titulo="Seguimiento y auditoría de merma"
+      subtitulo="Libro oficial de bajas de inventario con trazabilidad por lote y ubicación, causa raíz del desmedro, destino físico de las unidades y validación contable (FR-017 a FR-019)."
     >
       <template #badge>
         <SemanticChip :tipo="kpis.pendientes_count > 0 ? 'fifo' : 'ok'">
           {{ kpis.pendientes_count > 0 ? `${kpis.pendientes_count} por validar` : 'Al día' }}
         </SemanticChip>
       </template>
-
       <template #acciones>
         <div class="relative">
           <Btn variant="ghost" @click="menuExport = !menuExport">
@@ -448,410 +290,299 @@ onMounted(() => {
           </div>
         </div>
         <Btn
-          v-if="puedeEditarUmbrales"
           variant="ghost"
-          @click="() => { cargarUmbrales(); modalUmbrales = true }"
+          @click="
+            () => {
+              cargarUmbrales()
+              modalUmbrales = true
+            }
+          "
         >
-          <Icon name="cog" :size="16" />
-          Umbrales por categoría
+          <Icon name="cog" :size="16" /> Umbrales por categoría
         </Btn>
         <Btn v-if="puedeValidar" variant="primary" @click="modalDeclarar = true">
-          <Icon name="alert" :size="16" />
-          Declarar nueva merma
+          <Icon name="alert" :size="16" /> Declarar merma
         </Btn>
       </template>
     </PageHeader>
 
-    <!-- ALERTAS TEMPORALES -->
-    <div v-if="exito" class="rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800 flex items-center gap-2 shadow-sm">
-      <Icon name="check" :size="18" />
-      {{ exito }}
-    </div>
-    <div v-if="error" class="rounded-xl border border-red-300 bg-red-50 p-4 text-sm font-semibold text-red-800 flex items-center gap-2 shadow-sm">
-      <Icon name="alert" :size="18" />
+    <p
+      v-if="exito"
+      class="flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
+    >
+      <Icon name="check" :size="16" /> {{ exito }}
+    </p>
+    <p v-if="error" class="rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
       {{ error }}
-    </div>
+    </p>
 
-    <!-- SCORECARD: 4 KPI CARDS (BENTO GRID) -->
-    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       <KpiTile
-        label="Merma Acumulada Mes"
+        label="Merma acumulada del mes"
         :valor="money(kpis.merma_acumulada_mes)"
-        estado="0.84% s/ venta"
-        estado-tipo="ok"
-        microcopy="Meta de tienda: < 1.10% s/ venta neta"
-      >
-        <template #icono>
-          <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center">
-            <Icon name="alert" :size="18" />
-          </div>
-        </template>
-      </KpiTile>
-
+        variant="emerald"
+        :microcopy="
+          kpis.venta_mes > 0
+            ? `${kpis.tasa_merma_pct}% sobre venta confirmada del mes`
+            : 'Sin venta confirmada del mes para el ratio'
+        "
+      />
       <KpiTile
-        label="SKUs con Merma Crítica"
-        :valor="`${kpis.skus_criticos_count} SKUs`"
-        estado="Foco Retiro"
-        estado-tipo="quiebre"
-        microcopy="11 perecibles · 5 rotura · 3 hurto"
+        label="SKUs con merma este mes"
+        :valor="kpis.skus_criticos_count.toLocaleString('es-EC')"
+        :estado-tipo="kpis.skus_criticos_count > 0 ? 'fifo' : 'ok'"
       >
-        <template #icono>
-          <div class="w-8 h-8 rounded-lg bg-red-50 text-crimson-ruby border border-red-200 flex items-center justify-center">
-            <Icon name="alert" :size="18" />
-          </div>
-        </template>
+        <template #icono><Icon name="cube" :size="16" /></template>
       </KpiTile>
-
       <KpiTile
-        label="Tasa de Recuperación / Donación"
-        :valor="`${kpis.tasa_recuperacion_pct}%`"
-        estado="Triple Impacto"
-        estado-tipo="fifo"
-        :microcopy="`${money(kpis.recuperacion_monto)} desviado a banco alimentos`"
+        label="Valor recuperado / aprovechado"
+        :valor="money(kpis.recuperacion_monto)"
+        :microcopy="`${kpis.tasa_recuperacion_pct}% del valor de merma (donación o devolución)`"
+        :estado-tipo="kpis.tasa_recuperacion_pct > 0 ? 'ok' : 'neutral'"
       >
-        <template #icono>
-          <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center">
-            <Icon name="truck" :size="18" />
-          </div>
-        </template>
+        <template #icono><Icon name="truck" :size="16" /></template>
       </KpiTile>
-
       <KpiTile
-        label="Ajustes Auditados Pendientes"
-        :valor="`${kpis.pendientes_count} casos`"
-        :estado="kpis.pendientes_count > 0 ? 'Por validar' : 'Al día'"
+        label="Incidentes por validar"
+        :valor="kpis.pendientes_count.toLocaleString('es-EC')"
+        :estado="kpis.pendientes_count > 0 ? 'Requiere visado del Encargado' : 'Al día'"
         :estado-tipo="kpis.pendientes_count > 0 ? 'quiebre' : 'ok'"
-        microcopy="Requiere visado del Encargado de Tienda"
       >
-        <template #icono>
-          <div class="w-8 h-8 rounded-lg bg-purple-50 text-secondary border border-purple-200 flex items-center justify-center">
-            <Icon name="check" :size="18" />
-          </div>
-        </template>
+        <template #icono><Icon name="check" :size="16" /></template>
       </KpiTile>
-    </div>
+    </section>
 
-    <!-- SECCIÓN: ANÁLISIS DE CAUSA RAÍZ & PROTOCOLO SOSTENIBLE (2:1 GRID) -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <!-- DESGLOSE DE CAUSA RAÍZ (2 COLUMNAS) -->
-      <div class="lg:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm flex flex-col justify-between">
-        <div>
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-outline-variant/30 gap-2">
-            <div>
-              <h2 class="text-base font-bold text-on-surface">Desglose de Causa Raíz de la Merma</h2>
-              <p class="text-xs text-on-surface-variant">Análisis etiológico del desmedro para mitigar pérdidas en sala y bodega</p>
-            </div>
-            <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant text-xs font-semibold">
-              Ciclo Mensual en Curso
-            </span>
-          </div>
+    <div class="grid gap-6 lg:grid-cols-3">
+      <!-- Causa raíz -->
+      <section class="satin-card rounded-2xl p-5 shadow-card-subtle lg:col-span-2">
+        <div class="flex items-center justify-between border-b border-brand-100 pb-3">
+          <h2 class="font-display text-[14px] font-bold text-brand-950">Desglose de causa raíz</h2>
+          <span class="text-[11px] text-slate-400">Mes en curso · tienda {{ tiendaId }}</span>
+        </div>
 
-          <!-- Barra de Distribución Porcentual -->
-          <div class="my-4">
-            <div class="h-3.5 w-full rounded-full bg-surface-container flex overflow-hidden p-0.5 gap-0.5">
-              <div
-                class="h-full bg-amber-500 rounded-l-full transition-all cursor-pointer"
-                :style="{ width: '48%' }"
-                title="Vencimiento FEFO: 48%"
-                @click="filtroCausa = 'caducidad'"
-              ></div>
-              <div
-                class="h-full bg-red-500 transition-all cursor-pointer"
-                :style="{ width: '26%' }"
-                title="Manipulación / Rotura: 26%"
-                @click="filtroCausa = 'rotura'"
-              ></div>
-              <div
-                class="h-full bg-blue-500 transition-all cursor-pointer"
-                :style="{ width: '14%' }"
-                title="Cadena de Frío: 14%"
-                @click="filtroCausa = 'frio'"
-              ></div>
-              <div
-                class="h-full bg-purple-600 rounded-r-full transition-all cursor-pointer"
-                :style="{ width: '12%' }"
-                title="Hurto Externo: 12%"
-                @click="filtroCausa = 'robo'"
-              ></div>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-on-surface-variant mt-1.5 px-1 font-medium">
-              <span class="text-amber-700 font-semibold cursor-pointer" @click="filtroCausa = 'caducidad'">● Vencimiento (48%)</span>
-              <span class="text-red-700 font-semibold cursor-pointer" @click="filtroCausa = 'rotura'">● Rotura (26%)</span>
-              <span class="text-blue-700 font-semibold cursor-pointer" @click="filtroCausa = 'frio'">● Frío (14%)</span>
-              <span class="text-secondary font-semibold cursor-pointer" @click="filtroCausa = 'robo'">● Hurto (12%)</span>
-            </div>
-          </div>
+        <p v-if="!hayCausas" class="py-10 text-center text-[13px] text-slate-400">
+          Sin mermas registradas este mes en esta tienda.
+        </p>
 
-          <!-- 4 Tarjetas Detalladas de Causa -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+        <template v-else>
+          <div class="my-4 flex h-3 w-full gap-0.5 overflow-hidden rounded-full bg-brand-50 p-0.5">
             <div
               v-for="c in causasCatalogo"
               :key="c.id"
-              class="p-3.5 rounded-xl border transition-all cursor-pointer hover:shadow-sm"
-              :class="[c.borderClass, c.bgCardClass, filtroCausa === c.id ? 'ring-2 ring-primary-container' : '']"
+              class="h-full cursor-pointer rounded-full transition-all"
+              :class="c.barra"
+              :style="{ width: `${c.pct}%` }"
+              :title="`${c.nombre}: ${c.pct}%`"
+              @click="filtroCausa = filtroCausa === c.id ? 'todas' : c.id"
+            />
+          </div>
+
+          <div class="grid gap-3 sm:grid-cols-2">
+            <button
+              v-for="c in causasCatalogo"
+              :key="c.id"
+              type="button"
+              class="rounded-xl border p-3.5 text-left transition-all hover:shadow-card-subtle"
+              :class="filtroCausa === c.id ? 'border-brand-400 bg-brand-50/60' : 'border-brand-100 bg-white'"
               @click="filtroCausa = filtroCausa === c.id ? 'todas' : c.id"
             >
               <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <span class="w-3 h-3 rounded-full" :class="c.bgColor"></span>
-                  <span class="text-xs font-bold text-on-surface">{{ c.nombre }}</span>
-                </div>
-                <span class="text-xs font-bold" :class="c.textClass">{{ c.pct }}%</span>
+                <span class="flex items-center gap-2 text-[12px] font-bold text-slate-800">
+                  <span class="h-2.5 w-2.5 rounded-full" :class="c.barra" /> {{ c.nombre }}
+                </span>
+                <span class="text-[12px] font-bold" :class="c.punto">{{ c.pct }}%</span>
               </div>
-              <div class="flex items-baseline justify-between mt-2">
-                <span class="text-base font-bold font-mono text-on-surface">{{ money(c.monto) }}</span>
-                <span class="text-[11px] font-semibold text-on-surface-variant">{{ c.incidentes }} incidentes</span>
+              <div class="mt-2 flex items-baseline justify-between">
+                <span class="font-mono text-[15px] font-bold text-slate-900">{{ money(c.monto) }}</span>
+                <span class="text-[11px] font-semibold text-slate-500">{{ incidentes(c.incidentes) }}</span>
               </div>
-              <p class="text-[11px] text-on-surface-variant mt-1 leading-snug">{{ c.desc }}</p>
-            </div>
+            </button>
+          </div>
+
+          <div v-if="filtroCausa !== 'todas'" class="pt-3 text-right">
+            <button
+              class="text-[11px] font-semibold text-brand-600 underline"
+              @click="filtroCausa = 'todas'"
+            >
+              Quitar filtro de causa
+            </button>
+          </div>
+        </template>
+      </section>
+
+      <!-- Destino físico -->
+      <section class="satin-card rounded-2xl p-5 shadow-card-subtle">
+        <div class="flex items-center gap-2 border-b border-brand-100 pb-3">
+          <div class="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-200 bg-brand-50 text-brand-700">
+            <Icon name="truck" :size="16" />
+          </div>
+          <div>
+            <h2 class="font-display text-[14px] font-bold text-brand-950">Destino de las unidades</h2>
+            <span class="text-[11px] text-slate-400">Sobre los {{ mermas.length }} incidentes cargados</span>
           </div>
         </div>
 
-        <div v-if="filtroCausa !== 'todas'" class="mt-3 pt-2 text-right">
-          <button class="text-xs text-primary underline font-semibold" @click="filtroCausa = 'todas'">
-            Quitar filtro de causa (ver todas)
-          </button>
-        </div>
-      </div>
-
-      <!-- PROTOCOLO DE DISPOSICIÓN FINAL Y DESTINO SUSTENTABLE (1 COLUMNA) -->
-      <div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm flex flex-col justify-between">
-        <div class="space-y-3">
-          <div class="flex items-center gap-2.5 pb-2 border-b border-outline-variant/30">
-            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center">
-              <Icon name="truck" :size="18" />
+        <p v-if="!destinoCatalogo.length" class="py-8 text-center text-[13px] text-slate-400">
+          Sin incidentes cargados.
+        </p>
+        <ul v-else class="mt-3 space-y-2.5">
+          <li
+            v-for="d in destinoCatalogo"
+            :key="d.destino"
+            class="rounded-xl border border-brand-100 bg-white p-3"
+          >
+            <div class="flex items-center justify-between">
+              <span class="text-[12px] font-bold text-slate-800">{{ destinoTexto(d.destino === 'sin_destino' ? null : d.destino) }}</span>
+              <SemanticChip :tipo="DESTINOS[d.destino]?.aprovecha ? 'ok' : 'neutral'">
+                {{ DESTINOS[d.destino]?.aprovecha ? 'Aprovecha' : 'No recupera' }}
+              </SemanticChip>
             </div>
-            <div>
-              <h2 class="text-base font-bold text-on-surface">Disposición Sustentable</h2>
-              <span class="text-xs text-on-surface-variant font-medium">Convenios Activos Sucursal #{{ tiendaId }}</span>
+            <div class="mt-1.5 flex items-baseline justify-between">
+              <span class="font-mono text-[14px] font-bold text-slate-900">{{ money(d.monto) }}</span>
+              <span class="text-[11px] font-semibold text-slate-500">{{ incidentes(d.incidentes) }}</span>
             </div>
-          </div>
-
-          <p class="text-xs text-on-surface-variant leading-relaxed">
-            Conforme a la política de triple impacto de <strong>Marzú Retail Group</strong>, todo desmedro que conserve inocuidad alimentaria es reclasificado para evitar vertederos y optimizar deducción tributaria.
-          </p>
-
-          <div class="space-y-3 pt-1">
-            <!-- Convenio 1 -->
-            <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface">Banco de Alimentos</span>
-                <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">Activo Hoy</span>
-              </div>
-              <p class="text-[11px] text-on-surface-variant">
-                Retiro programado Martes y Jueves. Lácteos y abarrotes con &gt; 48 hrs de vida útil restante.
-              </p>
-            </div>
-
-            <!-- Convenio 2 -->
-            <div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/30 space-y-1">
-              <div class="flex items-center justify-between">
-                <span class="text-xs font-bold text-on-surface">Planta de Compostaje</span>
-                <span class="text-[10px] font-semibold text-primary-container bg-primary-fixed px-2 py-0.5 rounded">240 kg/sem</span>
-              </div>
-              <p class="text-[11px] text-on-surface-variant">
-                Residuos orgánicos frescos, frutas, verduras y molienda de panadería artesanal del día.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-xs text-on-surface-variant">
-          <span class="font-medium">Certificación Sanitaria SEREMI:</span>
-          <span class="font-bold text-emerald-700 flex items-center gap-1">
-            <Icon name="check" :size="14" /> Al Día (Vigente 2026)
-          </span>
-        </div>
-      </div>
+          </li>
+        </ul>
+      </section>
     </div>
 
-    <!-- MATRIZ / LIBRO OFICIAL DE REGISTRO DE INCIDENTES DE MERMA -->
-    <section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
-      <!-- Table Header Bar & Filter Pills -->
-      <div class="p-5 border-b border-outline-variant/30 flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Libro de incidentes -->
+    <section class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
+      <div class="flex flex-col gap-4 border-b border-brand-100 p-5 md:flex-row md:items-center md:justify-between">
         <div>
-          <div class="flex items-center gap-2">
-            <h2 class="text-base font-bold text-on-surface">Libro Oficial de Registro de Incidentes de Merma</h2>
-            <span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold">
-              {{ mermasFiltradas.length }} Registros
-            </span>
-          </div>
-          <p class="text-xs text-on-surface-variant">Trazabilidad de bajas físicas, muelle de recepción y mermas en góndola</p>
+          <h2 class="font-display text-[14px] font-bold text-brand-950">
+            Libro de incidentes de merma
+            <span class="ml-1 text-[12px] font-semibold text-slate-400">{{ mermasFiltradas.length }} registros</span>
+          </h2>
+          <p class="text-[12px] text-slate-500">Bajas físicas con trazabilidad por lote y ubicación en sala.</p>
         </div>
-
-        <!-- Buscador y Filtros -->
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="relative w-64">
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="relative">
             <input
               v-model="busqueda"
               type="text"
-              placeholder="Buscar por folio, SKU, lote..."
-              class="w-full h-9 pl-3 pr-8 rounded-lg border border-outline-variant/50 text-xs bg-surface focus:outline-none focus:border-primary-container"
+              placeholder="Folio, SKU, lote…"
+              class="h-9 w-56 rounded-lg border border-brand-200 bg-white pl-3 pr-8 text-[12px] focus:border-brand-500 focus:outline-none"
             />
-            <span v-if="busqueda" class="absolute right-2.5 top-2 cursor-pointer text-xs text-outline" @click="busqueda = ''">✕</span>
+            <button
+              v-if="busqueda"
+              class="absolute right-2 top-2 text-slate-400 hover:text-slate-600"
+              @click="busqueda = ''"
+            >
+              <Icon name="x" :size="14" />
+            </button>
           </div>
-
-          <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl border border-outline-variant/40 text-xs">
+          <div class="flex items-center gap-1 rounded-xl border border-brand-200 bg-white p-1 text-[12px]">
             <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroEstado === 'todos' ? 'bg-surface-container-lowest text-primary-container shadow-xs' : 'text-on-surface-variant'"
-              @click="filtroEstado = 'todos'"
+              v-for="f in [
+                { v: 'todos', t: 'Todos' },
+                { v: 'pendientes', t: `Pendientes (${cuentaPorEstado('pendiente')})` },
+                { v: 'validadas', t: 'Validadas' },
+                { v: 'rechazadas', t: 'Rechazadas' },
+              ]"
+              :key="f.v"
+              class="rounded-lg px-2.5 py-1 font-semibold transition-colors"
+              :class="filtroEstado === f.v ? 'bg-brand-800 text-white' : 'text-slate-500 hover:bg-brand-50'"
+              @click="filtroEstado = f.v"
             >
-              Todos
-            </button>
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroEstado === 'pendientes' ? 'bg-amber-100 text-amber-800 shadow-xs' : 'text-on-surface-variant'"
-              @click="filtroEstado = 'pendientes'"
-            >
-              Pendientes ({{ mermas.filter(m => m.estado_validacion === 'pendiente').length }})
-            </button>
-            <button
-              class="px-2.5 py-1 rounded-lg font-semibold transition-colors"
-              :class="filtroEstado === 'validadas' ? 'bg-emerald-100 text-emerald-800 shadow-xs' : 'text-on-surface-variant'"
-              @click="filtroEstado = 'validadas'"
-            >
-              Validadas
+              {{ f.t }}
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Data Table -->
       <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse text-xs">
+        <table class="w-full text-left text-[12px]">
           <thead>
-            <tr class="bg-surface-container-low/70 border-b border-outline-variant/40 text-[11px] uppercase tracking-wider text-outline select-none">
-              <th class="py-3 px-4 font-semibold">Folio / Fecha</th>
-              <th class="py-3 px-4 font-semibold">SKU & Producto</th>
-              <th class="py-3 px-4 font-semibold">Lote / Vencimiento</th>
-              <th class="py-3 px-4 font-semibold">Ubicación</th>
-              <th class="py-3 px-4 font-semibold text-right">Cant.</th>
-              <th class="py-3 px-4 font-semibold text-right">Costo Unit.</th>
-              <th class="py-3 px-4 font-semibold text-right">Pérdida Total</th>
-              <th class="py-3 px-4 font-semibold">Causal Declarada</th>
-              <th class="py-3 px-4 font-semibold">Operador</th>
-              <th class="py-3 px-4 font-semibold">Estado Baja</th>
-              <th class="py-3 px-4 font-semibold text-center">Acciones</th>
+            <tr class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[10px] font-bold uppercase tracking-wider text-brand-100">
+              <th class="px-4 py-3">Folio / fecha</th>
+              <th class="px-4 py-3">Producto</th>
+              <th class="px-4 py-3">Lote / vencimiento</th>
+              <th class="px-4 py-3">Ubicación</th>
+              <th class="px-4 py-3 text-right">Cant.</th>
+              <th class="px-4 py-3 text-right">Costo unit.</th>
+              <th class="px-4 py-3 text-right">Pérdida</th>
+              <th class="px-4 py-3">Causa</th>
+              <th class="px-4 py-3">Destino</th>
+              <th class="px-4 py-3 text-center">Estado</th>
+              <th class="px-4 py-3 text-center">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-outline-variant/20">
+          <tbody class="divide-y divide-brand-100/90 bg-white/80">
             <tr v-if="cargando">
-              <td colspan="11" class="py-12 text-center text-on-surface-variant">
-                <div class="flex items-center justify-center gap-2 font-medium">
-                  <span class="inline-block w-4 h-4 border-2 border-primary-container border-t-transparent rounded-full animate-spin"></span>
-                  Cargando libro oficial de mermas...
-                </div>
+              <td colspan="11" class="px-4 py-10 text-center text-slate-400">Cargando…</td>
+            </tr>
+            <tr v-else-if="!mermasFiltradas.length">
+              <td colspan="11" class="px-4 py-10 text-center text-slate-400">
+                Sin incidentes de merma para los filtros seleccionados.
               </td>
             </tr>
-            <tr v-else-if="mermasFiltradas.length === 0">
-              <td colspan="11" class="py-12 text-center text-on-surface-variant">
-                No se encontraron incidentes de merma con los filtros seleccionados.
+            <tr v-for="m in mermasFiltradas" :key="m.merma_id" class="hover:bg-brand-50/70">
+              <td class="px-4 py-3">
+                <div class="font-mono font-bold text-slate-800">#{{ folio(m) }}</div>
+                <div class="text-[11px] text-slate-400">{{ m.fecha }}</div>
               </td>
-            </tr>
-            <tr
-              v-for="m in mermasFiltradas"
-              :key="m.merma_id"
-              class="hover:bg-surface-container-low/40 transition-colors"
-            >
-              <!-- Folio -->
-              <td class="py-3 px-4">
-                <div class="font-bold font-mono text-on-surface">#MRM-2026-{{ m.merma_id }}</div>
-                <div class="text-[11px] text-outline">{{ m.fecha }}</div>
-              </td>
-
-              <!-- Producto -->
-              <td class="py-3 px-4">
-                <div class="font-semibold text-on-surface">{{ m.product_nombre }}</div>
-                <div class="text-[11px] text-outline font-mono">
-                  SKU: {{ m.product_sku || m.product_id }} · {{ m.product_categoria || 'Abarrotes' }}
+              <td class="px-4 py-3">
+                <div class="font-semibold text-slate-800">{{ m.product_nombre }}</div>
+                <div class="font-mono text-[11px] text-slate-400">
+                  {{ m.product_sku || `#${m.product_id}` }}<template v-if="m.product_categoria"> · {{ m.product_categoria }}</template>
                 </div>
               </td>
-
-              <!-- Lote -->
-              <td class="py-3 px-4 font-mono">
-                <span class="font-semibold text-slate-800">{{ m.lote_numero || 'LT-GENERAL' }}</span>
-                <div v-if="m.lote_vencimiento" class="text-[11px] text-crimson-ruby font-semibold">
+              <td class="px-4 py-3 font-mono">
+                <span class="text-slate-700">{{ m.lote_numero || '—' }}</span>
+                <div v-if="m.lote_vencimiento" class="text-[11px] font-semibold text-crimson-ruby">
                   Venc: {{ m.lote_vencimiento }}
                 </div>
-                <div v-else class="text-[11px] text-outline">No perecible</div>
               </td>
-
-              <!-- Ubicación -->
-              <td class="py-3 px-4">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-medium">
-                  {{ m.ubicacion_sala || 'Góndola Central' }}
-                </span>
+              <td class="px-4 py-3 text-slate-600">{{ m.ubicacion_sala || '—' }}</td>
+              <td class="px-4 py-3 text-right font-mono font-bold text-slate-800">{{ m.cantidad }}</td>
+              <td class="px-4 py-3 text-right font-mono text-slate-500">{{ money(m.costo_unitario) }}</td>
+              <td class="px-4 py-3 text-right font-mono font-bold text-slate-800">{{ money(m.valor) }}</td>
+              <td class="px-4 py-3">
+                <SemanticChip :tipo="causaMeta(m.causa).chip">{{ causaMeta(m.causa).texto }}</SemanticChip>
               </td>
-
-              <!-- Cantidad -->
-              <td class="py-3 px-4 text-right font-bold font-mono text-on-surface">
-                {{ m.cantidad }} u.
-              </td>
-
-              <!-- Costo Unitario -->
-              <td class="py-3 px-4 text-right font-mono text-outline">
-                {{ money(m.costo_unitario) }}
-              </td>
-
-              <!-- Pérdida Total -->
-              <td class="py-3 px-4 text-right font-bold font-mono text-on-surface">
-                {{ money(m.valor) }}
-              </td>
-
-              <!-- Causal -->
-              <td class="py-3 px-4">
-                <span
-                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border"
-                  :class="causalEtiqueta(m.causa).color"
-                >
-                  {{ causalEtiqueta(m.causa).texto }}
-                </span>
-              </td>
-
-              <!-- Operador -->
-              <td class="py-3 px-4">
-                <div class="font-medium text-on-surface">{{ m.empleado_nombre || `Empleado #${m.empleado_id}` }}</div>
-                <div class="text-[10px] text-outline">Turno Activo</div>
-              </td>
-
-              <!-- Estado Baja -->
-              <td class="py-3 px-4">
+              <td class="px-4 py-3 text-slate-600">{{ destinoTexto(m.destino) }}</td>
+              <td class="px-4 py-3 text-center">
                 <SemanticChip
-                  :tipo="m.estado_validacion === 'validada' ? 'ok' : m.estado_validacion === 'pendiente' ? 'quiebre' : 'error'"
+                  :tipo="
+                    m.estado_validacion === 'validada'
+                      ? 'ok'
+                      : m.estado_validacion === 'pendiente'
+                        ? 'fifo'
+                        : 'quiebre'
+                  "
                 >
-                  {{ m.estado_validacion === 'validada' ? 'Validada / Baja' : m.estado_validacion === 'pendiente' ? 'Pendiente Visado' : 'Rechazada' }}
+                  {{
+                    m.estado_validacion === 'validada'
+                      ? 'Validada'
+                      : m.estado_validacion === 'pendiente'
+                        ? 'Pendiente'
+                        : 'Rechazada'
+                  }}
                 </SemanticChip>
               </td>
-
-              <!-- Acciones -->
-              <td class="py-3 px-4 text-center">
+              <td class="px-4 py-3">
                 <div class="flex items-center justify-center gap-1">
-                  <!-- Acciones de Encargado si está pendiente -->
                   <template v-if="m.estado_validacion === 'pendiente' && puedeValidar">
                     <button
-                      class="px-2 py-1 rounded bg-emerald-600 text-white hover:bg-emerald-700 text-[10px] font-bold shadow-xs transition-all"
-                      title="Aprobar y dar de baja en inventario"
+                      class="rounded-lg bg-brand-700 px-2 py-1 text-[10px] font-bold text-white hover:bg-brand-600"
                       @click="procesarValidacion(m, 'validada')"
                     >
                       Aprobar
                     </button>
                     <button
-                      class="px-2 py-1 rounded bg-stone-200 text-stone-700 hover:bg-stone-300 text-[10px] font-bold transition-all"
-                      title="Rechazar merma"
+                      class="rounded-lg border border-brand-200 px-2 py-1 text-[10px] font-bold text-slate-600 hover:bg-brand-50"
                       @click="procesarValidacion(m, 'rechazada')"
                     >
                       Rechazar
                     </button>
                   </template>
-
-                  <!-- Ver Acta / Detalle -->
                   <button
-                    class="p-1.5 rounded-lg hover:bg-surface-container text-primary-container transition-colors"
-                    title="Ver Acta Oficial de Merma"
+                    class="rounded-lg p-1.5 text-brand-700 hover:bg-brand-50"
+                    title="Ver acta de la merma"
                     @click="abrirActa(m)"
                   >
-                    <Icon name="download" :size="16" />
+                    <Icon name="download" :size="15" />
                   </button>
                 </div>
               </td>
@@ -859,138 +590,128 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
-
-      <!-- Pie de tabla -->
-      <div class="px-5 py-3 bg-surface-container-low/40 border-t border-outline-variant/30 flex items-center justify-between text-xs text-outline">
-        <div>
-          Mostrando {{ mermasFiltradas.length }} de {{ mermas.length }} incidentes registrados
-        </div>
-        <div>
-          Sistema de Control de Mermas SIRA v4.12 · Sucursal Providencia
-        </div>
-      </div>
     </section>
 
-    <!-- MODAL 1: DECLARAR NUEVA MERMA -->
+    <!-- Modal: declarar merma -->
     <Modal
       v-if="modalDeclarar"
-      titulo="Declarar Baja de Merma de Inventario"
+      titulo="Declarar baja de merma de inventario"
       size="lg"
       @cerrar="modalDeclarar = false"
     >
       <FormularioMerma
         :tienda-id="tiendaId"
         :empleado-id="empleadoId"
-        @registrada="() => { modalDeclarar = false; cargarDatos(); exito = 'Merma registrada con éxito para revisión.'; }"
+        @registrada="
+          () => {
+            modalDeclarar = false
+            cargarDatos()
+            exito = 'Merma registrada; queda pendiente de visado.'
+          }
+        "
         @cerrar="modalDeclarar = false"
       />
     </Modal>
 
-    <!-- MODAL 2: ACTA OFICIAL DE MERMA Y AUDITORÍA CONTABLE -->
+    <!-- Modal: acta de la merma -->
     <Modal
-      v-if="modalActa && mermaSeleccionada != null"
-      titulo="Acta Oficial de Auditoría y Baja de Merma"
+      v-if="modalActa && mermaSeleccionada"
+      titulo="Acta de baja de merma"
       size="md"
       @cerrar="modalActa = false"
     >
-      <div v-if="mermaSeleccionada" class="space-y-4 text-xs">
-        <div class="rounded-xl border border-brand-200 bg-brand-50/50 p-4 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="font-mono text-sm font-bold text-brand-900">
-              #MRM-2026-{{ mermaSeleccionada.merma_id }}
-            </span>
-            <SemanticChip :tipo="mermaSeleccionada.estado_validacion === 'validada' ? 'ok' : 'quiebre'">
-              {{ mermaSeleccionada.estado_validacion.toUpperCase() }}
-            </SemanticChip>
-          </div>
-          <div class="text-slate-600">
-            Fecha de Registro: <strong class="text-slate-900">{{ mermaSeleccionada.fecha }}</strong> · Sucursal #{{ tiendaId }}
-          </div>
+      <div class="space-y-4 text-[12px]">
+        <div class="flex items-center justify-between rounded-xl border border-brand-200 bg-brand-50/60 p-4">
+          <span class="font-mono text-[14px] font-bold text-brand-900">#{{ folio(mermaSeleccionada) }}</span>
+          <SemanticChip :tipo="mermaSeleccionada.estado_validacion === 'validada' ? 'ok' : mermaSeleccionada.estado_validacion === 'pendiente' ? 'fifo' : 'quiebre'">
+            {{ mermaSeleccionada.estado_validacion }}
+          </SemanticChip>
         </div>
 
         <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-lg bg-surface border border-outline-variant/40">
-            <span class="text-[11px] text-outline block">Producto / SKU</span>
+          <div class="rounded-lg border border-brand-100 bg-white p-3">
+            <span class="block text-[11px] text-slate-400">Producto</span>
             <span class="font-semibold text-slate-800">{{ mermaSeleccionada.product_nombre }}</span>
-            <div class="font-mono text-[11px] text-slate-500 mt-0.5">SKU: {{ mermaSeleccionada.product_sku || mermaSeleccionada.product_id }}</div>
+            <div class="font-mono text-[11px] text-slate-500">{{ mermaSeleccionada.product_sku || `#${mermaSeleccionada.product_id}` }}</div>
           </div>
-          <div class="p-3 rounded-lg bg-surface border border-outline-variant/40">
-            <span class="text-[11px] text-outline block">Lote / Vencimiento</span>
-            <span class="font-mono font-semibold text-slate-800">{{ mermaSeleccionada.lote_numero || 'LT-GENERAL' }}</span>
-            <div class="text-[11px] text-slate-500 mt-0.5">Venc: {{ mermaSeleccionada.lote_vencimiento || 'No perecible' }}</div>
+          <div class="rounded-lg border border-brand-100 bg-white p-3">
+            <span class="block text-[11px] text-slate-400">Lote / vencimiento</span>
+            <span class="font-mono font-semibold text-slate-800">{{ mermaSeleccionada.lote_numero || '—' }}</span>
+            <div class="text-[11px] text-slate-500">{{ mermaSeleccionada.lote_vencimiento || 'Sin fecha de vencimiento' }}</div>
           </div>
-          <div class="p-3 rounded-lg bg-surface border border-outline-variant/40">
-            <span class="text-[11px] text-outline block">Cantidad / Unidades</span>
-            <span class="font-bold text-slate-800 text-sm font-mono">{{ mermaSeleccionada.cantidad }} unidades</span>
+          <div class="rounded-lg border border-brand-100 bg-white p-3">
+            <span class="block text-[11px] text-slate-400">Cantidad</span>
+            <span class="font-mono text-[14px] font-bold text-slate-800">{{ mermaSeleccionada.cantidad }} u.</span>
           </div>
-          <div class="p-3 rounded-lg bg-surface border border-outline-variant/40">
-            <span class="text-[11px] text-outline block">Impacto Económico Total</span>
-            <span class="font-bold text-crimson-ruby text-sm font-mono">{{ money(mermaSeleccionada.valor) }}</span>
+          <div class="rounded-lg border border-brand-100 bg-white p-3">
+            <span class="block text-[11px] text-slate-400">Pérdida total</span>
+            <span class="font-mono text-[14px] font-bold text-crimson-ruby">{{ money(mermaSeleccionada.valor) }}</span>
           </div>
         </div>
 
-        <div class="p-3 rounded-lg bg-surface border border-outline-variant/40 space-y-1">
-          <span class="text-[11px] text-outline block">Causal Declarada & Destino Físico</span>
+        <div class="rounded-lg border border-brand-100 bg-white p-3">
+          <span class="block text-[11px] text-slate-400">Causa y destino</span>
           <div class="font-semibold text-slate-800">
-            {{ causalEtiqueta(mermaSeleccionada.causa).texto }} → Destino: {{ mermaSeleccionada.destino || 'Destrucción / Rescate' }}
+            {{ causaMeta(mermaSeleccionada.causa).texto }} → {{ destinoTexto(mermaSeleccionada.destino) }}
           </div>
-          <p class="text-slate-600 mt-1 italic">"{{ mermaSeleccionada.observaciones || 'Sin observaciones adicionales declaradas' }}"</p>
+          <p v-if="mermaSeleccionada.observaciones" class="mt-1 italic text-slate-600">
+            "{{ mermaSeleccionada.observaciones }}"
+          </p>
         </div>
 
-        <div class="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200 text-emerald-900 text-[11px] flex items-center justify-between">
-          <span>Firmado electrónicamente por: <strong>{{ mermaSeleccionada.empleado_nombre || 'Encargado Tienda' }}</strong></span>
-          <span class="font-mono font-semibold">Trazabilidad SHA-256 OK</span>
+        <div class="rounded-lg border border-brand-100 bg-brand-50/50 p-3 text-slate-700">
+          Registrada por
+          <strong>{{ mermaSeleccionada.empleado_nombre || `empleado #${mermaSeleccionada.empleado_id}` }}</strong>
+          el {{ mermaSeleccionada.fecha }}<span v-if="mermaSeleccionada.fecha_validacion"> · validada el {{ String(mermaSeleccionada.fecha_validacion).slice(0, 10) }}</span>.
         </div>
 
-        <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/30">
-          <Btn variant="secondary" @click="modalActa = false">Cerrar</Btn>
-          <Btn variant="primary" @click="() => { window.print(); }">
-            <Icon name="download" :size="15" />
-            Imprimir Acta de Baja
+        <div class="flex justify-end gap-2 border-t border-brand-100 pt-3">
+          <Btn variant="ghost" @click="modalActa = false">Cerrar</Btn>
+          <Btn variant="primary" @click="() => window.print()">
+            <Icon name="download" :size="15" /> Imprimir
           </Btn>
         </div>
       </div>
     </Modal>
 
-    <!-- MODAL 3: UMBRALES POR CATEGORÍA (FR-017 / FR-018) -->
+    <!-- Modal: umbrales por categoría -->
     <Modal
       v-if="modalUmbrales"
-      titulo="Gobernanza de Umbrales de Merma por Categoría"
+      titulo="Umbrales de merma por categoría"
       size="lg"
       @cerrar="modalUmbrales = false"
     >
-      <div class="space-y-4 text-xs">
-        <p class="text-on-surface-variant">
-          El Jefe de Operaciones define el umbral aceptable de merma semanal por categoría (FR-017). Superar el umbral genera una alerta de gestión pero nunca bloquea la operativa regular (FR-019).
+      <div class="space-y-4 text-[12px]">
+        <p class="text-slate-600">
+          El Jefe de Operaciones define el umbral aceptable de merma semanal por categoría (FR-017),
+          vigente para toda la red. Superarlo genera una alerta de gestión pero nunca bloquea la
+          operativa (FR-019).
         </p>
 
-        <!-- Mensaje supervisor si no tiene permisos de edición -->
         <div
           v-if="!puedeEditarUmbrales"
-          class="flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3 text-[12px] text-on-surface-variant"
+          class="flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 p-3 text-slate-600"
         >
-          <Icon name="shield" :size="16" class="text-secondary shrink-0" />
-          <span>Vista de supervisión para encargado de tienda. La configuración de umbrales está asignada a la Jefatura de Operaciones corporativa.</span>
+          <Icon name="shield" :size="16" class="shrink-0 text-brand-700" />
+          <span>Vista de consulta. La definición de umbrales está asignada a la Jefatura de Operaciones.</span>
         </div>
 
-        <!-- Formulario de nuevo umbral (sólo editable si tiene permiso) -->
         <form
           v-else
-          class="p-4 rounded-xl border border-brand-200 bg-brand-50/40 flex flex-wrap items-end gap-3"
+          class="flex flex-wrap items-end gap-3 rounded-xl border border-brand-200 bg-brand-50/50 p-4"
           @submit.prevent="guardarUmbral"
         >
-          <div class="flex-1 min-w-[160px]">
-            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Categoría</label>
+          <div class="min-w-[160px] flex-1">
+            <label class="mb-1 block text-[11px] font-semibold text-slate-700">Categoría</label>
             <input
               v-model="nuevoUmbral.product_category"
-              type="text"
               required
-              placeholder="Ej: Lácteos, Panadería..."
-              class="w-full h-8 px-2.5 rounded-lg border border-brand-300 bg-white text-xs"
+              placeholder="p. ej. BEVERAGE, REFRIGERATED…"
+              class="h-8 w-full rounded-lg border border-brand-300 bg-white px-2.5 text-[12px]"
             />
           </div>
           <div class="w-28">
-            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Umbral (%)</label>
+            <label class="mb-1 block text-[11px] font-semibold text-slate-700">Umbral (%)</label>
             <input
               v-model="nuevoUmbral.porcentaje_umbral"
               type="number"
@@ -999,40 +720,39 @@ onMounted(() => {
               max="100"
               required
               placeholder="1.5"
-              class="w-full h-8 px-2.5 rounded-lg border border-brand-300 bg-white text-xs font-mono"
+              class="h-8 w-full rounded-lg border border-brand-300 bg-white px-2.5 font-mono text-[12px]"
             />
           </div>
           <Btn type="submit" variant="primary" :disabled="guardandoUmbral">
-            {{ guardandoUmbral ? 'Guardando...' : 'Fijar Umbral' }}
+            {{ guardandoUmbral ? 'Guardando…' : 'Fijar umbral' }}
           </Btn>
         </form>
 
-        <!-- Tabla de seguimiento semanal frente a umbrales -->
-        <div class="overflow-hidden rounded-xl border border-outline-variant">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-surface-container-low border-b border-outline-variant font-semibold text-slate-600">
-              <tr>
-                <th class="py-2.5 px-3">Categoría</th>
-                <th class="py-2.5 px-3 text-right">Merma Acumulada Semanal</th>
-                <th class="py-2.5 px-3 text-right">Umbral Permitido</th>
-                <th class="py-2.5 px-3 text-center">Estado de Gestión</th>
+        <div class="overflow-hidden rounded-xl border border-brand-200">
+          <table class="w-full text-left text-[12px]">
+            <thead>
+              <tr class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[10px] font-bold uppercase tracking-wider text-brand-100">
+                <th class="px-3 py-2.5">Categoría</th>
+                <th class="px-3 py-2.5 text-right">Merma acumulada semanal</th>
+                <th class="px-3 py-2.5 text-right">Umbral</th>
+                <th class="px-3 py-2.5 text-center">Estado</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-outline-variant/30">
-              <tr v-if="seguimientoSemanal.length === 0">
-                <td colspan="4" class="py-6 text-center text-on-surface-variant">
-                  Sin umbrales definidos o sin datos registrados esta semana.
+            <tbody class="divide-y divide-brand-100/90 bg-white/80">
+              <tr v-if="!seguimientoSemanal.length">
+                <td colspan="4" class="px-3 py-6 text-center text-slate-400">
+                  Sin umbrales definidos o sin mermas de esas categorías esta semana.
                 </td>
               </tr>
-              <tr v-for="s in seguimientoSemanal" :key="s.product_category" class="hover:bg-surface-container-low/30">
-                <td class="py-2 px-3 font-semibold text-slate-800">{{ s.product_category }}</td>
-                <td class="py-2 px-3 text-right font-mono">
+              <tr v-for="s in seguimientoSemanal" :key="s.product_category" class="hover:bg-brand-50/70">
+                <td class="px-3 py-2 font-semibold text-slate-800">{{ s.product_category }}</td>
+                <td class="px-3 py-2 text-right font-mono">
                   {{ s.porcentaje_merma_acumulado == null ? '—' : `${s.porcentaje_merma_acumulado}%` }}
                 </td>
-                <td class="py-2 px-3 text-right font-mono font-semibold">{{ s.porcentaje_umbral }}%</td>
-                <td class="py-2 px-3 text-center">
+                <td class="px-3 py-2 text-right font-mono font-semibold">{{ s.porcentaje_umbral }}%</td>
+                <td class="px-3 py-2 text-center">
                   <SemanticChip :tipo="s.supera_umbral ? 'quiebre' : 'ok'">
-                    {{ s.supera_umbral ? 'Sobre Umbral' : 'Dentro de Rango' }}
+                    {{ s.supera_umbral ? 'Sobre umbral' : 'Dentro de rango' }}
                   </SemanticChip>
                 </td>
               </tr>
@@ -1040,11 +760,10 @@ onMounted(() => {
           </table>
         </div>
 
-        <div class="flex justify-end pt-2">
-          <Btn variant="secondary" @click="modalUmbrales = false">Cerrar</Btn>
+        <div class="flex justify-end pt-1">
+          <Btn variant="ghost" @click="modalUmbrales = false">Cerrar</Btn>
         </div>
       </div>
     </Modal>
   </div>
 </template>
-
