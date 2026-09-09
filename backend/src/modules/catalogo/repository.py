@@ -122,6 +122,12 @@ class CatalogoRepository(BaseRepository[Producto]):
         base = f"""
             FROM productos p
             LEFT JOIN margenes_objetivo mo ON mo.product_category = p.product_category
+            LEFT JOIN (
+                SELECT vd.product_id, SUM(vd.cantidad) AS uni
+                FROM venta_detalle vd
+                JOIN ventas v ON v.venta_id = vd.venta_id AND v.estado = 'confirmada'
+                GROUP BY vd.product_id
+            ) vh ON vh.product_id = p.product_id
             WHERE {where}
         """
         total = await self.session.scalar(text(f"SELECT count(*) {base}"), binds) or 0
@@ -133,9 +139,11 @@ class CatalogoRepository(BaseRepository[Producto]):
                        p.clasificacion_abc, p.es_ancla, p.activo,
                        p.costo, p.precio_base,
                        {margen_expr} AS margen_pct,
-                       mo.margen_objetivo_pct
+                       mo.margen_objetivo_pct,
+                       COALESCE(vh.uni, 0) AS unidades_historicas
                 {base}
-                ORDER BY p.product_id DESC
+                ORDER BY (p.costo IS NOT NULL AND p.precio_base > 0) DESC,
+                         COALESCE(vh.uni, 0) DESC, p.product_id DESC
                 OFFSET :offset LIMIT :limit
                 """),
                 binds,
@@ -230,11 +238,11 @@ class CatalogoRepository(BaseRepository[Producto]):
             await self.session.execute(
                 text("""
                 SELECT COALESCE(SUM(vd.cantidad), 0)::float AS uni,
-                       GREATEST(
+                       LEAST(12, GREATEST(
                          1,
                          EXTRACT(EPOCH FROM (MAX(v.fecha_hora) - MIN(v.fecha_hora)))
                            / (60*60*24*30.44)
-                       ) AS meses
+                       )) AS meses
                 FROM venta_detalle vd
                 JOIN ventas v ON v.venta_id = vd.venta_id AND v.estado = 'confirmada'
                 WHERE vd.product_id = :p
