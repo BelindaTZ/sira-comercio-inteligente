@@ -95,9 +95,7 @@ async function cobrar(escenario) {
     <p
       v-if="ultimoResultado"
       class="mt-2 text-sm font-semibold"
-      :class="
-        ultimoResultado === 'aprobado' ? 'text-on-tertiary-container' : 'text-on-error-container'
-      "
+      :class="ultimoResultado === 'aprobado' ? 'text-emerald-700' : 'text-crimson-ruby'"
     >
       Resultado: {{ ultimoResultado.replace('_', ' ') }}
     </p>
