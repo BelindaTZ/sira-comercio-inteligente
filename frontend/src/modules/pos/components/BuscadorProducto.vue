@@ -211,7 +211,13 @@ function elegir(p) {
             <Icon name="cube" :size="22" />
           </span>
           <span
-            v-if="p.product_category"
+            v-if="p.precio_liquidacion"
+            class="absolute left-1 top-1 rounded bg-rose-600 px-1.5 py-0.5 text-[9px] font-bold text-white"
+          >
+            Liquidación −{{ Math.round(Number(p.descuento_liquidacion_pct)) }}%
+          </span>
+          <span
+            v-else-if="p.product_category"
             class="absolute left-1 top-1 max-w-[70%] truncate rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-slate-600"
           >
             {{ p.product_category }}
@@ -228,8 +234,16 @@ function elegir(p) {
             {{ p.nombre || '(sin nombre)' }}
           </p>
           <div class="mt-auto flex items-center justify-between pt-1">
-            <span class="font-display text-[13px] font-extrabold tabular-nums text-brand-900">
-              {{ money(p.precio_base) }}
+            <span class="flex items-baseline gap-1">
+              <span
+                class="font-display text-[13px] font-extrabold tabular-nums"
+                :class="p.precio_liquidacion ? 'text-crimson-ruby' : 'text-brand-900'"
+              >
+                {{ money(p.precio_liquidacion ?? p.precio_base) }}
+              </span>
+              <s v-if="p.precio_liquidacion" class="text-[10px] tabular-nums text-slate-400">
+                {{ money(p.precio_base) }}
+              </s>
             </span>
             <span class="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-800 group-hover:bg-brand-800 group-hover:text-white">
               <Icon name="plus" :size="13" />

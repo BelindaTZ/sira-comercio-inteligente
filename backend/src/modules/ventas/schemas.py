@@ -190,6 +190,9 @@ class CatalogoPosItem(BaseModel):
     imagen_url: str | None
     precio_base: Decimal
     stock_disponible: int
+    # feature 005 (FR-014) — liquidación local vigente en esta tienda
+    precio_liquidacion: Decimal | None = None
+    descuento_liquidacion_pct: Decimal | None = None
 
 
 class TiempoCobroSemanalOut(BaseModel):

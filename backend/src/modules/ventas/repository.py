@@ -65,6 +65,28 @@ class VentasRepository(BaseRepository[Venta]):
     async def get_producto(self, product_id: int) -> Producto | None:
         return await self.session.get(Producto, product_id)
 
+    async def liquidacion_activa(self, product_id: int, tienda_id: int) -> Decimal | None:
+        """% de descuento de una liquidación local vigente (feature 005, FR-014):
+        candidato de categoría C ejecutado por el Encargado en esta tienda dentro
+        de los últimos 60 días y que el producto siga siendo categoría C."""
+        row = (
+            await self.session.execute(
+                text("""
+                    SELECT cl.descuento_sugerido_pct
+                    FROM candidato_liquidacion cl
+                    JOIN productos p ON p.product_id = cl.product_id
+                    WHERE cl.product_id = :p AND cl.tienda_id = :t
+                      AND cl.estado = 'ejecutado'
+                      AND cl.fecha_ejecucion >= now() - interval '60 days'
+                      AND p.clasificacion_abc = 'C'
+                    ORDER BY cl.fecha_ejecucion DESC
+                    LIMIT 1
+                """),
+                {"p": product_id, "t": tienda_id},
+            )
+        ).first()
+        return Decimal(str(row.descuento_sugerido_pct)) if row else None
+
     async def get_producto_por_barcode(self, codigo_barras: str) -> Producto | None:
         stmt = select(Producto).where(Producto.codigo_barras == codigo_barras)
         return (await self.session.scalars(stmt)).first()
@@ -103,6 +125,14 @@ class VentasRepository(BaseRepository[Venta]):
         base = (
             "FROM productos p JOIN inventario i "
             "ON i.product_id = p.product_id AND i.tienda_id = :t "
+            "LEFT JOIN LATERAL ("
+            "  SELECT cl.descuento_sugerido_pct FROM candidato_liquidacion cl"
+            "  WHERE cl.product_id = p.product_id AND cl.tienda_id = :t"
+            "    AND cl.estado = 'ejecutado'"
+            "    AND cl.fecha_ejecucion >= now() - interval '60 days'"
+            "    AND p.clasificacion_abc = 'C'"
+            "  ORDER BY cl.fecha_ejecucion DESC LIMIT 1"
+            ") liq ON true "
             f"WHERE {where}"
         )
         total = await self.session.scalar(text(f"SELECT count(*) {base}"), binds) or 0
@@ -110,9 +140,14 @@ class VentasRepository(BaseRepository[Venta]):
             text(f"""
             SELECT p.product_id, p.nombre, p.marca, p.product_category,
                    p.codigo_barras, p.imagen_url, p.precio_base,
-                   i.cantidad_disponible AS stock_disponible
+                   i.cantidad_disponible AS stock_disponible,
+                   CASE WHEN liq.descuento_sugerido_pct IS NOT NULL
+                        THEN round(p.precio_base * (1 - liq.descuento_sugerido_pct / 100), 2)
+                        END AS precio_liquidacion,
+                   liq.descuento_sugerido_pct AS descuento_liquidacion_pct
             {base}
-            ORDER BY p.clasificacion_abc NULLS LAST, p.nombre
+            ORDER BY (liq.descuento_sugerido_pct IS NOT NULL) DESC,
+                     p.clasificacion_abc NULLS LAST, p.nombre
             OFFSET :offset LIMIT :limit
             """),
             binds,

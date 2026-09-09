@@ -139,6 +139,18 @@ class VentasService:
                 f"disponible {disponible}, solicitado {ya_en_venta + data.cantidad}"
             )
 
+        # feature 005 (FR-014) — si el producto tiene una liquidación local vigente
+        # en esta tienda, el precio de venta ya entra descontado (OO-2.3.2: se
+        # refleja en el punto de venta).
+        pct_liq = await self.repo.liquidacion_activa(producto.product_id, venta.tienda_id)
+        precio_unitario = producto.precio_base
+        motivo_liq = None
+        if pct_liq:
+            precio_unitario = (
+                producto.precio_base * (Decimal("1") - pct_liq / Decimal("100"))
+            ).quantize(Decimal("0.01"))
+            motivo_liq = f"Liquidación −{format(float(pct_liq), 'g')}%"
+
         # "Agregar producto" acumula sobre la línea existente del mismo producto
         # (una fila por SKU en el ticket), salvo que ya tenga descuentos aplicados.
         linea = next(
@@ -157,7 +169,8 @@ class VentasService:
                 venta_id=venta_id,
                 product_id=producto.product_id,
                 cantidad=data.cantidad,
-                sales_value=producto.precio_base,
+                sales_value=precio_unitario,
+                motivo_descuento=motivo_liq,
             )
             self.repo.agregar(linea)
         await self.repo.flush()

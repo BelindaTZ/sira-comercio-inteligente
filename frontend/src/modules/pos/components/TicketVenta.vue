@@ -142,6 +142,12 @@ function confirmarDescuento() {
           <td class="px-4 py-2.5">
             <span class="font-mono text-[12px] font-semibold text-brand-800">#{{ linea.product_id }}</span>
             <span
+              v-if="(linea.motivo_descuento || '').startsWith('Liquidación')"
+              class="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-crimson-ruby"
+            >
+              {{ linea.motivo_descuento }}
+            </span>
+            <span
               v-if="Number(linea.retail_disc) > 0"
               class="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
             >

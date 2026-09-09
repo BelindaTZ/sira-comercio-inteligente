@@ -156,9 +156,6 @@ onMounted(() => cargar())
         <Btn variant="ghost" @click="cargar(true)">
           <Icon name="chart" :size="16" /> Actualizar
         </Btn>
-        <Btn variant="ghost" @click="$router.push('/forecasting')">
-          <Icon name="chevron" :size="14" class="rotate-90" /> Pronóstico
-        </Btn>
       </template>
     </PageHeader>
 
