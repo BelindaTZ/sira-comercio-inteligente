@@ -1,31 +1,61 @@
 <script setup>
 /**
  * FR-014/FR-015/FR-016 — competidores nombrados, captura manual de precio de
- * referencia (con tienda opcional y flag promocional) y listado de alertas de
- * desviación (generadas por el job semanal). Open Prices se captura solo para
- * productos en vivo con barcode real, sin UI propia (research.md §5).
+ * referencia y alertas de desviación (job semanal). Arquetipo "Gestión" del kit.
+ * La captura la hace el Jefe Comercial; el resto (incl. Gerencia) consulta.
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { pricingApi } from '@/services/pricingApi'
 import { useSesion } from '@/stores/sesion'
+import { money as moneyUsd } from '@/shared/currency'
+import PageHeader from '@/shared/ui/PageHeader.vue'
+import KpiTile from '@/shared/ui/KpiTile.vue'
+import SemanticChip from '@/shared/ui/SemanticChip.vue'
+import Btn from '@/shared/ui/Btn.vue'
+import Icon from '@/shared/ui/Icon.vue'
+import Modal from '@/shared/ui/Modal.vue'
+import DataTable from '@/shared/DataTable.vue'
 
 const sesion = useSesion()
-// captura de competencia = Jefe Comercial; el resto (incl. Gerencia) consulta
-const puedeRegistrar = computed(() => sesion.puedeEditarTabla('Comercial', 'precio_competencia'))
+const puedeRegistrar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Comercial', 'precio_competencia'),
+)
 
+const money = (v) => moneyUsd(v, { showCode: false })
 const competidores = ref([])
 const alertas = ref([])
 const error = ref('')
+const aviso = ref('')
 const cargando = ref(false)
+const page = ref(1)
+const size = ref(15)
 
+const modal = ref(null) // 'competidor' | 'precio' | null
 const nuevoCompetidor = reactive({ nombre: '', tipo: 'supermercado', ciudad: '' })
 const captura = reactive({ productId: '', competidorId: '', precio: '', esPromocional: false })
 
-function moneda(v) {
-  return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(
-    Number(v || 0)
-  )
-}
+const kpi = computed(() => {
+  const peor = [...alertas.value].sort(
+    (a, b) => Math.abs(b.desviacion_pct) - Math.abs(a.desviacion_pct),
+  )[0]
+  return {
+    alertas: alertas.value.length,
+    competidores: competidores.value.length,
+    peorPct: peor ? peor.desviacion_pct : null,
+    peorProducto: peor ? peor.product_id : null,
+  }
+})
+
+const columnas = [
+  { key: 'producto', label: 'Producto' },
+  { key: 'propio', label: 'Precio propio', align: 'right', width: '130px' },
+  { key: 'competencia', label: 'Competencia', align: 'right', width: '130px' },
+  { key: 'fuente', label: 'Fuente', width: '150px' },
+  { key: 'desviacion', label: 'Desviación', align: 'right', width: '120px' },
+]
+const pagina = computed(() =>
+  alertas.value.slice((page.value - 1) * size.value, page.value * size.value),
+)
 
 async function cargar() {
   cargando.value = true
@@ -33,6 +63,7 @@ async function cargar() {
   try {
     competidores.value = await pricingApi.competidores()
     alertas.value = (await pricingApi.alertasCompetencia()).items
+    page.value = 1
   } catch (e) {
     error.value = e.message
   } finally {
@@ -44,8 +75,9 @@ async function crearCompetidor() {
   if (!nuevoCompetidor.nombre.trim()) return
   try {
     await pricingApi.crearCompetidor({ ...nuevoCompetidor, ciudad: nuevoCompetidor.ciudad || null })
-    nuevoCompetidor.nombre = ''
-    nuevoCompetidor.ciudad = ''
+    Object.assign(nuevoCompetidor, { nombre: '', tipo: 'supermercado', ciudad: '' })
+    modal.value = null
+    aviso.value = 'Competidor agregado.'
     await cargar()
   } catch (e) {
     error.value = e.message
@@ -60,8 +92,9 @@ async function registrarPrecio() {
       precio: captura.precio,
       esPromocional: captura.esPromocional,
     })
-    captura.precio = ''
-    captura.esPromocional = false
+    Object.assign(captura, { productId: '', competidorId: '', precio: '', esPromocional: false })
+    modal.value = null
+    aviso.value = 'Precio de competencia registrado.'
     await cargar()
   } catch (e) {
     error.value = e.message
@@ -72,143 +105,176 @@ onMounted(cargar)
 </script>
 
 <template>
-  <main class="mx-auto max-w-5xl px-6 py-8">
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-primary-container">Precio de competencia</h1>
-      <RouterLink
-        to="/pricing"
-        class="rounded-lg border border-outline-variant px-3 py-1.5 text-sm text-on-surface hover:bg-surface-container-low"
-      >
-        ← Márgenes
-      </RouterLink>
-    </div>
-
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container"
+  <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
+    <PageHeader
+      titulo="Precio de competencia"
+      subtitulo="Precios de referencia capturados frente a competidores nombrados y desviaciones que superan el umbral (job semanal, FR-014 a FR-016)."
     >
+      <template #badge>
+        <SemanticChip :tipo="kpi.alertas > 0 ? 'quiebre' : 'ok'">
+          {{ kpi.alertas > 0 ? `${kpi.alertas} desviaciones activas` : 'Sin desviaciones' }}
+        </SemanticChip>
+      </template>
+      <template #acciones>
+        <Btn variant="ghost" @click="$router.push('/pricing')">
+          <Icon name="chevron" :size="14" class="rotate-90" /> Márgenes
+        </Btn>
+        <template v-if="puedeRegistrar">
+          <Btn variant="ghost" @click="modal = 'competidor'">
+            <Icon name="plus" :size="15" /> Competidor
+          </Btn>
+          <Btn variant="primary" @click="modal = 'precio'">
+            <Icon name="tag" :size="15" /> Registrar precio
+          </Btn>
+        </template>
+      </template>
+    </PageHeader>
+
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
       {{ error }}
     </p>
+    <p
+      v-if="aviso"
+      class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
+    >
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''"><Icon name="x" :size="14" /></button>
+    </p>
 
-    <div class="grid gap-6 lg:grid-cols-[1fr_20rem]">
-      <section class="space-y-3">
-        <h2 class="text-sm font-semibold text-on-surface">
-          Alertas de desviación <span class="text-on-surface-variant">({{ alertas.length }})</span>
-        </h2>
-        <div
-          class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest"
-        >
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b border-outline-variant text-left text-on-surface-variant">
-                <th class="px-4 py-2 font-semibold">Producto</th>
-                <th class="px-4 py-2 text-right font-semibold">Precio propio</th>
-                <th class="px-4 py-2 text-right font-semibold">Competencia</th>
-                <th class="px-4 py-2 font-semibold">Fuente</th>
-                <th class="px-4 py-2 text-right font-semibold">Desviación</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="cargando">
-                <td colspan="5" class="px-4 py-6 text-center text-on-surface-variant">Cargando…</td>
-              </tr>
-              <tr v-else-if="!alertas.length">
-                <td colspan="5" class="px-4 py-6 text-center text-on-surface-variant">
-                  Sin desviaciones por encima del umbral
-                </td>
-              </tr>
-              <tr
-                v-for="a in alertas"
-                :key="a.product_id"
-                class="border-b border-outline-variant last:border-0"
-              >
-                <td class="px-4 py-2 tabular-nums">#{{ a.product_id }}</td>
-                <td class="px-4 py-2 text-right tabular-nums">{{ moneda(a.precio_base) }}</td>
-                <td class="px-4 py-2 text-right tabular-nums">
-                  {{ moneda(a.precio_competencia) }}
-                </td>
-                <td class="px-4 py-2 text-on-surface-variant">{{ a.fuente_captura }}</td>
-                <td class="px-4 py-2 text-right font-semibold tabular-nums text-error">
-                  {{ a.desviacion_pct }}%
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <KpiTile
+        label="Desviaciones sobre el umbral"
+        :valor="kpi.alertas.toLocaleString('es-EC')"
+        :variant="kpi.alertas > 0 ? 'default' : 'emerald'"
+        :estado-tipo="kpi.alertas > 0 ? 'quiebre' : 'ok'"
+      >
+        <template #icono><Icon name="alert" :size="16" /></template>
+      </KpiTile>
+      <KpiTile label="Competidores en seguimiento" :valor="kpi.competidores.toLocaleString('es-EC')" estado-tipo="neutral">
+        <template #icono><Icon name="users" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="Mayor desviación"
+        :valor="kpi.peorPct == null ? '—' : `${kpi.peorPct}%`"
+        estado-tipo="fifo"
+        :microcopy="kpi.peorProducto ? `Producto #${kpi.peorProducto}` : 'Sin alertas'"
+      >
+        <template #icono><Icon name="chart" :size="16" /></template>
+      </KpiTile>
+    </section>
 
-      <aside v-if="puedeRegistrar" class="space-y-4">
-        <form
-          class="space-y-2 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-          @submit.prevent="crearCompetidor"
-        >
-          <h3 class="text-sm font-semibold text-on-surface">Nuevo competidor</h3>
+    <DataTable
+      titulo="Alertas de desviación"
+      subtitulo="Productos cuyo precio propio se aleja del de la competencia más allá del umbral configurado."
+      :columns="columnas"
+      :rows="pagina"
+      row-key="product_id"
+      :loading="cargando"
+      densa
+      :page="page"
+      :size="size"
+      :total="alertas.length"
+      empty-text="Sin desviaciones por encima del umbral"
+      @update:page="page = $event"
+      @update:size="((size = $event), (page = 1))"
+    >
+      <template #cell:producto="{ row }">
+        <span class="font-mono text-[12px] font-semibold text-brand-800">#{{ row.product_id }}</span>
+      </template>
+      <template #cell:propio="{ row }">
+        <span class="tabular-nums text-[13px] text-slate-700">{{ money(row.precio_base) }}</span>
+      </template>
+      <template #cell:competencia="{ row }">
+        <span class="tabular-nums text-[13px] text-slate-700">{{ money(row.precio_competencia) }}</span>
+      </template>
+      <template #cell:fuente="{ row }">
+        <span class="text-[12px] text-slate-500">{{ row.fuente_captura }}</span>
+      </template>
+      <template #cell:desviacion="{ row }">
+        <SemanticChip tipo="quiebre">{{ row.desviacion_pct }}%</SemanticChip>
+      </template>
+    </DataTable>
+
+    <!-- Modal: nuevo competidor -->
+    <Modal v-if="modal === 'competidor'" titulo="Nuevo competidor" @cerrar="modal = null">
+      <form class="space-y-3" @submit.prevent="crearCompetidor">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Nombre
           <input
             v-model="nuevoCompetidor.nombre"
-            placeholder="Nombre"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Tipo
           <select
             v-model="nuevoCompetidor.tipo"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           >
             <option value="supermercado">Supermercado</option>
             <option value="tienda_barrio">Tienda de barrio</option>
             <option value="tienda_digital">Tienda digital</option>
           </select>
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Ciudad (opcional)
           <input
             v-model="nuevoCompetidor.ciudad"
-            placeholder="Ciudad (opcional)"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
-          <button
-            type="submit"
-            class="w-full rounded-lg bg-primary-container px-3 py-2 text-sm font-semibold text-on-primary-container"
-          >
-            Agregar competidor
-          </button>
-        </form>
+        </label>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" type="button" @click="modal = null">Cancelar</Btn>
+          <Btn variant="primary" type="submit">Agregar competidor</Btn>
+        </div>
+      </form>
+    </Modal>
 
-        <form
-          class="space-y-2 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-          @submit.prevent="registrarPrecio"
-        >
-          <h3 class="text-sm font-semibold text-on-surface">Registrar precio de competencia</h3>
+    <!-- Modal: registrar precio -->
+    <Modal v-if="modal === 'precio'" titulo="Registrar precio de competencia" @cerrar="modal = null">
+      <form class="space-y-3" @submit.prevent="registrarPrecio">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Producto (ID)
           <input
             v-model="captura.productId"
             type="number"
-            placeholder="ID de producto"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Competidor
           <select
             v-model="captura.competidorId"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           >
-            <option value="">Competidor…</option>
+            <option value="" disabled>Elegí un competidor…</option>
             <option v-for="c in competidores" :key="c.competidor_id" :value="c.competidor_id">
               {{ c.nombre }}
             </option>
           </select>
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Precio observado (USD)
           <input
             v-model="captura.precio"
             type="number"
             min="0"
             step="0.01"
-            placeholder="Precio observado"
-            class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
-          <label class="flex items-center gap-2 text-xs text-on-surface-variant">
-            <input v-model="captura.esPromocional" type="checkbox" />
-            Precio promocional
-          </label>
-          <button
-            type="submit"
-            class="w-full rounded-lg bg-primary-container px-3 py-2 text-sm font-semibold text-on-primary-container"
-          >
-            Registrar captura
-          </button>
-        </form>
-      </aside>
-    </div>
-  </main>
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-slate-600">
+          <input v-model="captura.esPromocional" type="checkbox" /> Es un precio promocional
+        </label>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" type="button" @click="modal = null">Cancelar</Btn>
+          <Btn variant="primary" type="submit">Registrar captura</Btn>
+        </div>
+      </form>
+    </Modal>
+  </div>
 </template>
