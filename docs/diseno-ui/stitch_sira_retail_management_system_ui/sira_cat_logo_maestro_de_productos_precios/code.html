@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Catálogo Maestro de Productos &amp; Matriz de Precios</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-primary": "#a5cfc9",
+            "primary-fixed": "#c0ebe4",
+            "on-tertiary-fixed-variant": "#005137",
+            "secondary": "#712ae2",
+            "primary-container": "#0a3632",
+            "on-primary-container": "#779f9a",
+            "on-surface-variant": "#414847",
+            "secondary-container": "#8a4cfc",
+            "surface-container-lowest": "#ffffff",
+            "on-background": "#191c1e",
+            "tertiary-container": "#003825",
+            "primary-fixed-dim": "#a5cfc9",
+            "error": "#ba1a1a",
+            "surface-variant": "#e0e3e5",
+            "on-tertiary-container": "#30ab7c",
+            "error-container": "#ffdad6",
+            "surface-dim": "#d8dadc",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-error": "#ffffff",
+            "primary": "#00201d",
+            "tertiary-fixed-dim": "#68dba9",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary": "#ffffff",
+            "on-secondary-fixed": "#25005a",
+            "surface-container-highest": "#e0e3e5",
+            "surface-container-low": "#f2f4f6",
+            "inverse-surface": "#2d3133",
+            "inverse-on-surface": "#eff1f3",
+            "on-surface": "#191c1e",
+            "on-primary-fixed-variant": "#254d49",
+            "tertiary": "#002014",
+            "surface-bright": "#f8f9fb",
+            "on-primary": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "surface-tint": "#3e6561",
+            "tertiary-fixed": "#85f8c4",
+            "surface-container": "#eceef0",
+            "on-secondary-container": "#fffbff",
+            "surface-container-high": "#e6e8ea",
+            "surface": "#f8f9fb",
+            "on-primary-fixed": "#00201d",
+            "background": "#f8f9fb",
+            "on-tertiary-fixed": "#002114",
+            "outline": "#717977",
+            "outline-variant": "#c0c8c6",
+            "secondary-fixed": "#eaddff",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem",
+            "space-xs": "0.25rem",
+            "sidebar-expanded": "16.5rem",
+            "space-sm": "0.5rem",
+            "gutter-mobile": "1rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-lg": "1.5rem",
+            "space-2xl": "3rem",
+            "space-base": "1rem"
+          },
+          "fontFamily": {
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "monospace"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    }
+    /* Hairline & Glass utility */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 2px rgba(10, 54, 50, 0.03), 0 4px 12px rgba(10, 54, 50, 0.04);
+      border: 1px solid rgba(10, 54, 50, 0.08);
+    }
+    .ai-amethyst-card {
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.16), 0 8px 24px -4px rgba(124, 58, 237, 0.10);
+    }
+  </style>
+</head>
+<body class="bg-[#f5f7f9] text-on-surface font-body-md antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-white">
+<!-- TopNavBar (Shared Component from JSON Blueprint) -->
+<header class="sticky top-0 z-50 w-full bg-[#082a27] text-white border-b border-[#0f403b] shadow-sm">
+<div class="flex items-center justify-between px-6 w-full max-w-[1780px] mx-auto h-16">
+<!-- Brand & Left Navigation Links -->
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">storefront</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-white font-bold tracking-tight">SIRA</span>
+<span class="text-[10px] tracking-widest font-semibold px-1.5 py-0.5 rounded bg-emerald-950/80 text-emerald-300 border border-emerald-500/20">ENTERPRISE OS</span>
+</div>
+</div>
+</div>
+<nav class="hidden xl:flex items-center gap-1 font-label-md">
+<a class="px-3.5 py-1.5 rounded-md text-emerald-200/80 hover:text-white hover:bg-white/5 transition-colors" href="#">Dashboard</a>
+<a class="px-3.5 py-1.5 rounded-md text-emerald-200/80 hover:text-white hover:bg-white/5 transition-colors" href="#">Punto de Venta</a>
+<a class="px-3.5 py-1.5 rounded-md text-emerald-200/80 hover:text-white hover:bg-white/5 transition-colors" href="#">Inventario</a>
+<!-- Activo según JSON / Semantic Hierarchy: "Catálogo" -->
+<a class="px-3.5 py-1.5 rounded-md bg-white/10 text-white font-semibold border border-white/15 flex items-center gap-1.5 shadow-sm" href="#">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+<span>Catálogo</span>
+</a>
+<a class="px-3.5 py-1.5 rounded-md text-emerald-200/80 hover:text-white hover:bg-white/5 transition-colors" href="#">CRM Clientes</a>
+<a class="px-3.5 py-1.5 rounded-md text-emerald-200/80 hover:text-white hover:bg-white/5 transition-colors" href="#">Finanzas</a>
+</nav>
+</div>
+<!-- Quick Context & Trailing Actions -->
+<div class="flex items-center gap-4">
+<!-- Branch Selector & SAP status -->
+<div class="hidden lg:flex items-center gap-3 bg-white/5 border border-white/10 px-3 py-1.5 rounded-md">
+<div class="flex items-center gap-1.5 text-xs text-emerald-200">
+<span class="material-symbols-outlined text-sm">storefront</span>
+<span class="font-medium text-white">Tienda 04 - Providencia Express</span>
+</div>
+<span class="w-px h-3.5 bg-white/20"></span>
+<div class="flex items-center gap-1.5 text-[11px] font-mono text-emerald-300">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span>SAP HANA Online</span>
+</div>
+</div>
+<!-- Trailing Secondary Action (Lila/Amethyst) -->
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-[#712ae2] hover:bg-[#6020c7] rounded-md transition-all active:scale-[0.98] shadow-sm">
+<span class="material-symbols-outlined text-base">payments</span>
+<span>Apertura de Caja</span>
+</button>
+<!-- Trailing Primary Action -->
+<button class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-md transition-all active:scale-[0.98] shadow-sm">
+<span class="material-symbols-outlined text-base">add</span>
+<span>Nuevo / Agregar</span>
+</button>
+<!-- Notification & Swap icons from JSON -->
+<div class="flex items-center gap-1 border-l border-white/10 pl-3">
+<button class="p-2 text-emerald-200 hover:text-white hover:bg-white/5 rounded-md transition-colors" title="Cambiar Sucursal">
+<span class="material-symbols-outlined text-lg">swap_horiz</span>
+</button>
+<button class="p-2 text-emerald-200 hover:text-white hover:bg-white/5 rounded-md transition-colors relative" title="Notificaciones">
+<span class="material-symbols-outlined text-lg">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-400 rounded-full"></span>
+</button>
+</div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2.5 pl-2">
+<img class="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/30" data-alt="Corporate headshot portrait of Camila Valenzuela, General Store Manager at Marzú Retail Group. She has a confident and composed professional expression, positioned against a soft-lit, high-end architectural grocery store interior with subtle teal and warm ambient illumination." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBFol7ZXfy9uWWFlYvJ7bWO9WCMm6UQS7rMrHB2uNDBjrruQmkfnXRt48ez70IPJJIuPpF225XPczm2ejm0wI4xWLjPAVJkbhi0hV8Y38w6nBavLmiApQksiMfBPHRcAXz_21xaQrQE0Ime1vYHo8_DcgZr8rzMCX4JFeppQO10hSu465WeCSBSzwlt_mR5kvWwUZ0qZauS-u8AVvzuaMsBet3c3kEiFq8_9UW_eetDS3q8rxMip1YmXA"/>
+<div class="hidden md:block text-left text-xs leading-tight">
+<div class="font-semibold text-white">Camila Valenzuela</div>
+<div class="text-[11px] text-emerald-300/80">Encargada de Tienda</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Sub-Header & Breadcrumb Bar -->
+<div class="bg-surface-container-lowest border-b border-outline-variant/40 px-6 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+<div class="max-w-[1780px] mx-auto flex flex-wrap items-center justify-between gap-2">
+<div class="flex items-center gap-2 text-xs font-label-md text-on-surface-variant">
+<span class="font-semibold text-primary">Marzú Retail Group</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span>Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-xs text-outline">chevron_right</span>
+<span class="text-primary-container font-semibold">Catálogo Maestro Multicanal</span>
+</div>
+<div class="flex items-center gap-4 text-xs font-tabular-data text-on-surface-variant">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-emerald-700">sync</span>
+<span>Sincronización de precios: <strong class="text-on-surface">Hace 3 min</strong></span>
+</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary">smart_toy</span>
+<span>Motor IA de Elasticidad: <strong class="text-secondary">Activo</strong></span>
+</span>
+</div>
+</div>
+</div>
+<!-- Main Canvas Cockpit -->
+<main class="flex-1 max-w-[1780px] w-full mx-auto p-6 space-y-6">
+<!-- Page Title & Top Actions Cluster -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-3">
+<h1 class="font-headline-xl text-primary tracking-tight">Catálogo Maestro de Productos &amp; Matriz de Precios</h1>
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            Sync Omnicanal 100%
+          </span>
+</div>
+<p class="font-body-md text-on-surface-variant mt-1">Gestión centralizada de SKU, márgenes brutos, PVP regulado por canal y simulación de sensibilidad a la demanda.</p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-lowest border border-outline-variant/70 text-primary font-label-md hover:bg-surface-container-low transition-colors shadow-sm">
+<span class="material-symbols-outlined text-base">upload_file</span>
+<span>Importar Masivo (Excel/SAP)</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-surface-container-lowest border border-outline-variant/70 text-primary font-label-md hover:bg-surface-container-low transition-colors shadow-sm">
+<span class="material-symbols-outlined text-base">download</span>
+<span>Exportar Catálogo</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded bg-secondary-container/10 border border-secondary/30 text-secondary font-label-md hover:bg-secondary/15 transition-all shadow-sm">
+<span class="material-symbols-outlined text-base">tune</span>
+<span>Actualización Rápida de Márgenes</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary-container text-white font-label-md hover:bg-[#0e4a44] transition-all shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-base">add_circle</span>
+<span>+ Nuevo Producto / SKU</span>
+</button>
+</div>
+</div>
+<!-- 4 KPI Metrics Row -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- KPI 1: SKUs Activos -->
+<div class="glass-panel p-4 rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm uppercase tracking-wider text-outline">Total SKUs Activos</span>
+<span class="material-symbols-outlined text-primary-container/70 text-xl">inventory_2</span>
+</div>
+<div class="mt-2 mb-3">
+<div class="font-tabular-metric text-on-surface">3.420 <span class="text-xs font-normal text-on-surface-variant">productos</span></div>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline-variant/30 text-xs">
+<span class="inline-flex items-center text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
+            +120 nuevos
+          </span>
+<span class="text-on-surface-variant font-label-sm">98% con código EAN validado</span>
+</div>
+</div>
+<!-- KPI 2: Margen Bruto -->
+<div class="glass-panel p-4 rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm uppercase tracking-wider text-outline">Margen Bruto Ponderado</span>
+<span class="material-symbols-outlined text-emerald-700 text-xl">trending_up</span>
+</div>
+<div class="mt-2 mb-3">
+<div class="font-tabular-metric text-primary-container">34.6%</div>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline-variant/30 text-xs">
+<span class="inline-flex items-center text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded">
+            +260 bps
+          </span>
+<span class="text-on-surface-variant font-label-sm">Meta tienda: &gt;32.0% cumplida</span>
+</div>
+</div>
+<!-- KPI 3: Amethyst AI Elasticidad -->
+<div class="glass-panel ai-amethyst-card p-4 rounded-lg flex flex-col justify-between relative overflow-hidden">
+<div class="absolute -right-3 -top-3 w-16 h-16 bg-purple-100 rounded-full blur-xl pointer-events-none"></div>
+<div class="flex items-center justify-between text-secondary">
+<span class="font-label-sm uppercase tracking-wider font-semibold text-secondary">Elasticidad de Precios IA</span>
+<span class="material-symbols-outlined text-secondary text-xl">psychology</span>
+</div>
+<div class="mt-2 mb-3">
+<div class="font-tabular-metric text-secondary">Media-Alta</div>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-secondary/15 text-xs">
+<span class="inline-flex items-center text-purple-800 font-semibold bg-purple-100 px-1.5 py-0.5 rounded">
+            450 SKUs
+          </span>
+<span class="text-on-surface-variant font-label-sm">Bajo optimización dinámica activa</span>
+</div>
+</div>
+<!-- KPI 4: Ofertas y Promociones -->
+<div class="glass-panel p-4 rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between text-on-surface-variant">
+<span class="font-label-sm uppercase tracking-wider text-outline">Precios Promocionales</span>
+<span class="material-symbols-outlined text-amber-600 text-xl">sell</span>
+</div>
+<div class="mt-2 mb-3">
+<div class="font-tabular-metric text-on-surface">186 <span class="text-xs font-normal text-on-surface-variant">ofertas vigentes</span></div>
+</div>
+<div class="flex items-center gap-2 pt-2 border-t border-outline-variant/30 text-xs">
+<span class="inline-flex items-center text-amber-800 font-semibold bg-amber-100 px-1.5 py-0.5 rounded">
+            24 vencen esta semana
+          </span>
+<span class="text-on-surface-variant font-label-sm">Revisión de markup req.</span>
+</div>
+</div>
+</section>
+<!-- Operational Work Area: 2-Column Responsive Layout (Main Table + Dynamic Simulation Drawer) -->
+<div class="grid grid-cols-1 2xl:grid-cols-12 gap-6 items-start">
+<!-- Main Table Stage (9 cols on 2xl) -->
+<div class="2xl:col-span-9 space-y-4">
+<!-- Filter Toolbar -->
+<div class="glass-panel p-4 rounded-lg space-y-3">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+<!-- Search bar -->
+<div class="md:col-span-5 relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-lg pointer-events-none">search</span>
+<input class="w-full pl-9 pr-4 py-2 text-xs rounded border border-outline-variant/80 focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container text-on-surface bg-surface-container-lowest placeholder:text-outline" placeholder="Buscar por SKU, EAN-13, nombre comercial o proveedor..." type="text"/>
+</div>
+<!-- Category selector -->
+<div class="md:col-span-3">
+<select class="w-full py-2 px-3 text-xs rounded border border-outline-variant/80 focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container text-on-surface bg-surface-container-lowest">
+<option value="">Todas las Categorías (6)</option>
+<option value="lacteos">Lácteos &amp; Frescos</option>
+<option selected="" value="abarrotes">Abarrotes &amp; Gourmet</option>
+<option value="panaderia">Panadería &amp; Masa Madre</option>
+<option value="frutas">Frutas &amp; Verduras</option>
+<option value="bebidas">Bebidas &amp; Licores</option>
+<option value="cuidado">Cuidado Personal</option>
+</select>
+</div>
+<!-- Margin Filter -->
+<div class="md:col-span-2">
+<select class="w-full py-2 px-3 text-xs rounded border border-outline-variant/80 focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container text-on-surface bg-surface-container-lowest">
+<option value="">Margen: Todos</option>
+<option value="low">&lt; 20% (Bajo)</option>
+<option value="mid">20% - 35% (Normal)</option>
+<option value="high">&gt; 35% (Premium)</option>
+</select>
+</div>
+<!-- Price Matrix Channel Selector -->
+<div class="md:col-span-2">
+<select class="w-full py-2 px-3 text-xs font-semibold rounded border border-secondary/40 focus:ring-2 focus:ring-secondary/20 focus:border-secondary text-secondary bg-purple-50/50">
+<option selected="" value="express">Lista Providencia Express</option>
+<option value="online">Lista Online / Delivery</option>
+<option value="mayorista">Lista Mayorista B2B</option>
+</select>
+</div>
+</div>
+<!-- Filter Pills & Status summary -->
+<div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-outline-variant/30 text-xs">
+<div class="flex items-center gap-2">
+<span class="text-outline font-label-sm">Filtros Activos:</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm">
+                Categoría: Abarrotes &amp; Gourmet
+                <button class="hover:text-primary"><span class="material-symbols-outlined text-xs">close</span></button>
+</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-sm">
+                Canal: Físico Tienda 04
+                <button class="hover:text-primary"><span class="material-symbols-outlined text-xs">close</span></button>
+</span>
+<button class="text-secondary hover:underline font-label-sm ml-1">Restablecer filtros</button>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant">
+<span>Mostrando <strong>8 de 3.420</strong> productos</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<button class="flex items-center gap-1 text-primary hover:text-primary-container font-medium">
+<span class="material-symbols-outlined text-sm">view_column</span>
+<span>Columnas Visibles</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Master Product Data Table -->
+<div class="glass-panel rounded-lg overflow-hidden border border-outline-variant/40 shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#f8fafc] border-b border-outline-variant/50 text-[11px] font-label-sm text-outline uppercase tracking-wider h-10">
+<th class="w-10 px-4 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</th>
+<th class="px-3 py-2 font-semibold">SKU / EAN-13</th>
+<th class="px-4 py-2 font-semibold">Producto &amp; Formato</th>
+<th class="px-3 py-2 font-semibold">Categoría / Pasillo</th>
+<th class="px-3 py-2 font-semibold text-right">Costo Proveedor Neto</th>
+<th class="px-3 py-2 font-semibold text-right">Margen Obj.</th>
+<th class="px-3 py-2 font-semibold text-right">PVP Actual (IVA Inc.)</th>
+<th class="px-3 py-2 font-semibold text-right text-secondary">PVP Delivery App</th>
+<th class="px-3 py-2 font-semibold text-center">Estado Margen</th>
+<th class="px-4 py-2 font-semibold text-center">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-xs font-body-sm">
+<!-- Product Row 1 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-77901</div>
+<div class="text-[11px] text-outline">7804612301982</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="High-end gourmet dark glass bottle of Extra Virgin Olive Oil 500ml sitting on a minimalist slate surface. Professional studio culinary lighting highlighting the deep golden-green oil tones and sleek brand label against an abyssal dark emerald background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDN2_FbeX-3nc1W8se7zMep6f1X4dVHOUQSomhAwzyF-cav_MvpRw_7qCVS5k1YF7B_Uq67FtLlo9z2ctsS528QmrtLgnArvN6Cb3Cqbm23TBuoueM0dzgBLhx7Ta3bxwH3N2dWzMXz4MYNM59TyJmqDcubYvzNqgSlmdtk3ZA-9xzqsWzLl2MWjjqygSKd2mBobmN4JDPj_ofqWAWDGmHqcjDFdOzV0IV0X9Bprv8_SpONwf4bVQzJ-w"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Aceite de Oliva Extra Virgen Reserva</div>
+<div class="text-[11px] text-on-surface-variant">Alonso Gourmet • Botella Vidrio Oscuro 500ml</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-medium">Abarrotes &amp; Aceites</span>
+<div class="text-[10px] text-outline mt-0.5">Pasillo 03-B • Nivel 2</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $5.450 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-emerald-700">
+                    38.5%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$8.890 CLP</div>
+<div class="text-[10px] text-outline">Neto: $7.471</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $9.690 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Margen Óptimo
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Product Row 2 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group bg-surface-bright/30">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-48219</div>
+<div class="text-[11px] text-outline">7809823412034</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="Kraft matte foil valve pouch bag of roasted specialty Arabica Whole Bean Coffee 500g in a pristine Nordic kitchen setting. Soft daylight catches subtle aromatic roasted coffee beans resting beside the package with a clean, high-end retail look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQOJeUEJ9HAEOgEpbgN3rr8dGKqa7kL6hvuRW8SqOzSiMHok9kcxwCViCt50DcFBkMNmBa-xccJzz18-youWZXCnGeuH8dqyyCJw7IOGCrKt1PHp5TVwnm81k5m4G9emziXwYUdjen0c1v0DKavW9Ob1wCfeI3XqzDKRPR7Icz-90TbfJyqamneTHM3fOq14xDhC1LkE0ZhxTysHfzpW051RI8Hmx2pScalCePldmrLG8gfQQ_HZsgmQ"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Café Arábica Grano Entero Roast Master</div>
+<div class="text-[11px] text-on-surface-variant">Café Altura • Bolsa Válvula 500g</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-medium">Desayuno &amp; Café</span>
+<div class="text-[10px] text-outline mt-0.5">Pasillo 02-A • Cabecera</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $7.900 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-emerald-700">
+                    36.2%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$12.390 CLP</div>
+<div class="text-[10px] text-outline">Neto: $10.412</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $13.490 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Margen Óptimo
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Product Row 3 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-31204</div>
+<div class="text-[11px] text-outline">7801289345091</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="Chilled vacuum thermoformed pack of sliced aged Gouda Cheese 500g in a refrigerated modern grocery display case. Sharp focus on golden cheese layers with condensation droplets and crisp transparent label packaging." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKoLSpZe-c5-K4qPgxGy0qo5mqOWlOzIw4c0dujvgG3vFcyzWILfHxVpYhdMxtQcHAPxb9MZIgQwMrmn0yRai8JOo-e5MmLi-7SElmqUblwV7eKcD3UuBph_RawdEyWgFlJpCd95H5oQQLtmAxCI5xCZmuVMa13RxqvgLGX4StU_vA86-_7BTxV_xhUo1nyYAwxgAsBVMt3PdPt2Kj2MRE4jkynKX8wd5J5WgLUko3PWstgRehtq5EaA"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Queso Gouda Madurado Laminado</div>
+<div class="text-[11px] text-on-surface-variant">Colun Selección • Atmósfera Modificada 500g</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-blue-50 text-blue-800 font-medium">Lácteos &amp; Fiambrería</span>
+<div class="text-[10px] text-outline mt-0.5">Mural Refrigerado 01</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $4.150 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-amber-700">
+                    23.4%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$5.420 CLP</div>
+<div class="text-[10px] text-outline">Neto: $4.555</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $5.890 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Margen Ajustado
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Product Row 4 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group bg-surface-bright/30">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-99410</div>
+<div class="text-[11px] text-outline">7807654129845</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="Rustic organic Artisan Sourdough Whole Wheat loaf 650g dusted with flour inside a minimalist bakery display crate with warm accent backlighting, highlighting crisp crust textures." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCW-0eVPDrurygEsGObqtF7l5evgyzIcwj1m9_NxFa8WR1ZOTcY8QJfaourd8Lx5YkQ7QtYcp1t6DCi9yneEvXi0zh-IY7xZp2TJVGhhOIKYKxFpTH3z-5Pk1lwPmVOi2OcAupG12UvWGSlhjJpnhVqzZqZWB4UTJg1BIcvG1vthPnL1S9CS7bpMkO6QBWYADq1i2l8syVesKhNN2L__YzFiN3bBra8txsbCzmui1jlwAku2s07rw5PWw"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Pan de Masa Madre Integral 650g</div>
+<div class="text-[11px] text-on-surface-variant">Panadería Central Marzú • Elaboración Diaria</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-amber-50 text-amber-800 font-medium">Panadería Fresca</span>
+<div class="text-[10px] text-outline mt-0.5">Góndola Central Horno</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $1.420 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-emerald-700">
+                    49.1%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$2.790 CLP</div>
+<div class="text-[10px] text-outline">Neto: $2.345</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $3.190 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Margen Óptimo
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Product Row 5 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-20512</div>
+<div class="text-[11px] text-outline">7802200114090</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="Chilled PET clear bottle of Coca-Cola Zero Sugar 1.5 Liters with vivid red cap and ice condensation running down the sides, lit with crisp commercial refrigerator LED lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB47L6SPGqc56eupnSK4aLi-JzqhbxVogFyL2X7NutzZb8mWRUXo-tHvInAi-kipDAQyO7vSscv0ug80d5uh594E3DEbYs0ebYPZ-xhmxSKedTxcwSxV2yMnCgeSzmblNha35ssBfs6QSF3z6QM54jQQopSV65JFDjmrFbcw0g9CsBOZtX_5xCoFpW9uLO7LNzUFG5xAnL0uXkZwFKEL1_s_wwxqjeXYSFZXs2dLM6zFb_ekwi6n894uw"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Bebida Gaseosa Cola Zero Azúcar 1.5L</div>
+<div class="text-[11px] text-on-surface-variant">Coca-Cola Andina • Envase PET Desechable</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-medium">Bebidas &amp; Refrescos</span>
+<div class="text-[10px] text-outline mt-0.5">Pasillo 05 • Heladeras</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $1.390 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-rose-700">
+                    17.8%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$1.690 CLP</div>
+<div class="text-[10px] text-outline">Neto: $1.420</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $1.990 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+<span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                      Bajo Margen
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Product Row 6 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors group bg-surface-bright/30">
+<td class="px-4 py-3 text-center">
+<input class="rounded border-outline-variant text-primary-container focus:ring-0" type="checkbox"/>
+</td>
+<td class="px-3 py-3 font-mono font-tabular-data text-[12px] text-on-surface-variant">
+<div class="font-semibold text-primary">SKU-66014</div>
+<div class="text-[11px] text-outline">7805401928312</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex items-center gap-3">
+<img class="w-10 h-10 rounded object-cover border border-outline-variant/40 bg-surface-container-low flex-shrink-0" data-alt="Luxury vacuum flat pack of premium Chilean Smoked Atlantic Salmon fillets 200g displayed over natural polished pine wood with sprigs of fresh dill and pink peppercorns in a high-end delicatessen environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCr1KGSFI2SLXlievElyWNz-qjvj9GU51-PPtPtNEN5pAI7pLoJsttrsa0CLib92BqFVftO_6UQOUaGrLe-sny64xVm7LysqwmQvlzMmuHYmw_cHpshRrP68GjmvntU06ShyQMQbnRTiByyzKj0OKKUpFqGmz9hYX_x25kKBAnh4Bo7HF51BVCgqUrxu5zGarvnfFDIRf4M04mVCTAYLNzX1t3xBhSxSOxfBCdJ99E9p8PxzieQ2R2Ogg"/>
+<div>
+<div class="font-semibold text-on-surface text-xs leading-tight">Salmón Ahumado en Frío Premium 200g</div>
+<div class="text-[11px] text-on-surface-variant">Australis Gourmet • Envasado al Vacío</div>
+</div>
+</div>
+</td>
+<td class="px-3 py-3">
+<span class="inline-block px-2 py-0.5 rounded text-[11px] bg-blue-50 text-blue-800 font-medium">Pescados &amp; Gourmet</span>
+<div class="text-[10px] text-outline mt-0.5">Isla Refrigerada Gourmet</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-on-surface">
+                    $6.200 CLP
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-emerald-700">
+                    41.0%
+                  </td>
+<td class="px-3 py-3 text-right font-tabular-data">
+<div class="font-bold text-on-surface text-[13px]">$10.500 CLP</div>
+<div class="text-[10px] text-outline">Neto: $8.824</div>
+</td>
+<td class="px-3 py-3 text-right font-tabular-data font-semibold text-secondary">
+                    $11.890 CLP
+                  </td>
+<td class="px-3 py-3 text-center">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Margen Óptimo
+                    </span>
+</td>
+<td class="px-4 py-3 text-center">
+<div class="flex items-center justify-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Editar Ficha">
+<span class="material-symbols-outlined text-base">edit</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-secondary" title="Ajustar Precio Rápido">
+<span class="material-symbols-outlined text-base">price_change</span>
+</button>
+<button class="p-1.5 hover:bg-surface-container rounded text-outline hover:text-primary" title="Histórico de Costos">
+<span class="material-symbols-outlined text-base">monitoring</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Bar -->
+<div class="px-4 py-3 bg-[#fcfdfd] border-t border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+<div class="text-on-surface-variant font-body-sm">
+              Mostrando <strong class="text-on-surface">1 - 6</strong> de 3.420 referencias totales
+            </div>
+<div class="flex items-center gap-1.5 font-label-md">
+<button class="p-1.5 rounded border border-outline-variant/60 text-outline hover:bg-surface-container disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-sm">first_page</span>
+</button>
+<button class="p-1.5 rounded border border-outline-variant/60 text-outline hover:bg-surface-container disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-7 h-7 rounded bg-primary-container text-white font-semibold flex items-center justify-center">1</button>
+<button class="w-7 h-7 rounded border border-outline-variant/60 text-on-surface hover:bg-surface-container flex items-center justify-center">2</button>
+<button class="w-7 h-7 rounded border border-outline-variant/60 text-on-surface hover:bg-surface-container flex items-center justify-center">3</button>
+<span class="px-1 text-outline">...</span>
+<button class="w-7 h-7 rounded border border-outline-variant/60 text-on-surface hover:bg-surface-container flex items-center justify-center">57</button>
+<button class="p-1.5 rounded border border-outline-variant/60 text-outline hover:bg-surface-container">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+</button>
+<button class="p-1.5 rounded border border-outline-variant/60 text-outline hover:bg-surface-container">
+<span class="material-symbols-outlined text-sm">last_page</span>
+</button>
+</div>
+<div class="flex items-center gap-2 text-xs text-on-surface-variant">
+<span>Registros por pág:</span>
+<select class="py-1 px-2 text-xs rounded border border-outline-variant/80 bg-surface-container-lowest">
+<option>25</option>
+<option>50</option>
+<option>100</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Simulation Drawer / Smart Marginality Panel (3 cols on 2xl) -->
+<div class="2xl:col-span-3 space-y-4">
+<!-- Live Margin Simulator Card (Amethyst Accent Tier 3) -->
+<div class="glass-panel ai-amethyst-card rounded-lg p-5 border border-purple-200/80 bg-white">
+<div class="flex items-center justify-between pb-3 border-b border-purple-100">
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded bg-purple-100 text-secondary">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">analytics</span>
+</span>
+<div>
+<h3 class="font-headline-sm text-primary text-sm font-semibold">Simulador de Impacto</h3>
+<p class="text-[11px] text-outline font-label-sm">Motor Predictivo de Elasticidad</p>
+</div>
+</div>
+<span class="text-[10px] font-semibold text-secondary bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200">
+              Live Feed
+            </span>
+</div>
+<div class="mt-4 space-y-4">
+<!-- Simulated Selected SKU context -->
+<div class="p-2.5 rounded bg-[#f8f9fb] border border-outline-variant/40">
+<div class="text-[11px] text-outline font-medium">SKU Seleccionado para Prueba:</div>
+<div class="font-semibold text-xs text-on-surface mt-0.5">Aceite de Oliva Extra Virgen 500ml</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant mt-1.5">
+<span>PVP Actual: <strong>$8.890 CLP</strong></span>
+<span>Margen: <strong class="text-emerald-700">38.5%</strong></span>
+</div>
+</div>
+<!-- Slider Simulation control -->
+<div class="space-y-2">
+<div class="flex justify-between items-center text-xs">
+<label class="font-medium text-on-surface font-label-sm">Ajuste proyectado de PVP:</label>
+<span class="font-bold font-tabular-data text-secondary text-sm bg-purple-50 px-2 py-0.5 rounded border border-purple-200" id="slider-val">+4.0%</span>
+</div>
+<input class="w-full accent-secondary cursor-pointer h-1.5 bg-purple-100 rounded-lg" id="elasticity-slider" max="15" min="-10" step="0.5" type="range" value="4"/>
+<div class="flex justify-between text-[10px] text-outline font-mono">
+<span>-10% (Promo agresiva)</span>
+<span>0%</span>
+<span>+15% (Markup máx)</span>
+</div>
+</div>
+<!-- Simulation Projected Outcomes -->
+<div class="p-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-600/20 space-y-2">
+<div class="flex items-center gap-1.5 text-xs text-emerald-900 font-semibold">
+<span class="material-symbols-outlined text-sm text-emerald-700">insights</span>
+<span>Proyección Mensual Tienda 04:</span>
+</div>
+<div class="text-xs text-emerald-950 leading-relaxed">
+                Si aumentas PVP un <strong class="text-emerald-900">+4.0%</strong> ($9.250 CLP), la ganancia bruta mensual proyectada sube en:
+              </div>
+<div class="font-tabular-metric text-emerald-900 text-xl font-bold flex items-baseline gap-1">
+                +$420.000 <span class="text-xs font-normal text-emerald-800">CLP netos/mes</span>
+</div>
+<div class="flex items-center gap-1 text-[11px] text-emerald-800 pt-1 border-t border-emerald-600/10">
+<span class="material-symbols-outlined text-xs text-emerald-600">check_circle</span>
+<span>Pérdida esperada de elasticidad: <strong class="text-emerald-900">0.0% (Inelástico)</strong></span>
+</div>
+</div>
+<!-- Action buttons inside drawer -->
+<div class="pt-1 space-y-2">
+<button class="w-full py-2 px-3 text-xs font-semibold rounded text-white bg-secondary hover:bg-[#6020c7] transition-colors shadow-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">flash_on</span>
+<span>Aplicar a Providencia Express</span>
+</button>
+<button class="w-full py-2 px-3 text-xs font-medium rounded text-on-surface-variant bg-surface-container-low hover:bg-surface-container transition-colors border border-outline-variant/40 flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-sm">schedule_send</span>
+<span>Programar para próximo lunes 00:00</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Quick Channel Markup Matrix Card -->
+<div class="glass-panel rounded-lg p-4 space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="font-headline-sm text-xs font-semibold text-primary uppercase tracking-wider">Reglas de Recargo por Canal</h4>
+<span class="material-symbols-outlined text-outline text-sm">settings_suggest</span>
+</div>
+<div class="space-y-2 text-xs">
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>Tienda Física Base</span>
+</div>
+<span class="font-tabular-data font-semibold text-primary">0.0% markup</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span>Canal Delivery App (Uber/Rappi)</span>
+</div>
+<span class="font-tabular-data font-semibold text-secondary">+12.0% auto</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-blue-500"></span>
+<span>E-Commerce Web Retiro</span>
+</div>
+<span class="font-tabular-data font-semibold text-primary">+0.0% (PVP Físico)</span>
+</div>
+</div>
+<p class="text-[11px] text-outline leading-tight pt-1">
+            Los precios en canales digitales cubren automáticamente la comisión de pasarela y packaging.
+          </p>
+</div>
+</div>
+</div>
+</main>
+<!-- Institutional Security Footer -->
+<footer class="mt-auto bg-surface-container-lowest border-t border-outline-variant/40 py-3.5 px-6">
+<div class="max-w-[1780px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-on-surface-variant font-label-sm">
+<div class="flex items-center gap-3">
+<span class="font-bold tracking-tight text-primary">Marzú Retail Group</span>
+<span class="text-outline">•</span>
+<span>SIRA Retail Enterprise Engine v4.8.2</span>
+<span class="text-outline">•</span>
+<span class="flex items-center gap-1 text-emerald-800">
+<span class="material-symbols-outlined text-xs">verified_user</span>
+<span>PCI-DSS v4.0 Level 1 Verified</span>
+</span>
+</div>
+<div class="flex items-center gap-4 text-[11px] text-outline">
+<span>Infraestructura Cloud: <strong>AWS Santiago Region (sa-east-1)</strong></span>
+<span>•</span>
+<span>Latencia nodo SAP HANA: <strong>14 ms</strong></span>
+<span>•</span>
+<span>ID Sesión: <code class="font-mono text-primary">MRZ-PROV-04-CATALOG</code></span>
+</div>
+</div>
+</footer>
+<!-- Micro-interaction Script for Live Margin Simulator -->
+<script>
+    const slider = document.getElementById('elasticity-slider');
+    const sliderVal = document.getElementById('slider-val');
+
+    if (slider && sliderVal) {
+      slider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        sliderVal.textContent = (val > 0 ? '+' : '') + val.toFixed(1) + '%';
+      });
+    }
+  </script>
+</body></html>

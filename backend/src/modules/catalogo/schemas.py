@@ -53,3 +53,70 @@ class ProductoOut(BaseModel):
     created_at: datetime | None = None
 
     model_config = {"from_attributes": True}
+
+
+# --- matriz de precios por canal (US4, migración 0024) ---
+EstadoMargen = Literal["optimo", "ajustado", "bajo", "sin_precio"]
+
+
+class ReglaCanalOut(BaseModel):
+    canal: str
+    nombre: str
+    markup_pct: Decimal
+    descripcion: str | None
+    activo: bool
+    orden: int
+
+    model_config = {"from_attributes": True}
+
+
+class ReglaCanalPatch(BaseModel):
+    markup_pct: Decimal | None = Field(default=None, ge=0, le=100)
+    activo: bool | None = None
+
+
+class PrecioMatrizItem(BaseModel):
+    product_id: int
+    codigo_barras: str | None
+    nombre: str | None
+    marca: str | None
+    product_category: str | None
+    package_size: str | None
+    imagen_url: str | None
+    clasificacion_abc: str | None
+    es_ancla: bool
+    activo: bool
+    costo: Decimal | None
+    precio_base: Decimal | None
+    margen_pct: float | None
+    margen_objetivo_pct: Decimal | None
+    estado_margen: EstadoMargen
+
+
+class CatalogoResumenOut(BaseModel):
+    total_activos: int
+    nuevos_30d: int
+    con_ean: int
+    total: int
+    skus_con_elasticidad: int
+    promos_vigentes: int
+    skus_bajo_margen: int
+    margen_bruto_ponderado_pct: float | None
+
+
+class SimulacionPrecioIn(BaseModel):
+    delta_pct: Decimal = Field(ge=-30, le=30)
+
+
+class SimulacionPrecioOut(BaseModel):
+    product_id: int
+    nombre: str | None
+    pvp_actual: Decimal
+    pvp_nuevo: Decimal
+    margen_actual_pct: float | None
+    margen_nuevo_pct: float | None
+    unidades_mes: float
+    factor_elasticidad: float
+    delta_unidades_mes: float
+    ganancia_mensual_delta: float
+    es_inelastico: bool

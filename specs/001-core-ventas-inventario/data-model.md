@@ -14,6 +14,16 @@
 
 **Transiciones**: `activo=true` → `activo=false` (descontinuado, irreversible en este flujo — reactivar requeriría un alta nueva, fuera de alcance de esta feature).
 
+### 1.1 Recargo por canal de venta (`regla_recargo_canal`, migración 0024)
+
+La pantalla "Catálogo Maestro de Productos & Matriz de Precios" muestra, junto al PVP físico, el PVP de cada canal digital (Delivery App +12%, E-Commerce +0%). Se modela como una regla transversal, no un precio por producto:
+
+**Campos clave**: `canal` (PK: `fisico` | `delivery_app` | `ecommerce`), `nombre`, `markup_pct` (0–100), `descripcion`, `activo`, `orden`.
+
+**Regla**: `PVP_canal = precio_base * (1 + markup_pct/100)`. El canal `fisico` es la base y su `markup_pct` es siempre 0 (se rechaza con 422 al intentar cambiarlo). Lo edita el Jefe Comercial / de Operaciones (RBAC módulo `Comercial`, tabla `regla_recargo_canal`).
+
+El **Simulador de Impacto** (`POST /catalogo/productos/{id}/simular-precio`) proyecta el margen y la ganancia mensual ante un cambio de PVP usando `margenes_objetivo.factor_sensibilidad` (0 = inelástico, 1 = muy elástico) como elasticidad de la categoría y las unidades/mes históricas del SKU.
+
 ## 2. Venta (Ticket/Comprobante)
 
 **Tabla**: `ventas`

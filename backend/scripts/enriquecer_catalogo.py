@@ -9,6 +9,8 @@ completas:
   - `productos.nombre`  ← `product_type` legible + `package_size`
   - `productos.marca`   ← marca genérica (pool fijo) o "Marca propia" si es Private
   - `productos.costo` / `precio_base` ← banda de precio por `department` cuando falta
+  - `margenes_objetivo` + `productos.costo` ← margen variado por categoría/SKU
+    (evita el 30% plano; la matriz de precios muestra óptimo/ajustado/bajo)
   - `proveedores`       ← 8 distribuidores genéricos (si la tabla está vacía)
   - `lotes.codigo_lote_proveedor` ← `L-AAMM-Pnn-<lote_id>` cuando falta
 
@@ -134,6 +136,30 @@ async def main() -> None:
         """)
         )
         log.info("precio sintético: %s productos", r.rowcount)
+
+        # 2b · variar el margen (evitar el 30% plano) --------------------
+        # Cada categoría tiene un margen objetivo propio (22%–34%) y cada SKU
+        # cae a ±14 pp de ese objetivo — así la matriz de precios muestra
+        # "óptimo / ajustado / bajo margen" como en la referencia de UI.
+        await s.execute(
+            text("""
+            UPDATE margenes_objetivo SET
+              margen_objetivo_pct = 22 + (abs(hashtext(product_category)) % 13)
+            """)
+        )
+        r = await s.execute(
+            text("""
+            UPDATE productos p SET
+              costo = round((p.precio_base * (1 - LEAST(0.55, GREATEST(0.05,
+                        (mo.margen_objetivo_pct
+                         + (abs(hashtext(p.product_id::text)) % 29) - 14) / 100.0
+                      ))))::numeric, 2)
+            FROM margenes_objetivo mo
+            WHERE mo.product_category = p.product_category
+              AND p.precio_base IS NOT NULL AND p.precio_base > 0
+            """)
+        )
+        log.info("margen variado: %s productos", r.rowcount)
 
         # 3 · proveedores ------------------------------------------------
         if not await s.scalar(text("SELECT count(*) FROM proveedores")):

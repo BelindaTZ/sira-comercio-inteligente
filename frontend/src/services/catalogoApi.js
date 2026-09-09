@@ -11,6 +11,48 @@ export const catalogoApi = {
     return http.get('/api/catalogo/categorias').then((r) => r.data)
   },
 
+  /** KPIs de la cabecera del Catálogo Maestro. */
+  resumen() {
+    return http.get('/api/catalogo/resumen').then((r) => r.data)
+  },
+
+  /** Matriz de precios: producto + margen real vs. objetivo + estado. */
+  matrizPrecios({ search, categoria, margen, activo, page = 1, size = 25 } = {}) {
+    return http
+      .get('/api/catalogo/precios', {
+        params: {
+          search: search || undefined,
+          categoria: categoria || undefined,
+          margen: margen || undefined,
+          activo: activo === undefined ? undefined : activo,
+          page,
+          size,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  /** Reglas de recargo por canal (Tienda Física / Delivery App / E-Commerce). */
+  canales() {
+    return http.get('/api/catalogo/precios/canales').then((r) => r.data)
+  },
+
+  actualizarCanal(canal, { markupPct, activo } = {}) {
+    return http
+      .patch(`/api/catalogo/precios/canales/${canal}`, {
+        markup_pct: markupPct ?? undefined,
+        activo: activo ?? undefined,
+      })
+      .then((r) => r.data)
+  },
+
+  /** Simulador de impacto: proyecta margen y ganancia mensual ante un cambio de PVP. */
+  simularPrecio(productId, deltaPct) {
+    return http
+      .post(`/api/catalogo/productos/${productId}/simular-precio`, { delta_pct: deltaPct })
+      .then((r) => r.data)
+  },
+
   crear({
     codigoBarras,
     nombre,
