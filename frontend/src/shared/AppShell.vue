@@ -16,6 +16,7 @@ import { useRoute } from 'vue-router'
 import { useSesion } from '@/stores/sesion'
 import { categoriasVisibles } from './navegacion'
 import AppFooter from './ui/AppFooter.vue'
+import ContextoOperativo from './ui/ContextoOperativo.vue'
 import UserMenu from './UserMenu.vue'
 import Icon from './ui/Icon.vue'
 import logoUrl from '@/assets/branding/logo.svg'
@@ -192,6 +193,8 @@ function activa(cat) {
         </RouterLink>
       </nav>
     </header>
+
+    <ContextoOperativo />
 
     <!-- Cierra el panel al hacer clic fuera -->
     <div v-if="catAbierta" class="fixed inset-0 z-30" @click="cerrar" />

@@ -5,16 +5,24 @@ import { http } from './http'
  * entre sucursales y ciclo solicitud → resolución → despacho → recepción.
  */
 export const trasladosApi = {
+  tiendas() {
+    return http.get('/api/traslados/tiendas').then((r) => r.data)
+  },
+
   disponibilidadSucursales(productId) {
     return http
       .get(`/api/traslados/productos/${productId}/disponibilidad-sucursales`)
       .then((r) => r.data)
   },
 
-  listar({ estado, tiendaOrigenId } = {}) {
+  listar({ estado, tiendaOrigenId, direccion } = {}) {
     return http
       .get('/api/traslados', {
-        params: { estado: estado || undefined, tienda_origen_id: tiendaOrigenId || undefined },
+        params: {
+          estado: estado || undefined,
+          tienda_origen_id: tiendaOrigenId || undefined,
+          direccion: direccion || undefined,
+        },
       })
       .then((r) => r.data)
   },

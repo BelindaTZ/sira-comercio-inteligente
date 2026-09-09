@@ -20,6 +20,7 @@ from src.core.security import CurrentPrincipal, Principal, require_permission
 from src.modules.traslados.repository import TrasladosRepository
 from src.modules.traslados.schemas import (
     DisponibilidadSucursalesOut,
+    TiendaItem,
     TrasladoCreate,
     TrasladoOut,
     TrasladoReporteItem,
@@ -41,6 +42,15 @@ def _svc(session: SessionDep) -> TrasladosService:
 
 
 ServiceDep = Annotated[TrasladosService, Depends(_svc)]
+
+
+# ============================================================ selectores (FR-003)
+@router.get("/tiendas", response_model=list[TiendaItem])
+async def listar_tiendas(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve)]
+) -> list[TiendaItem]:
+    """Sucursales activas de la red — para los selectores de origen/destino."""
+    return [TiendaItem(**t) for t in await svc.listar_tiendas()]
 
 
 # ============================================================ US1: disponibilidad
@@ -91,12 +101,14 @@ async def listar_traslados(
     _: Annotated[Principal, Depends(_ve)],
     estado: str | None = Query(default=None),
     tienda_origen_id: int | None = Query(default=None),
+    direccion: str = Query(default="origen", pattern="^(origen|destino)$"),
 ) -> list[TrasladoOut]:
     filas = await svc.listar(
         estado=estado,
         tienda_origen_id=tienda_origen_id,
         rol=principal.rol,
         tienda_actor=principal.tienda_id,
+        direccion=direccion,
     )
     return [TrasladoOut.model_validate(t) for t in filas]
 

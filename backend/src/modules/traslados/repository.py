@@ -74,6 +74,44 @@ class TrasladosRepository:
             agrupado.setdefault(m.pop("product_id"), []).append(m)
         return agrupado
 
+    async def tiendas_activas(self) -> list[dict]:
+        """Sucursales activas de la red — para los selectores de origen/destino."""
+        rows = await self.session.execute(
+            text(
+                "SELECT tienda_id, codigo, nombre, ciudad FROM tiendas "
+                "WHERE activa = true ORDER BY nombre"
+            )
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def nombres_tiendas(self, ids: set[int]) -> dict[int, str]:
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            text("SELECT tienda_id, nombre FROM tiendas WHERE tienda_id = ANY(:ids)"),
+            {"ids": list(ids)},
+        )
+        return {r.tienda_id: r.nombre for r in rows}
+
+    async def nombres_empleados(self, ids: set[int]) -> dict[int, str]:
+        ids = {i for i in ids if i is not None}
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            text("SELECT empleado_id, nombre FROM empleados WHERE empleado_id = ANY(:ids)"),
+            {"ids": list(ids)},
+        )
+        return {r.empleado_id: r.nombre for r in rows}
+
+    async def nombres_productos(self, ids: set[int]) -> dict[int, str]:
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            text("SELECT product_id, nombre FROM productos WHERE product_id = ANY(:ids)"),
+            {"ids": list(ids)},
+        )
+        return {r.product_id: r.nombre for r in rows}
+
     # ------------------------------------------------------------ traslados_stock
     async def get(self, traslado_id: int) -> TrasladoStock | None:
         return await self.session.get(TrasladoStock, traslado_id)

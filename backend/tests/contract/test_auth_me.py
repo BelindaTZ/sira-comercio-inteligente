@@ -42,6 +42,9 @@ async def test_me_gerente_general_ve_todos_los_modulos(client, escenario_pos, db
     nombres = {m["nombre"] for m in cuerpo["modulos"]}
     # el seed le da puede_ver global en los 9 módulos
     assert {"Direccion", "Comercial", "Finanzas", "TI", "RRHH", "Sistema"} <= nombres
+    # feature 018: la sub-barra de contexto necesita el nombre de la sucursal
+    assert cuerpo["tienda_id"] == escenario_pos["tienda_id"]
+    assert cuerpo["tienda_nombre"] == "Tienda Test"
     # feature 013 / migración 0027: lectura sobre las tablas operativas, sin escritura
     tablas = {(t["modulo"], t["nombre_tabla"]) for t in cuerpo["tablas"]}
     assert ("Comercial", "productos") in tablas

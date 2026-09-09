@@ -21,6 +21,16 @@ class DisponibilidadSucursalesOut(BaseModel):
     disponibilidad: list[DisponibilidadTiendaItem]
 
 
+class TiendaItem(BaseModel):
+    """Sucursal de la red — alimenta los selectores de origen/destino del frontend
+    (Principio XII: no se teclea un id de tienda a memoria)."""
+
+    tienda_id: int
+    codigo: str | None = None
+    nombre: str
+    ciudad: str | None = None
+
+
 class TrasladoCreate(BaseModel):
     product_id: int
     tienda_origen_id: int
@@ -53,6 +63,13 @@ class TrasladoOut(BaseModel):
     recibido_por: int | None
     fecha_recepcion: datetime | None
     fecha_cancelacion: datetime | None
+    # --- enriquecido (feature 018): nombres para no mostrar sólo ids en la UI ---
+    producto_nombre: str | None = None
+    tienda_origen_nombre: str | None = None
+    tienda_destino_nombre: str | None = None
+    solicitante_nombre: str | None = None
+    resuelto_por_nombre: str | None = None
+    recibido_por_nombre: str | None = None
 
     model_config = {"from_attributes": True}
 

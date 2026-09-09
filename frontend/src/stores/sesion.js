@@ -22,6 +22,9 @@ export const useSesion = defineStore('sesion', {
     nombre: (s) => s.perfil?.nombre ?? null,
     username: (s) => s.perfil?.username ?? null,
     tiendaId: (s) => s.perfil?.tienda_id ?? null,
+    tiendaNombre: (s) => s.perfil?.tienda_nombre ?? null,
+    tiendaCodigo: (s) => s.perfil?.tienda_codigo ?? null,
+    tiendaCiudad: (s) => s.perfil?.tienda_ciudad ?? null,
     empleadoId: (s) => s.perfil?.empleado_id ?? null,
     esGerente: (s) => s.perfil?.rol === 'Gerente_General',
     /** Módulo propio del Jefe (para su dashboard táctico); null para otros roles. */

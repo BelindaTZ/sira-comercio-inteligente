@@ -274,3 +274,50 @@ async def test_reporte_semanal_marca_pendiente_confirmacion(client, escenario_tr
     assert resp.status_code == 200, resp.text
     fila = next(t for t in resp.json() if t["traslado_id"] == tid)
     assert fila["pendiente_confirmacion"] is True
+
+
+# ------------------------------------------------------------------ feature 018
+async def test_listar_tiendas_para_selectores(client, escenario_traslados):
+    e = escenario_traslados
+    resp = await client.get("/api/traslados/tiendas", headers=_bearer(e["token_encargado_a"]))
+    assert resp.status_code == 200, resp.text
+    por_id = {t["tienda_id"]: t for t in resp.json()}
+    assert e["tienda_a"] in por_id and e["tienda_b"] in por_id
+    assert por_id[e["tienda_a"]]["nombre"] == "Traslados A"
+
+
+async def test_listado_trae_nombres_no_solo_ids(client, escenario_traslados):
+    e = escenario_traslados
+    await client.post(
+        "/api/traslados",
+        json={
+            "product_id": e["product_id"],
+            "tienda_origen_id": e["tienda_a"],
+            "tienda_destino_id": e["tienda_b"],
+            "cantidad": 3,
+        },
+        headers=_bearer(e["token_encargado_b"]),
+    )
+    resp = await client.get(
+        "/api/traslados", params={"estado": "solicitado"}, headers=_bearer(e["token_encargado_a"])
+    )
+    assert resp.status_code == 200, resp.text
+    fila = resp.json()[0]
+    assert fila["tienda_origen_nombre"] == "Traslados A"
+    assert fila["tienda_destino_nombre"] == "Traslados B"
+    assert "producto_nombre" in fila  # el producto del escenario no tiene nombre seteado
+    assert fila["solicitante_nombre"] is not None
+
+
+async def test_encargado_destino_ve_entrantes_con_direccion_destino(client, escenario_traslados):
+    e = escenario_traslados
+    tid = await _traslado_en_transito(client, e)
+    resp = await client.get(
+        "/api/traslados",
+        params={"direccion": "destino", "estado": "en_transito"},
+        headers=_bearer(e["token_encargado_b"]),
+    )
+    assert resp.status_code == 200, resp.text
+    ids = {t["traslado_id"] for t in resp.json()}
+    assert tid in ids
+    assert all(t["tienda_destino_id"] == e["tienda_b"] for t in resp.json())

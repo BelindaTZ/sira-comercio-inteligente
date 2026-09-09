@@ -108,12 +108,16 @@ async def perfil(principal: CurrentPrincipal, svc: ServiceDep) -> PerfilOut:
     completa, sólo el nivel de módulo del propio rol."""
     modulos = await svc.listar_permisos_modulo(principal.role_id)
     tablas = await svc.listar_tablas_legibles(principal.role_id)
+    tienda = await svc.datos_tienda(principal.tienda_id)
     return PerfilOut(
         usuario_id=principal.usuario_id,
         empleado_id=principal.empleado_id,
         role_id=principal.role_id,
         rol=principal.rol,
         tienda_id=principal.tienda_id,
+        tienda_nombre=tienda["nombre"] if tienda else None,
+        tienda_codigo=tienda["codigo"] if tienda else None,
+        tienda_ciudad=tienda["ciudad"] if tienda else None,
         nombre=principal.nombre,
         username=principal.username,
         modulos=[m for m in modulos if m["puede_ver"]],

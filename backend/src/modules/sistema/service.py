@@ -181,6 +181,11 @@ class SistemaService:
     async def listar_tablas_legibles(self, role_id: int) -> list[dict]:
         return await self.repo.tablas_legibles_de_rol(role_id)
 
+    async def datos_tienda(self, tienda_id: int | None) -> dict | None:
+        if tienda_id is None:
+            return None
+        return await self.repo.tienda_de(tienda_id)
+
     async def definir_permiso_tabla(
         self,
         role_id: int,

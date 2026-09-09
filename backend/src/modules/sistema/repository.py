@@ -132,6 +132,21 @@ class SistemaRepository:
         )
         return [dict(r._mapping) for r in rows]
 
+    async def tienda_de(self, tienda_id: int) -> dict | None:
+        """Datos de la sucursal de la sesión — el shell muestra su nombre/ciudad
+        en la sub-barra de contexto (Principio XII: el operador debe saber en qué
+        tienda está)."""
+        row = (
+            await self.session.execute(
+                text(
+                    "SELECT tienda_id, codigo, nombre, ciudad FROM tiendas "
+                    "WHERE tienda_id = :t"
+                ),
+                {"t": tienda_id},
+            )
+        ).first()
+        return dict(row._mapping) if row is not None else None
+
     async def modulo_id_existe(self, modulo_id: int) -> bool:
         return (
             await self.session.scalar(

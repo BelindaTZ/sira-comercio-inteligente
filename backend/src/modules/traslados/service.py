@@ -35,6 +35,36 @@ class TrasladosService:
         self.repo = repo
         self.inv = InventarioRepository(repo.session)
 
+    async def listar_tiendas(self) -> list[dict]:
+        """Sucursales activas — alimenta los selectores de origen/destino (FR-003)."""
+        return await self.repo.tiendas_activas()
+
+    async def _enriquecer(self, traslados: list[TrasladoStock]) -> list[TrasladoStock]:
+        """Cuelga los nombres de producto/tiendas/empleados en cada ORM (patrón de
+        `IncidenteFraudeOut.empleado_nombre`) para que la UI no muestre sólo ids."""
+        if not traslados:
+            return traslados
+        tienda_ids = {t.tienda_origen_id for t in traslados} | {
+            t.tienda_destino_id for t in traslados
+        }
+        emp_ids = (
+            {t.empleado_id for t in traslados}
+            | {t.resuelto_por for t in traslados}
+            | {t.recibido_por for t in traslados}
+        )
+        prod_ids = {t.product_id for t in traslados}
+        tiendas = await self.repo.nombres_tiendas(tienda_ids)
+        empleados = await self.repo.nombres_empleados(emp_ids)
+        productos = await self.repo.nombres_productos(prod_ids)
+        for t in traslados:
+            t.producto_nombre = productos.get(t.product_id)
+            t.tienda_origen_nombre = tiendas.get(t.tienda_origen_id)
+            t.tienda_destino_nombre = tiendas.get(t.tienda_destino_id)
+            t.solicitante_nombre = empleados.get(t.empleado_id)
+            t.resuelto_por_nombre = empleados.get(t.resuelto_por)
+            t.recibido_por_nombre = empleados.get(t.recibido_por)
+        return traslados
+
     # ============================================================ US1: disponibilidad
     async def disponibilidad_sucursales(self, product_id: int) -> dict:
         if await self.inv.get_producto(product_id) is None:
@@ -51,7 +81,7 @@ class TrasladosService:
         Decisión 3)."""
         if await self.inv.get_producto(data.product_id) is None:
             raise NotFoundError(f"Producto {data.product_id} no existe")
-        return await self.repo.crear(
+        traslado = await self.repo.crear(
             TrasladoStock(
                 product_id=data.product_id,
                 tienda_origen_id=data.tienda_origen_id,
@@ -61,6 +91,8 @@ class TrasladosService:
                 empleado_id=empleado_id,
             )
         )
+        (await self._enriquecer([traslado]))
+        return traslado
 
     async def listar(
         self,
@@ -69,16 +101,29 @@ class TrasladosService:
         tienda_origen_id: int | None,
         rol: str | None,
         tienda_actor: int | None,
+        direccion: str = "origen",
     ) -> list[TrasladoStock]:
-        """FR-004 (listado de pendientes de resolución). El `Encargado_Tienda`
-        queda limitado a los traslados cuya tienda origen es la suya."""
+        """FR-004 (listado de pendientes de resolución) + FR-007 (entrantes por
+        recibir). El `Encargado_Tienda` queda limitado a su propia tienda: como
+        origen (`direccion='origen'`, resolución) o como destino
+        (`direccion='destino'`, recepción); el Jefe de Operaciones ve toda la red."""
+        tienda_destino_id = None
         if rol != _JEFE_OPS:
-            if tienda_origen_id is not None and tienda_origen_id != tienda_actor:
-                raise ForbiddenError(
-                    "El Encargado de Tienda sólo ve los traslados de su propia tienda origen"
-                )
-            tienda_origen_id = tienda_actor
-        return await self.repo.listar(estado=estado, tienda_origen_id=tienda_origen_id)
+            if direccion == "destino":
+                tienda_destino_id = tienda_actor
+            else:
+                if tienda_origen_id is not None and tienda_origen_id != tienda_actor:
+                    raise ForbiddenError(
+                        "El Encargado de Tienda sólo ve los traslados de su propia tienda origen"
+                    )
+                tienda_origen_id = tienda_actor
+        return await self._enriquecer(
+            await self.repo.listar(
+                estado=estado,
+                tienda_origen_id=tienda_origen_id,
+                tienda_destino_id=tienda_destino_id,
+            )
+        )
 
     # ============================================================ US2: resolución
     async def resolver(
@@ -111,7 +156,7 @@ class TrasladosService:
         if decision == "rechazar":
             traslado.estado = "rechazado"
             await self.repo.flush()
-            return traslado
+            return (await self._enriquecer([traslado]))[0]
 
         # aprobar → revalidación autoritativa de stock + despacho, misma transacción
         inv = await self.inv.get_inventario_for_update(
@@ -132,7 +177,7 @@ class TrasladosService:
         await self._despachar_fifo(traslado)
         traslado.estado = "en_transito"
         await self.repo.flush()
-        return traslado
+        return (await self._enriquecer([traslado]))[0]
 
     async def _despachar_fifo(self, traslado: TrasladoStock) -> None:
         """Descuenta la cantidad de los lotes de origen en orden FIFO/FEFO y deja
@@ -227,7 +272,7 @@ class TrasladosService:
         traslado.recibido_por = empleado_actor
         traslado.fecha_recepcion = _ahora()
         await self.repo.flush()
-        return traslado
+        return (await self._enriquecer([traslado]))[0]
 
     async def _vencimiento_heredado(self, traslado_id: int) -> date | None:
         """La fecha de vencimiento más próxima entre los lotes de origen consumidos
@@ -263,10 +308,10 @@ class TrasladosService:
         traslado.estado = "cancelado"
         traslado.fecha_cancelacion = _ahora()
         await self.repo.flush()
-        return traslado
+        return (await self._enriquecer([traslado]))[0]
 
     # ============================================================ US1/US3: reporte
     async def reporte_semanal(self, desde: date, hasta: date) -> list[TrasladoStock]:
         """FR-012 — traslados del periodo. El router marca `pendiente_confirmacion`
         para los que quedaron `en_transito` sin recibir."""
-        return await self.repo.listar_periodo(desde, hasta)
+        return await self._enriquecer(await self.repo.listar_periodo(desde, hasta))
