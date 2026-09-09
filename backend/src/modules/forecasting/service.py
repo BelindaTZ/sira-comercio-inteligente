@@ -294,6 +294,11 @@ class ForecastingService:
     async def reporte_demanda_perdida(self, desde: date, hasta: date, tienda_id: int | None = None):
         return await self.repo.demanda_perdida(desde, hasta, tienda_id)
 
+    async def reporte_demanda_perdida_por_producto(
+        self, desde: date, hasta: date, tienda_id: int | None = None
+    ):
+        return await self.repo.demanda_perdida_por_producto(desde, hasta, tienda_id)
+
     # ================================================ configuración
     async def listar_configuracion(self):
         return await self.repo.listar_configuracion()

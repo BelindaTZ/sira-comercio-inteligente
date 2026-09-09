@@ -302,3 +302,34 @@ class ForecastingRepository(BaseRepository[ModeloDemanda]):
             params,
         )
         return [dict(r._mapping) for r in rows]
+
+    async def demanda_perdida_por_producto(
+        self, desde: date, hasta: date, tienda_id: int | None = None
+    ) -> list[dict]:
+        """Igual que `demanda_perdida` pero por SKU — para que la pantalla ofrezca
+        una acción concreta (solicitar reposición) sobre cada producto afectado."""
+        params: dict = {"desde": desde, "hasta": hasta}
+        filtro_tienda = ""
+        if tienda_id is not None:
+            filtro_tienda = "AND e.tienda_id = :tienda_id"
+            params["tienda_id"] = tienda_id
+        rows = await self.session.execute(
+            text(f"""
+                SELECT e.product_id,
+                       p.nombre AS producto_nombre,
+                       COALESCE(p.product_category, '(sin categoría)') AS product_category,
+                       max(e.tienda_id) AS tienda_id,
+                       count(*)::int AS cantidad_eventos,
+                       COALESCE(sum(e.demanda_estimada_no_satisfecha), 0)::int
+                           AS demanda_estimada_no_satisfecha,
+                       bool_or(e.es_alta_demanda) AS alta_demanda,
+                       max(e.fecha_hora) AS ultimo_evento
+                FROM eventos_quiebre_stock e
+                JOIN productos p ON p.product_id = e.product_id
+                WHERE e.fecha_hora >= :desde AND e.fecha_hora < :hasta {filtro_tienda}
+                GROUP BY e.product_id, p.nombre, p.product_category
+                ORDER BY demanda_estimada_no_satisfecha DESC, cantidad_eventos DESC
+            """),
+            params,
+        )
+        return [dict(r._mapping) for r in rows]

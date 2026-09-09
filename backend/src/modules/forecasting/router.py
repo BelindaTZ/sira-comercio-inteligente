@@ -24,6 +24,7 @@ from src.modules.forecasting.schemas import (
     ConfiguracionPatch,
     DecisionModeloIn,
     DemandaPerdidaFila,
+    DemandaPerdidaProducto,
     ModeloDetalleOut,
     ModeloOut,
     MonitoreoOut,
@@ -139,6 +140,22 @@ async def reporte_demanda_perdida(
 ) -> list[DemandaPerdidaFila]:
     filas = await svc.reporte_demanda_perdida(fecha_desde, fecha_hasta, tienda_id)
     return [DemandaPerdidaFila(**f) for f in filas]
+
+
+@router.get(
+    "/reportes/demanda-perdida/por-producto", response_model=list[DemandaPerdidaProducto]
+)
+async def reporte_demanda_perdida_por_producto(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver_demanda_perdida)],
+    fecha_desde: date = Query(...),
+    fecha_hasta: date = Query(...),
+    tienda_id: int | None = None,
+) -> list[DemandaPerdidaProducto]:
+    """Demanda perdida por SKU (no sólo por categoría) — cada fila lleva un
+    `product_id` real para poder disparar la solicitud de reposición."""
+    filas = await svc.reporte_demanda_perdida_por_producto(fecha_desde, fecha_hasta, tienda_id)
+    return [DemandaPerdidaProducto(**f) for f in filas]
 
 
 # =================================================== configuración

@@ -250,7 +250,7 @@ async def _cuadre_demo() -> None:
                 FROM cajas c
             )
             INSERT INTO apertura_caja (caja_id, cajero_id, fondo_inicial, fecha_hora)
-            SELECT caja_id, COALESCE(emp, 1), 50000,
+            SELECT caja_id, COALESCE(emp, 1), 150,
                    CURRENT_TIMESTAMP - interval '6 hours'
             FROM cj WHERE emp IS NOT NULL
         """)
@@ -268,11 +268,11 @@ async def _cuadre_demo() -> None:
                 (caja_id, cajero_id, total_esperado, total_registrado, fecha_hora)
             SELECT caja_id, COALESCE(emp, 1),
                    esperado,
-                   esperado + CASE WHEN rn % 5 = 0 THEN (rn % 3 - 1) * 1200 ELSE 0 END,
+                   esperado + CASE WHEN rn % 5 = 0 THEN (rn % 3 - 1) * 8.50 ELSE 0 END,
                    CURRENT_TIMESTAMP - interval '30 minutes'
             FROM (
                 SELECT caja_id, emp, rn,
-                       50000 + (abs(hashtext(caja_id::text)) % 900) * 1000 AS esperado
+                       450 + (abs(hashtext(caja_id::text)) % 900) * 3 AS esperado
                 FROM cj WHERE emp IS NOT NULL
             ) x
         """)
@@ -454,6 +454,37 @@ async def _compras_demo() -> None:
             text("SELECT estado, count(*) FROM ordenes_compra GROUP BY estado ORDER BY estado")
         )
         log.info("  órdenes de compra: %s", [tuple(r) for r in estados])
+
+        # eventos de quiebre de stock (feature 004 US4) — el dataset 2017 no los
+        # trae; se generan sobre productos hoy en quiebre para que la pantalla de
+        # Demanda Perdida tenga datos reales por SKU
+        if not await s.scalar(text("SELECT count(*) FROM eventos_quiebre_stock")):
+            emp_t = await s.scalar(
+                text(
+                    "SELECT empleado_id FROM empleados WHERE tienda_id = "
+                    "(SELECT tienda_id FROM tiendas WHERE codigo = 'T01') "
+                    "ORDER BY empleado_id LIMIT 1"
+                )
+            )
+            await s.execute(
+                text("""
+                INSERT INTO eventos_quiebre_stock
+                    (product_id, tienda_id, empleado_id, demanda_estimada_no_satisfecha,
+                     fecha_hora, es_alta_demanda)
+                SELECT i.product_id, i.tienda_id, :emp,
+                       5 + (i.product_id % 40),
+                       CURRENT_TIMESTAMP - make_interval(days => (i.product_id % 20)),
+                       (i.product_id % 3 = 0)
+                FROM inventario i
+                JOIN tiendas t ON t.tienda_id = i.tienda_id AND t.codigo = 'T01'
+                WHERE i.cantidad_minima > 0 AND i.cantidad_disponible < i.cantidad_minima
+                LIMIT 25
+            """),
+                {"emp": emp_t},
+            )
+            await s.commit()
+            nq = await s.scalar(text("SELECT count(*) FROM eventos_quiebre_stock"))
+            log.info("  eventos de quiebre de stock: %s", nq)
 
 
 async def main() -> None:

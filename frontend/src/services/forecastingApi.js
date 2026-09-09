@@ -75,6 +75,18 @@ export const forecastingApi = {
       .then((r) => r.data)
   },
 
+  demandaPerdidaPorProducto({ fechaDesde, fechaHasta, tiendaId } = {}) {
+    return http
+      .get('/api/forecasting/reportes/demanda-perdida/por-producto', {
+        params: {
+          fecha_desde: fechaDesde,
+          fecha_hasta: fechaHasta,
+          tienda_id: tiendaId ?? undefined,
+        },
+      })
+      .then((r) => r.data)
+  },
+
   // --- configuración ---
   configuracion() {
     return http.get('/api/forecasting/configuracion').then((r) => r.data)

@@ -69,6 +69,24 @@ async def test_reporte_demanda_perdida_por_tienda_y_categoria(
     # una categoría sin eventos simplemente no aparece
     assert "CATEGORIA FANTASMA" not in por_cat
 
+    # feature 018: el mismo período pero por SKU, con product_id real para la acción
+    por_prod = (
+        await client.get(
+            "/api/forecasting/reportes/demanda-perdida/por-producto",
+            params={
+                "fecha_desde": (hoy - timedelta(days=1)).isoformat(),
+                "fecha_hasta": (hoy + timedelta(days=1)).isoformat(),
+                "tienda_id": e["tienda_id"],
+            },
+            headers=auth_jefe_ops_fc,
+        )
+    ).json()
+    fila = next(f for f in por_prod if f["product_id"] == e["product_id"])
+    assert fila["cantidad_eventos"] == 2
+    assert fila["demanda_estimada_no_satisfecha"] == 8
+    assert "producto_nombre" in fila
+    assert "OTRA CAT" in {f["product_category"] for f in por_prod}
+
 
 async def test_jefe_ti_no_ve_el_reporte_de_operaciones(client, escenario_forecasting, auth_jefe_ti):
     hoy = datetime.now(UTC).date()

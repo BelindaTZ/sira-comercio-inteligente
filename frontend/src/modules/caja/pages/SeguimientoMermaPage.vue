@@ -18,6 +18,7 @@ import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import Btn from '@/shared/ui/Btn.vue'
 import Modal from '@/shared/ui/Modal.vue'
 import Icon from '@/shared/ui/Icon.vue'
+import { opcionesExportacion } from '@/shared/exportar'
 import FormularioMerma from '@/modules/inventario/components/FormularioMerma.vue'
 
 const sesion = useSesion()
@@ -364,32 +365,32 @@ function abrirActa(m) {
   modalActa.value = true
 }
 
-function exportarReporte() {
-  const contenido = [
-    ['Folio', 'Producto', 'SKU', 'Lote', 'Cantidad', 'Costo Unit USD', 'Total USD', 'Causal', 'Estado', 'Fecha'],
-    ...mermasFiltradas.value.map((m) => [
-      `#MRM-2026-${m.merma_id}`,
-      m.product_nombre,
-      m.product_sku,
-      m.lote_numero || '—',
-      m.cantidad,
-      m.costo_unitario,
-      m.valor,
-      m.causa,
-      m.estado_validacion,
-      m.fecha,
-    ]),
-  ]
-    .map((r) => r.join(','))
-    .join('\n')
-
-  const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `auditoria_mermas_tienda_${tiendaId.value}_${new Date().toISOString().slice(0, 10)}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
+const menuExport = ref(false)
+const filasExport = computed(() => [
+  ['Folio', 'Producto', 'SKU', 'Lote', 'Cantidad', 'Costo Unit USD', 'Total USD', 'Causal', 'Estado', 'Fecha'],
+  ...mermasFiltradas.value.map((m) => [
+    `MRM-${m.merma_id}`,
+    m.product_nombre,
+    m.product_sku,
+    m.lote_numero || '—',
+    m.cantidad,
+    m.costo_unitario,
+    m.valor,
+    m.causa,
+    m.estado_validacion,
+    m.fecha,
+  ]),
+])
+const opcionesExport = computed(() =>
+  opcionesExportacion(
+    `Auditoría de mermas — tienda ${tiendaId.value}`,
+    `auditoria_mermas_tienda_${tiendaId.value}_${new Date().toISOString().slice(0, 10)}`,
+    filasExport.value,
+  ),
+)
+function exportar(opt) {
+  menuExport.value = false
+  opt.fn()
 }
 
 function causalEtiqueta(causa) {
@@ -413,43 +414,50 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="mx-auto max-w-[1560px] space-y-6 px-6 py-8 lg:px-8">
     <!-- HEADER OPERATIVO -->
     <PageHeader
-      titulo="Seguimiento, Registro y Mitigación de Merma"
-      subtitulo="Control etiológico de desmedro operativo, libro oficial de bajas contables y política corporativa de rescate sustentable."
+      titulo="Seguimiento, registro y mitigación de merma"
+      subtitulo="Libro oficial de bajas de inventario con trazabilidad por lote y ubicación, causa raíz del desmedro y validación contable."
     >
-      <template #meta>
-        <div class="flex flex-wrap items-center gap-2">
-          <SemanticChip tipo="ok">
-            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Auditoría Activa Ciclo Q2
-          </SemanticChip>
-          <span class="text-xs text-on-surface-variant font-medium">
-            Alcance: <strong class="text-on-surface">Sucursal #{{ tiendaId }}</strong>
-          </span>
-          <SemanticChip tipo="fifo">
-            <Icon name="cube" :size="13" /> Rescate Sustentable
-          </SemanticChip>
-        </div>
+      <template #badge>
+        <SemanticChip :tipo="kpis.pendientes_count > 0 ? 'fifo' : 'ok'">
+          {{ kpis.pendientes_count > 0 ? `${kpis.pendientes_count} por validar` : 'Al día' }}
+        </SemanticChip>
       </template>
 
       <template #acciones>
-        <Btn variant="secondary" @click="exportarReporte">
-          <Icon name="file_download" :size="16" />
-          Exportar Informe a Finanzas
-        </Btn>
+        <div class="relative">
+          <Btn variant="ghost" @click="menuExport = !menuExport">
+            <Icon name="download" :size="16" /> Exportar
+            <Icon name="chevron" :size="12" :class="menuExport ? '-rotate-180' : ''" />
+          </Btn>
+          <div
+            v-if="menuExport"
+            class="absolute right-0 z-20 mt-1 w-44 rounded-xl border border-brand-200 bg-white py-1 shadow-card-hover"
+          >
+            <button
+              v-for="opt in opcionesExport"
+              :key="opt.id"
+              type="button"
+              class="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-slate-700 hover:bg-brand-50"
+              @click="exportar(opt)"
+            >
+              <Icon name="download" :size="13" class="text-slate-400" /> {{ opt.label }}
+            </button>
+          </div>
+        </div>
         <Btn
           v-if="puedeEditarUmbrales"
-          variant="secondary"
+          variant="ghost"
           @click="() => { cargarUmbrales(); modalUmbrales = true }"
         >
-          <Icon name="sliders" :size="16" />
-          Umbrales por Categoría
+          <Icon name="cog" :size="16" />
+          Umbrales por categoría
         </Btn>
         <Btn v-if="puedeValidar" variant="primary" @click="modalDeclarar = true">
           <Icon name="alert" :size="16" />
-          Declarar Nueva Merma
+          Declarar nueva merma
         </Btn>
       </template>
     </PageHeader>
@@ -843,7 +851,7 @@ onMounted(() => {
                     title="Ver Acta Oficial de Merma"
                     @click="abrirActa(m)"
                   >
-                    <Icon name="file_download" :size="16" />
+                    <Icon name="download" :size="16" />
                   </button>
                 </div>
               </td>
@@ -937,7 +945,7 @@ onMounted(() => {
         <div class="flex justify-end gap-2 pt-2 border-t border-outline-variant/30">
           <Btn variant="secondary" @click="modalActa = false">Cerrar</Btn>
           <Btn variant="primary" @click="() => { window.print(); }">
-            <Icon name="file_download" :size="15" />
+            <Icon name="download" :size="15" />
             Imprimir Acta de Baja
           </Btn>
         </div>
@@ -961,7 +969,7 @@ onMounted(() => {
           v-if="!puedeEditarUmbrales"
           class="flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3 text-[12px] text-on-surface-variant"
         >
-          <Icon name="lock" :size="16" class="text-secondary shrink-0" />
+          <Icon name="shield" :size="16" class="text-secondary shrink-0" />
           <span>Vista de supervisión para encargado de tienda. La configuración de umbrales está asignada a la Jefatura de Operaciones corporativa.</span>
         </div>
 

@@ -40,7 +40,12 @@ export const CATEGORIAS = [
         modulo: 'Direccion',
         tabla: 'dashboard_kpi',
       },
-      { label: 'Dashboard táctico de mi área', to: '/ti/dashboards/tactico', modulos: TACTICOS },
+      {
+        label: 'Dashboard táctico de mi área',
+        to: '/ti/dashboards/tactico',
+        modulos: TACTICOS,
+        soloArea: true,
+      },
       {
         label: 'Dashboard operativo de mi tienda',
         to: '/tienda/operativo',
@@ -376,6 +381,10 @@ export const CATEGORIAS = [
 
 /** ¿El rol (vía el store de sesión) puede ver este ítem? */
 export function itemVisible(item, sesion) {
+  // El dashboard táctico "de mi área" sólo tiene sentido para un Jefe (que tiene
+  // un módulo propio) o para la Gerencia (que elige el área). Un Encargado/Cajero
+  // tiene visibilidad de módulos pero no un "área" → sería un callejón sin salida.
+  if (item.soloArea && !sesion.miModulo && !sesion.esGerente) return false
   if (item.modulos) return item.modulos.some((m) => sesion.puedeVer(m))
   if (!sesion.puedeVer(item.modulo)) return false
   // Permiso de tabla: más fino que el de módulo — evita llevar la navegación a un 403.

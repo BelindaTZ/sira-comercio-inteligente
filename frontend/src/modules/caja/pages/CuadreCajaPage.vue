@@ -14,6 +14,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
 import { useSesion } from '@/stores/sesion'
+import { money as moneyUsd } from '@/shared/currency'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -38,14 +39,15 @@ const cuadre = reactive({ cajaId: null, totalRegistrado: '' })
 const ultimoCierre = ref(null)
 
 // contador de efectivo (ayuda para llegar al total físico — no se envía al backend)
-const DENOMS = [20000, 10000, 5000, 2000, 1000, 500, 100, 50, 10]
+// denominaciones USD: billetes y monedas (feature 016 — la moneda del proyecto es USD)
+const DENOMS = [100, 50, 20, 10, 5, 1, 0.25, 0.1, 0.05, 0.01]
 const conteo = reactive(Object.fromEntries(DENOMS.map((d) => [d, ''])))
 const mostrarContador = ref(false)
 const totalContado = computed(() =>
   DENOMS.reduce((s, d) => s + d * (Number(conteo[d]) || 0), 0),
 )
 
-const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
+const money = (v) => moneyUsd(v, { showCode: false })
 const cajaNombre = (id) => cajas.value.find((c) => c.caja_id === id)?.nombre || `Caja ${id}`
 
 const kpi = computed(() => {
@@ -260,7 +262,7 @@ onMounted(cargar)
             </button>
             <div v-if="mostrarContador" class="space-y-1.5 rounded-lg border border-brand-200 p-2.5">
               <div v-for="d in DENOMS" :key="d" class="flex items-center gap-2 text-[12px]">
-                <span class="w-16 shrink-0 tabular-nums text-slate-600">{{ money(d) }}</span>
+                <span class="w-14 shrink-0 tabular-nums text-slate-600">{{ money(d) }}</span>
                 <span class="text-slate-400">×</span>
                 <input
                   v-model="conteo[d]"

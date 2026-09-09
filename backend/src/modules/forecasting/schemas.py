@@ -64,6 +64,17 @@ class DemandaPerdidaFila(BaseModel):
     demanda_estimada_no_satisfecha: int
 
 
+class DemandaPerdidaProducto(BaseModel):
+    product_id: int
+    producto_nombre: str | None = None
+    product_category: str
+    tienda_id: int
+    cantidad_eventos: int
+    demanda_estimada_no_satisfecha: int
+    alta_demanda: bool = False
+    ultimo_evento: datetime | None = None
+
+
 class ConfiguracionOut(BaseModel):
     clave: str
     valor: Decimal

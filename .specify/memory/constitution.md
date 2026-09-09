@@ -42,6 +42,10 @@ Los filtros de búsqueda son reactivos/automáticos — sin botón "Buscar" o "F
 
 **Diálogos**: toda confirmación (aceptar/rechazar) y toda entrada de un dato puntual (motivo, fecha, id que autoriza) se resuelve con un modal in-app del design-system — nunca con `window.confirm` / `window.prompt` / `window.alert`, que rompen la paleta y la tipografía. El helper compartido es `frontend/src/shared/ui/dialogs.js` (`confirm()` / `prompt()`), pintado por `<DialogHost>` (montado una vez en `App.vue`). Un selector siempre ofrece las opciones válidas existentes (`<select>` poblado desde el backend) en vez de un campo libre donde se pueda teclear un valor inexistente.
 
+**Acciones que no llevan a nada**: ningún botón puede quedarse en un mensaje de "listo" sin efecto real. Toda acción o bien ejecuta su operación contra el backend, o bien navega a la pantalla/modal donde se resuelve (con el contexto ya cargado). Un botón que "recomienda" o "sugiere" algo debe abrir el flujo concreto (ej. "Solicitar reposición" → abre la orden de compra con el producto y la cantidad puestas).
+
+**Exportación de reportes**: toda pantalla de reporte ofrece la descarga en **CSV, Excel y PDF** mediante el helper compartido `frontend/src/shared/exportar.js` (`opcionesExportacion()` → menú de 3 formatos). CSV y Excel salen del mismo arreglo de filas; PDF abre una vista imprimible. Para un reporte muy extenso (más de ~5 000 filas) sólo se ofrece CSV.
+
 **Sistema de diseño de referencia**: `.specify/memory/design-system.md` ("Nordic Abyssal & Amethyst Intelligence") define la paleta, tipografía, spacing, elevación, formas y componentes oficiales — ninguna spec define su propia paleta o estilo de componente. Las 3 pantallas de referencia en `docs/diseno-ui/` (Dashboard Ejecutivo, Inventario & Alertas FIFO, Punto de Venta) son el estándar visual a replicar fielmente en cada feature — no se rediseña de cero por spec.
 
 **Navegación**: barra horizontal superior fija (no sidebar lateral), con categorías de primer nivel (ej. Dashboard, Punto de Venta, Inventario & FIFO, Catálogo, Clientes/CRM, Comercial, Finanzas & BI, Sistema, Soporte). Una categoría con 4 o más sub-opciones se despliega en un mega-menú agrupado por columnas temáticas (ej. "Sistema" → Seguridad / Configuración / Integraciones), usando el color primario Abyssal Emerald (`#0a3632`) para la barra y panel blanco para el desplegable. Una categoría con menos de 4 sub-opciones se lista directo sin agrupar en columnas.
@@ -69,4 +73,4 @@ Para cada una de las 12 features (001-core-ventas-inventario, 002-clientes-fidel
 
 Esta constitución tiene prioridad sobre cualquier spec individual. Un cambio aquí obliga a revisar las specs ya creadas que dependan del principio modificado. Toda spec/plan/tasks debe verificar cumplimiento de estos principios antes de pasar a la siguiente fase.
 
-**Version**: 1.4.0 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-09
+**Version**: 1.5.0 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-09
