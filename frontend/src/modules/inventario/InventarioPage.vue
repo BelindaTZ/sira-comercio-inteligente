@@ -512,18 +512,18 @@ onMounted(() => {
             v-else-if="row._reordenado"
             class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700"
           >
-            <Icon name="check" :size="12" /> Solicitado
+            <Icon name="check" :size="12" /> Reposición solicitada
           </span>
           <button
             v-else-if="row.estado === 'quiebre'"
             type="button"
             :disabled="reordenando === row.product_id"
             class="inline-flex items-center gap-1 rounded-lg border border-brand-600 bg-brand-800 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
-            title="Avisar al rol de compras para generar la orden"
+            title="Deja una alerta de reposición y avisa al rol de compras (no genera la orden)"
             @click.stop="reordenar(row)"
           >
-            <Icon name="cart" :size="12" />
-            {{ reordenando === row.product_id ? 'Enviando…' : 'Reordenar' }}
+            <Icon name="megaphone" :size="12" />
+            {{ reordenando === row.product_id ? 'Enviando…' : 'Solicitar reposición' }}
           </button>
           <span v-else class="text-slate-400">—</span>
         </template>

@@ -126,7 +126,14 @@ const numeros = computed(() => {
       </div>
     </div>
 
-    <div class="overflow-x-auto">
+    <div class="relative overflow-x-auto">
+      <!-- Barra de carga sutil: la lista NO se vacía al paginar/filtrar -->
+      <div
+        v-if="loading && rows.length"
+        class="absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden bg-brand-100"
+      >
+        <div class="dt-loading-bar h-full w-1/3 bg-brand-600" />
+      </div>
       <table class="w-full border-collapse text-left">
         <thead>
           <tr
@@ -151,8 +158,11 @@ const numeros = computed(() => {
             </th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-brand-100/90 bg-white/80 text-[13px]">
-          <tr v-if="loading">
+        <tbody
+          class="divide-y divide-brand-100/90 bg-white/80 text-[13px] transition-opacity"
+          :class="loading && rows.length ? 'opacity-50' : ''"
+        >
+          <tr v-if="loading && !rows.length">
             <td :colspan="columns.length" class="px-6 py-12 text-center text-slate-500">
               Cargando…
             </td>

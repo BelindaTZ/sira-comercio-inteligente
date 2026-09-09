@@ -24,6 +24,19 @@ body {
   display: none;
 }
 
+/* Barra de progreso indeterminada del DataTable (recarga de lista sin vaciarla) */
+.dt-loading-bar {
+  animation: dt-loading 1.1s ease-in-out infinite;
+}
+@keyframes dt-loading {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
 /* --- Clases exactas de docs/diseno-ui/.../sira_dashboard_ejecutivo/code.html --- */
 
 /* Fondo de la superficie de trabajo: canvas con difusión ambiental teal + amatista */
