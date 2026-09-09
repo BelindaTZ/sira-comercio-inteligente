@@ -12,6 +12,9 @@ const props = defineProps({
   modelValue: { type: Number, default: null },
   label: { type: String, default: 'Producto' },
   required: { type: Boolean, default: false },
+  // Si se pasa, busca sólo entre los SKU con stock en esa tienda (vista /stock)
+  // y el evento `seleccionado` entrega la fila completa (con costo, disponible…).
+  tiendaId: { type: Number, default: null },
 })
 const emit = defineEmits(['update:modelValue', 'seleccionado'])
 
@@ -47,7 +50,12 @@ watch(texto, (v) => {
   deb = setTimeout(async () => {
     cargando.value = true
     try {
-      opciones.value = await inventarioApi.buscarProductos(q)
+      if (props.tiendaId) {
+        const r = await inventarioApi.stock({ tiendaId: props.tiendaId, search: q, size: 12 })
+        opciones.value = r.items
+      } else {
+        opciones.value = await inventarioApi.buscarProductos(q)
+      }
       abierto.value = true
     } finally {
       cargando.value = false

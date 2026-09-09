@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import date
 
-from sqlalchemy import BigInteger, Computed, Date, Integer, func
+from sqlalchemy import BigInteger, Computed, Date, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.database import Base
@@ -23,4 +23,7 @@ class AjusteInventario(Base):
         Integer, Computed("cantidad_fisica - cantidad_sistema", persisted=True)
     )
     empleado_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Trazabilidad de auditoría (migración 0022) — opcionales.
+    motivo: Mapped[str | None] = mapped_column(String(30))
+    observaciones: Mapped[str | None] = mapped_column(Text)
     fecha: Mapped[date] = mapped_column(Date, server_default=func.current_date())

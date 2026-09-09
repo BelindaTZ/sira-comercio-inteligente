@@ -32,6 +32,7 @@ const tiendaId = computed(() => sesion.tiendaId ?? tiendaManual.value ?? null)
 const empleadoId = computed(() => sesion.empleadoId ?? 1)
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Operaciones', 'ubicacion_producto'))
 const puedeImagen = computed(() => sesion.puedeLeerTabla('Comercial', 'productos'))
+const puedeAnaquel = computed(() => sesion.puedeEditarTabla('Operaciones', 'verificacion_anaquel'))
 
 const tab = ref('stock') // 'stock' | 'alertas'
 const busqueda = ref('')
@@ -44,8 +45,15 @@ const rows = ref([])
 const total = ref(0)
 const cargando = ref(false)
 const error = ref('')
-const modal = ref(null) // 'ajuste' | 'merma' | 'stock-max' | 'anaquel' | fila-de-ubicacion
+const modal = ref(null) // 'ajuste' | 'merma' | 'stock-max' | 'anaquel'
+const ubicModal = ref(null) // fila cuya ubicación se está editando
 const imgModal = ref(null) // fila cuya imagen se está viendo/cambiando
+const ctx = ref({}) // { producto?, causa? } que precarga el modal de ajuste/merma
+
+function abrir(tipo, contexto = {}) {
+  ctx.value = contexto
+  modal.value = tipo
+}
 
 const kpi = ref({
   skus: 0,
@@ -141,6 +149,14 @@ async function cargar() {
 }
 
 async function atender(alerta) {
+  // Vencimiento → la forma de "atenderla" es declarar la merma (o liquidar en POS).
+  if (alerta.tipo === 'vencimiento') {
+    abrir('merma', {
+      producto: { product_id: alerta.product_id, nombre: alerta.producto_nombre },
+      causa: 'caducidad',
+    })
+    return
+  }
   try {
     await inventarioApi.atenderAlerta(alerta.alerta_id, empleadoId.value)
     await Promise.all([cargar(), cargarKpis()])
@@ -173,6 +189,8 @@ async function reordenar(row) {
 
 function tras() {
   modal.value = null
+  ubicModal.value = null
+  ctx.value = {}
   return Promise.all([cargar(), cargarKpis()])
 }
 
@@ -211,13 +229,15 @@ onMounted(() => {
       subtitulo="Stock por SKU con ubicación en sala, rotación FEFO y control de vencimientos y merma."
     >
       <template #acciones>
-        <Btn variant="primary" @click="modal = 'ajuste'">
-          <Icon name="plus" :size="17" /> Ajuste de conteo
+        <Btn variant="primary" @click="abrir('ajuste')">
+          <Icon name="pencil" :size="16" /> Ajuste / corrección de stock
         </Btn>
-        <Btn variant="ghost" @click="modal = 'anaquel'">Verificar anaquel</Btn>
-        <Btn variant="ghost" @click="modal = 'stock-max'">Stock máx.</Btn>
-        <Btn variant="danger" @click="modal = 'merma'">
+        <Btn variant="danger" @click="abrir('merma')">
           <Icon name="alert" :size="17" /> Declarar merma
+        </Btn>
+        <Btn variant="ghost" @click="abrir('stock-max')">Stock máx. de categoría</Btn>
+        <Btn v-if="puedeAnaquel" variant="ghost" @click="abrir('anaquel')">
+          Verificar anaquel (clase A)
         </Btn>
       </template>
     </PageHeader>
@@ -447,7 +467,7 @@ onMounted(() => {
                 ? 'border-brand-200 bg-white text-slate-700 hover:border-brand-400'
                 : 'border-dashed border-brand-300 text-brand-600 hover:bg-brand-50'
             "
-            @click.stop="modal = row"
+            @click.stop="ubicModal = row"
           >
             <Icon name="pin" :size="13" />
             <span v-if="row.pasillo"
@@ -632,11 +652,34 @@ onMounted(() => {
       </DataTable>
     </template>
 
-    <Modal v-if="modal === 'ajuste'" titulo="Ajuste de conteo físico" @cerrar="modal = null">
-      <FormularioAjuste :tienda-id="tiendaId" :empleado-id="empleadoId" @ajustado="tras" />
+    <Modal
+      v-if="modal === 'ajuste'"
+      size="xl"
+      titulo="Ajuste de Conteo Físico & Corrección de Stock"
+      @cerrar="modal = null"
+    >
+      <FormularioAjuste
+        :tienda-id="tiendaId"
+        :empleado-id="empleadoId"
+        :producto-inicial="ctx.producto"
+        @ajustado="tras"
+        @cerrar="modal = null"
+      />
     </Modal>
-    <Modal v-if="modal === 'merma'" titulo="Declarar merma" @cerrar="modal = null">
-      <FormularioMerma :tienda-id="tiendaId" :empleado-id="empleadoId" @registrada="tras" />
+    <Modal
+      v-if="modal === 'merma'"
+      size="xl"
+      titulo="Declarar & Registrar Merma de Inventario"
+      @cerrar="modal = null"
+    >
+      <FormularioMerma
+        :tienda-id="tiendaId"
+        :empleado-id="empleadoId"
+        :producto-inicial="ctx.producto"
+        :causa-inicial="ctx.causa || ''"
+        @registrada="tras"
+        @cerrar="modal = null"
+      />
     </Modal>
     <Modal v-if="modal === 'stock-max'" titulo="Stock máximo por categoría" @cerrar="modal = null">
       <FormularioStockMaximo :tienda-id="tiendaId" :empleado-id="empleadoId" @definido="tras" />
@@ -648,13 +691,9 @@ onMounted(() => {
         @registrada="tras"
       />
     </Modal>
-    <Modal
-      v-if="modal && typeof modal === 'object'"
-      titulo="Ubicación en sala"
-      @cerrar="modal = null"
-    >
+    <Modal v-if="ubicModal" titulo="Ubicación en sala" @cerrar="ubicModal = null">
       <FormularioUbicacion
-        :producto="modal"
+        :producto="ubicModal"
         :tienda-id="tiendaId"
         :empleado-id="empleadoId"
         @guardada="tras"

@@ -107,7 +107,7 @@ histórico de movimientos de góndola).
 
 **Tabla**: `ajustes_inventario`
 
-**Campos clave**: `ajuste_id` (PK), `product_id`, `tienda_id`, `cantidad_sistema`, `cantidad_fisica`, `diferencia` (columna generada).
+**Campos clave**: `ajuste_id` (PK), `product_id`, `tienda_id`, `cantidad_sistema`, `cantidad_fisica`, `diferencia` (columna generada), `motivo` + `observaciones` (migración 0022 — trazabilidad de auditoría del descuadre).
 
 **Validación**: `diferencia` se calcula en base de datos (`GENERATED ALWAYS AS`), no en la aplicación — es un dato derivado puro, no lógica de negocio (FR-017).
 
@@ -115,7 +115,7 @@ histórico de movimientos de góndola).
 
 **Tabla**: `mermas`
 
-**Campos clave**: `merma_id` (PK), `product_id`, `tienda_id`, `cantidad`, `causa` (caducidad/robo/rotura/error_humano), `valor`, `empleado_id`.
+**Campos clave**: `merma_id` (PK), `product_id`, `tienda_id`, `cantidad`, `causa` (caducidad/robo/rotura/error_humano), `valor`, `empleado_id`, `destino` + `observaciones` (migración 0022 — ficha de la declaración: destino físico de las unidades y detalle del siniestro).
 
 **Relaciones**: N:1 con `productos`. No tiene FK directa a `lotes` en el DDL base — se identifica por producto/tienda (limitación heredada del esquema base, no introducida por esta feature).
 

@@ -91,18 +91,20 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
-  ajuste({ productId, tiendaId, cantidadFisica, empleadoId }) {
+  ajuste({ productId, tiendaId, cantidadFisica, empleadoId, motivo, observaciones }) {
     return http
       .post('/api/inventario/ajustes', {
         product_id: productId,
         tienda_id: tiendaId,
         cantidad_fisica: cantidadFisica,
         empleado_id: empleadoId,
+        motivo: motivo || null,
+        observaciones: observaciones || null,
       })
       .then((r) => r.data)
   },
 
-  merma({ productId, tiendaId, cantidad, causa, empleadoId, loteId }) {
+  merma({ productId, tiendaId, cantidad, causa, empleadoId, loteId, destino, observaciones }) {
     return http
       .post('/api/inventario/mermas', {
         product_id: productId,
@@ -111,6 +113,8 @@ export const inventarioApi = {
         causa,
         empleado_id: empleadoId,
         lote_id: loteId || null,
+        destino: destino || null,
+        observaciones: observaciones || null,
       })
       .then((r) => r.data)
   },

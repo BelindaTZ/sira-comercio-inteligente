@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
-from sqlalchemy import BigInteger, Date, DateTime, ForeignKey, Integer, Numeric, String, func
+from sqlalchemy import (
+    BigInteger,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.core.database import Base
@@ -30,3 +40,6 @@ class Merma(Base):
     estado_validacion: Mapped[str] = mapped_column(String(20), nullable=False, default="pendiente")
     empleado_valida_id: Mapped[int | None] = mapped_column(Integer)
     fecha_validacion: Mapped[datetime | None] = mapped_column(DateTime)
+    # Ficha de la declaración (migración 0022) — opcionales.
+    destino: Mapped[str | None] = mapped_column(String(30))
+    observaciones: Mapped[str | None] = mapped_column(Text)

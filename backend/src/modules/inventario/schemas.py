@@ -27,6 +27,8 @@ class AjusteIn(BaseModel):
     tienda_id: int
     cantidad_fisica: int = Field(ge=0)
     empleado_id: int
+    motivo: str | None = Field(default=None, max_length=30)
+    observaciones: str | None = Field(default=None, max_length=250)
 
 
 class MermaIn(BaseModel):
@@ -36,6 +38,8 @@ class MermaIn(BaseModel):
     causa: CausaMerma
     empleado_id: int
     lote_id: int | None = None
+    destino: str | None = Field(default=None, max_length=30)
+    observaciones: str | None = Field(default=None, max_length=250)
 
 
 class ValidarMermaIn(BaseModel):

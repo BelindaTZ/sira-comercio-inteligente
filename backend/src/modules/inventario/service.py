@@ -150,6 +150,8 @@ class InventarioService:
             cantidad_sistema=cantidad_sistema,
             cantidad_fisica=data.cantidad_fisica,
             empleado_id=data.empleado_id,
+            motivo=data.motivo,
+            observaciones=data.observaciones,
         )
         self.repo.agregar(ajuste)
         await self.repo.flush()
@@ -216,6 +218,8 @@ class InventarioService:
             valor=(costo * data.cantidad).quantize(Decimal("0.01")),
             empleado_id=data.empleado_id,
             estado_validacion="pendiente",
+            destino=data.destino,
+            observaciones=data.observaciones,
         )
         self.repo.agregar(merma)
         await self.repo.flush()

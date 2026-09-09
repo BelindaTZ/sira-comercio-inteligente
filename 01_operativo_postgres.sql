@@ -489,6 +489,8 @@ CREATE TABLE mermas (
     causa VARCHAR(20) NOT NULL CHECK (causa IN ('caducidad','robo','rotura','error_humano')),
     valor DECIMAL(10,2) NOT NULL CHECK (valor >= 0),
     empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    destino VARCHAR(30),       -- migración 0022: destino físico de las unidades dadas de baja
+    observaciones TEXT,        -- migración 0022: detalle del siniestro / evidencia
     fecha DATE NOT NULL DEFAULT CURRENT_DATE
 );
 CREATE INDEX idx_mermas_producto_tienda ON mermas(product_id, tienda_id);
@@ -502,6 +504,8 @@ CREATE TABLE ajustes_inventario (
     cantidad_fisica INTEGER NOT NULL,
     diferencia INTEGER GENERATED ALWAYS AS (cantidad_fisica - cantidad_sistema) STORED,
     empleado_id INTEGER NOT NULL REFERENCES empleados(empleado_id),
+    motivo VARCHAR(30),        -- migración 0022: causal del descuadre (trazabilidad de auditoría)
+    observaciones TEXT,        -- migración 0022: justificación libre de auditoría
     fecha DATE NOT NULL DEFAULT CURRENT_DATE
 );
 

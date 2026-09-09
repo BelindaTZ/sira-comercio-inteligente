@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Declarar &amp; Registrar Merma Operativa</title>
+<!-- Google Fonts: Plus Jakarta Sans & Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<!-- Tailwind CSS CDN with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            abisal: {
+              DEFAULT: '#0a3632',
+              hover: '#082a27',
+              dark: '#051f1c',
+              light: '#134e4a'
+            },
+            amatista: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            },
+            ambermerma: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    /* Custom compact scrollbar if needed on smaller displays */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-1 {
+      font-variation-settings: 'FILL' 1;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 antialiased overflow-hidden min-h-screen">
+<!-- BEGIN: BackgroundMockInventoryScreen -->
+<!-- Context background representing SIRA FIFO & Inventory Dashboard underneath overlay -->
+<div aria-hidden="true" class="fixed inset-0 w-full h-full pointer-events-none select-none filter blur-[6px] opacity-40 scale-105 transform origin-center transition-all">
+<!-- Mock Top Nav -->
+<div class="h-16 bg-[#0a3632] flex items-center justify-between px-8 text-white">
+<div class="flex items-center gap-4">
+<span class="font-extrabold text-xl tracking-wider text-emerald-400">SIRA</span>
+<span class="text-xs bg-emerald-950 text-emerald-200 px-2 py-0.5 rounded border border-emerald-700/50">Marzú Retail Group</span>
+<span class="text-sm text-slate-300 ml-4 font-medium">Sucursal 14 - Las Condes Central</span>
+</div>
+<div class="flex items-center gap-6">
+<span class="text-xs text-emerald-200 bg-white/10 px-3 py-1 rounded-full">Terminal POS &amp; BODEGA ONLINE</span>
+<div class="w-8 h-8 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-xs">MV</div>
+</div>
+</div>
+<!-- Mock Inventory Body -->
+<div class="p-8 max-w-7xl mx-auto space-y-6">
+<div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+<div>
+<h1 class="text-2xl font-bold text-slate-800">Control de Existencias &amp; Alertas FIFO</h1>
+<p class="text-sm text-slate-500">Pasillo 02: Lácteos refrigerados y bebidas lácteas pasteurizadas</p>
+</div>
+<div class="flex gap-3">
+<button class="bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold text-sm">Exportar Reporte</button>
+<button class="bg-emerald-800 text-white px-4 py-2 rounded-lg font-semibold text-sm">+ Nuevo Conteo</button>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+<div class="text-xs text-slate-400 font-semibold uppercase">Total SKUs Activos</div>
+<div class="text-2xl font-bold text-slate-900 mt-1">1,482 un.</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/40 shadow-sm">
+<div class="text-xs text-amber-700 font-semibold uppercase">Lotes Próximos a Vencer (7d)</div>
+<div class="text-2xl font-bold text-amber-900 mt-1">14 SKUs</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-red-200 bg-red-50/40 shadow-sm">
+<div class="text-xs text-red-700 font-semibold uppercase">Mermas Registradas Mes</div>
+<div class="text-2xl font-bold text-red-900 mt-1">$482.100 CLP</div>
+</div>
+<div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+<div class="text-xs text-slate-400 font-semibold uppercase">Conformidad Auditoría</div>
+<div class="text-2xl font-bold text-emerald-700 mt-1">98.4%</div>
+</div>
+</div>
+<div class="bg-white rounded-xl border border-slate-200 p-4 space-y-3">
+<div class="h-8 bg-slate-100 rounded w-full"></div>
+<div class="h-10 bg-slate-50 rounded border border-slate-100 w-full"></div>
+<div class="h-10 bg-slate-50 rounded border border-slate-100 w-full"></div>
+<div class="h-10 bg-slate-50 rounded border border-slate-100 w-full"></div>
+<div class="h-10 bg-slate-50 rounded border border-slate-100 w-full"></div>
+</div>
+</div>
+</div>
+<!-- END: BackgroundMockInventoryScreen -->
+<!-- BEGIN: ModalBackdropAndContainer -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-md overflow-y-auto" data-purpose="modal-backdrop-overlay">
+<!-- Modal Card (Optimized for 1440x900 & 1680x1050 viewport without vertical cutoff) -->
+<div class="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200/90 flex flex-col max-h-[95vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200" data-purpose="merma-modal-card">
+<!-- BEGIN: ModalHeader -->
+<header class="bg-gradient-to-r from-slate-50 via-white to-amber-50/30 px-6 py-4 border-b border-slate-200 shrink-0">
+<div class="flex items-start justify-between gap-4">
+<div class="space-y-1.5 flex-1">
+<!-- Badges Row -->
+<div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-600 text-white shadow-sm tracking-wide text-[11px] font-bold uppercase">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                Declaración de Merma
+              </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono border border-slate-200 text-[11px]">
+                #SKU-44120
+              </span>
+<span class="inline-flex items-center gap-1 text-slate-600 bg-slate-100/80 px-2 py-0.5 rounded-md border border-slate-200 text-[11px]">
+<span class="material-symbols-outlined text-[13px] text-slate-500">grid_view</span>
+                Pasillo 02 (Lácteos &amp; Refrigerados)
+              </span>
+<span class="inline-flex items-center gap-1 text-amatista-700 bg-amatista-50 px-2.5 py-0.5 rounded-md border border-amatista-100 text-[11px] font-medium">
+<span class="material-symbols-outlined text-[13px]">barcode_scanner</span>
+                Lote: <strong class="font-bold">L-2024-11C</strong>
+</span>
+<span class="inline-flex items-center gap-1 text-amber-800 bg-amber-100/70 px-2.5 py-0.5 rounded-md border border-amber-200 text-[11px] font-medium">
+<span class="material-symbols-outlined text-[13px] text-amber-700">event</span>
+                Vto FIFO: <strong>18 Mar 2025</strong>
+</span>
+</div>
+<!-- Title & Context -->
+<div class="flex items-baseline gap-3">
+<h1 class="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+                Declarar &amp; Registrar Merma de Inventario
+              </h1>
+<span class="text-sm font-semibold text-slate-600">
+                • Leche Entera Larga Vida 1L - Colun Selección
+              </span>
+</div>
+<p class="text-xs text-slate-500 leading-snug">
+              Baja formal de existencias no aptas para venta comercial por deterioro, caducidad o siniestro en sala de ventas o bodega.
+            </p>
+</div>
+<!-- Close Modal Action Button -->
+<button aria-label="Cerrar modal" class="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400" type="button">
+<span class="material-symbols-outlined text-2xl">close</span>
+</button>
+</div>
+</header>
+<!-- END: ModalHeader -->
+<!-- BEGIN: ModalBodyContent -->
+<main class="flex-1 overflow-y-auto px-6 py-4 space-y-4 text-slate-700">
+<!-- SECTION 1: Categoría / Causa de la Merma -->
+<section class="space-y-2" data-purpose="merma-reason-selection">
+<div class="flex justify-between items-center">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-[#0a3632]">category</span>
+              1. Motivo Primario / Causal de Pérdida
+              <span class="text-red-500 font-bold">*</span>
+</label>
+<span class="text-[11px] font-medium text-slate-500">Seleccione el factor causante de la baja física</span>
+</div>
+<!-- Radio Cards Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+<!-- Option 1 -->
+<label class="relative flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 cursor-pointer transition-all hover:border-slate-300 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 has-[:checked]:ring-1 has-[:checked]:ring-amber-500">
+<input checked="" class="sr-only peer" name="merma_cause" type="radio" value="rotura"/>
+<div class="flex items-center justify-between mb-1.5">
+<span class="material-symbols-outlined text-amber-600 text-xl">broken_image</span>
+<span class="w-4 h-4 rounded-full border-2 border-slate-300 peer-checked:border-amber-600 peer-checked:bg-amber-600 flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+</span>
+</div>
+<span class="text-xs font-bold text-slate-800 leading-tight">Rotura / Envase Dañado</span>
+<span class="text-[10px] text-slate-500 mt-1 leading-snug">Fisura de empaque, golpe en tránsito o derrame.</span>
+</label>
+<!-- Option 2 -->
+<label class="relative flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 cursor-pointer transition-all hover:border-slate-300 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 has-[:checked]:ring-1 has-[:checked]:ring-amber-500">
+<input class="sr-only peer" name="merma_cause" type="radio" value="vencimiento"/>
+<div class="flex items-center justify-between mb-1.5">
+<span class="material-symbols-outlined text-slate-500 text-xl">event_busy</span>
+<span class="w-4 h-4 rounded-full border-2 border-slate-300 peer-checked:border-amber-600 peer-checked:bg-amber-600"></span>
+</div>
+<span class="text-xs font-bold text-slate-800 leading-tight">Vencida / Alerta FIFO</span>
+<span class="text-[10px] text-slate-500 mt-1 leading-snug">Fecha de caducidad superada en góndola/almacén.</span>
+</label>
+<!-- Option 3 -->
+<label class="relative flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 cursor-pointer transition-all hover:border-slate-300 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 has-[:checked]:ring-1 has-[:checked]:ring-amber-500">
+<input class="sr-only peer" name="merma_cause" type="radio" value="frio"/>
+<div class="flex items-center justify-between mb-1.5">
+<span class="material-symbols-outlined text-slate-500 text-xl">device_thermostat</span>
+<span class="w-4 h-4 rounded-full border-2 border-slate-300 peer-checked:border-amber-600 peer-checked:bg-amber-600"></span>
+</div>
+<span class="text-xs font-bold text-slate-800 leading-tight">Quiebre Cadena Frío</span>
+<span class="text-[10px] text-slate-500 mt-1 leading-snug">Cámara térmica fuera de rango reglamentario.</span>
+</label>
+<!-- Option 4 -->
+<label class="relative flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 cursor-pointer transition-all hover:border-slate-300 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 has-[:checked]:ring-1 has-[:checked]:ring-amber-500">
+<input class="sr-only peer" name="merma_cause" type="radio" value="contaminacion"/>
+<div class="flex items-center justify-between mb-1.5">
+<span class="material-symbols-outlined text-slate-500 text-xl">pest_control</span>
+<span class="w-4 h-4 rounded-full border-2 border-slate-300 peer-checked:border-amber-600 peer-checked:bg-amber-600"></span>
+</div>
+<span class="text-xs font-bold text-slate-800 leading-tight">Falla / Defecto Fábrica</span>
+<span class="text-[10px] text-slate-500 mt-1 leading-snug">Sellado deficiente, anomalía organoléptica o lote.</span>
+</label>
+<!-- Option 5 -->
+<label class="relative flex flex-col p-3 rounded-xl border border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 cursor-pointer transition-all hover:border-slate-300 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50/40 has-[:checked]:ring-1 has-[:checked]:ring-amber-500">
+<input class="sr-only peer" name="merma_cause" type="radio" value="decomiso"/>
+<div class="flex items-center justify-between mb-1.5">
+<span class="material-symbols-outlined text-slate-500 text-xl">gavel</span>
+<span class="w-4 h-4 rounded-full border-2 border-slate-300 peer-checked:border-amber-600 peer-checked:bg-amber-600"></span>
+</div>
+<span class="text-xs font-bold text-slate-800 leading-tight">Retiro Preventivo</span>
+<span class="text-[10px] text-slate-500 mt-1 leading-snug">Bloqueo sanitario o recall legal del proveedor.</span>
+</label>
+</div>
+</section>
+<!-- SECTION 2: Métricas Cuantitativas & Valorización Financiera -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-stretch" data-purpose="quantitative-metrics">
+<!-- Box 1: Stock Actual Disponible -->
+<div class="md:col-span-3 bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col justify-between">
+<div class="flex items-center justify-between text-xs text-slate-500">
+<span class="font-semibold uppercase tracking-wider text-[10px]">Stock Disponible</span>
+<span class="material-symbols-outlined text-sm text-slate-400">inventory_2</span>
+</div>
+<div class="my-1.5">
+<div class="text-3xl font-extrabold text-slate-900 tracking-tight">84 <span class="text-sm font-medium text-slate-500">un.</span></div>
+<p class="text-[11px] text-slate-500">Valor contable: <strong class="text-slate-700 font-semibold">$75.600 CLP</strong></p>
+</div>
+<div class="text-[10px] text-slate-400 bg-white border border-slate-200 px-2 py-0.5 rounded">
+              Costo Unitario: <strong>$900 CLP / un.</strong>
+</div>
+</div>
+<!-- Box 2: Stepper de Unidades a Dar de Baja -->
+<div class="md:col-span-5 bg-white border-2 border-[#0a3632]/25 rounded-xl p-3.5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+<span class="text-xs font-bold text-slate-800 uppercase tracking-wide">Unidades a Dar de Baja</span>
+</div>
+<span class="text-[11px] bg-red-50 text-red-700 px-2 py-0.5 rounded-full font-bold border border-red-200">
+                Merma Operativa
+              </span>
+</div>
+<!-- Stepper controls -->
+<div class="flex items-center justify-center gap-3 my-1">
+<button aria-label="Restar una unidad" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-lg flex items-center justify-center transition active:scale-95 border border-slate-300" type="button">
+                -
+              </button>
+<div class="text-center">
+<input class="w-24 text-center text-3xl font-extrabold text-[#0a3632] border-0 focus:ring-0 p-0 font-mono tracking-tight" max="84" min="1" type="number" value="6"/>
+<span class="text-[10px] text-slate-400 block -mt-1 uppercase tracking-wider font-semibold">unidades físicas</span>
+</div>
+<button aria-label="Sumar una unidad" class="w-10 h-10 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-lg flex items-center justify-center transition active:scale-95 border border-slate-300" type="button">
+                +
+              </button>
+</div>
+<!-- Quick Step Badges -->
+<div class="flex items-center justify-center gap-1.5 pt-1">
+<span class="text-[10px] text-slate-400 font-medium mr-1">Rápido:</span>
+<button class="text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 transition" type="button">-1</button>
+<button class="text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 transition" type="button">+1</button>
+<button class="text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 transition" type="button">+5</button>
+<button class="text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded text-slate-600 transition" type="button">+10</button>
+</div>
+</div>
+<!-- Box 3: Impacto Financiero y Stock Resultante -->
+<div class="md:col-span-4 bg-amber-50/70 border border-amber-300/80 rounded-xl p-3 flex flex-col justify-between relative overflow-hidden">
+<div class="flex items-center justify-between text-xs text-amber-800">
+<span class="font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-amber-700">payments</span>
+                Impacto Financiero Total
+              </span>
+<span class="material-symbols-outlined text-amber-600 text-lg">monetization_on</span>
+</div>
+<div class="my-1">
+<div class="text-3xl font-extrabold text-amber-900 tracking-tight">
+                -$5.400 <span class="text-xs font-bold text-amber-700 uppercase">CLP</span>
+</div>
+<p class="text-[11px] text-amber-800/90 font-medium">
+                Pérdida neta calculada (6 un. × $900 neto)
+              </p>
+</div>
+<div class="flex items-center justify-between pt-1 border-t border-amber-200/80 text-[11px]">
+<span class="text-amber-900/80">Stock final proyectado:</span>
+<span class="font-extrabold text-emerald-800 bg-white/80 px-2 py-0.5 rounded border border-amber-300/60 font-mono">
+                78 un. vigentes
+              </span>
+</div>
+</div>
+</section>
+<!-- SECTION 3: Destino Físico + Evidencia Fotográfica -->
+<section class="grid grid-cols-1 md:grid-cols-12 gap-3.5" data-purpose="destination-and-evidence">
+<!-- Left: Destino del Producto Mermado -->
+<div class="md:col-span-6 bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-[#0a3632]">local_shipping</span>
+                2. Destino Físico de las Unidades
+              </label>
+<span class="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Protocolo SAG/SEREMI</span>
+</div>
+<div class="grid grid-cols-2 gap-2 text-xs">
+<label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#0a3632] has-[:checked]:bg-[#0a3632]/5">
+<input checked="" class="text-[#0a3632] focus:ring-[#0a3632]" name="destino_merma" type="radio" value="destruccion"/>
+<div class="leading-snug">
+<div class="font-bold text-slate-800 text-[11px]">Destrucción In Situ</div>
+<div class="text-[10px] text-slate-500">Vertedero / Compactador</div>
+</div>
+</label>
+<label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#0a3632] has-[:checked]:bg-[#0a3632]/5">
+<input class="text-[#0a3632] focus:ring-[#0a3632]" name="destino_merma" type="radio" value="reclamo_proveedor"/>
+<div class="leading-snug">
+<div class="font-bold text-slate-800 text-[11px]">Devolución a Proveedor</div>
+<div class="text-[10px] text-slate-500">Nota de Crédito (Colun)</div>
+</div>
+</label>
+<label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#0a3632] has-[:checked]:bg-[#0a3632]/5">
+<input class="text-[#0a3632] focus:ring-[#0a3632]" name="destino_merma" type="radio" value="donacion"/>
+<div class="leading-snug">
+<div class="font-bold text-slate-800 text-[11px]">Donación Autorizada</div>
+<div class="text-[10px] text-slate-500">Red Alimentos (Apta consumo)</div>
+</div>
+</label>
+<label class="flex items-center gap-2 p-2 rounded-lg bg-white border border-slate-200 cursor-pointer hover:border-slate-300 has-[:checked]:border-[#0a3632] has-[:checked]:bg-[#0a3632]/5">
+<input class="text-[#0a3632] focus:ring-[#0a3632]" name="destino_merma" type="radio" value="cuarentena"/>
+<div class="leading-snug">
+<div class="font-bold text-slate-800 text-[11px]">Jaula de Cuarentena</div>
+<div class="text-[10px] text-slate-500">Peritaje de Calidad / Seguros</div>
+</div>
+</label>
+</div>
+</div>
+<!-- Right: Evidencia Fotográfica y Detalle -->
+<div class="md:col-span-6 bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<label class="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-[#0a3632]">photo_camera</span>
+                3. Registro Fotográfico de Respaldo
+              </label>
+<span class="text-[11px] text-slate-500">Obligatorio &gt; $5.000 CLP</span>
+</div>
+<!-- Upload / Attachment preview card -->
+<div class="mt-1 flex items-center justify-between gap-3 p-2.5 bg-white border border-emerald-300/80 rounded-lg shadow-sm">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 rounded-md bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 overflow-hidden relative group">
+<span class="material-symbols-outlined text-emerald-700">image</span>
+</div>
+<div>
+<div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    Foto_lote_colun_fisura_01.jpg
+                    <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 rounded">Adjunto OK</span>
+</div>
+<div class="text-[10px] text-slate-500 font-mono">1.8 MB • Capturado con Terminal Zebra TC26</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100" title="Ver imagen ampliada" type="button">
+<span class="material-symbols-outlined text-sm">visibility</span>
+</button>
+<button class="p-1 text-[#0a3632] hover:text-[#082a27] rounded hover:bg-slate-100" title="Tomar nueva foto con cámara" type="button">
+<span class="material-symbols-outlined text-sm">photo_camera</span>
+</button>
+</div>
+</div>
+<div class="mt-2 flex items-center justify-between text-[11px] text-slate-500 px-1">
+<span class="truncate">Operador: <strong class="text-slate-700">Camila Henríquez (Reponedora)</strong></span>
+<span class="text-[10px] text-slate-400 font-mono">14:28 hrs</span>
+</div>
+</div>
+</section>
+<!-- SECTION 4: Protocolo de Autorización y Switches Automatizados -->
+<section class="bg-slate-50 border border-slate-200/90 rounded-xl p-3.5 space-y-3" data-purpose="supervisor-authorization-and-toggles">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+<!-- Supervisor Select & PIN validation -->
+<div class="md:col-span-7 flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+<div class="flex-1">
+<label class="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                  Supervisor que autoriza la baja
+                </label>
+<div class="relative">
+<select class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-300 rounded-lg py-1.5 pl-2.5 pr-8 focus:ring-[#0a3632] focus:border-[#0a3632]">
+<option selected="">Ignacio Valdés — Subgerente de Turno (Op ID: #4409)</option>
+<option>Marcos Valenzuela — Jefe de Operaciones &amp; Sala</option>
+<option>Paola Durán — Encargada Control de Calidad</option>
+</select>
+</div>
+</div>
+<!-- PIN Input -->
+<div class="w-full sm:w-44">
+<div class="flex justify-between items-center mb-1">
+<label class="text-[10px] font-bold uppercase tracking-wider text-slate-500">PIN / Token</label>
+<span class="text-[10px] font-bold text-emerald-700 flex items-center gap-0.5">
+<span class="material-symbols-outlined text-xs">verified</span> Validado
+                  </span>
+</div>
+<div class="relative">
+<input class="w-full text-center text-xs font-mono font-black tracking-widest bg-emerald-50/60 border border-emerald-300 rounded-lg py-1.5 text-emerald-900 focus:outline-none" readonly="" type="password" value="••••"/>
+<span class="material-symbols-outlined text-xs text-emerald-600 absolute right-2.5 top-2">lock</span>
+</div>
+</div>
+</div>
+<!-- Two Compact Switches -->
+<div class="md:col-span-5 flex flex-col gap-2 pl-0 md:pl-2 border-t md:border-t-0 md:border-l border-slate-200 pt-2 md:pt-0">
+<!-- Switch 1: Reabastecimiento Automático -->
+<label class="flex items-center justify-between cursor-pointer gap-2 select-none">
+<span class="text-xs text-slate-700 leading-tight">
+<span class="font-bold text-slate-800 block text-[11px]">Generar pedido de reposición automática</span>
+<span class="text-[10px] text-slate-500">Sincroniza orden al CD Pudahuel</span>
+</span>
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0a3632] relative"></div>
+</label>
+<!-- Switch 2: Asiento Contable Inmediato -->
+<label class="flex items-center justify-between cursor-pointer gap-2 select-none">
+<span class="text-xs text-slate-700 leading-tight">
+<span class="font-bold text-slate-800 block text-[11px]">Asentar baja contable en SIRA Finanzas</span>
+<span class="text-[10px] text-slate-500">Imputa pérdida al centro de costo Lácteos</span>
+</span>
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0a3632] relative"></div>
+</label>
+</div>
+</div>
+</section>
+</main>
+<!-- END: ModalBodyContent -->
+<!-- BEGIN: ModalFooter -->
+<footer class="bg-slate-50 border-t border-slate-200 px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+<!-- Left helper info -->
+<div class="flex items-center gap-2 text-xs text-slate-500">
+<span class="material-symbols-outlined text-slate-400 text-sm">info</span>
+<span>Acción con registro inmutable en auditoría SIRA Ledger #AUD-99812</span>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+<button class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg transition shadow-sm" type="button">
+            Cancelar / Volver
+          </button>
+<button class="px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg transition" type="button">
+            Guardar Borrador
+          </button>
+<!-- Main Call to Action Button in Verde Abisal Nórdico -->
+<button class="px-5 py-2 text-xs font-bold text-white bg-[#0a3632] hover:bg-[#082a27] active:scale-[0.99] rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-2 focus:ring-2 focus:ring-offset-2 focus:ring-[#0a3632]" type="button">
+<span class="material-symbols-outlined text-base">check_circle</span>
+            Registrar Baja de Merma y Actualizar Stock (6 un.)
+          </button>
+</div>
+</footer>
+<!-- END: ModalFooter -->
+</div>
+</div>
+<!-- END: ModalBackdropAndContainer -->
+</body></html>
