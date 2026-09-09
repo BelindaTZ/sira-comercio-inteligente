@@ -8,7 +8,8 @@
  * - Libro oficial de incidentes de merma con trazabilidad por lote, ubicación y validación contable.
  * - Gobernanza de umbrales por categoría (FR-017 / FR-018).
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useSesion } from '@/stores/sesion'
 import { cajaApi } from '@/services/cajaApi'
 import { inventarioApi } from '@/services/inventarioApi'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -19,8 +20,16 @@ import Modal from '@/shared/ui/Modal.vue'
 import Icon from '@/shared/ui/Icon.vue'
 import FormularioMerma from '@/modules/inventario/components/FormularioMerma.vue'
 
-const tiendaId = ref(Number(localStorage.getItem('sira_tienda_id')) || 1)
-const empleadoId = ref(Number(localStorage.getItem('sira_empleado_id')) || 1)
+const sesion = useSesion()
+const tiendaId = computed(() => sesion.tiendaId ?? (Number(localStorage.getItem('sira_tienda_id')) || 1))
+const empleadoId = computed(() => sesion.empleadoId ?? (Number(localStorage.getItem('sira_empleado_id')) || 1))
+const puedeEditarUmbrales = computed(() => {
+  return (
+    sesion.rol === 'Jefe_Operaciones' ||
+    sesion.rol === 'Administrador' ||
+    (sesion._tablasEditables && sesion._tablasEditables.has('Finanzas/umbral_merma_categoria'))
+  )
+})
 
 // Formateador estándar de moneda en USD
 const money = (v) =>
@@ -34,12 +43,12 @@ const exito = ref('')
 
 // KPIs y Métricas
 const kpis = ref({
-  merma_acumulada_mes: 1840.5,
-  tasa_merma_pct: 0.84,
-  skus_criticos_count: 19,
-  tasa_recuperacion_pct: 41.5,
-  recuperacion_monto: 760.0,
-  pendientes_count: 2,
+  merma_acumulada_mes: 0,
+  tasa_merma_pct: 0,
+  skus_criticos_count: 0,
+  tasa_recuperacion_pct: 0,
+  recuperacion_monto: 0,
+  pendientes_count: 0,
   causas_desglose: {},
 })
 
@@ -49,21 +58,38 @@ const filtroCausa = ref('todas')
 const filtroEstado = ref('todos')
 const busqueda = ref('')
 
-// Causas raíz predeterminadas y enriquecidas
-const causasCatalogo = [
-  {
-    id: 'caducidad',
-    nombre: 'Vencimiento / Caducidad FEFO',
-    pct: 48,
-    monto: 883.44,
-    incidentes: 12,
-    color: '#d97706',
-    bgColor: 'bg-amber-500',
-    borderClass: 'border-amber-200',
-    bgCardClass: 'bg-amber-50/40',
-    textClass: 'text-amber-700',
-    desc: 'Mayor impacto en lácteos pasteurizados, masas artesanales y fiambrería fraccionada.',
-  },
+// Causas raíz adaptativas al desglose real o catálogo base
+const causasCatalogo = computed(() => {
+  const desglose = kpis.value.causas_desglose || {}
+  const caducidadValor = Number(desglose.caducidad?.valor ?? 0)
+  const caducidadCount = Number(desglose.caducidad?.cantidad ?? 0)
+
+  const roturaValor = Number(desglose.rotura?.valor ?? 0)
+  const roturaCount = Number(desglose.rotura?.cantidad ?? 0)
+
+  const roboValor = Number(desglose.robo?.valor ?? 0)
+  const roboCount = Number(desglose.robo?.cantidad ?? 0)
+
+  const errorValor = Number(desglose.error_humano?.valor ?? 0)
+  const errorCount = Number(desglose.error_humano?.cantidad ?? 0)
+
+  const sumValor = caducidadValor + roturaValor + roboValor + errorValor
+  const tieneDatos = sumValor > 0
+
+  return [
+    {
+      id: 'caducidad',
+      nombre: 'Vencimiento / Caducidad FEFO',
+      pct: tieneDatos ? Math.round((caducidadValor / sumValor) * 100) : 48,
+      monto: tieneDatos ? caducidadValor : 883.44,
+      incidentes: tieneDatos ? caducidadCount : 12,
+      color: '#d97706',
+      bgColor: 'bg-amber-500',
+      borderClass: 'border-amber-200',
+      bgCardClass: 'bg-amber-50/40',
+      textClass: 'text-amber-700',
+      desc: 'Mayor impacto en lácteos pasteurizados, masas artesanales y fiambrería fraccionada.',
+    },
   {
     id: 'rotura',
     nombre: 'Daño en Manipulación / Rotura',
@@ -104,6 +130,7 @@ const causasCatalogo = [
     desc: 'Chocolatería importada premium y licores 750ml con vulneración de sensores.',
   },
 ]
+})
 
 // Modal: Declarar Merma
 const modalDeclarar = ref(false)
@@ -119,6 +146,10 @@ const seguimientoSemanal = ref([])
 const nuevoUmbral = reactive({ product_category: '', porcentaje_umbral: '' })
 const guardandoUmbral = ref(false)
 
+watch(tiendaId, () => {
+  cargarDatos()
+})
+
 // Carga de datos
 async function cargarDatos() {
   cargando.value = true
@@ -131,12 +162,12 @@ async function cargarDatos() {
 
     if (kpisData) {
       kpis.value = {
-        merma_acumulada_mes: Number(kpisData.merma_acumulada_mes) || 1840.5,
-        tasa_merma_pct: Number(kpisData.tasa_merma_pct) || 0.84,
-        skus_criticos_count: kpisData.skus_criticos_count || 19,
-        tasa_recuperacion_pct: Number(kpisData.tasa_recuperacion_pct) || 41.5,
-        recuperacion_monto: Number(kpisData.recuperacion_monto) || 760.0,
-        pendientes_count: kpisData.pendientes_count ?? 2,
+        merma_acumulada_mes: Number(kpisData.merma_acumulada_mes ?? 0),
+        tasa_merma_pct: Number(kpisData.tasa_merma_pct ?? 0),
+        skus_criticos_count: Number(kpisData.skus_criticos_count ?? 0),
+        tasa_recuperacion_pct: Number(kpisData.tasa_recuperacion_pct ?? 0),
+        recuperacion_monto: Number(kpisData.recuperacion_monto ?? 0),
+        pendientes_count: Number(kpisData.pendientes_count ?? 0),
         causas_desglose: kpisData.causas_desglose || {},
       }
     }
@@ -398,7 +429,7 @@ onMounted(() => {
             Auditoría Activa Ciclo Q2
           </SemanticChip>
           <span class="text-xs text-on-surface-variant font-medium">
-            Alcance: <strong class="text-on-surface">Sucursal #{{ tiendaId }} Providencia Express</strong>
+            Alcance: <strong class="text-on-surface">Sucursal #{{ tiendaId }}</strong>
           </span>
           <SemanticChip tipo="fifo">
             <Icon name="cube" :size="13" /> Rescate Sustentable
@@ -833,9 +864,9 @@ onMounted(() => {
 
     <!-- MODAL 1: DECLARAR NUEVA MERMA -->
     <Modal
-      :abierto="modalDeclarar"
+      v-if="modalDeclarar"
       titulo="Declarar Baja de Merma de Inventario"
-      tamano="lg"
+      size="lg"
       @cerrar="modalDeclarar = false"
     >
       <FormularioMerma
@@ -848,9 +879,9 @@ onMounted(() => {
 
     <!-- MODAL 2: ACTA OFICIAL DE MERMA Y AUDITORÍA CONTABLE -->
     <Modal
-      :abierto="modalActa && mermaSeleccionada != null"
+      v-if="modalActa && mermaSeleccionada != null"
       titulo="Acta Oficial de Auditoría y Baja de Merma"
-      tamano="md"
+      size="md"
       @cerrar="modalActa = false"
     >
       <div v-if="mermaSeleccionada" class="space-y-4 text-xs">
@@ -914,9 +945,9 @@ onMounted(() => {
 
     <!-- MODAL 3: UMBRALES POR CATEGORÍA (FR-017 / FR-018) -->
     <Modal
-      :abierto="modalUmbrales"
+      v-if="modalUmbrales"
       titulo="Gobernanza de Umbrales de Merma por Categoría"
-      tamano="lg"
+      size="lg"
       @cerrar="modalUmbrales = false"
     >
       <div class="space-y-4 text-xs">
@@ -924,8 +955,21 @@ onMounted(() => {
           El Jefe de Operaciones define el umbral aceptable de merma semanal por categoría (FR-017). Superar el umbral genera una alerta de gestión pero nunca bloquea la operativa regular (FR-019).
         </p>
 
-        <!-- Formulario de nuevo umbral -->
-        <form class="p-4 rounded-xl border border-brand-200 bg-brand-50/40 flex flex-wrap items-end gap-3" @submit.prevent="guardarUmbral">
+        <!-- Mensaje supervisor si no tiene permisos de edición -->
+        <div
+          v-if="!puedeEditarUmbrales"
+          class="flex items-center gap-2 rounded-xl border border-outline-variant/60 bg-surface-container-low p-3 text-[12px] text-on-surface-variant"
+        >
+          <Icon name="lock" :size="16" class="text-secondary shrink-0" />
+          <span>Vista de supervisión para encargado de tienda. La configuración de umbrales está asignada a la Jefatura de Operaciones corporativa.</span>
+        </div>
+
+        <!-- Formulario de nuevo umbral (sólo editable si tiene permiso) -->
+        <form
+          v-else
+          class="p-4 rounded-xl border border-brand-200 bg-brand-50/40 flex flex-wrap items-end gap-3"
+          @submit.prevent="guardarUmbral"
+        >
           <div class="flex-1 min-w-[160px]">
             <label class="block text-[11px] font-semibold text-slate-700 mb-1">Categoría</label>
             <input

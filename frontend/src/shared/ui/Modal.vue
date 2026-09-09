@@ -2,6 +2,7 @@
 /** Modal / diálogo del design-system (§Elevation Tier 2, radios 12px). */
 const props = defineProps({
   titulo: { type: String, default: '' },
+  abierto: { type: Boolean, default: true },
   // md (formularios simples) · lg · xl (auditoría de stock / merma, como docs/diseno-ui)
   size: { type: String, default: 'md' },
 })
@@ -13,6 +14,7 @@ const grande = props.size === 'xl' || props.size === 'lg'
 
 <template>
   <div
+    v-if="abierto"
     class="fixed inset-0 z-[60] flex justify-center overflow-y-auto bg-black/40 backdrop-blur-sm"
     :class="grande ? 'items-start p-4 sm:p-6' : 'items-start p-4 pt-24'"
   >
