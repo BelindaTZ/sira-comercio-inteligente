@@ -1,39 +1,57 @@
 <script setup>
 /**
- * US2 — cada Jefe de departamento consulta el dashboard táctico de su propio
- * departamento (el backend valida el alcance por RBAC / FR-005; el Gerente
- * General puede consultar cualquiera). Un mismo componente sirve a los 6 roles,
- * parametrizado por `modulo`. Junto a cada valor, la fecha de última publicación
- * (FR-008); los KPIs con datos insuficientes se muestran atenuados sin bloquear
- * el resto (Acceptance Scenario 3).
+ * US2 (feature 009) — cada Jefe de departamento consulta el dashboard táctico de
+ * su propio departamento (el backend valida el alcance por RBAC / FR-005; el
+ * Gerente General puede consultar cualquiera). Un mismo componente sirve a los 6
+ * roles, parametrizado por `modulo`. Los KPIs con datos insuficientes se muestran
+ * atenuados sin bloquear el resto (Acceptance Scenario 3). Arquetipo "Dashboard".
  */
-import { onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { tiDashboardsApi } from '@/services/tiDashboardsApi'
 import { useSesion } from '@/stores/sesion'
+import { formatoKpi, valorKpi } from '@/shared/kpiFormato'
+import PageHeader from '@/shared/ui/PageHeader.vue'
+import KpiTile from '@/shared/ui/KpiTile.vue'
+import SemanticChip from '@/shared/ui/SemanticChip.vue'
+import Icon from '@/shared/ui/Icon.vue'
 
-const MODULOS = ['Comercial', 'Marketing_CRM', 'Operaciones', 'Finanzas', 'TI', 'RRHH']
+const MODULOS = [
+  { id: 'Comercial', label: 'Comercial' },
+  { id: 'Marketing_CRM', label: 'Marketing & CRM' },
+  { id: 'Operaciones', label: 'Operaciones' },
+  { id: 'Finanzas', label: 'Finanzas' },
+  { id: 'TI', label: 'Tecnología' },
+  { id: 'RRHH', label: 'Recursos Humanos' },
+]
+const ICONO = { moneda: 'bank', indice: 'users', numero: 'chart' }
 
 const sesion = useSesion()
-// El Jefe aterriza en su propio módulo; el Gerente puede cambiar de departamento.
-const modulo = ref(sesion.miModulo || MODULOS[0])
+const modulo = ref(sesion.miModulo || MODULOS[0].id)
 const dashboard = ref(null)
 const error = ref('')
 const aviso = ref('')
+const cargando = ref(false)
 
-function fmtFecha(iso) {
-  return iso ? new Date(iso).toLocaleString() : '—'
-}
+const moduloLabel = computed(() => MODULOS.find((m) => m.id === modulo.value)?.label || modulo.value)
+const fechaPublicacion = computed(() =>
+  dashboard.value?.fecha_publicacion
+    ? new Date(dashboard.value.fecha_publicacion).toLocaleString('es-EC')
+    : null,
+)
 
 async function cargar() {
   error.value = ''
   aviso.value = ''
   dashboard.value = null
+  cargando.value = true
   try {
     dashboard.value = await tiDashboardsApi.dashboardTactico(modulo.value)
   } catch (e) {
     if (e.status === 403) aviso.value = 'No tienes acceso al dashboard de este departamento.'
     else if (e.status === 404) aviso.value = 'Todavía no se ha publicado este dashboard táctico.'
     else error.value = e.message
+  } finally {
+    cargando.value = false
   }
 }
 
@@ -42,54 +60,49 @@ onMounted(cargar)
 </script>
 
 <template>
-  <main class="mx-auto max-w-4xl space-y-6 px-6 py-8">
-    <header class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h1 class="text-2xl font-bold text-primary-container">Dashboard táctico</h1>
-        <p v-if="dashboard" class="mt-1 text-sm text-on-surface-variant">
-          Última actualización: {{ fmtFecha(dashboard.fecha_publicacion) }}
-        </p>
-      </div>
-      <label v-if="sesion.esGerente" class="text-xs text-on-surface-variant">
-        Departamento
-        <select
-          v-model="modulo"
-          class="mt-1 block rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+  <div class="mx-auto max-w-[1400px] px-6 py-8 lg:px-8">
+    <PageHeader
+      :titulo="`Dashboard táctico · ${moduloLabel}`"
+      subtitulo="KPIs operativos del departamento, publicados por el proceso diario. Cada Jefe ve el suyo; la Gerencia puede alternar entre departamentos."
+    >
+      <template #badge>
+        <SemanticChip v-if="fechaPublicacion" tipo="ok">Publicado {{ fechaPublicacion }}</SemanticChip>
+      </template>
+      <template #acciones>
+        <label
+          v-if="sesion.esGerente"
+          class="flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600"
         >
-          <option v-for="m in MODULOS" :key="m" :value="m">{{ m }}</option>
-        </select>
-      </label>
-      <span
-        v-else
-        class="rounded-full bg-surface-container px-3 py-1 text-xs font-semibold text-on-surface-variant"
-      >
-        {{ modulo }}
-      </span>
-    </header>
+          <Icon name="filter" :size="14" class="text-brand-700" />
+          <select v-model="modulo" class="bg-transparent text-slate-800 focus:outline-none">
+            <option v-for="m in MODULOS" :key="m.id" :value="m.id">{{ m.label }}</option>
+          </select>
+        </label>
+      </template>
+    </PageHeader>
 
-    <p v-if="error" class="rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container">
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
       {{ error }}
     </p>
     <p
       v-if="aviso"
-      class="rounded-lg bg-surface-container-high px-4 py-2 text-sm text-on-surface-variant"
+      class="mb-4 flex items-center gap-2 rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800"
     >
-      {{ aviso }}
+      <Icon name="alert" :size="16" class="text-brand-600" /> {{ aviso }}
     </p>
 
-    <section v-if="dashboard" class="grid gap-4 sm:grid-cols-2">
-      <article
-        v-for="kpi in dashboard.kpis"
+    <section v-if="dashboard && dashboard.kpis.length" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <KpiTile
+        v-for="(kpi, i) in dashboard.kpis"
         :key="kpi.nombre_kpi"
-        class="rounded-xl border border-outline-variant p-4"
-        :class="
-          kpi.disponible ? 'bg-surface-container-lowest' : 'bg-surface-container-high opacity-70'
-        "
+        :label="kpi.nombre_kpi"
+        :valor="valorKpi(kpi) ?? 'Datos insuficientes'"
+        :variant="i === 0 && kpi.disponible ? 'emerald' : kpi.disponible ? 'default' : 'plain'"
+        :estado="kpi.disponible ? '' : 'Sin datos suficientes'"
+        :estado-tipo="kpi.disponible ? 'neutral' : 'fifo'"
       >
-        <p class="text-sm text-on-surface">{{ kpi.nombre_kpi }}</p>
-        <p v-if="kpi.disponible" class="mt-2 text-3xl font-bold text-on-surface">{{ kpi.valor }}</p>
-        <p v-else class="mt-2 text-sm font-medium text-on-surface-variant">Datos insuficientes</p>
-      </article>
+        <template #icono><Icon :name="ICONO[formatoKpi(kpi.nombre_kpi)] || 'chart'" :size="16" /></template>
+      </KpiTile>
     </section>
-  </main>
+  </div>
 </template>
