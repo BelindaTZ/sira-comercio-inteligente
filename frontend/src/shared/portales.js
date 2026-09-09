@@ -10,7 +10,7 @@ export const HOME_POR_ROL = {
   Jefe_Operaciones: '/ti/dashboards/tactico',
   Jefe_Finanzas: '/ti/dashboards/tactico',
   Jefe_RRHH: '/ti/dashboards/tactico',
-  Encargado_Tienda: '/inventario',
+  Encargado_Tienda: '/tienda/operativo',
   Reponedor: '/inventario',
   Cajero: '/pos',
 }

@@ -1,45 +1,70 @@
 <script setup>
 /**
- * Punto de venta (US1). Orquesta el flujo completo: abrir venta → agregar
- * líneas → cobrar (efectivo / tarjeta simulada) → confirmar → abrir el
- * comprobante para imprimir/guardar (FR-004, SC-011).
+ * Punto de Venta & Registro Rápido (001, US1). Orquesta el flujo completo:
+ * abrir venta → agregar líneas (escáner / manual) → cobrar (efectivo / tarjeta
+ * simulada) → confirmar → abrir el comprobante (FR-004, SC-011). Toda regla vive
+ * en el backend; esta página sólo llama a `ventasApi`.
  *
- * Toda regla vive en el backend; esta página sólo llama a `ventasApi`.
+ * Rediseño feature 013 sobre `docs/diseno-ui/.../sira_punto_de_venta_y_registro_r_pido…`:
+ * cockpit de dos columnas con el kit del design-system. El grid de productos con
+ * foto del mockup necesita un endpoint de catálogo para el Cajero (hoy no tiene
+ * lectura de `productos`/`inventario`); mientras tanto el registro es por escáner
+ * o código, que es el flujo real.
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
+import { useSesion } from '@/stores/sesion'
+import Icon from '@/shared/ui/Icon.vue'
+import SemanticChip from '@/shared/ui/SemanticChip.vue'
 import BuscadorProducto from './components/BuscadorProducto.vue'
 import BuscadorCliente from './components/BuscadorCliente.vue'
 import TicketVenta from './components/TicketVenta.vue'
 import SimuladorDatafono from './components/SimuladorDatafono.vue'
 
-// Datos de sesión — provisorios hasta la feature 008 (login real).
+const sesionStore = useSesion()
 const sesion = reactive({
-  tiendaId: Number(localStorage.getItem('sira_tienda_id')) || 1,
-  cajeroId: Number(localStorage.getItem('sira_empleado_id')) || 1,
+  tiendaId: sesionStore.tiendaId ?? (Number(localStorage.getItem('sira_tienda_id')) || 1),
+  cajeroId: sesionStore.empleadoId ?? (Number(localStorage.getItem('sira_empleado_id')) || 1),
   cajaId: Number(localStorage.getItem('sira_caja_id')) || null,
 })
 
 const venta = ref(null)
 const clienteId = ref(null)
 const medioPagoId = ref(null)
-// feature 007: sólo los medios de pago aprobados y no dados de baja (FR-007).
 const mediosPago = ref([])
 const tipoComprobante = ref('nota_venta')
 const identificacion = ref('')
 const razonSocial = ref('')
+const efectivoRecibido = ref('')
 
 const cargando = ref(false)
 const procesandoPago = ref(false)
 const error = ref('')
 const pagoTarjetaAprobado = ref(false)
-// feature 007 (FR-004): advertencia no bloqueante si el datáfono de la caja no está disponible.
 const datafonoAviso = ref('')
+
+const money = (v) => `$${Math.round(Number(v || 0)).toLocaleString('es-CL')}`
 
 const medioSeleccionado = computed(
   () => mediosPago.value.find((m) => m.medio_pago_id === medioPagoId.value) || null,
 )
 const requiereTarjeta = computed(() => medioSeleccionado.value?.nombre === 'Tarjeta')
+const esEfectivo = computed(() => medioSeleccionado.value?.nombre === 'Efectivo')
+const vuelto = computed(() => {
+  const r = Number(efectivoRecibido.value)
+  const t = Number(venta.value?.total || 0)
+  return r > t ? r - t : 0
+})
+const quickCash = computed(() => {
+  const t = Math.ceil(Number(venta.value?.total || 0))
+  const opts = new Set([t])
+  ;[1000, 2000, 5000, 10000, 20000].forEach((base) => {
+    opts.add(Math.ceil(t / base) * base)
+  })
+  return [...opts].filter((n) => n >= t).sort((a, b) => a - b).slice(0, 4)
+})
+
+const ICONO_MEDIO = { Efectivo: 'bank', Tarjeta: 'key', 'Transferencia Bancaria': 'bank', 'Billetera Digital': 'wifi' }
 
 async function cargarMediosPago() {
   try {
@@ -63,13 +88,14 @@ watch(requiereTarjeta, async (necesita) => {
 })
 
 onMounted(cargarMediosPago)
+
 const puedeConfirmar = computed(
   () =>
     venta.value?.estado === 'en_curso' &&
     venta.value.lineas.length > 0 &&
     medioPagoId.value != null &&
     (!requiereTarjeta.value || pagoTarjetaAprobado.value) &&
-    (tipoComprobante.value !== 'factura' || identificacion.value.trim().length > 0)
+    (tipoComprobante.value !== 'factura' || identificacion.value.trim().length > 0),
 )
 
 async function conError(fn) {
@@ -89,14 +115,12 @@ async function nuevaVenta() {
   pagoTarjetaAprobado.value = false
   medioPagoId.value = null
   clienteId.value = null
+  efectivoRecibido.value = ''
   venta.value = await conError(() =>
-    ventasApi.iniciar({ tiendaId: sesion.tiendaId, cajeroId: sesion.cajeroId })
+    ventasApi.iniciar({ tiendaId: sesion.tiendaId, cajeroId: sesion.cajeroId }),
   )
 }
 
-// Si aún no hay venta abierta, el cliente elegido queda pendiente hasta que se
-// abra la venta con la primera línea; si ya hay, se reinicia la venta con el
-// household_id vinculado (el backend acepta household_id solo al iniciar).
 async function vincularCliente(c) {
   clienteId.value = c.household_id
   if (venta.value && venta.value.estado === 'en_curso' && !venta.value.lineas.length) {
@@ -105,7 +129,7 @@ async function vincularCliente(c) {
         tiendaId: sesion.tiendaId,
         cajeroId: sesion.cajeroId,
         householdId: c.household_id,
-      })
+      }),
     )
   }
 }
@@ -117,17 +141,17 @@ async function agregar({ productId, codigoBarras, cantidad }) {
         tiendaId: sesion.tiendaId,
         cajeroId: sesion.cajeroId,
         householdId: clienteId.value,
-      })
+      }),
     )
   }
   venta.value = await conError(() =>
-    ventasApi.agregarLinea(venta.value.venta_id, { productId, codigoBarras, cantidad })
+    ventasApi.agregarLinea(venta.value.venta_id, { productId, codigoBarras, cantidad }),
   )
 }
 
 async function remover({ lineaId, autorizaEmpleadoId, motivo }) {
   venta.value = await conError(() =>
-    ventasApi.removerLinea(venta.value.venta_id, lineaId, { autorizaEmpleadoId, motivo })
+    ventasApi.removerLinea(venta.value.venta_id, lineaId, { autorizaEmpleadoId, motivo }),
   )
 }
 
@@ -139,7 +163,7 @@ async function aplicarDescuento({ lineaId, tipo, valor, motivo, empleadoAutoriza
       motivo,
       empleadoAplicaId: sesion.cajeroId,
       empleadoAutorizaId,
-    })
+    }),
   )
 }
 
@@ -147,7 +171,7 @@ async function cobrarTarjeta({ escenario, onResultado }) {
   procesandoPago.value = true
   try {
     const res = await conError(() =>
-      ventasApi.pagoTarjeta(venta.value.venta_id, { monto: venta.value.total, escenario })
+      ventasApi.pagoTarjeta(venta.value.venta_id, { monto: venta.value.total, escenario }),
     )
     onResultado(res.resultado)
     pagoTarjetaAprobado.value = res.resultado === 'aprobado'
@@ -163,42 +187,53 @@ async function confirmar() {
       tipoComprobante: tipoComprobante.value,
       identificacion: identificacion.value,
       razonSocial: razonSocial.value,
-    })
+    }),
   )
   venta.value = confirmada
-  // SC-011: abrir el comprobante de inmediato para imprimir/guardar.
   window.open(ventasApi.comprobanteUrl(confirmada.venta_id), '_blank', 'noopener')
 }
 </script>
 
 <template>
-  <main class="mx-auto max-w-5xl px-6 py-8">
-    <header class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-primary-container">Punto de Venta</h1>
+  <div class="mx-auto max-w-[1560px] px-6 py-6 lg:px-8">
+    <header class="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <h1 class="font-display text-2xl font-extrabold tracking-tight text-brand-950">
+            Punto de Venta
+          </h1>
+          <SemanticChip v-if="venta?.estado === 'en_curso'" tipo="ok">Venta abierta</SemanticChip>
+          <SemanticChip v-else-if="venta?.estado === 'confirmada'" tipo="neutral">Confirmada</SemanticChip>
+        </div>
+        <p class="mt-0.5 text-[13px] font-medium text-slate-600">
+          Tienda #{{ sesion.tiendaId }}<template v-if="sesion.cajaId"> · Caja {{ sesion.cajaId }}</template>
+          · Cajero #{{ sesion.cajeroId }}
+        </p>
+      </div>
       <button
         type="button"
-        class="rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container"
+        class="inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2.5 text-[13px] font-bold text-white shadow-md hover:bg-brand-700"
         @click="nuevaVenta"
       >
-        Nueva venta
+        <Icon name="plus" :size="17" /> Nueva venta
       </button>
     </header>
 
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container"
-    >
-      {{ error }}
-    </p>
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">{{ error }}</p>
 
     <div
       v-if="!venta"
-      class="rounded-xl border border-dashed border-outline-variant p-10 text-center text-on-surface-variant"
+      class="satin-card grid place-items-center rounded-2xl p-16 text-center shadow-card-subtle"
     >
-      Pulsa «Nueva venta» para empezar a escanear.
+      <div>
+        <Icon name="cart" :size="30" class="mx-auto mb-3 text-brand-300" />
+        <p class="text-[14px] font-bold text-slate-800">Sin venta en curso</p>
+        <p class="mt-1 text-[12px] text-slate-500">Pulsá «Nueva venta» para empezar a escanear.</p>
+      </div>
     </div>
 
-    <div v-else class="grid gap-6 lg:grid-cols-[1fr_20rem]">
+    <div v-else class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <!-- Columna izquierda: registro + ticket -->
       <section class="space-y-4">
         <BuscadorProducto v-if="venta.estado === 'en_curso'" @agregar="agregar" />
         <TicketVenta
@@ -209,6 +244,7 @@ async function confirmar() {
         />
       </section>
 
+      <!-- Columna derecha: cliente + cobro -->
       <aside class="space-y-4">
         <BuscadorCliente
           v-if="venta.estado === 'en_curso'"
@@ -216,34 +252,79 @@ async function confirmar() {
           @seleccionar="vincularCliente"
           @quitar="clienteId = null"
         />
-        <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-          <h2 class="mb-3 text-sm font-semibold text-on-surface">Cobro</h2>
 
-          <label class="mb-2 block text-xs font-medium text-on-surface-variant"
-            >Medio de pago</label
-          >
-          <select
-            v-model.number="medioPagoId"
-            :disabled="venta.estado !== 'en_curso'"
-            class="mb-3 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-          >
-            <option :value="null">Selecciona…</option>
-            <option v-for="m in mediosPago" :key="m.medio_pago_id" :value="m.medio_pago_id">
-              {{ m.nombre }}
-            </option>
-          </select>
+        <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
+          <h2 class="mb-3 font-display text-[13px] font-bold text-brand-950">Cobro</h2>
+
+          <div class="mb-1.5 flex items-baseline justify-between">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
+            <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">
+              {{ money(venta.total) }}
+            </span>
+          </div>
+
+          <label class="mb-1 mt-3 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            Medio de pago
+          </label>
+          <div class="mb-3 grid grid-cols-2 gap-1.5">
+            <button
+              v-for="m in mediosPago"
+              :key="m.medio_pago_id"
+              type="button"
+              :disabled="venta.estado !== 'en_curso'"
+              class="flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[12px] font-semibold transition disabled:opacity-40"
+              :class="
+                medioPagoId === m.medio_pago_id
+                  ? 'border-brand-600 bg-brand-50 text-brand-900'
+                  : 'border-brand-200 bg-white text-slate-600 hover:border-brand-400'
+              "
+              @click="((medioPagoId = m.medio_pago_id), (pagoTarjetaAprobado = false))"
+            >
+              <Icon :name="ICONO_MEDIO[m.nombre] || 'bank'" :size="14" /> {{ m.nombre }}
+            </button>
+          </div>
 
           <p
             v-if="datafonoAviso"
-            class="mb-3 rounded-lg bg-error-container px-3 py-2 text-xs text-on-error-container"
+            class="mb-3 flex items-start gap-1.5 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800"
           >
-            ⚠️ {{ datafonoAviso }}
+            <Icon name="alert" :size="13" class="mt-px shrink-0" /> {{ datafonoAviso }}
           </p>
 
-          <label class="mb-2 block text-xs font-medium text-on-surface-variant">Comprobante</label>
+          <!-- Efectivo: recibido + vuelto -->
+          <template v-if="esEfectivo">
+            <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              Pago con efectivo
+            </label>
+            <input
+              v-model="efectivoRecibido"
+              type="number"
+              min="0"
+              placeholder="Monto recibido"
+              class="mb-1.5 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+            />
+            <div class="mb-2 flex flex-wrap gap-1.5">
+              <button
+                v-for="q in quickCash"
+                :key="q"
+                type="button"
+                class="rounded-lg border border-brand-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-400"
+                @click="efectivoRecibido = String(q)"
+              >
+                {{ money(q) }}
+              </button>
+            </div>
+            <p v-if="vuelto > 0" class="mb-3 text-right text-[12px] font-bold text-emerald-700">
+              Vuelto: {{ money(vuelto) }}
+            </p>
+          </template>
+
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
+            Comprobante
+          </label>
           <select
             v-model="tipoComprobante"
-            class="mb-3 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
+            class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           >
             <option value="nota_venta">Nota de venta</option>
             <option value="factura">Factura</option>
@@ -253,26 +334,26 @@ async function confirmar() {
             <input
               v-model="identificacion"
               placeholder="Identificación del comprador"
-              class="mb-2 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
+              class="mb-2 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
             />
             <input
               v-model="razonSocial"
               placeholder="Razón social"
-              class="mb-3 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
+              class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
             />
           </template>
 
           <button
             type="button"
             :disabled="!puedeConfirmar || cargando"
-            class="w-full rounded-lg bg-primary-container px-4 py-2.5 text-sm font-bold text-on-primary-container disabled:opacity-40"
+            class="w-full rounded-xl bg-brand-800 px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-brand-700 disabled:opacity-40"
             @click="confirmar"
           >
-            Confirmar venta
+            {{ cargando ? 'Procesando…' : `Cobrar ${money(venta.total)} — Imprimir boleta` }}
           </button>
           <p
             v-if="venta.estado === 'confirmada'"
-            class="mt-2 text-center text-sm font-semibold text-on-tertiary-container"
+            class="mt-2 text-center text-[13px] font-bold text-emerald-700"
           >
             Venta #{{ venta.venta_id }} confirmada
           </p>
@@ -280,11 +361,11 @@ async function confirmar() {
 
         <SimuladorDatafono
           v-if="requiereTarjeta && venta.estado === 'en_curso' && venta.lineas.length"
-          :monto="venta.total"
+          :monto="money(venta.total)"
           :procesando="procesandoPago"
           @cobrar="cobrarTarjeta"
         />
       </aside>
     </div>
-  </main>
+  </div>
 </template>

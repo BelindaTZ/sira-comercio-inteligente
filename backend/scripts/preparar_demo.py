@@ -218,6 +218,61 @@ async def _caja_demo() -> None:
         )
 
 
+async def _cuadre_demo() -> None:
+    """Siembra una apertura + un cuadre horario por caja (la mayoría cuadra, ~1 de
+    cada 5 con un descuadre) para que las pantallas de Cuadre y el dashboard del
+    Encargado tengan datos. El dataset Dunnhumby no trae cuadre de caja física."""
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        if await s.scalar(text("SELECT count(*) FROM cierre_caja")):
+            log.info("  cuadres ya poblados, se omite")
+            return
+        # un cajero por tienda (empleado cualquiera de esa tienda)
+        await s.execute(
+            text("""
+            WITH cj AS (
+                SELECT c.caja_id, c.tienda_id,
+                       (row_number() OVER (ORDER BY c.caja_id))::int AS rn,
+                       (SELECT e.empleado_id FROM empleados e
+                        WHERE e.tienda_id = c.tienda_id ORDER BY e.empleado_id LIMIT 1) AS emp
+                FROM cajas c
+            )
+            INSERT INTO apertura_caja (caja_id, cajero_id, fondo_inicial, fecha_hora)
+            SELECT caja_id, COALESCE(emp, 1), 50000,
+                   CURRENT_TIMESTAMP - interval '6 hours'
+            FROM cj WHERE emp IS NOT NULL
+        """)
+        )
+        await s.execute(
+            text("""
+            WITH cj AS (
+                SELECT c.caja_id, c.tienda_id,
+                       (row_number() OVER (ORDER BY c.caja_id))::int AS rn,
+                       (SELECT e.empleado_id FROM empleados e
+                        WHERE e.tienda_id = c.tienda_id ORDER BY e.empleado_id LIMIT 1) AS emp
+                FROM cajas c
+            )
+            INSERT INTO cierre_caja
+                (caja_id, cajero_id, total_esperado, total_registrado, fecha_hora)
+            SELECT caja_id, COALESCE(emp, 1),
+                   esperado,
+                   esperado + CASE WHEN rn % 5 = 0 THEN (rn % 3 - 1) * 1200 ELSE 0 END,
+                   CURRENT_TIMESTAMP - interval '30 minutes'
+            FROM (
+                SELECT caja_id, emp, rn,
+                       50000 + (abs(hashtext(caja_id::text)) % 900) * 1000 AS esperado
+                FROM cj WHERE emp IS NOT NULL
+            ) x
+        """)
+        )
+        await s.commit()
+        n = await s.scalar(text("SELECT count(*) FROM cierre_caja"))
+        d = await s.scalar(text("SELECT count(*) FROM cierre_caja WHERE diferencia <> 0"))
+        log.info("  cuadres: %s (%s con descuadre)", n, d)
+
+
 _PROTOCOLO_PASOS = (
     "Protocolo de escalamiento ante fraude confirmado.\n\n"
     "1. Documentar la evidencia (cuadres, ajustes, testimonios) sin alterar registros.\n"
@@ -340,6 +395,9 @@ async def main() -> None:
 
     log.info("4c/5 · protocolo + política de seguridad + incidentes de fraude de demo")
     await _seguridad_pagos_demo()
+
+    log.info("4d/5 · aperturas + cuadres horarios de demo")
+    await _cuadre_demo()
 
     log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()

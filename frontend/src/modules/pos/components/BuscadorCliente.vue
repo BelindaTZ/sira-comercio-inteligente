@@ -47,17 +47,17 @@ function elegir(c) {
 </script>
 
 <template>
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-    <h3 class="mb-2 text-sm font-semibold text-on-surface">Cliente (opcional)</h3>
+  <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
+    <h3 class="mb-2 text-sm font-semibold text-slate-800">Cliente (opcional)</h3>
 
     <div
       v-if="seleccionadoId"
-      class="flex items-center justify-between rounded-lg bg-surface-container-high px-3 py-2 text-sm"
+      class="flex items-center justify-between rounded-lg bg-brand-50 px-3 py-2 text-sm"
     >
       <span>Cliente #{{ seleccionadoId }} vinculado a la venta</span>
       <button
         type="button"
-        class="text-xs font-semibold text-error hover:underline"
+        class="text-xs font-semibold text-crimson-ruby hover:underline"
         @click="emit('quitar')"
       >
         Quitar
@@ -68,24 +68,24 @@ function elegir(c) {
       <input
         v-model="termino"
         placeholder="Buscar por cédula, nombre o email"
-        class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+        class="w-full rounded-lg border border-brand-200 bg-white px-3 py-2 text-sm text-slate-800"
         @input="buscar"
       />
-      <p v-if="error" class="mt-1 text-xs text-error">{{ error }}</p>
-      <ul v-if="resultados.length" class="mt-2 divide-y divide-outline-variant">
+      <p v-if="error" class="mt-1 text-xs text-crimson-ruby">{{ error }}</p>
+      <ul v-if="resultados.length" class="mt-2 divide-y divide-brand-100">
         <li
           v-for="c in resultados"
           :key="c.household_id"
-          class="cursor-pointer px-2 py-1.5 text-sm hover:bg-surface-container-low"
+          class="cursor-pointer px-2 py-1.5 text-sm hover:bg-brand-50"
           @click="elegir(c)"
         >
           #{{ c.household_id }} · {{ c.nombre }}
-          <span class="text-on-surface-variant">
+          <span class="text-slate-500">
             {{ c.documento_identidad || c.email }}
           </span>
         </li>
       </ul>
-      <p v-else-if="termino.length >= 2 && !buscando" class="mt-2 text-xs text-on-surface-variant">
+      <p v-else-if="termino.length >= 2 && !buscando" class="mt-2 text-xs text-slate-500">
         Sin coincidencias — la venta puede confirmarse como anónima.
       </p>
     </template>

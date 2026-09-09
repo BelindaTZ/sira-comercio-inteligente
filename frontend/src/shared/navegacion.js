@@ -42,6 +42,12 @@ export const CATEGORIAS = [
       },
       { label: 'Dashboard táctico de mi área', to: '/ti/dashboards/tactico', modulos: TACTICOS },
       {
+        label: 'Dashboard operativo de mi tienda',
+        to: '/tienda/operativo',
+        modulo: 'Finanzas',
+        tabla: 'cierre_caja',
+      },
+      {
         label: 'Dashboards operativos',
         to: '/ti/dashboards/operativos',
         modulo: 'TI',

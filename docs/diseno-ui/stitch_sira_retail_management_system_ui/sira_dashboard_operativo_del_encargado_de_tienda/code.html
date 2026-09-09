@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-surface" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA Retail · Marzú - Dashboard Operativo del Encargado de Tienda</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed-dim": "#68dba9",
+            "on-primary-fixed-variant": "#254d49",
+            "on-secondary-fixed": "#25005a",
+            "on-tertiary-container": "#30ab7c",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed": "#00201d",
+            "primary-fixed-dim": "#a5cfc9",
+            "surface-tint": "#3e6561",
+            "on-tertiary-fixed-variant": "#005137",
+            "on-secondary": "#ffffff",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-surface": "#191c1e",
+            "on-tertiary-fixed": "#002114",
+            "surface-container-highest": "#e0e3e5",
+            "outline-variant": "#c0c8c6",
+            "on-background": "#191c1e",
+            "outline": "#717977",
+            "tertiary-fixed": "#85f8c4",
+            "on-surface-variant": "#414847",
+            "secondary-container": "#8a4cfc",
+            "surface-container-low": "#f2f4f6",
+            "surface-dim": "#d8dadc",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "inverse-surface": "#2d3133",
+            "inverse-primary": "#a5cfc9",
+            "surface": "#f8f9fb",
+            "on-error": "#ffffff",
+            "on-primary-container": "#779f9a",
+            "background": "#f8f9fb",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#93000a",
+            "primary": "#00201d",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "surface-bright": "#f8f9fb",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#c0ebe4",
+            "tertiary-container": "#003825",
+            "tertiary": "#002014",
+            "secondary-fixed": "#eaddff",
+            "on-secondary-container": "#fffbff",
+            "primary-container": "#0a3632",
+            "secondary": "#712ae2",
+            "surface-container": "#eceef0",
+            "surface-variant": "#e0e3e5",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-high": "#e6e8ea"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "sidebar-collapsed": "4.5rem",
+            "space-lg": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem",
+            "space-base": "1rem",
+            "sidebar-expanded": "16.5rem",
+            "space-2xl": "3rem"
+          },
+          "fontFamily": {
+            "body-lg": ["inter"],
+            "tabular-data": ["inter"],
+            "body-md": ["inter"],
+            "headline-md": ["plusJakartaSans"],
+            "headline-xl": ["plusJakartaSans"],
+            "label-sm": ["inter"],
+            "label-md": ["inter"],
+            "display-lg": ["plusJakartaSans"],
+            "headline-lg": ["plusJakartaSans"],
+            "body-sm": ["inter"],
+            "tabular-metric": ["inter"],
+            "headline-sm": ["plusJakartaSans"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(10, 54, 50, 0.03);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(10, 54, 50, 0.15);
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col bg-surface text-on-surface font-body-md text-body-md antialiased selection:bg-primary-container selection:text-white">
+<!-- ========================================================================= -->
+<!-- 1. SHARED COMPONENT: TopNavBar (Enterprise Horizontal Strict Specification)-->
+<!-- ========================================================================= -->
+<header class="w-full sticky top-0 z-50 flex items-center justify-between px-6 py-2 bg-surface dark:bg-surface-container-low border-b border-outline-variant/30 shadow-sm backdrop-blur-md bg-white/95">
+<!-- Left Zone: Brand, Active Badge & Global Search -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-lg bg-primary-container flex items-center justify-center text-white shadow-sm ring-1 ring-primary/20">
+<span class="material-symbols-outlined text-white text-[20px]" data-icon="storefront">storefront</span>
+</div>
+<div>
+<span class="text-headline-sm font-headline-sm font-bold text-primary-container dark:text-primary-fixed tracking-tight">SIRA Retail · Marzú</span>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-tertiary-fixed text-on-tertiary-fixed tracking-wide uppercase">
+              ENCARGADO DE TIENDA · TURNO ACTIVO
+            </span>
+</div>
+</div>
+</div>
+<!-- Store Selector & Quick Search -->
+<div class="hidden xl:flex items-center gap-3 pl-4 border-l border-outline-variant/40">
+<!-- Store Selector Pill -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors text-primary-container border border-outline-variant/50 text-label-md font-label-md">
+<span class="material-symbols-outlined text-primary-container text-[18px]" data-icon="location_on">location_on</span>
+<span class="font-semibold">Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-outline text-[16px]" data-icon="arrow_drop_down">arrow_drop_down</span>
+</button>
+<!-- Search Bar -->
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]" data-icon="search">search</span>
+<input class="w-full h-[36px] pl-9 pr-3 rounded-lg bg-surface-container-lowest border border-outline-variant/50 text-body-sm font-body-sm placeholder:text-outline/70 focus:outline-none focus:border-primary-container focus:ring-2 focus:ring-primary-container/10 transition-all" placeholder="Buscar SKU, colaborador, caja..." type="text"/>
+</div>
+</div>
+</div>
+<!-- Center Navigation Links (Horizontal Enterprise Bar) -->
+<nav class="hidden lg:flex items-center gap-6">
+<!-- Active Link: Visión General (Dashboard) -->
+<a class="text-primary-container dark:text-primary-fixed font-semibold border-b-2 border-primary-container dark:border-primary-fixed pb-3 pt-3 flex items-center gap-2 text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="dashboard">dashboard</span>
+<span>Visión General</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:text-on-surface dark:hover:text-inverse-on-surface pb-3 pt-3 flex items-center gap-2 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="inventory_2">inventory_2</span>
+<span>Inventario &amp; FIFO</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:text-on-surface dark:hover:text-inverse-on-surface pb-3 pt-3 flex items-center gap-2 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_awesome">auto_awesome</span>
+<span>Reposición IA</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:text-on-surface dark:hover:text-inverse-on-surface pb-3 pt-3 flex items-center gap-2 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="point_of_sale">point_of_sale</span>
+<span>Cajas &amp; Cuadraturas</span>
+</a>
+<a class="text-on-surface-variant dark:text-outline hover:text-on-surface dark:hover:text-inverse-on-surface pb-3 pt-3 flex items-center gap-2 transition-colors text-label-md font-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified">verified</span>
+<span>Auditoría</span>
+</a>
+</nav>
+<!-- Right Zone: Actions, Alerts, & Store Manager Profile -->
+<div class="flex items-center gap-3">
+<!-- Trailing Action: Aprobar Reposición -->
+<button class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary-container text-white text-label-md font-label-md font-medium shadow-sm hover:bg-[#0e4a44] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="check_circle">check_circle</span>
+<span>Aprobar Reposición</span>
+</button>
+<!-- Trailing Icon Actions -->
+<div class="flex items-center gap-1 border-l border-outline-variant/40 pl-2">
+<button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors relative" title="Notificaciones operativas">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-error ring-2 ring-white"></span>
+</button>
+<button class="w-9 h-9 rounded-lg flex items-center justify-center text-secondary hover:bg-secondary-fixed/40 transition-colors" title="Asistente SIRA IA">
+<span class="material-symbols-outlined text-[20px]" data-icon="smart_toy">smart_toy</span>
+</button>
+<button class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-colors" title="Ajustes de Tienda">
+<span class="material-symbols-outlined text-[20px]" data-icon="tune">tune</span>
+</button>
+</div>
+<!-- Store Manager Avatar & Real-Time Presence -->
+<div class="flex items-center gap-3 pl-3 border-l border-outline-variant/40">
+<div class="relative">
+<img alt="Avatar de G. González Encargado de Tienda" class="w-9 h-9 rounded-full object-cover ring-2 ring-primary-container/20 shadow-sm" data-alt="Close-up professional portrait of G. González, a Hispanic store operations manager in his late thirties wearing an executive dark emerald collared retail uniform in a modern bright supermarket setting with subtle warm ambient aisle lights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmoHV2h_QqbRASQMxHEEmF7XdETufnTDq6YEDXwDSP8-6TeMwUUVH58Om-3MLpN40AyCrpai493jcPBnvncIKabpE3Hk7A3xx6q7oWj1jxlA2yXdtImi0EMhjyMHOeqNI6Lry68NEjZZ7qhEtHp8wbIxcLg2s6ajNMIzNFKarM34moiRhD3zB4L6qNEf4ftq2wiwkuNUte90kmg--3kRieY2nF4GG69UyKpn8Cp4p-TcJHCkQDeEcZ2Q"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary-fixed-dim ring-2 ring-white" title="En Sala (Presencial)"></span>
+</div>
+<div class="hidden md:block text-left">
+<p class="text-label-md font-label-md font-semibold text-primary-container leading-none">G. González</p>
+<p class="text-[11px] text-tertiary-container font-medium mt-0.5 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
+            En Sala (Presencial)
+          </p>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN OPERATIONAL WORKSPACE (NO SIDEBAR · 100% HORIZONTAL DESKTOP STAGE)   -->
+<!-- ========================================================================= -->
+<main class="flex-1 max-w-[1680px] w-full mx-auto px-6 py-6 space-y-6">
+<!-- ======================================================================= -->
+<!-- 2. OPERATIONAL WELCOME HEADER & REAL-TIME INCIDENT ACTION CLUSTER        -->
+<!-- ======================================================================= -->
+<section class="bg-surface-container-lowest rounded-xl p-6 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)]">
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+<!-- Title & Tactical Status -->
+<div class="space-y-2">
+<div class="flex flex-wrap items-center gap-3">
+<h1 class="text-headline-lg font-headline-lg text-primary-container tracking-tight">
+              Dashboard Operativo de Sucursal · Tienda 04 Providencia Express
+            </h1>
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#d1fae5] text-[#047857] border border-[#059669]/20">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857] animate-pulse"></span>
+              Operación Nominal
+            </span>
+</div>
+<div class="flex flex-wrap items-center gap-y-1 gap-x-4 text-body-sm font-body-sm text-on-surface-variant">
+<span class="flex items-center gap-1.5 font-medium text-primary">
+<span class="material-symbols-outlined text-[17px] text-outline" data-icon="calendar_today">calendar_today</span>
+              Jueves, 24 de Octubre
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1.5 font-medium text-primary">
+<span class="material-symbols-outlined text-[18px] text-[#b45309]" data-icon="wb_sunny">wb_sunny</span>
+              Santiago, Providencia: 26°C · Soleado
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[17px] text-primary-container" data-icon="schedule">schedule</span>
+<strong>Turno Tarde:</strong> 14:00 - 22:30 hrs
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px] text-[#047857]" data-icon="badge">badge</span>
+<strong>Dotación en Sala:</strong> 21 de 24 colaboradores
+            </span>
+<span class="text-outline-variant">•</span>
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[17px] text-primary-container" data-icon="point_of_sale">point_of_sale</span>
+<strong>26 cajas activas</strong>
+</span>
+</div>
+</div>
+<!-- Quick Tactical Action Buttons -->
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary-container text-label-md font-label-md font-semibold border border-outline-variant/60 shadow-sm active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="checklist_rtl">checklist_rtl</span>
+<span>Ronda de Supervisión</span>
+</button>
+<button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#ffe4e6] hover:bg-[#fecdd3] text-[#be123c] border border-[#e11d48]/20 text-label-md font-label-md font-semibold shadow-sm active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="report_problem">report_problem</span>
+<span>Incidencia Inmediata</span>
+</button>
+<button class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#0e4a44] text-white text-label-md font-label-md font-semibold shadow-sm active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[18px]" data-icon="inventory">inventory</span>
+<span>Aprobar Pedido Min/Max</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ======================================================================= -->
+<!-- 3. SHIFT OPERATIONAL KPIS (5 HIGH-DENSITY TILES)                       -->
+<!-- ======================================================================= -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+<!-- KPI 1: Venta Neta Hoy -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">Venta Neta Hoy (Providencia)</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container" data-icon="payments">payments</span>
+</div>
+<p class="text-tabular-metric font-tabular-metric text-primary-container mt-2 tracking-tight">$14.280.500</p>
+<span class="text-[12px] text-outline">Meta Diaria: $15.200.000 CLP</span>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[12px]">
+<span class="inline-flex items-center gap-1 font-medium text-[#047857]">
+<span class="material-symbols-outlined text-[15px]" data-icon="trending_up">trending_up</span>
+            +8.2% vs sem. ant.
+          </span>
+<span class="font-semibold text-primary px-1.5 py-0.5 rounded bg-surface-container-low">94% Meta</span>
+</div>
+</div>
+<!-- KPI 2: Flujo & Ticket Promedio -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">Flujo &amp; Ticket Promedio</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container" data-icon="group">group</span>
+</div>
+<div class="flex items-baseline gap-2 mt-2">
+<p class="text-tabular-metric font-tabular-metric text-primary tracking-tight">1.840</p>
+<span class="text-body-sm font-medium text-outline">clientes</span>
+</div>
+<p class="text-[13px] font-semibold text-primary-container mt-0.5">$7.760 CLP <span class="font-normal text-outline">ticket medio</span></p>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[12px]">
+<span class="text-on-surface-variant">Tiempo cobro:</span>
+<span class="inline-flex items-center gap-1 font-semibold text-[#047857]">
+<span class="material-symbols-outlined text-[14px]" data-icon="timer">timer</span>
+            38s / cliente
+          </span>
+</div>
+</div>
+<!-- KPI 3: Estado Cuadratura de Cajas -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">Cuadratura de Cajas</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container" data-icon="point_of_sale">point_of_sale</span>
+</div>
+<div class="flex items-baseline gap-1.5 mt-2">
+<p class="text-tabular-metric font-tabular-metric text-primary-container tracking-tight">26</p>
+<span class="text-headline-sm text-outline">/ 30</span>
+<span class="text-[12px] font-semibold text-[#047857] ml-1 bg-[#d1fae5] px-1.5 py-0.5 rounded">Operativas</span>
+</div>
+<span class="text-[12px] text-outline">4 cajas en mantención / pausa</span>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[12px]">
+<span class="text-on-surface-variant">Descuadres &gt;$2.000:</span>
+<span class="font-semibold text-[#047857]">0 detectados</span>
+</div>
+</div>
+<!-- KPI 4: Merma del Día Controlada -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">Merma del Día</span>
+<span class="material-symbols-outlined text-[20px] text-[#b45309]" data-icon="delete_sweep">delete_sweep</span>
+</div>
+<p class="text-tabular-metric font-tabular-metric text-[#0a3632] mt-2 tracking-tight">$68.400</p>
+<span class="text-[12px] text-outline">Tope máximo tolerable: 1.0%</span>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[12px]">
+<span class="inline-flex items-center px-1.5 py-0.5 rounded bg-[#d1fae5] text-[#047857] font-semibold">
+            0.48% de la venta
+          </span>
+<span class="text-outline font-medium">Bajo umbral</span>
+</div>
+</div>
+<!-- KPI 5: Nivel de Servicio en Góndola -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-outline">
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-on-surface-variant">On-Shelf Availability</span>
+<span class="material-symbols-outlined text-[20px] text-primary-container" data-icon="shelves">shelves</span>
+</div>
+<div class="flex items-baseline gap-1 mt-2">
+<p class="text-tabular-metric font-tabular-metric text-primary-container tracking-tight">97.2%</p>
+</div>
+<span class="text-[12px] text-outline">Target operacional: &gt;96.5%</span>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-between text-[12px]">
+<span class="text-on-surface-variant">En reposición activa:</span>
+<span class="font-semibold text-secondary px-1.5 py-0.5 rounded bg-[#f3e8ff]">8 SKUs</span>
+</div>
+</div>
+</section>
+<!-- ======================================================================= -->
+<!-- 4. MATRIZ DE CONTROL DE PISO EN TIEMPO REAL (FLOOR STATUS)             -->
+<!-- ======================================================================= -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container text-[22px]" data-icon="grid_view">grid_view</span>
+<h2 class="text-headline-md font-headline-md text-primary-container">Matriz de Control de Piso en Tiempo Real (Floor Status)</h2>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm text-outline">
+<span class="w-2 h-2 rounded-full bg-[#047857] animate-ping"></span>
+<span>Actualización en vivo cada 30s</span>
+</div>
+</div>
+<!-- 4 Critical Operational Quadrants -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Quadrant 1: Línea de Cajas -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline">Zona 01</span>
+<h3 class="text-headline-sm font-headline-sm text-primary-container mt-0.5">Línea de Cajas (POS 01-30)</h3>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#d1fae5] text-[#047857] border border-[#059669]/20">
+                Fluido
+              </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-3">
+              Tráfico fluido sin congestión en pasillo principal. Tiempo promedio de espera en fila dentro de parámetros.
+            </p>
+<div class="grid grid-cols-2 gap-2 mt-4 p-3 bg-surface-container-low rounded-lg text-[12px]">
+<div>
+<span class="text-outline block">Tiempo en fila</span>
+<span class="font-bold text-primary text-[14px]">1.8 min</span>
+</div>
+<div>
+<span class="text-outline block">Cajas express</span>
+<span class="font-bold text-primary text-[14px]">8 de 8 activas</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
+<span class="text-[12px] text-outline">Supervisora: V. Méndez</span>
+<button class="text-label-sm font-label-sm font-semibold text-primary-container hover:underline flex items-center gap-1">
+              Ver Terminales <span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Quadrant 2: Frutas, Verduras y Panadería -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline">Zona 02</span>
+<h3 class="text-headline-sm font-headline-sm text-primary-container mt-0.5">Frutas, Verduras &amp; Panadería</h3>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#d1fae5] text-[#047857] border border-[#059669]/20">
+                Óptimo
+              </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-3">
+              Horneado de tarde 18:00 hrs completado al 100%. Rotación FIFO óptima en mesón de verduras y balanzas calibradas.
+            </p>
+<div class="grid grid-cols-2 gap-2 mt-4 p-3 bg-surface-container-low rounded-lg text-[12px]">
+<div>
+<span class="text-outline block">Último Horneado</span>
+<span class="font-bold text-primary text-[14px]">18:00 hrs OK</span>
+</div>
+<div>
+<span class="text-outline block">Rotación FIFO</span>
+<span class="font-bold text-[#047857] text-[14px]">Conforme</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
+<span class="text-[12px] text-outline">Hornero: R. Salinas</span>
+<button class="text-label-sm font-label-sm font-semibold text-primary-container hover:underline flex items-center gap-1">
+              Checklist Frescura <span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Quadrant 3: Cámaras y Lácteos -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline">Zona 03</span>
+<h3 class="text-headline-sm font-headline-sm text-primary-container mt-0.5">Cámaras Frías &amp; Lácteos</h3>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#fef3c7] text-[#b45309] border border-[#d97706]/20">
+                2 Markdowns
+              </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-3">
+              Temperatura conforme de cadena de frío (3.4°C). Dos lotes de yogurt griego ingresados a markdown preventivo 30% off.
+            </p>
+<div class="grid grid-cols-2 gap-2 mt-4 p-3 bg-surface-container-low rounded-lg text-[12px]">
+<div>
+<span class="text-outline block">Temp. Sensores</span>
+<span class="font-bold text-primary text-[14px]">3.4°C (Normal)</span>
+</div>
+<div>
+<span class="text-outline block">Vencimiento &lt;48h</span>
+<span class="font-bold text-[#b45309] text-[14px]">2 SKUs etiq.</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
+<span class="text-[12px] text-outline">Sensor IoT: Sala Frío 02</span>
+<button class="text-label-sm font-label-sm font-semibold text-primary-container hover:underline flex items-center gap-1">
+              Ver Telemetría <span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Quadrant 4: Muelle de Recepción -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-start justify-between">
+<div>
+<span class="text-label-sm font-label-sm uppercase tracking-wider text-outline">Zona 04</span>
+<h3 class="text-headline-sm font-headline-sm text-primary-container mt-0.5">Muelle de Recepción DSD</h3>
+</div>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#d1fae5] text-[#047857] border border-[#059669]/20">
+                Muelle Libre
+              </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-3">
+              Camión CD Lo Boza descargado con 100% de bultos cruzados. Próxima llegada confirmada DSD Soprole para las 17:30 hrs.
+            </p>
+<div class="grid grid-cols-2 gap-2 mt-4 p-3 bg-surface-container-low rounded-lg text-[12px]">
+<div>
+<span class="text-outline block">Descarga Lo Boza</span>
+<span class="font-bold text-[#047857] text-[14px]">100% Recibido</span>
+</div>
+<div>
+<span class="text-outline block">Próximo arribo</span>
+<span class="font-bold text-primary text-[14px]">17:30 hrs</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between">
+<span class="text-[12px] text-outline">Receptor: P. Castillo</span>
+<button class="text-label-sm font-label-sm font-semibold text-primary-container hover:underline flex items-center gap-1">
+              Guía de Entrada <span class="material-symbols-outlined text-[14px]" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- ======================================================================= -->
+<!-- 5 & 6. SPLIT STAGE: AGENDA OPERATIVA & ALERTAS INTELIGENTES SIRA IA     -->
+<!-- ======================================================================= -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- LEFT COLUMN (7 COLS): Agenda Operativa & Tareas Prioritarias del Turno -->
+<section class="lg:col-span-7 bg-surface-container-lowest rounded-xl p-6 border border-primary-container/10 shadow-[0_1px_2px_rgba(10,54,50,0.03),0_4px_12px_rgba(10,54,50,0.04)] flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between pb-4 border-b border-outline-variant/30">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[20px]" data-icon="pending_actions">pending_actions</span>
+</div>
+<div>
+<h2 class="text-headline-sm font-headline-sm text-primary-container">Agenda Operativa &amp; Tareas del Encargado</h2>
+<p class="text-[12px] text-outline">Protocolo de supervisión y cumplimiento de turno tarde</p>
+</div>
+</div>
+<span class="text-label-sm font-label-sm font-semibold px-2.5 py-1 rounded bg-surface-container-low text-primary">
+              2 de 4 cumplidas
+            </span>
+</div>
+<!-- Task Items List -->
+<div class="mt-4 space-y-3">
+<!-- Task 1: Completado -->
+<div class="p-3.5 rounded-lg border border-outline-variant/30 bg-surface-container-low/40 flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-[#d1fae5] text-[#047857] flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="check">check</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-bold text-outline">14:15 hrs</span>
+<span class="inline-flex px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#d1fae5] text-[#047857] uppercase">Completado</span>
+</div>
+<h4 class="text-body-md font-body-md font-semibold text-primary line-through opacity-80 mt-0.5">
+                    Verificación de aperturas de caja y fondos iniciales
+                  </h4>
+<p class="text-[12px] text-outline">Revisión de 30 gavetas de caja con tesorera M. Sandoval. 100% de fondos cuadran con remesa inicial.</p>
+</div>
+</div>
+<span class="text-[11px] text-outline shrink-0">Auditado 14:28</span>
+</div>
+<!-- Task 2: En Curso -->
+<div class="p-3.5 rounded-lg border-2 border-primary-container/20 bg-primary-container/[0.02] flex items-start justify-between gap-3 shadow-xs">
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-[#eaddff] text-secondary flex items-center justify-center shrink-0 mt-0.5 animate-pulse">
+<span class="material-symbols-outlined text-[16px]" data-icon="sync">sync</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-bold text-secondary">17:30 hrs</span>
+<span class="inline-flex px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#f3e8ff] text-secondary uppercase">En Curso</span>
+</div>
+<h4 class="text-body-md font-body-md font-semibold text-primary-container mt-0.5">
+                    Recepción y control ciego de camión Soprole en muelle
+                  </h4>
+<p class="text-[12px] text-on-surface-variant">Arribo estimado en 8 minutos. Verificar acta de temperatura refrigerada (≤ 4.0°C) y precintos de seguridad.</p>
+</div>
+</div>
+<button class="px-2.5 py-1 rounded bg-primary-container text-white text-[11px] font-semibold hover:bg-[#0e4a44] transition-all shrink-0">
+                Iniciar Acta
+              </button>
+</div>
+<!-- Task 3: Pendiente Arqueo -->
+<div class="p-3.5 rounded-lg border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-colors flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-outline flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="schedule">schedule</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-bold text-outline">19:00 hrs</span>
+<span class="inline-flex px-1.5 py-0.2 rounded text-[10px] font-bold bg-surface-container-high text-on-surface-variant uppercase">Pendiente</span>
+</div>
+<h4 class="text-body-md font-body-md font-semibold text-on-surface mt-0.5">
+                    Arqueo sorpresivo en POS 04 y POS 15 (control de efectivo)
+                  </h4>
+<p class="text-[12px] text-outline">Control aleatorio de cumplimiento de límites de caja fuerte buzón ($300.000 CLP máx en gaveta).</p>
+</div>
+</div>
+<span class="text-[11px] font-medium text-outline shrink-0">En 1h 22m</span>
+</div>
+<!-- Task 4: Pendiente Cierre Z -->
+<div class="p-3.5 rounded-lg border border-outline-variant/40 bg-surface-container-lowest hover:bg-surface-container-low transition-colors flex items-start justify-between gap-3">
+<div class="flex items-start gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-high text-outline flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px]" data-icon="lock">lock</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-bold text-outline">21:45 hrs</span>
+<span class="inline-flex px-1.5 py-0.2 rounded text-[10px] font-bold bg-surface-container-high text-on-surface-variant uppercase">Pendiente</span>
+</div>
+<h4 class="text-body-md font-body-md font-semibold text-on-surface mt-0.5">
+                    Cierre Z unificado y consolidación de remesas en bóveda
+                  </h4>
+<p class="text-[12px] text-outline">Emisión del reporte Z fiscal de las 26 cajas y entrega formal a camión de transporte de valores Brink's.</p>
+</div>
+</div>
+<span class="text-[11px] font-medium text-outline shrink-0">Fin de Turno</span>
+</div>
+</div>
+</div>
+<!-- Footnote checklist helper -->
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[12px] text-outline">
+<span>Protocolo Operacional SIRA v4.2 · Sucursal Providencia</span>
+<a class="font-semibold text-primary-container hover:underline" href="#">Ver Bitácora Completa</a>
+</div>
+</section>
+<!-- RIGHT COLUMN (5 COLS): Alertas Críticas & Recomendaciones IA SIRA      -->
+<section class="lg:col-span-5 space-y-4">
+<!-- Header for AI section -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<h2 class="text-headline-sm font-headline-sm text-primary-container">Alertas Críticas &amp; IA SIRA</h2>
+</div>
+<span class="text-label-sm font-label-sm text-secondary bg-[#f3e8ff] px-2 py-0.5 rounded font-semibold border border-secondary/20">
+            Algoritmo Predictivo Activo
+          </span>
+</div>
+<!-- Alert Card 1: Quiebre Preventivo en Cerveza Artesanal IPA -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-secondary/20 shadow-[0_0_0_1px_rgba(124,58,237,0.12),0_8px_24px_-4px_rgba(124,58,237,0.08)] space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded-lg bg-[#f3e8ff] text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_awesome">auto_awesome</span>
+</span>
+<div>
+<span class="text-label-sm font-label-sm font-bold text-secondary uppercase">Quiebre Preventivo Inminente</span>
+<h3 class="text-body-md font-body-md font-semibold text-primary-container">Cerveza Artesanal IPA 473ml (SKU-77218)</h3>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-[#ffe4e6] text-[#be123c]">Alta Prioridad</span>
+</div>
+<div class="p-3 bg-surface-container-low rounded-lg text-body-sm font-body-sm space-y-1.5">
+<div class="flex items-center justify-between">
+<span class="text-outline">Stock visible en Góndola:</span>
+<span class="font-bold text-[#be123c]">12 unidades (se agota en ~35 min)</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-outline">Stock disponible en Bodega:</span>
+<span class="font-bold text-primary">48 unidades (Pasillo 3, Altillo B)</span>
+</div>
+</div>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">
+            La IA detectó una velocidad de venta inusual por tarde cálida (26°C). Se recomienda reposición inmediata antes del peak de 18:30 hrs.
+          </p>
+<div class="flex items-center gap-2 pt-1">
+<button class="flex-1 py-2 px-3 rounded-lg bg-secondary text-white text-label-md font-label-md font-semibold hover:bg-[#6d28d9] shadow-sm transition-all text-center">
+              Asignar a Reponedor Sala
+            </button>
+<button class="py-2 px-3 rounded-lg border border-outline-variant/60 hover:bg-surface-container text-on-surface text-label-md font-label-md transition-all">
+              Ignorar
+            </button>
+</div>
+</div>
+<!-- Alert Card 2: Micro-Capacitación Antifraude Pendiente -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm space-y-3">
+<div class="flex items-start justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="p-1.5 rounded-lg bg-[#fef3c7] text-[#b45309]">
+<span class="material-symbols-outlined text-[18px]" data-icon="school">school</span>
+</span>
+<div>
+<span class="text-label-sm font-label-sm font-bold text-[#b45309] uppercase">Seguridad &amp; Cumplimiento</span>
+<h3 class="text-body-md font-body-md font-semibold text-primary">Capacitación Antifraude Pendiente</h3>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-container-high text-on-surface-variant">2 Cajeros</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+            Los cajeros <strong>C. Morales (POS 06)</strong> y <strong>J. Herrera (POS 11)</strong> no han completado el módulo interactivo de 3 min sobre 'Detección de Billetes Falsos Serie 2024'.
+          </p>
+<div class="flex items-center justify-between pt-1 text-[12px]">
+<span class="text-outline">Plazo sugerido: Antes de su break</span>
+<button class="text-label-sm font-label-sm font-semibold text-primary-container hover:underline flex items-center gap-1">
+              Enviar Recordatorio al POS <span class="material-symbols-outlined text-[14px]" data-icon="send">send</span>
+</button>
+</div>
+</div>
+<!-- Quick Summary Mini-Card: Clima de Tienda -->
+<div class="bg-primary-container text-white rounded-xl p-4 flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[22px]" data-icon="psychology">psychology</span>
+</div>
+<div>
+<p class="text-[11px] font-semibold tracking-wide text-primary-fixed uppercase">Recomendación Táctica SIRA</p>
+<p class="text-body-sm font-medium text-white">Reforzar cajas 12 y 14 a las 18:45 por flujo de oficinistas metro Pedro de Valdivia.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- 7. FOOTER CORPORATIVO INTEGRADO (NO SIDEBAR · CONTINUO & ELEGANTE)        -->
+<!-- ========================================================================= -->
+<footer class="mt-auto w-full bg-surface-container-lowest border-t border-outline-variant/30 py-4 px-6 text-on-surface-variant">
+<div class="max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-[12px]">
+<div class="flex items-center gap-3">
+<span class="font-bold text-primary-container">SIRA Retail Group</span>
+<span class="text-outline-variant">|</span>
+<span>Marzú Retail Solutions v4.8.2-prod</span>
+<span class="text-outline-variant">|</span>
+<span class="text-outline">Terminal de Sala Conectado a Servidor Local #CL-PRV-04</span>
+</div>
+<div class="flex items-center gap-6 text-outline">
+<span class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+          Latencia Servidor Central: 18ms
+        </span>
+<a class="hover:text-primary-container transition-colors" href="#">Soporte Técnico de Tienda</a>
+<a class="hover:text-primary-container transition-colors" href="#">Manual de Procedimientos</a>
+<span class="font-medium text-primary">© 2024 Marzú Retail Group</span>
+</div>
+</div>
+</footer>
+<!-- Micro-Interactions Script -->
+<script>
+    // Simple visual interaction feedback for buttons
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function() {
+        this.style.opacity = '0.7';
+        setTimeout(() => {
+          this.style.opacity = '1';
+        }, 120);
+      });
+    });
+  </script>
+</body></html>

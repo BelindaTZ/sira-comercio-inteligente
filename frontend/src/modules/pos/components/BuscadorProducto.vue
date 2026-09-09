@@ -73,42 +73,43 @@ onBeforeUnmount(detenerCamara)
 </script>
 
 <template>
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-    <form class="flex flex-wrap items-end gap-3" @submit.prevent="enviar">
+  <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
+    <h2 class="mb-2 font-display text-[13px] font-bold text-brand-950">Registro rápido</h2>
+    <form class="flex flex-wrap items-end gap-2.5" @submit.prevent="enviar">
       <label class="flex-1">
-        <span class="mb-1 block text-xs font-medium text-on-surface-variant">
+        <span class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
           Código de barras o ID de producto
         </span>
         <input
           v-model="entrada"
           autofocus
           inputmode="text"
-          placeholder="Escanea o escribe y pulsa Enter"
-          class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface outline-none focus:border-primary-container"
+          placeholder="Escaneá o escribí y pulsá Enter"
+          class="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-slate-800 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20"
         />
       </label>
-      <label class="w-24">
-        <span class="mb-1 block text-xs font-medium text-on-surface-variant">Cant.</span>
+      <label class="w-20">
+        <span class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">Cant.</span>
         <input
           v-model.number="cantidad"
           type="number"
           min="1"
-          class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface outline-none focus:border-primary-container"
+          class="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-center tabular-nums text-slate-800 outline-none focus:border-brand-600"
         />
       </label>
       <button
         type="submit"
-        class="rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container"
+        class="rounded-xl bg-brand-800 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700"
       >
         Agregar
       </button>
       <button
         v-if="soporteCamara"
         type="button"
-        class="rounded-lg border border-outline-variant px-3 py-2 text-sm font-medium text-on-surface"
+        class="rounded-xl border border-brand-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-brand-50"
         @click="toggleCamara"
       >
-        {{ escaneando ? 'Detener cámara' : 'Escanear con cámara' }}
+        {{ escaneando ? 'Detener cámara' : 'Escanear' }}
       </button>
     </form>
     <video v-show="escaneando" id="pos-camara" class="mt-3 w-full max-w-sm rounded-lg" muted />

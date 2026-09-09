@@ -36,17 +36,17 @@ const ESCENARIOS = [
   {
     key: 'aprobado',
     label: 'Simular pago aprobado',
-    clase: 'bg-tertiary-container text-on-tertiary-container',
+    clase: 'bg-emerald-100 text-emerald-800',
   },
   {
     key: 'rechazado',
     label: 'Simular rechazo del banco',
-    clase: 'bg-error-container text-on-error-container',
+    clase: 'bg-rose-100 text-crimson-ruby',
   },
   {
     key: 'error_tecnico',
     label: 'Simular error técnico',
-    clase: 'border border-outline-variant text-on-surface',
+    clase: 'border border-brand-200 text-slate-800',
   },
 ]
 
@@ -63,10 +63,10 @@ async function cobrar(escenario) {
 </script>
 
 <template>
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-    <p class="text-sm text-on-surface-variant">
+  <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
+    <p class="text-sm text-slate-500">
       Cobro con tarjeta — monto
-      <strong class="text-on-surface">{{ props.monto }}</strong>
+      <strong class="text-slate-800">{{ props.monto }}</strong>
     </p>
 
     <div class="mt-3 flex flex-wrap gap-2">

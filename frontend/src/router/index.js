@@ -74,6 +74,11 @@ const routes = [
     component: () => import('@/modules/pos/PuntoDeVentaPage.vue'),
   },
   {
+    path: '/tienda/operativo',
+    name: 'tienda-dashboard-operativo',
+    component: () => import('@/modules/tienda/DashboardEncargadoPage.vue'),
+  },
+  {
     path: '/inventario',
     name: 'inventario',
     component: () => import('@/modules/inventario/InventarioPage.vue'),

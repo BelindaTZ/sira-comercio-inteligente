@@ -11,6 +11,7 @@
 import { reactive, ref, watch } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
 import { prompt } from '@/shared/ui/dialogs'
+import Icon from '@/shared/ui/Icon.vue'
 
 const props = defineProps({
   venta: { type: Object, default: null },
@@ -116,78 +117,93 @@ function confirmarDescuento() {
 <template>
   <div
     v-if="recomendacion"
-    class="mb-3 flex items-center gap-2 rounded-xl border border-tertiary bg-tertiary-container px-4 py-2 text-sm text-on-tertiary-container"
+    class="mb-3 flex items-center gap-2 rounded-xl border border-amethyst-200 bg-orchid-soft px-4 py-2 text-[12px] text-amethyst-900"
   >
-    <span class="font-semibold">Sugerencia:</span>
+    <span class="font-bold">Sugerencia:</span>
     ofrecer el producto #{{ recomendacion.product_id_recomendado }} — suele comprarse junto ({{
       (Number(recomendacion.confianza) * 100).toFixed(0)
     }}% de las veces).
   </div>
 
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest">
-    <table class="w-full text-sm">
+  <div class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
+    <div class="border-b border-brand-200 bg-gradient-to-r from-brand-100/80 via-sage-100 to-brand-50 px-4 py-2.5">
+      <div class="flex items-center gap-2">
+        <h2 class="font-display text-[13px] font-bold text-brand-950">Ticket activo</h2>
+        <span
+          v-if="venta"
+          class="rounded-full border border-brand-300 bg-white px-2 py-0.5 text-[10px] font-bold text-brand-900"
+        >
+          #{{ venta.venta_id }} · {{ (venta.lineas || []).length }} art.
+        </span>
+      </div>
+    </div>
+    <table class="w-full text-[13px]">
       <thead>
-        <tr class="border-b border-outline-variant text-left text-on-surface-variant">
-          <th class="px-4 py-2 font-semibold">Producto</th>
-          <th class="px-4 py-2 text-right font-semibold">Cant.</th>
-          <th class="px-4 py-2 text-right font-semibold">P. Unit.</th>
-          <th class="px-4 py-2 text-right font-semibold">Subtotal</th>
-          <th v-if="removible" class="px-4 py-2" />
+        <tr
+          class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[10px] font-bold uppercase tracking-wider text-brand-100"
+        >
+          <th class="px-4 py-2 text-left">Producto</th>
+          <th class="px-3 py-2 text-right">Cant.</th>
+          <th class="px-3 py-2 text-right">P. unit.</th>
+          <th class="px-4 py-2 text-right">Subtotal</th>
+          <th v-if="removible" class="px-3 py-2" />
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-brand-100/90 bg-white/80">
         <tr v-if="!venta || !venta.lineas.length">
-          <td :colspan="removible ? 5 : 4" class="px-4 py-6 text-center text-on-surface-variant">
-            Sin líneas todavía
+          <td :colspan="removible ? 5 : 4" class="px-4 py-10 text-center text-slate-500">
+            Sin líneas todavía — escaneá el primer producto.
           </td>
         </tr>
-        <tr
-          v-for="linea in venta?.lineas || []"
-          :key="linea.venta_detalle_id"
-          class="border-b border-outline-variant last:border-0"
-        >
-          <td class="px-4 py-2">
-            #{{ linea.product_id }}
+        <tr v-for="linea in venta?.lineas || []" :key="linea.venta_detalle_id">
+          <td class="px-4 py-2.5">
+            <span class="font-mono text-[12px] font-semibold text-brand-800">#{{ linea.product_id }}</span>
             <span
               v-if="Number(linea.retail_disc) > 0"
-              class="ml-1 rounded-full bg-tertiary-container px-2 py-0.5 text-xs text-on-tertiary-container"
+              class="ml-1.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800"
             >
               −{{ moneda(linea.retail_disc) }}
             </span>
             <span
               v-if="linea.margen_bajo_minimo"
-              class="ml-1 rounded-full bg-error-container px-2 py-0.5 text-xs font-semibold text-on-error-container"
+              class="ml-1.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-crimson-ruby"
             >
               margen bajo mínimo
             </span>
           </td>
-          <td class="px-4 py-2 text-right tabular-nums">{{ linea.cantidad }}</td>
-          <td class="px-4 py-2 text-right tabular-nums">{{ moneda(linea.sales_value) }}</td>
-          <td class="px-4 py-2 text-right tabular-nums">{{ moneda(linea.subtotal) }}</td>
-          <td v-if="removible" class="px-4 py-2 text-right">
-            <div class="flex justify-end gap-2">
+          <td class="px-3 py-2.5 text-right tabular-nums">{{ linea.cantidad }}</td>
+          <td class="px-3 py-2.5 text-right tabular-nums text-slate-600">{{ moneda(linea.sales_value) }}</td>
+          <td class="px-4 py-2.5 text-right font-semibold tabular-nums text-slate-900">
+            {{ moneda(linea.subtotal) }}
+          </td>
+          <td v-if="removible" class="px-3 py-2.5 text-right">
+            <div class="flex justify-end gap-1">
               <button
                 type="button"
-                class="text-xs font-semibold text-primary-container hover:underline"
+                class="rounded-md p-1 text-slate-400 hover:bg-amethyst-50 hover:text-amethyst-700"
+                title="Descuento manual"
                 @click="abrirDescuento(linea)"
               >
-                Descuento
+                <Icon name="tag" :size="14" />
               </button>
               <button
                 type="button"
-                class="text-xs font-semibold text-error hover:underline"
+                class="rounded-md p-1 text-slate-400 hover:bg-rose-50 hover:text-crimson-ruby"
+                title="Quitar línea"
                 @click="pedirRemocion(linea)"
               >
-                Quitar
+                <Icon name="trash" :size="14" />
               </button>
             </div>
           </td>
         </tr>
       </tbody>
       <tfoot>
-        <tr class="border-t border-outline-variant">
-          <td :colspan="removible ? 3 : 2" class="px-4 py-3 text-right font-semibold">TOTAL</td>
-          <td class="px-4 py-3 text-right text-lg font-bold tabular-nums">
+        <tr class="border-t-2 border-brand-200 bg-brand-50/60">
+          <td :colspan="removible ? 3 : 2" class="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-slate-600">
+            Total
+          </td>
+          <td class="px-4 py-3 text-right font-display text-lg font-extrabold tabular-nums text-brand-900">
             {{ moneda(venta?.total) }}
           </td>
           <td v-if="removible" />
@@ -199,14 +215,14 @@ function confirmarDescuento() {
   <!-- Modal de descuento manual con autorización obligatoria (FR-009) -->
   <div
     v-if="modal.abierto"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    class="fixed inset-0 z-[60] flex items-start justify-center bg-black/40 p-4 pt-24 backdrop-blur-sm"
     @click.self="modal.abierto = false"
   >
-    <div class="w-full max-w-md rounded-xl border border-outline-variant bg-surface p-5 shadow-xl">
-      <h3 class="mb-1 text-sm font-bold text-on-surface">
+    <div class="w-full max-w-md rounded-2xl border border-black/10 bg-white p-5 shadow-tier-2">
+      <h3 class="mb-1 font-display text-base font-bold text-brand-950">
         Descuento manual — producto #{{ modal.linea?.product_id }}
       </h3>
-      <p class="mb-4 text-xs text-on-surface-variant">
+      <p class="mb-4 text-[12px] text-slate-600">
         Requiere autorización de un Encargado_Tienda (o superior) distinto del cajero, sin excepción
         por monto.
       </p>
@@ -214,7 +230,7 @@ function confirmarDescuento() {
       <div class="mb-3 flex gap-2">
         <select
           v-model="modal.tipo"
-          class="rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+          class="rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
         >
           <option value="monto">Monto ($)</option>
           <option value="porcentaje">Porcentaje (%)</option>
@@ -225,44 +241,44 @@ function confirmarDescuento() {
           min="0"
           step="0.01"
           placeholder="Valor"
-          class="flex-1 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+          class="flex-1 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
         />
       </div>
       <input
         v-model="modal.motivo"
         placeholder="Motivo del descuento (obligatorio)"
-        class="mb-3 w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+        class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
       />
 
-      <p class="mb-1 text-xs font-semibold text-on-surface-variant">Autorización del Encargado</p>
+      <p class="mb-1 text-[12px] font-semibold text-slate-600">Autorización del Encargado</p>
       <div class="mb-3 flex gap-2">
         <input
           v-model="modal.encargadoId"
           type="number"
           placeholder="ID empleado"
-          class="w-1/2 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+          class="w-1/2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
         />
         <input
           v-model="modal.encargadoPin"
           type="password"
           placeholder="PIN"
-          class="w-1/2 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+          class="w-1/2 rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
         />
       </div>
 
-      <p v-if="errorModal" class="mb-2 text-xs text-error">{{ errorModal }}</p>
+      <p v-if="errorModal" class="mb-2 text-[12px] text-crimson-ruby">{{ errorModal }}</p>
 
       <div class="flex justify-end gap-2">
         <button
           type="button"
-          class="rounded-lg border border-outline-variant px-3 py-1.5 text-sm text-on-surface"
+          class="rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
           @click="modal.abierto = false"
         >
           Cancelar
         </button>
         <button
           type="button"
-          class="rounded-lg bg-primary-container px-3 py-1.5 text-sm font-semibold text-on-primary-container"
+          class="rounded-xl bg-brand-800 px-4 py-2 text-[13px] font-bold text-white hover:bg-brand-700"
           @click="confirmarDescuento"
         >
           Aplicar descuento
