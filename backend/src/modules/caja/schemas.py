@@ -51,6 +51,19 @@ class CierreTiendaItem(BaseModel):
     fecha_hora: datetime
 
 
+class TurnoCajaOut(BaseModel):
+    """Estado del turno de una caja para el POS (feature 018): si está abierta,
+    su fondo inicial, y el total que el sistema espera contar en este momento."""
+
+    caja_id: int
+    abierta: bool
+    fondo_inicial: Decimal | None = None
+    apertura_hora: datetime | None = None
+    cajero_id: int | None = None
+    total_esperado_actual: Decimal | None = None
+    ultimo_cierre_hora: datetime | None = None
+
+
 # ============================================================ datáfonos (US2)
 class DatafonoOut(BaseModel):
     datafono_id: int

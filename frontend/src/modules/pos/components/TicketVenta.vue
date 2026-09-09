@@ -111,7 +111,7 @@ function confirmarDescuento() {
 <template>
   <div
     v-if="recomendacion"
-    class="mb-3 flex items-center gap-2 rounded-xl border border-amethyst-200 bg-orchid-soft px-4 py-2 text-[12px] text-amethyst-900"
+    class="m-3 flex items-center gap-2 rounded-xl border border-amethyst-200 bg-orchid-soft px-4 py-2 text-[12px] text-amethyst-900"
   >
     <span class="font-bold">Sugerencia:</span>
     ofrecer el producto #{{ recomendacion.product_id_recomendado }} — suele comprarse junto ({{
@@ -119,18 +119,7 @@ function confirmarDescuento() {
     }}% de las veces).
   </div>
 
-  <div class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
-    <div class="border-b border-brand-200 bg-gradient-to-r from-brand-100/80 via-sage-100 to-brand-50 px-4 py-2.5">
-      <div class="flex items-center gap-2">
-        <h2 class="font-display text-[13px] font-bold text-brand-950">Ticket activo</h2>
-        <span
-          v-if="venta"
-          class="rounded-full border border-brand-300 bg-white px-2 py-0.5 text-[10px] font-bold text-brand-900"
-        >
-          #{{ venta.venta_id }} · {{ (venta.lineas || []).length }} art.
-        </span>
-      </div>
-    </div>
+  <div>
     <table class="w-full text-[13px]">
       <thead>
         <tr

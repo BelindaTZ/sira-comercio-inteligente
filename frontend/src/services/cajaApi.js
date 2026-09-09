@@ -27,6 +27,11 @@ export const cajaApi = {
       .then((r) => r.data)
   },
 
+  /** Estado del turno de una caja (abierta/cerrada + total esperado) — feature 018. */
+  turno(cajaId) {
+    return http.get('/api/caja/turno', { params: { caja_id: cajaId } }).then((r) => r.data)
+  },
+
   // --- datáfonos (FR-006 a FR-008) ---
   datafonos(estado) {
     return http

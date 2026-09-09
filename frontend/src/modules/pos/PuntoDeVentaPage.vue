@@ -1,22 +1,24 @@
 <script setup>
 /**
- * Punto de Venta & Registro Rápido (001, US1). Orquesta el flujo completo:
- * abrir venta → agregar líneas (escáner / manual) → cobrar (efectivo / tarjeta
- * simulada) → confirmar → abrir el comprobante (FR-004, SC-011). Toda regla vive
- * en el backend; esta página sólo llama a `ventasApi`.
+ * Punto de Venta & Registro Rápido (001 US1). Cockpit de dos columnas según
+ * `docs/diseno-ui/.../Punto d eventa/`: barra de acciones (Pausar · Anular ·
+ * Cuadre de Caja · Nueva Venta), buscador unificado + grid de productos a la
+ * izquierda, "Ticket Activo" con cliente, totales, medios de pago y cobro a la
+ * derecha. Toda regla vive en el backend.
  *
- * Rediseño feature 013 sobre `docs/diseno-ui/.../sira_punto_de_venta_y_registro_r_pido…`:
- * cockpit de dos columnas con el kit del design-system. El grid de productos con
- * foto del mockup necesita un endpoint de catálogo para el Cajero (hoy no tiene
- * lectura de `productos`/`inventario`); mientras tanto el registro es por escáner
- * o código, que es el flujo real.
+ * El turno de la caja (apertura / cierre) se abre y cierra desde aquí: una caja
+ * es el manejo de efectivo de un cajero durante su turno, no la caja física.
  */
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
+import { cajaApi } from '@/services/cajaApi'
+import { clientesApi } from '@/services/clientesApi'
 import { useSesion } from '@/stores/sesion'
 import { money as moneyUsd } from '@/shared/currency'
+import { confirm, prompt } from '@/shared/ui/dialogs'
 import Icon from '@/shared/ui/Icon.vue'
 import SemanticChip from '@/shared/ui/SemanticChip.vue'
+import Modal from '@/shared/ui/Modal.vue'
 import BuscadorProducto from './components/BuscadorProducto.vue'
 import BuscadorCliente from './components/BuscadorCliente.vue'
 import TicketVenta from './components/TicketVenta.vue'
@@ -29,8 +31,12 @@ const sesion = reactive({
   cajaId: Number(localStorage.getItem('sira_caja_id')) || null,
 })
 
+const money = (v) => moneyUsd(v, { showCode: false })
+const tiendaNombre = computed(() => sesionStore.tiendaNombre || `Tienda ${sesion.tiendaId}`)
+const cajeroNombre = computed(() => sesionStore.nombre || `Cajero ${sesion.cajeroId}`)
+
 const venta = ref(null)
-const clienteId = ref(null)
+const cliente = ref(null)
 const medioPagoId = ref(null)
 const mediosPago = ref([])
 const tipoComprobante = ref('nota_venta')
@@ -41,18 +47,107 @@ const efectivoRecibido = ref('')
 const cargando = ref(false)
 const procesandoPago = ref(false)
 const error = ref('')
+const aviso = ref('')
 const pagoTarjetaAprobado = ref(false)
 const datafonoAviso = ref('')
+const ticketsPausados = ref([])
+const nivelesFidel = ref([])
 
-const money = (v) => moneyUsd(v, { showCode: false })
-const tiendaNombre = computed(() => sesionStore.tiendaNombre || `Tienda ${sesion.tiendaId}`)
-const cajeroNombre = computed(() => sesionStore.nombre || `Cajero ${sesion.cajeroId}`)
+// ---- turno de caja -------------------------------------------------------
+const cajas = ref([])
+const turno = ref(null)
+const modalCaja = ref(null) // 'abrir' | 'cerrar' | null
+const formCaja = reactive({ cajaId: null, fondoInicial: '', totalContado: '' })
+const guardandoCaja = ref(false)
+const cajaAbierta = computed(() => turno.value?.abierta === true)
 
+async function cargarCajas() {
+  try {
+    cajas.value = await ventasApi.cajas(sesion.tiendaId)
+    if (!sesion.cajaId && cajas.value.length) sesion.cajaId = cajas.value[0].caja_id
+  } catch {
+    /* sin lista de cajas: se opera igual con la del localStorage */
+  }
+}
+
+async function cargarTurno() {
+  if (!sesion.cajaId) return
+  try {
+    turno.value = await cajaApi.turno(sesion.cajaId)
+  } catch (e) {
+    error.value = msg(e)
+  }
+}
+
+async function abrirModalCaja() {
+  Object.assign(formCaja, {
+    cajaId: sesion.cajaId ?? cajas.value[0]?.caja_id ?? null,
+    fondoInicial: '',
+    totalContado: '',
+  })
+  error.value = ''
+  // refresca el turno para que el "total esperado" del cuadre no salga viejo
+  await cargarTurno()
+  modalCaja.value = cajaAbierta.value ? 'cerrar' : 'abrir'
+}
+
+async function abrirCaja() {
+  guardandoCaja.value = true
+  error.value = ''
+  try {
+    await cajaApi.registrarApertura({
+      cajaId: formCaja.cajaId,
+      fondoInicial: Number(formCaja.fondoInicial || 0),
+    })
+    sesion.cajaId = formCaja.cajaId
+    try {
+      localStorage.setItem('sira_caja_id', String(formCaja.cajaId))
+    } catch {
+      /* almacenamiento no disponible */
+    }
+    modalCaja.value = null
+    aviso.value = 'Caja abierta. Ya puedes registrar ventas.'
+    await cargarTurno()
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    guardandoCaja.value = false
+  }
+}
+
+async function cerrarCaja() {
+  guardandoCaja.value = true
+  error.value = ''
+  try {
+    const r = await cajaApi.registrarCierre({
+      cajaId: sesion.cajaId,
+      totalRegistrado: Number(formCaja.totalContado || 0),
+    })
+    modalCaja.value = null
+    aviso.value =
+      Number(r.diferencia) === 0
+        ? 'Cuadre registrado: la caja cuadra.'
+        : `Cuadre registrado con una diferencia de ${money(r.diferencia)}. Queda marcado para revisión.`
+    await cargarTurno()
+  } catch (e) {
+    error.value = msg(e)
+  } finally {
+    guardandoCaja.value = false
+  }
+}
+
+// ---- medios de pago -----------------------------------------------------
 const medioSeleccionado = computed(
   () => mediosPago.value.find((m) => m.medio_pago_id === medioPagoId.value) || null,
 )
-const requiereTarjeta = computed(() => medioSeleccionado.value?.nombre === 'Tarjeta')
-const esEfectivo = computed(() => medioSeleccionado.value?.nombre === 'Efectivo')
+const requiereTarjeta = computed(() =>
+  /tarjeta/i.test(medioSeleccionado.value?.nombre || ''),
+)
+const esEfectivo = computed(() => /efectivo/i.test(medioSeleccionado.value?.nombre || ''))
+const esDigital = computed(() =>
+  /digital|qr|billetera|transfer/i.test(medioSeleccionado.value?.nombre || ''),
+)
+
 const vuelto = computed(() => {
   const r = Number(efectivoRecibido.value)
   const t = Number(venta.value?.total || 0)
@@ -62,19 +157,22 @@ const quickCash = computed(() => {
   const t = Number(venta.value?.total || 0)
   if (t <= 0) return []
   const opts = new Set([Math.ceil(t * 100) / 100])
-  for (const base of [1, 5, 10, 20, 50, 100]) {
-    opts.add(Math.ceil(t / base) * base)
-  }
+  for (const base of [1, 5, 10, 20, 50, 100]) opts.add(Math.ceil(t / base) * base)
   return [...opts].filter((n) => n >= t).sort((a, b) => a - b).slice(0, 4)
 })
 
-const ICONO_MEDIO = { Efectivo: 'bank', Tarjeta: 'key', 'Transferencia Bancaria': 'bank', 'Billetera Digital': 'wifi' }
+const ICONO_MEDIO = (n) =>
+  /efectivo/i.test(n) ? 'bank' : /tarjeta/i.test(n) ? 'key' : /digital|qr/i.test(n) ? 'wifi' : 'tag'
+
+function msg(e) {
+  return e.response?.data?.error?.message || e.message || 'No se pudo completar la operación.'
+}
 
 async function cargarMediosPago() {
   try {
     mediosPago.value = await ventasApi.mediosPagoDisponibles()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
   }
 }
 
@@ -84,15 +182,25 @@ watch(requiereTarjeta, async (necesita) => {
   try {
     const { disponible, estado } = await ventasApi.datafonoDisponible(sesion.cajaId)
     if (!disponible) {
-      datafonoAviso.value = `El datáfono de esta caja está ${estado || 'no disponible'}. Puedes cobrar con otro medio de pago.`
+      datafonoAviso.value = `El datáfono de esta caja está ${estado || 'no disponible'}. Puedes cobrar con otro medio.`
     }
   } catch {
-    /* la advertencia es best-effort, nunca bloquea el cobro */
+    /* la advertencia es best-effort */
   }
 })
 
-onMounted(cargarMediosPago)
+onMounted(() => {
+  cargarMediosPago()
+  cargarCajas().then(cargarTurno)
+  clientesApi.niveles().then((n) => (nivelesFidel.value = n)).catch(() => {})
+  window.addEventListener('keydown', atajos)
+})
+onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
 
+// ---- venta ------------------------------------------------------------
+const artsCount = computed(() =>
+  (venta.value?.lineas || []).reduce((s, l) => s + (l.cantidad || 0), 0),
+)
 const puedeConfirmar = computed(
   () =>
     venta.value?.estado === 'en_curso' &&
@@ -108,26 +216,42 @@ async function conError(fn) {
   try {
     return await fn()
   } catch (e) {
-    error.value = e.message
+    error.value = msg(e)
     throw e
   } finally {
     cargando.value = false
   }
 }
 
-async function nuevaVenta() {
+function resetPago() {
   pagoTarjetaAprobado.value = false
   medioPagoId.value = null
-  clienteId.value = null
   efectivoRecibido.value = ''
+  tipoComprobante.value = 'nota_venta'
+  identificacion.value = ''
+  razonSocial.value = ''
+}
+
+async function nuevaVenta() {
+  resetPago()
+  cliente.value = null
   venta.value = await conError(() =>
     ventasApi.iniciar({ tiendaId: sesion.tiendaId, cajeroId: sesion.cajeroId }),
   )
 }
 
 async function vincularCliente(c) {
-  clienteId.value = c.household_id
-  if (venta.value && venta.value.estado === 'en_curso' && !venta.value.lineas.length) {
+  const nivel = nivelesFidel.value.find((n) => n.nivel_id === c.nivel_fidelizacion_id)
+  cliente.value = { ...c, nivel_nombre: nivel?.nombre || null, puntos: null, valor_canje_usd: null }
+  clientesApi
+    .ficha360(c.household_id)
+    .then((f) => {
+      if (cliente.value?.household_id === c.household_id) {
+        cliente.value = { ...cliente.value, puntos: f.puntos, valor_canje_usd: f.valor_canje_usd }
+      }
+    })
+    .catch(() => {})
+  if (venta.value?.estado === 'en_curso' && !venta.value.lineas.length) {
     venta.value = await conError(() =>
       ventasApi.iniciar({
         tiendaId: sesion.tiendaId,
@@ -144,7 +268,7 @@ async function agregar({ productId, codigoBarras, cantidad }) {
       ventasApi.iniciar({
         tiendaId: sesion.tiendaId,
         cajeroId: sesion.cajeroId,
-        householdId: clienteId.value,
+        householdId: cliente.value?.household_id,
       }),
     )
   }
@@ -155,11 +279,7 @@ async function agregar({ productId, codigoBarras, cantidad }) {
 
 async function remover({ lineaId, autorizaEmpleadoId, autorizaPin, motivo }) {
   venta.value = await conError(() =>
-    ventasApi.removerLinea(venta.value.venta_id, lineaId, {
-      autorizaEmpleadoId,
-      autorizaPin,
-      motivo,
-    }),
+    ventasApi.removerLinea(venta.value.venta_id, lineaId, { autorizaEmpleadoId, autorizaPin, motivo }),
   )
 }
 
@@ -199,119 +319,299 @@ async function confirmar() {
     }),
   )
   venta.value = confirmada
+  aviso.value = `Venta #${confirmada.venta_id} confirmada.`
   window.open(ventasApi.comprobanteUrl(confirmada.venta_id), '_blank', 'noopener')
+  await cargarTurno()
 }
 
-// --- atajos de teclado del mockup ([F2] buscar · [F4] descuento · [F12] cobrar) ---
+// ---- pausar / anular --------------------------------------------------
+function pausarTicket() {
+  if (!venta.value || venta.value.estado !== 'en_curso' || !venta.value.lineas.length) return
+  ticketsPausados.value.push({ venta: venta.value, cliente: cliente.value })
+  venta.value = null
+  cliente.value = null
+  resetPago()
+  aviso.value = 'Ticket pausado. Retómalo desde «Tickets pausados».'
+}
+
+function retomarTicket(i) {
+  const t = ticketsPausados.value.splice(i, 1)[0]
+  venta.value = t.venta
+  cliente.value = t.cliente
+  resetPago()
+}
+
+async function anularVenta() {
+  if (!venta.value) return
+  if (venta.value.estado === 'en_curso') {
+    if (venta.value.lineas.length) {
+      const ok = await confirm({
+        title: 'Descartar el ticket en curso',
+        message: 'Se pierden las líneas registradas. Esta acción no queda en el historial.',
+        confirmText: 'Descartar',
+        tone: 'danger',
+      })
+      if (!ok) return
+    }
+    venta.value = null
+    cliente.value = null
+    resetPago()
+    aviso.value = 'Ticket descartado.'
+    return
+  }
+  if (venta.value.estado === 'confirmada') {
+    const motivo = await prompt({
+      title: `Anular venta #${venta.value.venta_id}`,
+      message: 'La anulación repone el stock y sólo puede hacerse durante la misma jornada (FR-007).',
+      label: 'Motivo de la anulación',
+      required: true,
+      tone: 'danger',
+      confirmText: 'Anular venta',
+    })
+    if (!motivo) return
+    await conError(() =>
+      ventasApi.anular(venta.value.venta_id, { empleadoId: sesion.cajeroId, motivo }),
+    )
+    aviso.value = `Venta #${venta.value.venta_id} anulada.`
+    venta.value = null
+    cliente.value = null
+    resetPago()
+    await cargarTurno()
+  }
+}
+
+// ---- atajos de teclado ----------------------------------------------
 const buscador = ref(null)
 function atajos(e) {
   if (e.key === 'F2') {
     e.preventDefault()
     if (!venta.value) return nuevaVenta()
     buscador.value?.focar?.()
+  } else if (e.key === 'F6') {
+    e.preventDefault()
+    pausarTicket()
   } else if (e.key === 'F12') {
     e.preventDefault()
     if (puedeConfirmar.value && !cargando.value) confirmar()
   }
 }
-onMounted(() => window.addEventListener('keydown', atajos))
-onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
 </script>
 
 <template>
-  <div class="mx-auto max-w-[1560px] px-6 py-6 lg:px-8">
-    <header class="mb-5 flex flex-col justify-between gap-3 md:flex-row md:items-center">
-      <div>
-        <div class="flex items-center gap-2.5">
-          <h1 class="font-display text-2xl font-extrabold tracking-tight text-brand-950">
-            Punto de Venta
-          </h1>
-          <SemanticChip v-if="venta?.estado === 'en_curso'" tipo="ok">Venta abierta</SemanticChip>
-          <SemanticChip v-else-if="venta?.estado === 'confirmada'" tipo="neutral">Confirmada</SemanticChip>
-        </div>
-        <p class="mt-0.5 text-[13px] font-medium text-slate-600">
-          {{ tiendaNombre }}<template v-if="sesion.cajaId"> · Caja {{ sesion.cajaId }}</template>
-          · {{ cajeroNombre }}
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <span
-          class="hidden items-center gap-2 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 font-mono text-[11px] font-semibold text-slate-500 sm:flex"
-        >
-          <span><b class="text-brand-700">F2</b> Buscar</span>
-          <span class="text-slate-300">·</span>
-          <span><b class="text-brand-700">F12</b> Cobrar</span>
+  <div class="mx-auto max-w-[1720px] px-4 py-5 sm:px-6 lg:px-8">
+    <!-- Barra de acciones del POS -->
+    <header
+      class="mb-4 flex flex-col justify-between gap-3 rounded-2xl border border-brand-200 bg-shell-bar px-4 py-3 text-white lg:flex-row lg:items-center"
+    >
+      <div class="flex items-center gap-3">
+        <span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-700">
+          <Icon name="cart" :size="18" />
         </span>
+        <div class="leading-tight">
+          <p class="font-display text-[15px] font-extrabold">Punto de Venta</p>
+          <p class="text-[11px] text-brand-200">
+            {{ tiendaNombre }} · {{ cajeroNombre }}
+            <template v-if="sesion.cajaId"> · Caja {{ sesion.cajaId }}</template>
+          </p>
+        </div>
+        <SemanticChip :tipo="cajaAbierta ? 'ok' : 'quiebre'" class="ml-1">
+          {{ cajaAbierta ? 'Caja abierta' : 'Caja cerrada' }}
+        </SemanticChip>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-1.5">
+        <button
+          v-if="ticketsPausados.length"
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-[#0e3f3a] px-2.5 py-1.5 text-[12px] font-semibold text-amber-200 hover:bg-[#134f49]"
+          @click="retomarTicket(ticketsPausados.length - 1)"
+        >
+          <Icon name="clock" :size="14" /> Tickets pausados ({{ ticketsPausados.length }})
+        </button>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2.5 text-[13px] font-bold text-white shadow-md hover:bg-brand-700"
+          :disabled="!venta || venta.estado !== 'en_curso' || !venta.lineas.length"
+          class="inline-flex items-center gap-1.5 rounded-xl border border-amber-400/40 bg-[#0e3f3a] px-2.5 py-1.5 text-[12px] font-semibold text-amber-200 hover:bg-[#134f49] disabled:opacity-40"
+          @click="pausarTicket"
+        >
+          <Icon name="clock" :size="14" /> Pausar
+          <span class="font-mono text-amber-400">F6</span>
+        </button>
+        <button
+          type="button"
+          :disabled="!venta"
+          class="inline-flex items-center gap-1.5 rounded-xl border border-rose-400/40 bg-[#0e3f3a] px-2.5 py-1.5 text-[12px] font-semibold text-rose-200 hover:bg-rose-950/40 disabled:opacity-40"
+          @click="anularVenta"
+        >
+          <Icon name="trash" :size="14" /> Anular
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-xl border border-[#1d635a] bg-[#0e3f3a] px-2.5 py-1.5 text-[12px] font-semibold text-brand-100 hover:bg-[#14534c]"
+          @click="abrirModalCaja"
+        >
+          <Icon name="bank" :size="14" /> Cuadre de Caja
+        </button>
+        <button
+          type="button"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-400 px-3 py-1.5 text-[12px] font-bold text-brand-950 hover:bg-emerald-300"
           @click="nuevaVenta"
         >
-          <Icon name="plus" :size="17" /> Nueva venta
+          <Icon name="plus" :size="15" /> Nueva Venta
         </button>
       </div>
     </header>
 
-    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">{{ error }}</p>
+    <p
+      v-if="error"
+      class="mb-3 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+    <p
+      v-if="aviso"
+      class="mb-3 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
+    >
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''">
+        <Icon name="x" :size="14" />
+      </button>
+    </p>
 
+    <!-- Caja cerrada: bloquea la venta -->
     <div
-      v-if="!venta"
-      class="satin-card grid place-items-center rounded-2xl p-16 text-center shadow-card-subtle"
+      v-if="!cajaAbierta"
+      class="satin-card grid place-items-center rounded-2xl p-14 text-center shadow-card-subtle"
+    >
+      <div class="max-w-sm">
+        <Icon name="bank" :size="30" class="mx-auto mb-3 text-brand-300" />
+        <p class="text-[14px] font-bold text-slate-800">La caja está cerrada</p>
+        <p class="mt-1 text-[12px] text-slate-500">
+          Abre tu caja declarando el fondo inicial para empezar a registrar ventas.
+        </p>
+        <button
+          type="button"
+          class="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-brand-800 px-4 py-2.5 text-[13px] font-bold text-white hover:bg-brand-700"
+          @click="abrirModalCaja"
+        >
+          <Icon name="bank" :size="16" /> Abrir caja
+        </button>
+      </div>
+    </div>
+
+    <!-- Sin venta -->
+    <div
+      v-else-if="!venta"
+      class="satin-card grid place-items-center rounded-2xl p-14 text-center shadow-card-subtle"
     >
       <div>
         <Icon name="cart" :size="30" class="mx-auto mb-3 text-brand-300" />
         <p class="text-[14px] font-bold text-slate-800">Sin venta en curso</p>
-        <p class="mt-1 text-[12px] text-slate-500">Pulsá «Nueva venta» para empezar a escanear.</p>
+        <p class="mt-1 text-[12px] text-slate-500">
+          Pulsa «Nueva Venta» (o F2) para empezar a escanear.
+        </p>
       </div>
     </div>
 
-    <div v-else class="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
-      <!-- Columna izquierda: registro + ticket -->
-      <section class="space-y-4">
+    <!-- Cockpit -->
+    <div v-else class="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px]">
+      <section>
         <BuscadorProducto
           v-if="venta.estado === 'en_curso'"
           ref="buscador"
           :tienda-id="sesion.tiendaId"
+          :en-ticket="Object.fromEntries((venta.lineas || []).map((l) => [l.product_id, l.cantidad]))"
           @agregar="agregar"
-        />
-        <TicketVenta
-          :venta="venta"
-          :removible="venta.estado === 'en_curso'"
-          @remover="remover"
-          @descuento="aplicarDescuento"
-          @incrementar="agregar({ productId: $event, cantidad: 1 })"
         />
       </section>
 
-      <!-- Columna derecha: cliente + cobro -->
       <aside class="space-y-4">
-        <BuscadorCliente
-          v-if="venta.estado === 'en_curso'"
-          :seleccionado-id="clienteId"
-          @seleccionar="vincularCliente"
-          @quitar="clienteId = null"
-        />
+        <!-- Ticket -->
+        <div class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
+          <div class="flex items-center justify-between border-b border-brand-200 bg-brand-50/60 px-4 py-2.5">
+            <div class="flex items-center gap-2">
+              <span class="font-display text-[13px] font-bold text-brand-950">Ticket activo</span>
+              <span
+                class="rounded-full border border-brand-300 bg-white px-2 py-0.5 font-mono text-[10px] font-bold text-brand-900"
+              >
+                #T-{{ String(venta.venta_id).slice(-6) }}
+              </span>
+              <span class="text-[11px] font-semibold text-slate-500">{{ artsCount }} arts.</span>
+            </div>
+          </div>
 
+          <!-- Cliente -->
+          <div class="border-b border-brand-100 p-3">
+            <div
+              v-if="cliente"
+              class="flex items-center justify-between rounded-xl border border-amethyst-200 bg-orchid-soft/60 px-3 py-2"
+            >
+              <div class="leading-tight">
+                <div class="flex items-center gap-1.5 text-[12px] font-bold text-amethyst-900">
+                  {{ cliente.nombre }}
+                  <span
+                    v-if="cliente.nivel_nombre"
+                    class="rounded-full bg-amethyst-600 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white"
+                  >
+                    {{ cliente.nivel_nombre }}
+                  </span>
+                </div>
+                <div class="text-[10px] text-amethyst-700">
+                  <template v-if="cliente.puntos != null">
+                    {{ cliente.puntos.toLocaleString('es-EC') }} pts
+                    <template v-if="cliente.valor_canje_usd">
+                      · {{ money(cliente.valor_canje_usd) }} canjeables
+                    </template>
+                  </template>
+                  <template v-else>Cliente afiliado</template>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="text-[11px] font-semibold text-amethyst-700 hover:underline"
+                @click="cliente = null"
+              >
+                Cambiar
+              </button>
+            </div>
+            <BuscadorCliente
+              v-else
+              :seleccionado-id="null"
+              class="!p-0 !shadow-none !bg-transparent"
+              @seleccionar="vincularCliente"
+            />
+          </div>
+
+          <TicketVenta
+            :venta="venta"
+            :removible="venta.estado === 'en_curso'"
+            @remover="remover"
+            @descuento="aplicarDescuento"
+            @incrementar="agregar({ productId: $event, cantidad: 1 })"
+          />
+        </div>
+
+        <!-- Cobro -->
         <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
-          <h2 class="mb-3 font-display text-[13px] font-bold text-brand-950">Cobro</h2>
-
-          <div class="mb-1.5 flex items-baseline justify-between">
+          <div class="mb-2 flex items-baseline justify-between">
             <span class="text-[11px] font-bold uppercase tracking-wide text-slate-500">Total a pagar</span>
             <span class="font-display text-2xl font-extrabold tabular-nums text-brand-900">
               {{ money(venta.total) }}
             </span>
           </div>
+          <p class="mb-3 text-right text-[10px] text-slate-400">Comprobante electrónico</p>
 
-          <label class="mb-1 mt-3 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
+          <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
             Medio de pago
           </label>
-          <div class="mb-3 grid grid-cols-2 gap-1.5">
+          <div class="mb-3 grid grid-cols-3 gap-1.5">
             <button
               v-for="m in mediosPago"
               :key="m.medio_pago_id"
               type="button"
               :disabled="venta.estado !== 'en_curso'"
-              class="flex items-center justify-center gap-1.5 rounded-lg border px-2 py-2 text-[12px] font-semibold transition disabled:opacity-40"
+              class="flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] font-semibold transition disabled:opacity-40"
               :class="
                 medioPagoId === m.medio_pago_id
                   ? 'border-brand-600 bg-brand-50 text-brand-900'
@@ -319,7 +619,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
               "
               @click="((medioPagoId = m.medio_pago_id), (pagoTarjetaAprobado = false))"
             >
-              <Icon :name="ICONO_MEDIO[m.nombre] || 'bank'" :size="14" /> {{ m.nombre }}
+              <Icon :name="ICONO_MEDIO(m.nombre)" :size="15" /> {{ m.nombre }}
             </button>
           </div>
 
@@ -330,7 +630,6 @@ onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
             <Icon name="alert" :size="13" class="mt-px shrink-0" /> {{ datafonoAviso }}
           </p>
 
-          <!-- Efectivo: recibido + vuelto -->
           <template v-if="esEfectivo">
             <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
               Pago con efectivo
@@ -357,6 +656,10 @@ onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
               Vuelto: {{ money(vuelto) }}
             </p>
           </template>
+
+          <p v-if="esDigital" class="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-[11px] text-brand-800">
+            Muestra el QR al cliente y confirma cuando el pago aparezca aprobado.
+          </p>
 
           <label class="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-500">
             Comprobante
@@ -385,10 +688,11 @@ onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
           <button
             type="button"
             :disabled="!puedeConfirmar || cargando"
-            class="w-full rounded-xl bg-brand-800 px-4 py-3 text-sm font-bold text-white shadow-md hover:bg-brand-700 disabled:opacity-40"
+            class="w-full rounded-xl bg-gradient-to-r from-brand-800 to-amethyst-700 px-4 py-3 text-sm font-bold text-white shadow-md hover:brightness-110 disabled:opacity-40"
             @click="confirmar"
           >
             {{ cargando ? 'Procesando…' : `Cobrar ${money(venta.total)} — Imprimir boleta` }}
+            <span class="ml-1 font-mono text-white/70">F12</span>
           </button>
           <p
             v-if="venta.estado === 'confirmada'"
@@ -406,5 +710,128 @@ onBeforeUnmount(() => window.removeEventListener('keydown', atajos))
         />
       </aside>
     </div>
+
+    <!-- Barra de atajos -->
+    <div
+      class="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-white px-4 py-2 font-mono text-[11px] font-semibold text-slate-500"
+    >
+      Teclas POS:
+      <span><b class="text-brand-700">F2</b> Buscar</span>
+      <span class="text-slate-300">·</span>
+      <span><b class="text-brand-700">F4</b> Descuento</span>
+      <span class="text-slate-300">·</span>
+      <span><b class="text-brand-700">F6</b> Pausar</span>
+      <span class="text-slate-300">·</span>
+      <span><b class="text-brand-700">F12</b> Cobro</span>
+    </div>
+
+    <!-- Modal: abrir / cerrar caja -->
+    <Modal
+      v-if="modalCaja === 'abrir'"
+      titulo="Abrir caja"
+      @cerrar="modalCaja = null"
+    >
+      <p class="mb-4 text-[13px] text-slate-600">
+        Declara el efectivo con el que inicia el turno. La caja es el manejo de efectivo de tu turno.
+      </p>
+      <form class="space-y-4" @submit.prevent="abrirCaja">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Caja
+          <select
+            v-model.number="formCaja.cajaId"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          >
+            <option v-for="c in cajas" :key="c.caja_id" :value="c.caja_id">{{ c.nombre }}</option>
+          </select>
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Fondo inicial (USD)
+          <input
+            v-model="formCaja.fondoInicial"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            placeholder="150.00"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <div class="flex justify-end gap-2.5">
+          <button
+            type="button"
+            class="rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+            @click="modalCaja = null"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            :disabled="guardandoCaja || !formCaja.cajaId"
+            class="rounded-xl bg-brand-800 px-4 py-2 text-[13px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+          >
+            {{ guardandoCaja ? 'Abriendo…' : 'Abrir caja' }}
+          </button>
+        </div>
+      </form>
+    </Modal>
+
+    <Modal
+      v-if="modalCaja === 'cerrar'"
+      titulo="Cerrar caja — cuadre"
+      @cerrar="modalCaja = null"
+    >
+      <p class="mb-4 text-[13px] text-slate-600">
+        Cuenta el efectivo en la gaveta y regístralo. El sistema calcula la diferencia contra lo
+        esperado.
+      </p>
+      <dl class="mb-4 grid grid-cols-2 gap-y-1 rounded-xl border border-brand-100 bg-brand-50/40 p-3 text-[13px]">
+        <dt class="text-slate-500">Fondo inicial</dt>
+        <dd class="text-right font-semibold text-slate-800">{{ money(turno?.fondo_inicial) }}</dd>
+        <dt class="text-slate-500">Total esperado ahora</dt>
+        <dd class="text-right font-semibold text-brand-900">{{ money(turno?.total_esperado_actual) }}</dd>
+      </dl>
+      <form class="space-y-4" @submit.prevent="cerrarCaja">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Total contado (USD)
+          <input
+            v-model="formCaja.totalContado"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <p
+          v-if="formCaja.totalContado !== '' && turno"
+          class="text-right text-[13px] font-bold"
+          :class="
+            Number(formCaja.totalContado) - Number(turno.total_esperado_actual || 0) === 0
+              ? 'text-emerald-700'
+              : 'text-crimson-ruby'
+          "
+        >
+          Diferencia:
+          {{ money(Number(formCaja.totalContado) - Number(turno.total_esperado_actual || 0)) }}
+        </p>
+        <div class="flex justify-end gap-2.5">
+          <button
+            type="button"
+            class="rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+            @click="modalCaja = null"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            :disabled="guardandoCaja"
+            class="rounded-xl bg-brand-800 px-4 py-2 text-[13px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+          >
+            {{ guardandoCaja ? 'Registrando…' : 'Registrar cuadre' }}
+          </button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>

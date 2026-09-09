@@ -6,12 +6,16 @@
  * (keyboard-wedge) y la cámara (`BarcodeDetector`), y entrada manual por código.
  * El grid se sirve de `GET /api/ventas/catalogo` (RBAC `Ventas`).
  */
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
 import { money as moneyUsd } from '@/shared/currency'
 import Icon from '@/shared/ui/Icon.vue'
 
-const props = defineProps({ tiendaId: { type: Number, required: true } })
+const props = defineProps({
+  tiendaId: { type: Number, required: true },
+  // { product_id: cantidad } de las líneas ya en el ticket
+  enTicket: { type: Object, default: () => ({}) },
+})
 const emit = defineEmits(['agregar'])
 
 // --- escáner / entrada manual ---
@@ -26,6 +30,8 @@ function enviarCodigo() {
   if (!valor) return
   const esNumeroPuro = /^\d+$/.test(valor)
   const pareceBarcode = esNumeroPuro && valor.length >= 6
+  // texto libre corto = está filtrando el grid por nombre, no escaneando
+  if (!esNumeroPuro && valor.length < 4) return
   emit('agregar', {
     codigoBarras: pareceBarcode || !esNumeroPuro ? valor : null,
     productId: !pareceBarcode && esNumeroPuro ? Number(valor) : null,
@@ -73,7 +79,7 @@ function detenerCamara() {
 onBeforeUnmount(detenerCamara)
 
 // --- grid de productos ---
-const busqueda = ref('')
+const busqueda = computed(() => entrada.value.trim())
 const categoria = ref('')
 const categorias = ref([])
 const productos = ref([])
@@ -89,7 +95,7 @@ async function cargarProductos() {
   try {
     const data = await ventasApi.catalogo({
       tiendaId: props.tiendaId,
-      search: busqueda.value.trim() || undefined,
+      search: busqueda.value || undefined,
       categoria: categoria.value || undefined,
       size: 30,
     })
@@ -126,60 +132,55 @@ function elegir(p) {
 
 <template>
   <div class="satin-card rounded-2xl p-4 shadow-card-subtle">
-    <div class="mb-2 flex items-center justify-between">
-      <h2 class="font-display text-[13px] font-bold text-brand-950">Registro rápido</h2>
-      <span class="text-[10px] font-semibold text-slate-400">{{ total.toLocaleString('es-CL') }} SKUs en stock</span>
-    </div>
-
-    <!-- escáner / código manual -->
+    <!-- buscador unificado: escanea un código o busca por nombre -->
     <form class="mb-3 flex items-center gap-2" @submit.prevent="enviarCodigo">
       <div class="relative flex-1">
-        <Icon name="search" :size="15" class="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-brand-600" />
+        <Icon
+          name="search"
+          :size="18"
+          class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-brand-600"
+        />
         <input
           ref="entradaEl"
           v-model="entrada"
           autofocus
           inputmode="text"
-          placeholder="Escaneá o escribí un código y pulsá Enter  ·  F2"
-          class="w-full rounded-lg border border-brand-300 bg-white py-2 pl-8 pr-3 text-[13px] text-slate-800 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20"
+          placeholder="Escanea un código de barras o busca por nombre…"
+          class="h-11 w-full rounded-xl border border-brand-300 bg-white pl-10 pr-16 text-[14px] text-slate-800 outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-500/20"
         />
+        <span
+          class="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-brand-200 bg-brand-50 px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand-700"
+        >
+          F2
+        </span>
       </div>
       <button
         v-if="soporteCamara"
         type="button"
-        class="shrink-0 rounded-lg border border-brand-200 bg-white p-2 text-slate-600 hover:bg-brand-50"
+        class="h-11 shrink-0 rounded-xl border border-brand-200 bg-white px-2.5 text-slate-600 hover:bg-brand-50"
         :title="escaneando ? 'Detener cámara' : 'Escanear con cámara'"
         @click="toggleCamara"
       >
-        <Icon name="image" :size="16" />
+        <Icon name="image" :size="18" />
       </button>
     </form>
     <video v-show="escaneando" id="pos-camara" class="mb-3 w-full max-w-sm rounded-lg" muted />
 
-    <!-- filtro del grid -->
-    <div class="mb-2 flex items-center gap-2">
-      <div class="relative flex-1">
-        <input
-          v-model="busqueda"
-          placeholder="Filtrar el catálogo por nombre o marca…"
-          class="w-full rounded-lg border border-brand-200 bg-brand-50/40 px-3 py-1.5 text-[12px] text-slate-800 outline-none focus:border-brand-500"
-        />
-      </div>
-    </div>
+    <!-- pills de categoría -->
     <div class="mb-3 flex gap-1.5 overflow-x-auto pb-1">
       <button
         type="button"
-        class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold transition"
+        class="shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition"
         :class="categoria === '' ? 'bg-brand-800 text-white' : 'border border-brand-200 bg-white text-slate-600 hover:border-brand-400'"
         @click="categoria = ''"
       >
-        Todos
+        Favoritos / Alta rotación
       </button>
       <button
         v-for="c in categorias"
         :key="c"
         type="button"
-        class="shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize transition"
+        class="shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold capitalize transition"
         :class="categoria === c ? 'bg-brand-800 text-white' : 'border border-brand-200 bg-white text-slate-600 hover:border-brand-400'"
         @click="categoria = c"
       >
@@ -188,7 +189,7 @@ function elegir(p) {
     </div>
 
     <!-- grid -->
-    <div class="grid max-h-[440px] grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
+    <div class="grid max-h-[560px] grid-cols-2 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-3 2xl:grid-cols-4">
       <p v-if="cargando && !productos.length" class="col-span-full py-8 text-center text-[12px] text-slate-400">
         Cargando catálogo…
       </p>
@@ -200,16 +201,26 @@ function elegir(p) {
         :key="p.product_id"
         type="button"
         :disabled="p.stock_disponible <= 0"
-        class="group flex gap-2 rounded-xl border border-brand-200 bg-white p-1.5 text-left transition hover:border-brand-500 hover:shadow-card-subtle disabled:opacity-50 sm:flex-col sm:gap-1"
+        class="group flex flex-col gap-1.5 rounded-xl border bg-white p-2 text-left transition hover:shadow-card-subtle disabled:opacity-50"
+        :class="enTicket[p.product_id] ? 'border-amethyst-400 ring-1 ring-amethyst-300/40' : 'border-brand-200 hover:border-brand-500'"
         @click="elegir(p)"
       >
-        <div class="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-brand-50 sm:h-16 sm:w-full">
+        <div class="relative aspect-square w-full overflow-hidden rounded-lg bg-brand-50">
           <img v-if="esFoto(p.imagen_url)" :src="p.imagen_url" alt="" class="h-full w-full object-cover" />
           <span v-else class="grid h-full w-full place-items-center text-brand-300">
-            <Icon name="cube" :size="18" />
+            <Icon name="cube" :size="22" />
           </span>
-          <span class="absolute right-1 top-1 rounded bg-white/90 px-1 text-[9px] font-bold text-slate-600">
-            {{ p.stock_disponible }}
+          <span
+            v-if="p.product_category"
+            class="absolute left-1 top-1 max-w-[70%] truncate rounded bg-white/90 px-1.5 py-0.5 text-[9px] font-bold text-slate-600"
+          >
+            {{ p.product_category }}
+          </span>
+          <span
+            class="absolute right-1 top-1 rounded px-1.5 py-0.5 text-[9px] font-bold"
+            :class="enTicket[p.product_id] ? 'bg-amethyst-600 text-white' : 'bg-white/90 text-slate-600'"
+          >
+            {{ enTicket[p.product_id] ? `En ticket ×${enTicket[p.product_id]}` : `${p.stock_disponible} u` }}
           </span>
         </div>
         <div class="flex min-w-0 flex-1 flex-col">
@@ -217,11 +228,11 @@ function elegir(p) {
             {{ p.nombre || '(sin nombre)' }}
           </p>
           <div class="mt-auto flex items-center justify-between pt-1">
-            <span class="font-display text-[12px] font-extrabold tabular-nums text-brand-900">
+            <span class="font-display text-[13px] font-extrabold tabular-nums text-brand-900">
               {{ money(p.precio_base) }}
             </span>
-            <span class="grid h-5 w-5 shrink-0 place-items-center rounded bg-brand-100 text-brand-800 group-hover:bg-brand-800 group-hover:text-white">
-              <Icon name="plus" :size="12" />
+            <span class="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-brand-100 text-brand-800 group-hover:bg-brand-800 group-hover:text-white">
+              <Icon name="plus" :size="13" />
             </span>
           </div>
         </div>

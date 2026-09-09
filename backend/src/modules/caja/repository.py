@@ -61,12 +61,14 @@ class CajaRepository:
     async def ventas_ventana_cajero(
         self, cajero_id: int, desde: datetime, hasta: datetime
     ) -> list[dict]:
-        """Ventas no anuladas del cajero con `desde < fecha_hora <= hasta`
-        (research.md Decisión 1: agregación por cajero, no por caja física)."""
+        """Ventas confirmadas del cajero con `desde < fecha_hora <= hasta`
+        (research.md Decisión 1: agregación por cajero, no por caja física). Sólo
+        `confirmada`: un ticket `en_curso` abandonado no adeuda efectivo, y una
+        `anulada` repuso el dinero."""
         rows = await self.session.execute(
             text(
                 "SELECT fecha_hora, total FROM ventas "
-                "WHERE cajero_id = :c AND estado <> 'anulada' "
+                "WHERE cajero_id = :c AND estado = 'confirmada' "
                 "AND fecha_hora > :desde AND fecha_hora <= :hasta"
             ),
             {"c": cajero_id, "desde": desde, "hasta": hasta},

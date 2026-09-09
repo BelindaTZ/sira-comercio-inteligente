@@ -40,6 +40,32 @@ class CajaService:
             fecha_hora=_ahora(),
         )
 
+    async def estado_turno(self, caja_id: int) -> dict:
+        """Estado del turno de la caja para el POS: abierta si su última apertura
+        es posterior al último cierre. Incluye el total que el sistema espera."""
+        momento = _ahora()
+        apertura = await self.repo.apertura_vigente(caja_id, momento)
+        ultimo = await self.repo.ultimo_cierre(caja_id, momento)
+        abierta = apertura is not None and (
+            ultimo is None or apertura.fecha_hora > ultimo.fecha_hora
+        )
+        out: dict = {
+            "caja_id": caja_id,
+            "abierta": abierta,
+            "fondo_inicial": apertura.fondo_inicial if abierta else None,
+            "apertura_hora": apertura.fecha_hora if abierta else None,
+            "cajero_id": apertura.cajero_id if abierta else None,
+            "ultimo_cierre_hora": ultimo.fecha_hora if ultimo is not None else None,
+            "total_esperado_actual": None,
+        }
+        if abierta:
+            desde = ultimo.fecha_hora if ultimo is not None else apertura.fecha_hora
+            ventas = await self.repo.ventas_ventana_cajero(apertura.cajero_id, desde, momento)
+            out["total_esperado_actual"] = logica.total_esperado_ventana(
+                ventas, desde=desde, hasta=momento
+            )
+        return out
+
     async def calcular_total_esperado(
         self, *, caja_id: int, momento: datetime
     ) -> tuple[Decimal, int]:

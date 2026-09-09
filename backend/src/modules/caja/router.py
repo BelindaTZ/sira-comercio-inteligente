@@ -49,6 +49,7 @@ from src.modules.caja.schemas import (
     ReporteDiferenciasOut,
     SeguimientoMermaOut,
     TransicionarIncidenteSeguridadIn,
+    TurnoCajaOut,
     UmbralMermaOut,
 )
 from src.modules.caja.service import CajaService
@@ -110,6 +111,17 @@ async def registrar_cierre(
     return CierreOut(**await svc.registrar_cierre(
         caja_id=data.caja_id, total_registrado=data.total_registrado
     ))
+
+
+@router.get("/turno", response_model=TurnoCajaOut)
+async def estado_turno(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve_cierres)],
+    caja_id: int = Query(...),
+) -> TurnoCajaOut:
+    """Estado del turno de una caja para el POS: si está abierta y qué total
+    espera el sistema en este momento."""
+    return TurnoCajaOut(**await svc.estado_turno(caja_id))
 
 
 @router.get("/cierres", response_model=list[CierreTiendaItem])
