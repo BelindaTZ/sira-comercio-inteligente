@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-surface" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Gestión de Capacitaciones y Certificaciones del Personal</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-secondary-container": "#fffbff",
+            "on-primary-fixed-variant": "#254d49",
+            "surface-container": "#eceef0",
+            "tertiary-fixed": "#85f8c4",
+            "surface-tint": "#3e6561",
+            "on-tertiary": "#ffffff",
+            "primary-container": "#0a3632",
+            "outline-variant": "#c0c8c6",
+            "error": "#ba1a1a",
+            "on-tertiary-container": "#30ab7c",
+            "surface-variant": "#e0e3e5",
+            "inverse-surface": "#2d3133",
+            "inverse-primary": "#a5cfc9",
+            "secondary": "#712ae2",
+            "error-container": "#ffdad6",
+            "on-secondary": "#ffffff",
+            "on-background": "#191c1e",
+            "surface": "#f8f9fb",
+            "surface-bright": "#f8f9fb",
+            "on-surface-variant": "#414847",
+            "surface-dim": "#d8dadc",
+            "surface-container-low": "#f2f4f6",
+            "on-error-container": "#93000a",
+            "background": "#f8f9fb",
+            "outline": "#717977",
+            "tertiary-fixed-dim": "#68dba9",
+            "tertiary": "#002014",
+            "on-secondary-fixed": "#25005a",
+            "surface-container-high": "#e6e8ea",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed": "#002114",
+            "on-primary-container": "#779f9a",
+            "on-primary-fixed": "#00201d",
+            "inverse-on-surface": "#eff1f3",
+            "primary-fixed-dim": "#a5cfc9",
+            "secondary-fixed": "#eaddff",
+            "primary-fixed": "#c0ebe4",
+            "surface-container-highest": "#e0e3e5",
+            "primary": "#00201d",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "secondary-fixed-dim": "#d2bbff",
+            "on-primary": "#ffffff",
+            "on-surface": "#191c1e",
+            "on-tertiary-fixed-variant": "#005137",
+            "on-error": "#ffffff",
+            "tertiary-container": "#003825",
+            "secondary-container": "#8a4cfc"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-2xl": "3rem",
+            "space-xl": "2rem",
+            "sidebar-expanded": "16.5rem",
+            "space-sm": "0.5rem",
+            "space-base": "1rem",
+            "space-xs": "0.25rem",
+            "space-2xs": "0.125rem",
+            "space-lg": "1.5rem",
+            "gutter-desktop": "1.5rem",
+            "space-md": "0.75rem",
+            "gutter-mobile": "1rem",
+            "sidebar-collapsed": "4.5rem"
+          },
+          "fontFamily": {
+            "tabular-data": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-surface text-on-surface font-body-md flex flex-col antialiased selection:bg-primary-fixed selection:text-primary">
+<!-- 1. TOP HORIZONTAL NAVIGATION (TopNavBar - 100% Horizontal, No Vertical Sidebar) -->
+<header class="sticky top-0 z-50 w-full bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm">
+<div class="flex items-center justify-between px-6 max-w-[1720px] mx-auto h-16 gap-4">
+<!-- Brand & Store Hub Selector -->
+<div class="flex items-center gap-5">
+<div class="flex items-center gap-2.5">
+<div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm">
+<span class="material-symbols-outlined material-symbols-fill text-xl" data-icon="school">school</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-md text-headline-md font-bold tracking-tight text-primary">SIRA</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-container/10 text-primary-container tracking-wider">RETAIL OS</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Capacitación y Desempeño</span>
+</div>
+</div>
+<div class="h-6 w-px bg-outline-variant/40"></div>
+<!-- Tienda Selector Pill -->
+<div class="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/30 hover:border-primary/40 cursor-pointer transition-all">
+<span class="material-symbols-outlined text-primary text-[18px]" data-icon="storefront">storefront</span>
+<div class="flex flex-col text-left">
+<span class="font-label-md text-label-md text-primary font-semibold leading-tight">Tienda 04 - Providencia Express</span>
+<span class="font-label-sm text-[10px] text-outline leading-none">Región Metropolitana • Marzú Retail</span>
+</div>
+<span class="material-symbols-outlined text-outline text-sm" data-icon="swap_horiz">swap_horiz</span>
+</div>
+</div>
+<!-- Center-Right Horizontal Nav Links (Horizontal Architecture) -->
+<nav class="hidden xl:flex items-center gap-1">
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">Punto de Venta</a>
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">Inventario</a>
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">Catálogo</a>
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">CRM Clientes</a>
+<a class="px-3 py-2 font-label-md text-label-md text-primary font-bold border-b-2 border-primary-container flex items-center gap-1.5 bg-primary-container/5 rounded-t-lg" href="#">
+<span class="material-symbols-outlined text-[17px] material-symbols-fill" data-icon="badge">badge</span>
+          RRHH &amp; Formación
+        </a>
+<a class="px-3 py-2 font-label-md text-label-md text-secondary-container/80 hover:text-primary transition-colors" href="#">Finanzas</a>
+</nav>
+<!-- Global Search & User Actions -->
+<div class="flex items-center gap-3">
+<div class="relative w-64 hidden lg:block">
+<span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[18px]" data-icon="search">search</span>
+</span>
+<input class="w-full pl-9 pr-3 py-1.5 bg-surface-container-low rounded-lg border border-outline-variant/40 font-body-sm text-body-sm focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container transition-all" placeholder="Buscar colaborador, curso o módulo..." type="text"/>
+</div>
+<button class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center text-on-surface-variant hover:bg-surface-container relative transition-colors" title="Notificaciones de Vencimientos">
+<span class="material-symbols-outlined text-[20px]" data-icon="notifications">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-error"></span>
+</button>
+<div class="h-6 w-px bg-outline-variant/40"></div>
+<!-- User Profile -->
+<div class="flex items-center gap-2.5 pl-1 cursor-pointer">
+<img class="w-9 h-9 rounded-full object-cover ring-2 ring-primary-container/20" data-alt="Fotografía de perfil profesional en luz natural de G. González, encargado de tienda retail de 38 años vestido con camisa institucional azul oscura y credencial corporativa de Marzú Retail Group con expresión serena y confiable" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDX5Nej-VVS8YpPn9L2p8bxW2A6NCaa05CXL72Z6Ct0OaQAPVNT0P_5YzMN0nUoVNCcqfhkUqPTLs5oB_oswQ5iJ1VTHSqpagr8KTYzED3IKnLAHX6jT-8kCEb5HSAL5-anXaY90A1SBpMZZxHBLr1f7zlZXaHLCor4wVnOm4QbtEnlrFvvadIeCE6ok_5rygEgwHywYQmyimnzAerq5OAM8wq81_WhULXCrEu_VQXrdnzg0tLu7ANMtQ"/>
+<div class="hidden sm:flex flex-col text-left">
+<span class="font-label-md text-label-md font-semibold text-primary leading-tight">G. González</span>
+<span class="font-label-sm text-[10px] text-outline leading-tight">Encargado de Tienda</span>
+</div>
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+</div>
+</header>
+<!-- MAIN VIEWPORT (No vertical sidebar, full canvas grid) -->
+<main class="flex-1 max-w-[1720px] w-full mx-auto px-6 py-6 space-y-6">
+<!-- 2. BANNER DE ALCANCE LOCAL & ACCIONES RÁPIDAS -->
+<section class="bg-gradient-to-r from-primary-container via-[#0e4a44] to-[#042d2a] rounded-xl p-5 text-on-primary shadow-sm relative overflow-hidden">
+<!-- Subtle Decorative Grid Background -->
+<div class="absolute -right-10 -bottom-10 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined text-[220px]" data-icon="workspace_premium">workspace_premium</span>
+</div>
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+<div class="space-y-1.5">
+<div class="flex items-center gap-2.5 flex-wrap">
+<span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-tertiary-fixed text-on-tertiary-fixed flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] material-symbols-fill" data-icon="check_circle">check_circle</span>
+              Alcance Operativo: Tienda 04 - Providencia Express
+            </span>
+<span class="text-xs text-primary-fixed-dim/90 font-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="groups">groups</span>
+              Dotación Activa: <strong>24 colaboradores en sala</strong>
+</span>
+<span class="text-xs text-primary-fixed-dim/90 font-label-md flex items-center gap-1"><span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+              Última sincronización: Hoy, 08:35 AM • Actualizado
+            </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-white tracking-tight">
+            Gestión de Capacitaciones &amp; Cumplimiento Normativo del Personal
+          </h1>
+<p class="font-body-sm text-body-sm text-primary-fixed/80 max-w-3xl">
+            Supervisión directa de certificaciones de cajas, manipulación sanitaria SEREMI y protocolos de antifraude de Providencia Express.
+          </p>
+</div>
+<div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+<button class="px-4 py-2.5 rounded-lg bg-white/10 hover:bg-white/15 text-white font-label-md text-label-md border border-white/20 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="file_download">file_download</span>
+            Exportar Ficha a RRHH Central
+          </button>
+<button class="px-4 py-2.5 rounded-lg bg-tertiary-fixed hover:bg-tertiary-fixed-dim text-on-tertiary-fixed font-label-md text-label-md font-bold shadow-md transition-all flex items-center gap-2 hover:scale-[1.01]">
+<span class="material-symbols-outlined text-[18px] material-symbols-fill" data-icon="add_circle">add_circle</span>
+            Programar Micro-Capacitación en Sala
+          </button>
+</div>
+</div>
+</section>
+<!-- 3. CUATRO KPIS PRINCIPALES -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between hover:border-primary-container/30 transition-all">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Cumplimiento Global Tienda</span>
+<span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="verified">verified</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">87.5%</span>
+<span class="font-label-sm text-label-sm text-emerald-700 font-bold bg-emerald-100/60 px-1.5 py-0.5 rounded">+2.5% vs Meta</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-emerald-600 h-full rounded-full" style="width: 87.5%"></div>
+</div>
+</div>
+<span class="font-body-sm text-[12px] text-outline">Meta corporativa mensual: 85.0%</span>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between hover:border-primary-container/30 transition-all">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Colaboradores Certificados</span>
+<span class="w-8 h-8 rounded-lg bg-primary-container/10 text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="person_check">person_check</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">21 <span class="text-lg font-normal text-outline">/ 24</span></span>
+<span class="font-label-sm text-label-sm text-primary font-semibold bg-surface-container px-1.5 py-0.5 rounded">87.5% dotación</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-primary-container h-full rounded-full" style="width: 87.5%"></div>
+</div>
+</div>
+<span class="font-body-sm text-[12px] text-outline">3 en proceso de renovación de credencial</span>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between hover:border-primary-container/30 transition-all">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Horas Acumuladas Mes</span>
+<span class="w-8 h-8 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="timelapse">timelapse</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">142 <span class="text-base font-normal text-outline">hrs</span></span>
+<span class="font-label-sm text-label-sm text-secondary font-bold bg-secondary-fixed/50 px-1.5 py-0.5 rounded">+18% meta regional</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-secondary h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<span class="font-body-sm text-[12px] text-outline">Promedio: 5.9 hrs por colaborador</span>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between hover:border-error/30 transition-all">
+<div class="flex items-start justify-between">
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-outline">Pendientes Críticos POS</span>
+<span class="w-8 h-8 rounded-lg bg-red-50 text-error flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-error">3 <span class="text-base font-normal text-outline">personas</span></span>
+<span class="font-label-sm text-label-sm text-error font-semibold bg-red-100/60 px-1.5 py-0.5 rounded">Riesgo Auditoría</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden mt-2">
+<div class="bg-error h-full rounded-full" style="width: 25%"></div>
+</div>
+</div>
+<span class="font-body-sm text-[12px] text-error">Protocolo Antifraude POS &amp; PCI-DSS vencido</span>
+</div>
+</section>
+<!-- 4. SECCIÓN CENTRAL (2/3 Módulos Formativos y 1/3 Agenda y Ranking) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Columna Izquierda (8 cols - 2/3): Módulos Formativos Obligatorios -->
+<div class="lg:col-span-8 space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Módulos Formativos &amp; Certificaciones Obligatorias</h2>
+<p class="font-body-sm text-body-sm text-outline">Estándares regulatorios SEREMI, protocolos de seguridad CISO y servicio Marzú Express.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span> Filtrar
+            </button>
+<button class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant">Historial</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Card Curso 1: Antifraude POS -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between space-y-4 hover:border-primary-container/40 transition-all">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-error border border-red-200">Obligatorio CISO Anual</span>
+<span class="text-xs font-tabular-data text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> 45 min
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-primary mt-2">
+                Prevención de Fraude, Clonación y Ciberseguridad POS
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Detección de skimming, validación chip EMV y protocolo de sospecha ante tarjetas bloqueadas.
+              </p>
+</div>
+<!-- Avance Bar -->
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-semibold">
+<span class="text-on-surface-variant">Avance Sucursal (22 / 24)</span>
+<span class="text-primary font-bold">92%</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<!-- Pendientes y Acciones -->
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-outline font-label-sm">Pendientes:</span>
+<div class="flex -space-x-1.5 overflow-hidden">
+<span class="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-amber-100 text-amber-800 text-[10px] font-bold text-center leading-6" title="F. Soto (Cajero)">FS</span>
+<span class="inline-block h-6 w-6 rounded-full ring-2 ring-white bg-red-100 text-error text-[10px] font-bold text-center leading-6" title="M. Morales (Cajero)">MM</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-xs font-semibold text-primary-container hover:bg-primary-container/5 rounded border border-primary-container/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="notification_important">notification_important</span> Recordar
+                </button>
+</div>
+</div>
+</div>
+<!-- Card Curso 2: Manipulación Higiénica y FIFO -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between space-y-4 hover:border-emerald-600/40 transition-all">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">Normativa SEREMI Salud</span>
+<span class="text-xs font-tabular-data text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> 60 min
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-primary mt-2">
+                Manipulación Higiénica de Alimentos &amp; Rotación FIFO
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Cadena de frío en lácteos/carnes, fechas de vencimiento críticas y control de mermas en góndolas.
+              </p>
+</div>
+<!-- Avance Bar -->
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-semibold">
+<span class="text-emerald-700 font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-xs material-symbols-fill" data-icon="check_circle">check_circle</span> 100% Cumplido
+                </span>
+<span class="text-emerald-700 font-bold">24 / 24</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full" style="width: 100%"></div>
+</div>
+</div>
+<!-- Pendientes y Acciones -->
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<span class="text-xs text-emerald-700 font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="verified_user">verified_user</span> Certificación vigente hasta Oct 2025
+              </span>
+<button class="px-2.5 py-1 text-xs font-semibold text-outline hover:text-primary rounded hover:bg-surface-container-low">
+                Ver Certificados
+              </button>
+</div>
+</div>
+<!-- Card Curso 3: Atención y Manejo de Reclamos -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between space-y-4 hover:border-primary-container/40 transition-all">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">Protocolo Marzú Express</span>
+<span class="text-xs font-tabular-data text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> 30 min
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-primary mt-2">
+                Atención al Cliente y Resolución Rápida de Discrepancias
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Políticas de devolución sin fricción, gestión de diferencias de precio en flejes y empatía en fila.
+              </p>
+</div>
+<!-- Avance Bar -->
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-semibold">
+<span class="text-on-surface-variant">Avance Sucursal (19 / 24)</span>
+<span class="text-primary font-bold">78%</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
+<div class="bg-amber-500 h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<!-- Pendientes y Acciones -->
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="text-xs text-outline font-label-sm">5 colaboradores sin taller</span>
+</div>
+<button class="px-2.5 py-1 text-xs font-semibold text-primary-container hover:bg-primary-container/5 rounded border border-primary-container/20 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="add_alarm">add_alarm</span> Asignar Turno
+              </button>
+</div>
+</div>
+<!-- Card Curso 4: Terminales POS y Billeteras Digitales -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm flex flex-col justify-between space-y-4 hover:border-primary-container/40 transition-all">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Operaciones de Caja</span>
+<span class="text-xs font-tabular-data text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="schedule">schedule</span> 40 min
+                </span>
+</div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-primary mt-2">
+                Operación Rápida de Terminales POS &amp; Medios de Pago Digital
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">
+                Manejo de billeteras QR (MercadoPago, Fpay), anulación autorizada de ítems y cuadratura rápida.
+              </p>
+</div>
+<!-- Avance Bar -->
+<div class="space-y-1.5">
+<div class="flex justify-between text-xs font-semibold">
+<span class="text-on-surface-variant">Avance Sucursal (20 / 24)</span>
+<span class="text-primary font-bold">85%</span>
+</div>
+<div class="w-full bg-surface-container-low h-2 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Pendientes y Acciones -->
+<div class="pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+<span class="text-xs text-outline font-label-sm">Actualizado con lector NFC v2.4</span>
+<button class="px-2.5 py-1 text-xs font-semibold text-outline hover:text-primary rounded hover:bg-surface-container-low">
+                Ver Módulo
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Columna Derecha (4 cols - 1/3): Agenda de Micro-Capacitaciones & Ranking -->
+<div class="lg:col-span-4 space-y-5">
+<!-- Próximas Sesiones Programadas en Tienda -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm space-y-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container" data-icon="event_note">event_note</span>
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary">Micro-Sesiones en Sala</h3>
+</div>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-primary-container/10 text-primary-container">Pre-Turno (15m)</span>
+</div>
+<p class="font-body-sm text-[12px] text-outline">Capacitaciones ágiles de 15 min en backoffice antes de apertura de cajas.</p>
+<div class="space-y-3">
+<!-- Sesión 1 -->
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-xs font-bold text-primary">Detección de Billetes &amp; Chips Dañados</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">Mañana 07:45 AM</span>
+</div>
+<div class="flex items-center justify-between mt-2 text-xs text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="person">person</span> Relator: G. González
+                </span>
+<span class="font-semibold text-primary">6 cajeros turno AM</span>
+</div>
+</div>
+<!-- Sesión 2 -->
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-xs font-bold text-primary">Protocolo de Rotulado Mermas FIFO</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">Jueves 14:15 PM</span>
+</div>
+<div class="flex items-center justify-between mt-2 text-xs text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="person">person</span> Relator: Sup. M. Riquelme
+                </span>
+<span class="font-semibold text-primary">4 reponedores frescos</span>
+</div>
+</div>
+<!-- Sesión 3 -->
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 transition-colors">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-xs font-bold text-primary">Resolución Empática ante Discrepancias</span>
+<span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">Viernes 08:00 AM</span>
+</div>
+<div class="flex items-center justify-between mt-2 text-xs text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="person">person</span> Relator: G. González
+                </span>
+<span class="font-semibold text-primary">5 colaboradores</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2 bg-surface-container hover:bg-surface-variant text-primary font-label-md text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> Agendar Nueva Micro-Sesión
+          </button>
+</div>
+<!-- Ranking de Cumplimiento Red de Tiendas -->
+<div class="bg-surface-container-lowest p-5 rounded-xl border border-outline-variant/30 shadow-sm space-y-3">
+<div class="flex items-center justify-between">
+<h3 class="font-headline-sm text-headline-sm font-bold text-primary flex items-center gap-1.5">
+<span class="material-symbols-outlined text-amber-500 material-symbols-fill text-lg" data-icon="trophy">trophy</span>
+              Ranking Regional de Formación
+            </h3>
+<span class="text-xs text-outline font-label-sm">Zona Oriente</span>
+</div>
+<div class="space-y-2 text-xs">
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-5 font-bold text-outline">1</span>
+<span class="font-medium text-on-surface">Tienda 02 - Las Condes Mall</span>
+</div>
+<span class="font-bold text-emerald-700">94.2%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low">
+<div class="flex items-center gap-2">
+<span class="w-5 font-bold text-outline">2</span>
+<span class="font-medium text-on-surface">Tienda 07 - Vitacura Central</span>
+</div>
+<span class="font-bold text-emerald-700">91.0%</span>
+</div>
+<!-- Posición Tienda Actual -->
+<div class="flex items-center justify-between p-2 rounded-lg bg-primary-container/10 border border-primary-container/30">
+<div class="flex items-center gap-2">
+<span class="w-5 font-bold text-primary-container">3</span>
+<span class="font-bold text-primary">T-04 Providencia Express (Esta tienda)</span>
+</div>
+<span class="font-bold text-primary-container">87.5%</span>
+</div>
+<div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low opacity-75">
+<div class="flex items-center gap-2">
+<span class="w-5 font-bold text-outline">4</span>
+<span class="font-medium text-on-surface">Tienda 11 - Ñuñoa Plaza</span>
+</div>
+<span class="font-semibold text-on-surface-variant">84.1%</span>
+</div>
+</div>
+<p class="text-[11px] text-outline text-center">3º lugar entre 14 sucursales de formato Express.</p>
+</div>
+</div>
+</div>
+<!-- 5. TABLA INFERIOR: MATRIZ DE ESTADO FORMATIVO POR COLABORADOR -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/30 shadow-sm overflow-hidden">
+<!-- Table Header & Controls -->
+<div class="p-5 border-b border-outline-variant/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md font-bold text-primary">Matriz de Estado Formativo por Colaborador</h2>
+<span class="px-2 py-0.5 rounded-full text-xs font-bold bg-surface-container-high text-primary">24 Registros</span>
+</div>
+<p class="font-body-sm text-body-sm text-outline">Seguimiento individual de cursos aprobados, vencimientos y turnos de reforzamiento.</p>
+</div>
+<div class="flex items-center gap-2 flex-wrap">
+<!-- Filter by Role -->
+<select class="py-1.5 px-3 bg-surface-container-low border border-outline-variant/40 rounded-lg text-xs font-semibold text-on-surface-variant focus:outline-none focus:border-primary-container">
+<option value="all">Todos los Roles (Cajeros, Supervisores, Reponedores)</option>
+<option value="caja">Cajeros de Sala</option>
+<option value="sup">Supervisores de Turno</option>
+<option value="repo">Reponedores &amp; Mermas</option>
+</select>
+<!-- Filter by Status -->
+<select class="py-1.5 px-3 bg-surface-container-low border border-outline-variant/40 rounded-lg text-xs font-semibold text-on-surface-variant focus:outline-none focus:border-primary-container">
+<option value="all">Todos los Estados</option>
+<option value="critical">Crítico / Vencido (3)</option>
+<option value="progress">En Curso (5)</option>
+<option value="ok">Al Día (16)</option>
+</select>
+<button class="px-3 py-1.5 bg-primary-container text-white rounded-lg text-xs font-bold hover:bg-[#0e4a44] transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-sm" data-icon="person_add">person_add</span> Asignar Capacitación
+          </button>
+</div>
+</div>
+<!-- Table Body -->
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#f8fafc] border-b border-outline-variant/30 text-[11px] font-bold text-outline uppercase tracking-wider">
+<th class="py-3 px-4">Colaborador / RUT</th>
+<th class="py-3 px-4">Rol &amp; Turno</th>
+<th class="py-3 px-4">Cursos Aprobados</th>
+<th class="py-3 px-4">Módulo Pendiente Crítico</th>
+<th class="py-3 px-4 text-center">Última Evaluación</th>
+<th class="py-3 px-4 text-center">Estado</th>
+<th class="py-3 px-4 text-right">Acción Operativa</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/15 font-body-sm text-body-sm">
+<!-- Row 1: Al Día -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs">
+                    CA
+                  </div>
+<div>
+<div class="font-semibold text-primary">Camila Araya V.</div>
+<div class="text-xs text-outline font-tabular-data">18.421.903-5</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-primary">Cajera Titular</span>
+<div class="text-xs text-outline">Turno Mañana (07:30 - 15:30)</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">6 de 6</span>
+<div class="w-16 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full" style="width: 100%"></div>
+</div>
+</div>
+<span class="text-[11px] text-emerald-700 font-medium">100% malla completa</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="text-outline text-xs italic">Ninguno (Al día hasta Nov 2025)</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="px-2 py-0.5 rounded font-tabular-data font-bold text-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  98 / 100
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Al Día
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 text-xs font-medium text-outline hover:text-primary hover:bg-surface-container rounded transition-colors">
+                  Ver Ficha
+                </button>
+</td>
+</tr>
+<!-- Row 2: Pendiente Crítico (Alerta) -->
+<tr class="hover:bg-red-50/30 transition-colors bg-red-50/10">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-red-100 text-error font-bold flex items-center justify-center text-xs">
+                    FS
+                  </div>
+<div>
+<div class="font-semibold text-primary">Felipe Soto M.</div>
+<div class="text-xs text-outline font-tabular-data">19.832.110-K</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-primary">Cajero Polifuncional</span>
+<div class="text-xs text-outline">Turno Tarde (14:30 - 22:30)</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">4 de 6</span>
+<div class="w-16 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-amber-500 h-full rounded-full" style="width: 66%"></div>
+</div>
+</div>
+<span class="text-[11px] text-error font-semibold">2 obligatorios vencidos</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-error text-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="error">error</span> Antifraude POS &amp; PCI-DSS
+                </span>
+<div class="text-[10px] text-error">Venció hace 12 días</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="px-2 py-0.5 rounded font-tabular-data font-bold text-xs bg-red-50 text-error border border-red-200">
+                  58 / 100
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-error">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Vencido Crítico
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 text-xs font-bold text-white bg-error hover:bg-red-700 rounded transition-colors shadow-sm">
+                  Asignar Micro-Turno
+                </button>
+</td>
+</tr>
+<!-- Row 3: En Progreso -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-amber-100 text-amber-900 font-bold flex items-center justify-center text-xs">
+                    JR
+                  </div>
+<div>
+<div class="font-semibold text-primary">Javiera Rojas T.</div>
+<div class="text-xs text-outline font-tabular-data">20.144.521-3</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-primary">Reponedora de Perecibles</span>
+<div class="text-xs text-outline">Turno Apertura (06:00 - 14:00)</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">5 de 6</span>
+<div class="w-16 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-primary-container h-full rounded-full" style="width: 83%"></div>
+</div>
+</div>
+<span class="text-[11px] text-amber-700 font-medium">83% completado</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-on-surface text-xs">Atención al Cliente Marzú</span>
+<div class="text-[10px] text-outline">Iniciado (60% completado en app)</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="px-2 py-0.5 rounded font-tabular-data font-bold text-xs bg-amber-50 text-amber-800 border border-amber-200">
+                  82 / 100
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span> En Progreso
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 text-xs font-medium text-primary-container hover:bg-primary-container/10 rounded transition-colors border border-primary-container/20">
+                  Recordar Módulo
+                </button>
+</td>
+</tr>
+<!-- Row 4: Supervisor Al Día -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container text-white font-bold flex items-center justify-center text-xs">
+                    MR
+                  </div>
+<div>
+<div class="font-semibold text-primary">Mauricio Riquelme</div>
+<div class="text-xs text-outline font-tabular-data">16.329.800-4</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-primary">Supervisor de Caja &amp; Turno</span>
+<div class="text-xs text-outline">Turno Rotativo Sala</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">8 de 8</span>
+<div class="w-16 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-emerald-600 h-full rounded-full" style="width: 100%"></div>
+</div>
+</div>
+<span class="text-[11px] text-emerald-700 font-medium">Habilitado como Relator</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="text-outline text-xs italic">Todos aprobados (Nivel Supervisor)</span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="px-2 py-0.5 rounded font-tabular-data font-bold text-xs bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  95 / 100
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Al Día
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 text-xs font-medium text-outline hover:text-primary hover:bg-surface-container rounded transition-colors">
+                  Ver Ficha
+                </button>
+</td>
+</tr>
+<!-- Row 5: Nuevo Ingreso -->
+<tr class="hover:bg-surface-container-low/60 transition-colors">
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-blue-100 text-blue-800 font-bold flex items-center justify-center text-xs">
+                    NE
+                  </div>
+<div>
+<div class="font-semibold text-primary">Nicolás Espinoza</div>
+<div class="text-xs text-outline font-tabular-data">21.092.338-7</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-primary">Cajero de Refuerzo (Nuevo)</span>
+<div class="text-xs text-outline">Ingreso: Hace 3 días</div>
+</td>
+<td class="py-3.5 px-4">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">2 de 6</span>
+<div class="w-16 bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-blue-600 h-full rounded-full" style="width: 33%"></div>
+</div>
+</div>
+<span class="text-[11px] text-blue-700 font-medium">Onboarding inicial en curso</span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-medium text-amber-700 text-xs">Manipulación Alimentos SEREMI</span>
+<div class="text-[10px] text-outline">Plazo máximo: 7 días hábiles</div>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="px-2 py-0.5 rounded font-tabular-data font-bold text-xs bg-slate-100 text-slate-700 border border-slate-200">
+                  Pendiente
+                </span>
+</td>
+<td class="py-3.5 px-4 text-center">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> Onboarding
+                </span>
+</td>
+<td class="py-3.5 px-4 text-right">
+<button class="px-2.5 py-1 text-xs font-semibold text-primary-container hover:bg-primary-container/10 rounded transition-colors border border-primary-container/20">
+                  Completar Malla
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Pagination Footer -->
+<div class="p-4 bg-[#f8fafc] border-t border-outline-variant/20 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-outline">
+<div>
+          Mostrando <strong class="text-on-surface">5</strong> de <strong class="text-on-surface">24</strong> colaboradores de Tienda 04 - Providencia Express
+        </div>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 rounded border border-outline-variant/40 bg-white hover:bg-surface-container-low text-on-surface disabled:opacity-50" disabled="">Anterior</button>
+<button class="px-2.5 py-1 rounded bg-primary-container text-white font-bold">1</button>
+<button class="px-2.5 py-1 rounded border border-outline-variant/40 bg-white hover:bg-surface-container-low text-on-surface">2</button>
+<button class="px-2.5 py-1 rounded border border-outline-variant/40 bg-white hover:bg-surface-container-low text-on-surface">3</button>
+<button class="px-2.5 py-1 rounded border border-outline-variant/40 bg-white hover:bg-surface-container-low text-on-surface">Siguiente</button>
+</div>
+</div>
+</section>
+</main>
+<!-- 6. FOOTER INSTITUCIONAL SIRA -->
+<footer class="mt-auto bg-surface-container-lowest border-t border-outline-variant/30 py-4 px-6">
+<div class="max-w-[1720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-outline">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">SIRA</span>
+<span>• Sistema Integrado de Retail y Aprendizaje v4.12.0</span>
+<span class="hidden md:inline">• Conexión Segura TLS 1.3 CISO Certificada</span>
+</div>
+<div class="flex items-center gap-4">
+<span>Marzú Retail Group © 2025</span>
+<a class="hover:text-primary transition-colors" href="#">Protocolos SEREMI</a>
+<a class="hover:text-primary transition-colors" href="#">Soporte Mesa de Ayuda RRHH</a>
+<span class="flex items-center gap-1 text-emerald-700 font-semibold">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Servidor Local Operativo
+        </span>
+</div>
+</div>
+</footer>
+</body></html>

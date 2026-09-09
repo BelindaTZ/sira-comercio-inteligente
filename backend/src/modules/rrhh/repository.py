@@ -136,15 +136,55 @@ class RRHHRepository:
         rows = await self.session.execute(
             text("""
                 SELECT e.empleado_id, e.nombre,
+                       rp.nombre AS puesto, e.fecha_contratacion,
                        c.capacitacion_id, c.nombre AS nombre_capacitacion,
                        ec.fecha_completado
                 FROM empleado_capacitacion ec
                 JOIN empleados e ON e.empleado_id = ec.empleado_id
                 JOIN capacitaciones c ON c.capacitacion_id = ec.capacitacion_id
+                LEFT JOIN roles_puesto rp ON rp.puesto_id = e.puesto_id
                 WHERE e.tienda_id = :t
                 ORDER BY e.nombre, c.nombre
             """),
             {"t": tienda_id},
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def listar_capacitaciones(self, tienda_id: int | None = None) -> list[dict]:
+        """Catálogo de capacitaciones con su avance (asignados / completados). Si
+        se pasa `tienda_id`, los contadores se limitan al personal de esa tienda;
+        si no, son de toda la red."""
+        filtro = "AND e.tienda_id = :t" if tienda_id is not None else ""
+        rows = await self.session.execute(
+            text(f"""
+                SELECT c.capacitacion_id, c.nombre, c.descripcion,
+                       count(e.empleado_id) AS asignados,
+                       count(ec.fecha_completado) FILTER (WHERE e.empleado_id IS NOT NULL)
+                         AS completados
+                FROM capacitaciones c
+                LEFT JOIN empleado_capacitacion ec
+                       ON ec.capacitacion_id = c.capacitacion_id
+                LEFT JOIN empleados e
+                       ON e.empleado_id = ec.empleado_id {filtro}
+                GROUP BY c.capacitacion_id, c.nombre, c.descripcion
+                ORDER BY c.nombre
+            """),
+            {"t": tienda_id} if tienda_id is not None else {},
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def listar_roles(self) -> list[dict]:
+        rows = await self.session.execute(
+            text("SELECT role_id, nombre FROM roles ORDER BY nombre")
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def listar_tiendas_activas(self) -> list[dict]:
+        rows = await self.session.execute(
+            text(
+                "SELECT tienda_id, codigo, nombre, ciudad FROM tiendas "
+                "WHERE activa = true ORDER BY nombre"
+            )
         )
         return [dict(r._mapping) for r in rows]
 

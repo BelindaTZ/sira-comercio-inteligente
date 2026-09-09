@@ -39,6 +39,42 @@ async def test_programar_completar_y_consultar_cumplimiento(client, escenario_rr
     assert e["cajero_b1"] not in filas
 
 
+async def test_catalogo_capacitaciones_con_avance(client, escenario_rrhh, auth_jefe_rrhh):
+    e = escenario_rrhh
+    prog = await client.post(
+        "/api/rrhh/capacitaciones",
+        json={"nombre": "FIFO en góndola", "role_ids": [e["rol_cajero_id"]]},
+        headers=auth_jefe_rrhh,
+    )
+    cap_id = prog.json()["capacitacion_id"]
+    await client.patch(
+        f"/api/rrhh/empleado-capacitacion/{e['cajero_a1']}/{cap_id}/completar",
+        json={"fecha_completado": "2026-05-10"},
+        headers=auth_jefe_rrhh,
+    )
+    # catálogo global
+    todos = await client.get("/api/rrhh/capacitaciones", headers=auth_jefe_rrhh)
+    assert todos.status_code == 200, todos.text
+    fila = next(c for c in todos.json() if c["capacitacion_id"] == cap_id)
+    assert fila["asignados"] >= 2 and fila["completados"] == 1
+    # el Encargado sólo tiene lectura, también puede ver el catálogo de su tienda
+    de_tienda = await client.get(
+        "/api/rrhh/capacitaciones",
+        params={"tienda_id": e["tienda_a"]},
+        headers={"Authorization": f"Bearer {e['token_encargado_a']}"},
+    )
+    assert de_tienda.status_code == 200, de_tienda.text
+
+
+async def test_roles_y_tiendas_para_selectores(client, escenario_rrhh, auth_jefe_rrhh):
+    roles = await client.get("/api/rrhh/roles", headers=auth_jefe_rrhh)
+    assert roles.status_code == 200
+    assert any(r["nombre"] == "Cajero" for r in roles.json())
+    tiendas = await client.get("/api/rrhh/tiendas", headers=auth_jefe_rrhh)
+    assert tiendas.status_code == 200
+    assert all({"tienda_id", "nombre"} <= set(t) for t in tiendas.json())
+
+
 async def test_encargado_no_ve_cumplimiento_de_otra_tienda(client, escenario_rrhh):
     e = escenario_rrhh
     resp = await client.get(

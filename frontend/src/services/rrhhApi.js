@@ -56,6 +56,20 @@ export const rrhhApi = {
   },
 
   // --------------------------------------------------- 011: capacitación
+  capacitaciones(tiendaId) {
+    return http
+      .get('/api/rrhh/capacitaciones', { params: { tienda_id: tiendaId || undefined } })
+      .then((r) => r.data)
+  },
+
+  rolesSistema() {
+    return http.get('/api/rrhh/roles').then((r) => r.data)
+  },
+
+  tiendas() {
+    return http.get('/api/rrhh/tiendas').then((r) => r.data)
+  },
+
   programarCapacitacion({ nombre, descripcion, roleIds }) {
     return http
       .post('/api/rrhh/capacitaciones', {

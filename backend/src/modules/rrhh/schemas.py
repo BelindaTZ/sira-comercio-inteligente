@@ -92,6 +92,29 @@ class CapacitacionOut(BaseModel):
     empleados_asignados: int
 
 
+class CapacitacionResumenOut(BaseModel):
+    """Catálogo de capacitaciones con su avance (feature 018 — tarjetas de módulos
+    formativos y selector para registrar finalización)."""
+
+    capacitacion_id: int
+    nombre: str
+    descripcion: str | None
+    asignados: int
+    completados: int
+
+
+class RolItem(BaseModel):
+    role_id: int
+    nombre: str
+
+
+class TiendaItem(BaseModel):
+    tienda_id: int
+    codigo: str | None = None
+    nombre: str
+    ciudad: str | None = None
+
+
 class CompletarCapacitacionIn(BaseModel):
     fecha_completado: date
 
@@ -107,6 +130,8 @@ class EmpleadoCapacitacionOut(BaseModel):
 class CumplimientoCapacitacionItem(BaseModel):
     empleado_id: int
     nombre: str
+    puesto: str | None = None
+    fecha_contratacion: date | None = None
     capacitacion_id: int
     nombre_capacitacion: str
     fecha_completado: date | None

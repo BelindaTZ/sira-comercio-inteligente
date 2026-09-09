@@ -139,6 +139,19 @@ class RRHHService:
             )
         return await self.repo.cumplimiento_por_tienda(tienda_id)
 
+    async def listar_capacitaciones(self, tienda_id: int | None = None) -> list[dict]:
+        """Catálogo de capacitaciones con avance — alimenta las tarjetas de
+        módulos formativos y el selector para registrar una finalización."""
+        return await self.repo.listar_capacitaciones(tienda_id)
+
+    async def listar_roles(self) -> list[dict]:
+        """Roles del sistema — para el multiselect de roles objetivo al programar
+        una capacitación (Principio XII: no se teclean ids)."""
+        return await self.repo.listar_roles()
+
+    async def listar_tiendas(self) -> list[dict]:
+        return await self.repo.listar_tiendas_activas()
+
     # ============================================================ 011 US3: clima / rotación
     async def registrar_clima(
         self, *, tienda_id: int, periodo: str, resultado_promedio: Decimal

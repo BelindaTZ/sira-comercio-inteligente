@@ -26,6 +26,7 @@ from src.modules.rrhh.schemas import (
     BajaEmpleadoIn,
     CapacitacionIn,
     CapacitacionOut,
+    CapacitacionResumenOut,
     ClimaLaboralIn,
     ClimaLaboralOut,
     ClimaRotacionOut,
@@ -40,6 +41,8 @@ from src.modules.rrhh.schemas import (
     PlanSucesionIn,
     PlanSucesionOut,
     PuestoOut,
+    RolItem,
+    TiendaItem,
 )
 from src.modules.rrhh.service import RRHHService
 
@@ -140,6 +143,33 @@ async def listar_acciones_retencion(
 
 
 # ============================================================ 011 US2: capacitación
+@router.get("/capacitaciones", response_model=list[CapacitacionResumenOut])
+async def listar_capacitaciones(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve_capacitacion)],
+    tienda_id: int | None = Query(default=None),
+) -> list[CapacitacionResumenOut]:
+    """Catálogo con avance — tarjetas de módulos formativos y selector de
+    finalización. `tienda_id` limita los contadores a esa sucursal."""
+    return [CapacitacionResumenOut(**c) for c in await svc.listar_capacitaciones(tienda_id)]
+
+
+@router.get("/roles", response_model=list[RolItem])
+async def listar_roles(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_crea_capacitacion)]
+) -> list[RolItem]:
+    """Roles del sistema para el multiselect de roles objetivo (FR-003)."""
+    return [RolItem(**r) for r in await svc.listar_roles()]
+
+
+@router.get("/tiendas", response_model=list[TiendaItem])
+async def listar_tiendas_rrhh(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve_capacitacion)]
+) -> list[TiendaItem]:
+    """Sucursales activas — para el selector de tienda del Jefe de RRHH."""
+    return [TiendaItem(**t) for t in await svc.listar_tiendas()]
+
+
 @router.post("/capacitaciones", status_code=status.HTTP_201_CREATED, response_model=CapacitacionOut)
 async def programar_capacitacion(
     data: CapacitacionIn,
