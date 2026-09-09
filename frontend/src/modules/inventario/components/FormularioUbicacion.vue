@@ -2,6 +2,7 @@
 /** Ubica un SKU en sala (pasillo/góndola/nivel). Reponedor / Encargado (FR-013). */
 import { reactive, ref } from 'vue'
 import { inventarioApi } from '@/services/inventarioApi'
+import Btn from '@/shared/ui/Btn.vue'
 
 const props = defineProps({
   producto: { type: Object, required: true }, // fila de /inventario/stock
@@ -72,13 +73,11 @@ async function enviar() {
         />
       </label>
     </div>
-    <button
-      type="submit"
-      :disabled="enviando"
-      class="w-full rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container disabled:opacity-40"
-    >
-      Guardar ubicación
-    </button>
-    <p v-if="error" class="text-sm text-error">{{ error }}</p>
+    <p v-if="error" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-crimson-ruby">{{ error }}</p>
+    <div class="flex justify-end pt-1">
+      <Btn variant="primary" type="submit" :disabled="enviando">
+        {{ enviando ? 'Guardando…' : 'Guardar ubicación' }}
+      </Btn>
+    </div>
   </form>
 </template>
