@@ -54,6 +54,11 @@ export const comprasApi = {
     return http.get(`/api/compras/ordenes/${ordenId}`).then((r) => r.data)
   },
 
+  /** Órdenes en estado 'recibida' — selector del registro de factura (Finanzas). */
+  ordenesFacturables() {
+    return http.get('/api/compras/ordenes-facturables').then((r) => r.data)
+  },
+
   aprobarOrden(ordenId) {
     return http.post(`/api/compras/ordenes/${ordenId}/aprobar`).then((r) => r.data)
   },

@@ -2,12 +2,15 @@
 /**
  * Autorización de pago a proveedor (FR-034, T073). Control de doble persona
  * entre pasos separados: quien usa este formulario es el AUTORIZADOR (su sesión
- * firma la operación); indica además el ID del empleado que registró el pago en
- * el paso previo, que debe ser distinto de él. El backend rechaza (403) si el
- * autorizador no coincide con el usuario autenticado o si registra == autoriza.
+ * firma la operación); indica además el empleado que registró el pago en el paso
+ * previo, que debe ser distinto de él. El backend rechaza (403) si el autorizador
+ * no coincide con el usuario autenticado o si registra == autoriza.
  */
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { comprasApi } from '@/services/comprasApi'
+import { cajaApi } from '@/services/cajaApi'
+import { money } from '@/shared/currency'
+import Btn from '@/shared/ui/Btn.vue'
 
 const props = defineProps({
   // Empleado en sesión = autorizador del pago.
@@ -15,27 +18,42 @@ const props = defineProps({
 })
 const emit = defineEmits(['pagado'])
 
+const MEDIOS = [
+  { id: 1, t: 'Efectivo' },
+  { id: 3, t: 'Transferencia' },
+  { id: 2, t: 'Tarjeta' },
+  { id: 4, t: 'Billetera digital' },
+]
+
 const form = reactive({
   facturaId: null,
   monto: '',
-  medioPagoId: 1,
+  medioPagoId: 3,
   referencia: '',
   empleadoRegistraId: null,
 })
+const facturas = ref([])
+const empleados = ref([])
 const error = ref('')
+const aviso = ref('')
 const enviando = ref(false)
 
-const registranteInvalido = computed(
-  () =>
-    form.empleadoRegistraId != null && Number(form.empleadoRegistraId) === props.empleadoAutorizaId
+onMounted(async () => {
+  const [pag, emp] = await Promise.all([
+    comprasApi.facturas().then((p) => p.items ?? p).catch(() => []),
+    cajaApi.empleados().catch(() => []),
+  ])
+  facturas.value = (pag || []).filter((f) => Number(f.saldo) > 0)
+  empleados.value = (emp || []).filter((e) => e.empleado_id !== props.empleadoAutorizaId)
+})
+
+const facturaSel = computed(() =>
+  facturas.value.find((f) => f.factura_id === Number(form.facturaId)),
 )
 
 async function enviar() {
   error.value = ''
-  if (registranteInvalido.value) {
-    error.value = 'Quien registró el pago debe ser distinto de quien lo autoriza'
-    return
-  }
+  aviso.value = ''
   enviando.value = true
   try {
     const pago = await comprasApi.registrarPago(Number(form.facturaId), {
@@ -45,6 +63,13 @@ async function enviar() {
       empleadoRegistraId: Number(form.empleadoRegistraId),
       empleadoAutorizaId: props.empleadoAutorizaId,
     })
+    aviso.value = 'Pago autorizado y registrado.'
+    Object.assign(form, {
+      facturaId: null,
+      monto: '',
+      referencia: '',
+      empleadoRegistraId: null,
+    })
     emit('pagado', pago)
   } catch (e) {
     error.value = e.message
@@ -52,69 +77,78 @@ async function enviar() {
     enviando.value = false
   }
 }
+
+const inputClass =
+  'mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:outline-none'
 </script>
 
 <template>
-  <form
-    class="space-y-3 rounded-xl border border-outline-variant bg-surface-container-lowest p-4"
-    @submit.prevent="enviar"
-  >
-    <h3 class="text-sm font-semibold text-on-surface">Autorizar pago a proveedor</h3>
-    <p class="text-xs text-on-surface-variant">
-      Autorizas como empleado #{{ empleadoAutorizaId }}.
+  <form class="space-y-3 rounded-xl border border-brand-200 bg-white p-4" @submit.prevent="enviar">
+    <h3 class="text-[13px] font-bold text-brand-950">Autorizar pago a proveedor</h3>
+    <p class="text-[11px] text-slate-500">
+      Autorizás con tu propia sesión. Quien registró el pago (paso previo) debe ser otra persona.
     </p>
-    <input
-      v-model.number="form.facturaId"
-      type="number"
-      placeholder="ID de factura"
-      required
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
-    <div class="flex gap-3">
-      <input
-        v-model="form.monto"
-        type="number"
-        step="0.01"
-        placeholder="Monto"
-        required
-        class="w-1/2 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-      />
-      <select
-        v-model.number="form.medioPagoId"
-        class="w-1/2 rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-      >
-        <option :value="1">Efectivo</option>
-        <option :value="2">Tarjeta</option>
-        <option :value="3">Transferencia</option>
-        <option :value="4">Billetera Digital</option>
+
+    <label class="block text-[12px] font-semibold text-slate-600">
+      Factura con saldo
+      <select v-model.number="form.facturaId" required :class="inputClass">
+        <option :value="null" disabled>Elegí una factura…</option>
+        <option v-for="f in facturas" :key="f.factura_id" :value="f.factura_id">
+          {{ f.numero_factura }} · OC-{{ String(f.orden_id).padStart(4, '0') }} · saldo {{ money(f.saldo) }}
+        </option>
       </select>
-    </div>
-    <input
-      v-model="form.referencia"
-      placeholder="Referencia (opcional)"
-      class="w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-on-surface"
-    />
-    <label class="block text-xs text-on-surface-variant">
-      ID del empleado que REGISTRÓ el pago (paso 1, distinto de ti)
-      <input
-        v-model.number="form.empleadoRegistraId"
-        type="number"
-        required
-        class="mt-1 w-full rounded-lg border px-3 py-2 text-on-surface"
-        :class="
-          registranteInvalido
-            ? 'border-error bg-error-container'
-            : 'border-outline-variant bg-surface'
-        "
-      />
+      <span v-if="!facturas.length" class="mt-1 block text-[11px] text-slate-400">
+        No hay facturas con saldo pendiente.
+      </span>
     </label>
-    <button
-      type="submit"
-      :disabled="enviando || registranteInvalido"
-      class="w-full rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container disabled:opacity-40"
-    >
-      Autorizar y registrar pago
-    </button>
-    <p v-if="error" class="text-sm text-error">{{ error }}</p>
+
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block text-[12px] font-semibold text-slate-600">
+        Monto
+        <input
+          v-model="form.monto"
+          type="number"
+          step="0.01"
+          :max="facturaSel ? Number(facturaSel.saldo) : undefined"
+          required
+          :class="inputClass"
+        />
+      </label>
+      <label class="block text-[12px] font-semibold text-slate-600">
+        Medio de pago
+        <select v-model.number="form.medioPagoId" :class="inputClass">
+          <option v-for="m in MEDIOS" :key="m.id" :value="m.id">{{ m.t }}</option>
+        </select>
+      </label>
+    </div>
+
+    <label class="block text-[12px] font-semibold text-slate-600">
+      Referencia (opcional)
+      <input v-model="form.referencia" :class="inputClass" />
+    </label>
+
+    <label class="block text-[12px] font-semibold text-slate-600">
+      Empleado que registró el pago (paso previo, distinto de vos)
+      <select v-model.number="form.empleadoRegistraId" required :class="inputClass">
+        <option :value="null" disabled>Elegí un empleado…</option>
+        <option v-for="e in empleados" :key="e.empleado_id" :value="e.empleado_id">
+          {{ e.nombre }}
+        </option>
+      </select>
+    </label>
+
+    <p v-if="aviso" class="rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-800">
+      {{ aviso }}
+    </p>
+    <p v-if="error" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-crimson-ruby">{{ error }}</p>
+    <div class="flex justify-end">
+      <Btn
+        variant="primary"
+        type="submit"
+        :disabled="enviando || !form.facturaId || !form.empleadoRegistraId"
+      >
+        {{ enviando ? 'Registrando…' : 'Autorizar y registrar pago' }}
+      </Btn>
+    </div>
   </form>
 </template>

@@ -72,6 +72,7 @@ const modalRecibir = ref(null) // orden
 const lineasRecibir = ref([])
 const recibiendo = ref(false)
 const mostrarFinanzas = ref(false)
+const mostrarAnalisis = ref(false)
 
 const formResp = reactive({ decision: 'aceptar', canal: 'correo', motivo: '' })
 const enviandoResp = ref(false)
@@ -300,6 +301,10 @@ onMounted(async () => {
         <Btn v-if="puedeOperar" variant="ghost" @click="correrJobs">
           <Icon name="cog" :size="16" /> Recalcular sugerencia
         </Btn>
+        <Btn v-if="puedeOperar" variant="ghost" @click="mostrarAnalisis = !mostrarAnalisis">
+          <Icon name="chart" :size="16" />
+          {{ mostrarAnalisis ? 'Ocultar análisis' : 'Análisis de compras' }}
+        </Btn>
         <Btn
           v-if="puedeFinanzas"
           variant="ghost"
@@ -513,6 +518,19 @@ onMounted(async () => {
       </template>
     </DataTable>
 
+    <!-- Análisis de compras (Operaciones) -->
+    <section
+      v-if="mostrarAnalisis && puedeOperar"
+      class="satin-card mt-6 rounded-2xl p-5 shadow-card-subtle"
+    >
+      <h2 class="mb-4 font-display text-base font-bold text-brand-950">Análisis de compras</h2>
+      <div class="grid gap-4 lg:grid-cols-2">
+        <ReporteComprasAutomaticoManual />
+        <HistorialProveedorProducto />
+      </div>
+    </section>
+
+    <!-- Cuentas por pagar (Finanzas) -->
     <section
       v-if="mostrarFinanzas && puedeFinanzas"
       class="satin-card mt-6 rounded-2xl p-5 shadow-card-subtle"
@@ -520,11 +538,7 @@ onMounted(async () => {
       <h2 class="mb-4 font-display text-base font-bold text-brand-950">
         Cuentas por pagar a proveedores
       </h2>
-      <div class="grid gap-4 lg:grid-cols-3">
-        <ResumenCuentasPorPagar />
-        <ReporteComprasAutomaticoManual />
-        <HistorialProveedorProducto />
-      </div>
+      <ResumenCuentasPorPagar class="max-w-sm" />
       <div class="mt-4 grid gap-6 border-t border-brand-100 pt-4 lg:grid-cols-2">
         <FormularioFacturaProveedor :empleado-id="empleadoId" />
         <FormularioPagoProveedor :empleado-autoriza-id="empleadoId" />

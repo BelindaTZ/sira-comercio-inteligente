@@ -2,6 +2,7 @@
 /** Resumen mensual de cuentas por pagar para Finanzas (FR-041, Ronda 10). */
 import { onMounted, ref } from 'vue'
 import { comprasApi } from '@/services/comprasApi'
+import { money } from '@/shared/currency'
 
 const hoy = new Date()
 const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10)
@@ -22,35 +23,20 @@ async function cargar() {
 }
 onMounted(cargar)
 
-const moneda = (v) =>
-  new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(Number(v || 0))
+const inputClass = 'rounded-lg border border-brand-300 bg-white px-2 py-1 text-[12px] text-slate-800'
 </script>
 
 <template>
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-    <h3 class="mb-3 text-sm font-semibold text-on-surface">Cuentas por pagar</h3>
+  <div class="rounded-xl border border-brand-200 bg-white p-4">
+    <h3 class="mb-3 text-[13px] font-bold text-brand-950">Cuentas por pagar</h3>
     <div class="mb-3 flex gap-2">
-      <input
-        v-model="desde"
-        type="date"
-        class="rounded-lg border border-outline-variant bg-surface px-2 py-1 text-sm"
-        @change="cargar"
-      />
-      <input
-        v-model="hasta"
-        type="date"
-        class="rounded-lg border border-outline-variant bg-surface px-2 py-1 text-sm"
-        @change="cargar"
-      />
+      <input v-model="desde" type="date" :class="inputClass" @change="cargar" />
+      <input v-model="hasta" type="date" :class="inputClass" @change="cargar" />
     </div>
-    <p v-if="error" class="text-sm text-error">{{ error }}</p>
+    <p v-if="error" class="text-sm text-crimson-ruby">{{ error }}</p>
     <template v-if="resumen">
-      <p class="text-3xl font-bold text-primary-container">
-        {{ moneda(resumen.total_por_pagar) }}
-      </p>
-      <p class="text-sm text-on-surface-variant">
-        {{ resumen.facturas_abiertas }} factura(s) abiertas
-      </p>
+      <p class="font-mono text-2xl font-bold text-brand-900">{{ money(resumen.total_por_pagar) }}</p>
+      <p class="text-[12px] text-slate-500">{{ resumen.facturas_abiertas }} factura(s) abiertas</p>
     </template>
   </div>
 </template>

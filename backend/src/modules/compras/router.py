@@ -181,6 +181,17 @@ async def listar_ordenes(
     return [await _orden_out(svc, o) for o in ordenes]
 
 
+@router.get("/ordenes-facturables", response_model=list[OrdenOut])
+async def ordenes_facturables(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_factura_ver)],
+) -> list[OrdenOut]:
+    """Órdenes en estado 'recibida' — el selector del registro de factura de
+    proveedor (Finanzas), para no teclear un id de orden a memoria."""
+    ordenes = await svc.listar_ordenes(estado="recibida")
+    return [await _orden_out(svc, o) for o in ordenes]
+
+
 @router.get("/ordenes/{orden_id}", response_model=OrdenOut)
 async def orden_por_id(
     orden_id: int,

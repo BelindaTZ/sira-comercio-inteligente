@@ -19,24 +19,22 @@ onMounted(cargar)
 </script>
 
 <template>
-  <div class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-    <div class="mb-3 flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-on-surface">Compras automáticas vs. manuales</h3>
+  <div class="rounded-xl border border-brand-200 bg-white p-4">
+    <div class="mb-3 flex items-center justify-between gap-2">
+      <h3 class="text-[13px] font-bold text-brand-950">Compras automáticas vs. manuales</h3>
       <input
         v-model="mes"
         type="month"
-        class="rounded-lg border border-outline-variant bg-surface px-2 py-1 text-sm"
+        class="rounded-lg border border-brand-300 bg-white px-2 py-1 text-[12px] text-slate-800"
         @change="cargar"
       />
     </div>
-    <p v-if="error" class="text-sm text-error">{{ error }}</p>
+    <p v-if="error" class="text-sm text-crimson-ruby">{{ error }}</p>
     <template v-if="reporte">
-      <p class="text-3xl font-bold text-tertiary-container">{{ reporte.pct_programadas }}%</p>
-      <p class="text-sm text-on-surface-variant">
-        {{ reporte.programadas }} programadas / {{ reporte.especiales }} especiales ({{
-          reporte.total
-        }}
-        en total)
+      <p class="font-mono text-2xl font-bold text-brand-900">{{ reporte.pct_programadas }}%</p>
+      <p class="text-[12px] text-slate-500">
+        {{ reporte.programadas }} programadas / {{ reporte.especiales }} especiales
+        ({{ reporte.total }} en total)
       </p>
     </template>
   </div>
