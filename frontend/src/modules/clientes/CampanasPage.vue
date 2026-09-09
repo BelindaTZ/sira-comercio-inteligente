@@ -8,6 +8,7 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { clientesApi } from '@/services/clientesApi'
+import { useSesion } from '@/stores/sesion'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -21,6 +22,9 @@ const ETIQUETA_HITO = {
   cumpleanos: 'Cumpleaños',
   aniversario_registro: 'Aniversario de registro',
 }
+
+const sesion = useSesion()
+const puedeVer = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'campanas'))
 
 const hito = ref([])
 const campanas = ref([])
@@ -93,7 +97,9 @@ function onCreada(c) {
   abrir(c.campaign_id)
 }
 
-onMounted(cargar)
+onMounted(() => {
+  if (puedeVer.value) cargar()
+})
 </script>
 
 <template>
@@ -110,12 +116,33 @@ onMounted(cargar)
         >
           <Icon name="alert" :size="16" /> Riesgo de fuga
         </RouterLink>
-        <Btn variant="primary" @click="modal = 'nueva'">
+        <Btn v-if="puedeVer" variant="primary" @click="modal = 'nueva'">
           <Icon name="plus" :size="17" /> Nueva campaña de reactivación
         </Btn>
       </template>
     </PageHeader>
 
+    <div
+      v-if="!puedeVer"
+      class="satin-card grid place-items-center rounded-2xl p-12 text-center shadow-card-subtle"
+    >
+      <div class="max-w-sm">
+        <Icon name="shield" :size="28" class="mx-auto mb-3 text-brand-300" />
+        <p class="text-[14px] font-bold text-slate-800">Sección exclusiva del Jefe de Marketing</p>
+        <p class="mt-1 text-[12px] text-slate-500">
+          Las campañas de reactivación y la medición de uplift las gestiona el equipo de
+          Marketing / CRM (feature 002, US4–US5).
+        </p>
+        <RouterLink
+          to="/clientes"
+          class="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+        >
+          <Icon name="users" :size="15" /> Volver al directorio
+        </RouterLink>
+      </div>
+    </div>
+
+    <template v-else>
     <section class="mb-6 grid gap-4 sm:grid-cols-3">
       <KpiTile
         label="Tasa de redención de cupones"
@@ -307,13 +334,14 @@ onMounted(cargar)
       </div>
     </div>
 
-    <Modal
-      v-if="modal === 'nueva'"
-      size="lg"
-      titulo="Nueva campaña de reactivación"
-      @cerrar="modal = null"
-    >
-      <FormularioCampana @creada="onCreada" />
-    </Modal>
+      <Modal
+        v-if="modal === 'nueva'"
+        size="lg"
+        titulo="Nueva campaña de reactivación"
+        @cerrar="modal = null"
+      >
+        <FormularioCampana @creada="onCreada" />
+      </Modal>
+    </template>
   </div>
 </template>

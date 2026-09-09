@@ -12,6 +12,7 @@ import Icon from '@/shared/ui/Icon.vue'
 const props = defineProps({
   cliente: { type: Object, default: null }, // fila del directorio
   niveles: { type: Array, default: () => [] },
+  puedeCupon: { type: Boolean, default: false },
 })
 const emit = defineEmits(['editar', 'asignar-cupon'])
 
@@ -144,6 +145,7 @@ const fmtFecha = (d) =>
             Cupones del Club ({{ ficha?.cupones?.length ?? 0 }})
           </span>
           <button
+            v-if="puedeCupon"
             type="button"
             class="text-[11px] font-semibold text-amethyst-700 hover:underline"
             @click="emit('asignar-cupon', cliente)"
@@ -221,15 +223,17 @@ const fmtFecha = (d) =>
         </div>
         <p v-else class="text-[11px] text-slate-400">Sin compras registradas.</p>
 
-        <div class="mt-3 grid grid-cols-2 gap-2 border-t border-brand-100 pt-3">
+        <div class="mt-3 border-t border-brand-100 pt-3" :class="puedeCupon ? 'grid grid-cols-2 gap-2' : ''">
           <button
             type="button"
             class="rounded-lg border border-brand-200 py-2 text-[12px] font-semibold text-slate-700 hover:bg-brand-50"
+            :class="puedeCupon ? '' : 'w-full'"
             @click="emit('editar', cliente)"
           >
             <Icon name="pencil" :size="13" class="mr-1 inline" /> Editar contacto
           </button>
           <button
+            v-if="puedeCupon"
             type="button"
             class="rounded-lg bg-brand-800 py-2 text-[12px] font-bold text-white hover:bg-brand-700"
             @click="emit('asignar-cupon', cliente)"

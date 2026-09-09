@@ -38,9 +38,15 @@ async def test_me_gerente_general_ve_todos_los_modulos(client, escenario_pos, db
     token = await _token(db_session, role_id=role_id, tienda_id=escenario_pos["tienda_id"])
     r = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 200, r.text
-    nombres = {m["nombre"] for m in r.json()["modulos"]}
+    cuerpo = r.json()
+    nombres = {m["nombre"] for m in cuerpo["modulos"]}
     # el seed le da puede_ver global en los 9 módulos
     assert {"Direccion", "Comercial", "Finanzas", "TI", "RRHH", "Sistema"} <= nombres
+    # feature 013 / migración 0027: lectura sobre las tablas operativas, sin escritura
+    tablas = {(t["modulo"], t["nombre_tabla"]) for t in cuerpo["tablas"]}
+    assert ("Comercial", "productos") in tablas
+    assert ("Marketing_CRM", "clientes") in tablas
+    assert all(not t["can_editar"] for t in cuerpo["tablas"])
 
 
 async def test_me_cajero_no_ve_sistema_ni_direccion(client, escenario_auth):

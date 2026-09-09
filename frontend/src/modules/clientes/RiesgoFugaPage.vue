@@ -8,6 +8,7 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { clientesApi } from '@/services/clientesApi'
+import { useSesion } from '@/stores/sesion'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -16,6 +17,9 @@ import Icon from '@/shared/ui/Icon.vue'
 import Modal from '@/shared/ui/Modal.vue'
 import DataTable from '@/shared/DataTable.vue'
 import FormularioCampana from './components/FormularioCampana.vue'
+
+const sesion = useSesion()
+const puedeVer = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'churn_score'))
 
 const severidad = ref('') // '' | 'en_riesgo' | 'inactivo'
 const page = ref(1)
@@ -114,12 +118,14 @@ function trasCampana() {
 }
 
 watch(severidad, () => {
+  if (!puedeVer.value) return
   page.value = 1
   cargar()
   cargarKpis()
 })
-watch([page, size], cargar)
+watch([page, size], () => puedeVer.value && cargar())
 onMounted(() => {
+  if (!puedeVer.value) return
   cargar()
   cargarKpis()
 })
@@ -176,11 +182,32 @@ onMounted(() => {
       </KpiTile>
     </section>
 
-    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">
-      {{ error }}
-    </p>
+    <div
+      v-if="!puedeVer"
+      class="satin-card grid place-items-center rounded-2xl p-12 text-center shadow-card-subtle"
+    >
+      <div class="max-w-sm">
+        <Icon name="shield" :size="28" class="mx-auto mb-3 text-brand-300" />
+        <p class="text-[14px] font-bold text-slate-800">Sección exclusiva del Jefe de Marketing</p>
+        <p class="mt-1 text-[12px] text-slate-500">
+          El análisis de riesgo de fuga y el plan de retención los gestiona el equipo de
+          Marketing / CRM (feature 002, US3).
+        </p>
+        <RouterLink
+          to="/clientes"
+          class="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 hover:bg-brand-50"
+        >
+          <Icon name="users" :size="15" /> Volver al directorio
+        </RouterLink>
+      </div>
+    </div>
 
-    <DataTable
+    <template v-else>
+      <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby">
+        {{ error }}
+      </p>
+
+      <DataTable
       titulo="Cohorte en observación algorítmica"
       subtitulo="Ordenada por probabilidad de abandono. El causal se deriva del quiebre del ciclo de compra."
       :columns="columnas"
@@ -274,13 +301,14 @@ onMounted(() => {
       </div>
     </Modal>
 
-    <Modal
-      v-if="modal === 'campana'"
-      size="lg"
-      titulo="Ejecutar estrategia de retención"
-      @cerrar="modal = null"
-    >
-      <FormularioCampana :segmento-inicial="segmentoSugerido" @creada="trasCampana" />
-    </Modal>
+      <Modal
+        v-if="modal === 'campana'"
+        size="lg"
+        titulo="Ejecutar estrategia de retención"
+        @cerrar="modal = null"
+      >
+        <FormularioCampana :segmento-inicial="segmentoSugerido" @creada="trasCampana" />
+      </Modal>
+    </template>
   </div>
 </template>

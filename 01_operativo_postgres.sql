@@ -648,13 +648,13 @@ SELECT r.role_id, m.modulo_id, 'ventas', true, false, false, false
 FROM roles r JOIN modulos m ON m.nombre = 'Ventas'
 WHERE r.nombre = 'Jefe_Marketing';
 
--- GERENTE GENERAL: solo lectura en TODOS los módulos, cero escritura operativa
+-- GERENTE GENERAL: lectura en TODOS los módulos, cero escritura operativa.
+-- Los `role_permisos_tabla` (can_select) se siembran AL FINAL del archivo, una
+-- vez que todas las features registraron sus tablas (feature 013, migración 0027).
 INSERT INTO role_permisos_modulo (role_id, modulo_id, puede_ver, puede_editar)
 SELECT r.role_id, m.modulo_id, true, false
 FROM roles r, modulos m
 WHERE r.nombre = 'Gerente_General';
--- (sin filas en role_permisos_tabla con INSERT/UPDATE/DELETE = true para este rol
---  a propósito: el nivel estratégico consulta/agrega, no opera registro a registro)
 
 -- ============================================================================
 -- EXTENSIÓN — Feature 001-core-ventas-inventario (spec.md, ronda 4)
@@ -2077,4 +2077,17 @@ CROSS JOIN (VALUES
      ('dashboard_operativo_estado', false)
 ) AS t(tabla, ins)
 WHERE r.nombre = 'Jefe_TI'
+ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;
+
+-- ============================================================================
+-- Feature 013: Gerente_General — lectura (select) sobre toda tabla que cualquier
+-- otro rol pueda leer, dentro de un módulo que el Gerente ya ve. Zero write.
+-- (Debe ir al final: todas las features ya sembraron sus role_permisos_tabla.)
+-- ============================================================================
+INSERT INTO role_permisos_tabla (role_id, modulo_id, nombre_tabla,
+                                 can_select, can_insert, can_update, can_delete)
+SELECT DISTINCT g.role_id, t.modulo_id, t.nombre_tabla, true, false, false, false
+FROM (SELECT role_id FROM roles WHERE nombre = 'Gerente_General') g
+JOIN role_permisos_modulo rpm ON rpm.role_id = g.role_id AND rpm.puede_ver
+JOIN role_permisos_tabla t ON t.modulo_id = rpm.modulo_id
 ON CONFLICT (role_id, modulo_id, nombre_tabla) DO NOTHING;

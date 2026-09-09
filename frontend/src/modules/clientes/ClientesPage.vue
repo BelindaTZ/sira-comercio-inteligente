@@ -21,6 +21,8 @@ import FichaCliente360 from './components/FichaCliente360.vue'
 
 const sesion = useSesion()
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Marketing_CRM', 'clientes'))
+const puedeChurn = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'churn_score'))
+const puedeCampanas = computed(() => sesion.puedeLeerTabla('Marketing_CRM', 'campanas'))
 
 const busqueda = ref('')
 const nivel = ref('') // '' | nivel_id
@@ -150,12 +152,14 @@ onMounted(() => {
       </template>
       <template #acciones>
         <RouterLink
+          v-if="puedeCampanas"
           to="/clientes/campanas"
           class="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-2xs hover:bg-brand-50/70"
         >
           <Icon name="megaphone" :size="16" /> Campañas de cupones
         </RouterLink>
         <RouterLink
+          v-if="puedeChurn"
           to="/clientes/riesgo-fuga"
           class="inline-flex items-center gap-1.5 rounded-xl border border-brand-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-slate-700 shadow-2xs hover:bg-brand-50/70"
         >
@@ -308,6 +312,7 @@ onMounted(() => {
         </DataTable>
 
         <div
+          v-if="puedeCampanas"
           class="flex items-center justify-between gap-3 rounded-2xl border border-amethyst-200 bg-amethyst-50/50 p-4"
         >
           <div class="flex items-center gap-3">
@@ -334,6 +339,7 @@ onMounted(() => {
       <FichaCliente360
         :cliente="seleccion"
         :niveles="kpi.niveles"
+        :puede-cupon="puedeCampanas"
         @editar="((seleccion = $event), (modal = 'editar'))"
         @asignar-cupon="() => $router.push('/clientes/campanas')"
       />
