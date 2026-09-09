@@ -307,6 +307,22 @@ class CajaRepository:
         )
         return {r.empleado_id: r.nombre for r in rows}
 
+    async def empleados_activos(self, tienda_id: int | None = None) -> list[dict]:
+        """Empleados activos (de una tienda o de la red) — para el selector de
+        'empleado involucrado' al abrir un incidente de fraude."""
+        filtro = "AND e.tienda_id = :t" if tienda_id is not None else ""
+        rows = await self.session.execute(
+            text(f"""
+                SELECT e.empleado_id, e.nombre, rp.nombre AS puesto, e.tienda_id
+                FROM empleados e
+                LEFT JOIN roles_puesto rp ON rp.puesto_id = e.puesto_id
+                WHERE e.activo = true {filtro}
+                ORDER BY e.nombre
+            """),
+            {"t": tienda_id} if tienda_id is not None else {},
+        )
+        return [dict(r._mapping) for r in rows]
+
     # ============================================================ protocolo (US4)
     async def protocolo_vigente(self) -> ProtocoloEscalamiento | None:
         stmt = (

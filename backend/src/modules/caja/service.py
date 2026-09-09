@@ -103,6 +103,9 @@ class CajaService:
     async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
         return await self.repo.listar_cajas(tienda_id)
 
+    async def listar_empleados(self, tienda_id: int | None = None) -> list[dict]:
+        return await self.repo.empleados_activos(tienda_id)
+
     async def registrar_datafono(
         self,
         *,

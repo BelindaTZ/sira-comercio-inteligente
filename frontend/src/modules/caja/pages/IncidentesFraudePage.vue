@@ -23,7 +23,9 @@ import Modal from '@/shared/ui/Modal.vue'
 import DataTable from '@/shared/DataTable.vue'
 
 const sesion = useSesion()
-const puedeRegistrar = computed(() => sesion.rol === 'Jefe_Finanzas')
+// registrar y aplicar protocolo: Encargado (detecta en su tienda) + Jefe de Finanzas.
+// Cerrar el caso como fraude confirmado/descartado es sólo del Jefe de Finanzas.
+const puedeRegistrar = computed(() => sesion.puedeEditarTabla('Finanzas', 'incidentes_fraude'))
 const puedeCerrar = computed(() => sesion.rol === 'Jefe_Finanzas')
 const puedeAplicar = computed(() => sesion.puedeEditarTabla('Finanzas', 'incidentes_fraude'))
 
@@ -37,6 +39,19 @@ const size = ref(15)
 const modal = ref(null) // 'nuevo' | { tipo: 'cerrar', row }
 const nuevo = ref({ empleadoId: null, descripcion: '' })
 const guardando = ref(false)
+const empleados = ref([])
+
+async function abrirNuevo() {
+  nuevo.value = { empleadoId: null, descripcion: '' }
+  modal.value = 'nuevo'
+  if (!empleados.value.length) {
+    try {
+      empleados.value = await cajaApi.empleados()
+    } catch (e) {
+      error.value = e.response?.data?.error?.message || e.message
+    }
+  }
+}
 
 const ESTADO = {
   abierto: { tipo: 'quiebre', txt: 'Abierto' },
@@ -169,7 +184,7 @@ onMounted(cargar)
         <Btn
           v-if="puedeRegistrar"
           variant="primary"
-          @click="((modal = 'nuevo'), (nuevo = { empleadoId: null, descripcion: '' }))"
+          @click="abrirNuevo"
         >
           <Icon name="plus" :size="17" /> Registrar incidente
         </Btn>
@@ -314,14 +329,17 @@ onMounted(cargar)
       </p>
       <form class="space-y-3" @submit.prevent="registrar">
         <label class="block text-[12px] font-semibold text-slate-600">
-          ID del empleado involucrado
-          <input
+          Empleado involucrado
+          <select
             v-model.number="nuevo.empleadoId"
-            type="number"
-            min="1"
             required
             class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-          />
+          >
+            <option :value="null" disabled>Selecciona un empleado…</option>
+            <option v-for="e in empleados" :key="e.empleado_id" :value="e.empleado_id">
+              {{ e.nombre || `Empleado ${e.empleado_id}` }}{{ e.puesto ? ` · ${e.puesto}` : '' }}
+            </option>
+          </select>
         </label>
         <label class="block text-[12px] font-semibold text-slate-600">
           Evidencia / descripción del patrón

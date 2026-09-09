@@ -102,6 +102,15 @@ class CajaOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class EmpleadoItem(BaseModel):
+    """Empleado activo — selector de 'empleado involucrado' al abrir un incidente."""
+
+    empleado_id: int
+    nombre: str | None = None
+    puesto: str | None = None
+    tienda_id: int | None = None
+
+
 class ConfiguracionSeguridadOut(BaseModel):
     config_id: int
     version_minima_firmware: str

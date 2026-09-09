@@ -145,7 +145,7 @@ siembra el protocolo, la política y 3 incidentes de ejemplo.
 `role_permisos_tabla` no tenía filas para `datafonos` ni `incidentes_fraude` (verificado — solo `apertura_caja`/`cierre_caja` para `Cajero` estaban sembradas desde 001). Esta feature agrega:
 
 - `Cajero`: sin cambio (ya tiene `apertura_caja`/`cierre_caja` completos desde 001).
-- `Encargado_Tienda`: SELECT sobre `cierre_caja`/`apertura_caja` (todas las cajas de su tienda), SELECT/UPDATE sobre `incidentes_fraude` (aplicar protocolo), SELECT sobre `protocolo_escalamiento`, `umbral_merma_categoria`, `mermas`, `venta_detalle` (seguimiento semanal).
+- `Encargado_Tienda`: SELECT sobre `cierre_caja`/`apertura_caja` (todas las cajas de su tienda), SELECT/INSERT/UPDATE sobre `incidentes_fraude` (abrir el caso al detectar algo sospechoso en su tienda y aplicar el protocolo; el `INSERT` se añade en la migración 0030 / feature 018 — cerrar como fraude confirmado sigue siendo del Jefe de Finanzas), SELECT sobre `protocolo_escalamiento`, `umbral_merma_categoria`, `mermas`, `venta_detalle` (seguimiento semanal).
 - `Jefe_Finanzas`: SELECT sobre `cierre_caja`, `ajustes_inventario` (reporte), INSERT/UPDATE sobre `incidentes_fraude`, INSERT sobre `protocolo_escalamiento`.
 - `Jefe_TI`: SELECT/INSERT/UPDATE sobre `datafonos`, INSERT sobre `configuracion_seguridad_pagos` — acceso concedido al módulo `Finanzas` (research.md Decisión 10), no solo a `TI`.
 - `Jefe_Operaciones`: INSERT/UPDATE sobre `umbral_merma_categoria`.

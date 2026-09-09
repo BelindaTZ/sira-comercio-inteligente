@@ -40,6 +40,10 @@ export const cajaApi = {
       .then((r) => r.data)
   },
 
+  empleados() {
+    return http.get('/api/caja/empleados').then((r) => r.data)
+  },
+
   crearDatafono({ cajaId, modelo, versionFirmware, fechaUltimaActualizacion }) {
     return http
       .post('/api/caja/datafonos', {

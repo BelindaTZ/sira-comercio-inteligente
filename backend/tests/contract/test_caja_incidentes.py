@@ -71,6 +71,20 @@ async def test_ciclo_incidente_abierto_en_revision_cerrado(
     assert cerrar.json()["resultado"] == "descartado"
 
 
+async def test_encargado_puede_registrar_incidente(client, escenario_caja, auth_encargado):
+    """Feature 018 (migración 0030): el Encargado abre el caso al detectar algo
+    sospechoso en su tienda; cerrarlo como fraude confirmado sigue siendo del
+    Jefe de Finanzas."""
+    e = escenario_caja
+    abrir = await client.post(
+        "/api/caja/incidentes-fraude",
+        json={"empleado_id": e["cajero_id"], "descripcion": "Anulaciones fuera de patrón"},
+        headers=auth_encargado,
+    )
+    assert abrir.status_code == 201, abrir.text
+    assert abrir.json()["estado"] == "abierto"
+
+
 async def test_protocolo_vigente_consultable_por_encargado(
     client, escenario_caja, auth_caja_finanzas, auth_encargado
 ):

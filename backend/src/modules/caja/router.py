@@ -38,6 +38,7 @@ from src.modules.caja.schemas import (
     DefinirPoliticaIn,
     DefinirProtocoloIn,
     DefinirUmbralMermaIn,
+    EmpleadoItem,
     FueraServicioIn,
     IncidenteFraudeIn,
     IncidenteFraudeOut,
@@ -248,6 +249,17 @@ async def reporte_diferencias(
     anio: int = Query(..., ge=2000),
 ) -> ReporteDiferenciasOut:
     return ReporteDiferenciasOut(**await svc.generar_reporte_diferencias(mes=mes, anio=anio))
+
+
+@router.get("/empleados", response_model=list[EmpleadoItem])
+async def listar_empleados(
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ve_incidentes)],
+) -> list[EmpleadoItem]:
+    """Empleados activos — selector de 'empleado involucrado' al abrir un incidente
+    de fraude. El Encargado sólo ve los de su tienda."""
+    tienda_id = principal.tienda_id if principal.rol == "Encargado_Tienda" else None
+    return [EmpleadoItem(**e) for e in await svc.listar_empleados(tienda_id)]
 
 
 @router.post(
