@@ -43,7 +43,7 @@
 
 **Migración**: `ALTER TABLE ventas ADD COLUMN fecha_inicio_cobro TIMESTAMP; CREATE INDEX idx_ventas_fecha_inicio_cobro ON ventas(fecha_inicio_cobro) WHERE fecha_inicio_cobro IS NOT NULL;` — puramente aditiva.
 
-**Pantalla (feature 013)** — `frontend/src/modules/ventas/pages/TiempoCobroPage.vue`, arquetipo Dashboard: fila de KPI + panel de revisión semanal por caja (FR-016, Encargado de Tienda) y data-grid de revisión mensual por tienda a nivel de red (FR-017, sólo `Jefe_Comercial`/`Gerente_General`). Aviso permanente de que la medición es prospectiva (FR-015) y excluye anuladas (FR-018). No se muestran el desglose anatómico del ciclo, la telemetría horaria ni la fricción por medio de pago del mockup: no hay datos que los sustenten y no se fabrican (Principio VII).
+**Pantalla (feature 013)** — `frontend/src/modules/ventas/pages/TiempoCobroPage.vue`, arquetipo Dashboard: fila de KPI + panel de revisión semanal por caja (FR-016, Encargado de Tienda) y data-grid de revisión mensual por tienda a nivel de red (FR-017, sólo `Jefe_Comercial`/`Gerente_General`). El selector de caja de la revisión semanal se puebla con `GET /api/ventas/cajas` (RBAC `Ventas`/`ventas` SELECT; el Encargado sólo ve las de su tienda). Aviso permanente de que la medición es prospectiva (FR-015) y excluye anuladas (FR-018). No se muestran el desglose anatómico del ciclo, la telemetría horaria ni la fricción por medio de pago del mockup: no hay datos que los sustenten y no se fabrican (Principio VII).
 
 ## Entidades nuevas
 

@@ -140,6 +140,45 @@ class CajaRepository:
     async def get_datafono(self, datafono_id: int) -> Datafono | None:
         return await self.session.get(Datafono, datafono_id)
 
+    async def crear_datafono(
+        self,
+        *,
+        caja_id: int,
+        modelo: str | None,
+        version_firmware: str | None,
+        fecha_ultima_actualizacion: date | None,
+        estado: str,
+    ) -> Datafono:
+        datafono = Datafono(
+            caja_id=caja_id,
+            modelo=modelo,
+            version_firmware=version_firmware,
+            fecha_ultima_actualizacion=fecha_ultima_actualizacion,
+            estado=estado,
+        )
+        self.session.add(datafono)
+        await self.session.flush()
+        await self.session.refresh(datafono)
+        return datafono
+
+    async def caja_existe(self, caja_id: int) -> bool:
+        return bool(
+            await self.session.scalar(
+                text("SELECT 1 FROM cajas WHERE caja_id = :c"), {"c": caja_id}
+            )
+        )
+
+    async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
+        cond = "" if tienda_id is None else "WHERE tienda_id = :t"
+        rows = await self.session.execute(
+            text(
+                f"SELECT caja_id, tienda_id, nombre, activa FROM cajas {cond} "
+                "ORDER BY tienda_id, caja_id"
+            ),
+            {"t": tienda_id},
+        )
+        return [dict(r._mapping) for r in rows]
+
     async def datafonos_evaluables(self) -> list[Datafono]:
         """Todos los datáfonos que no están fuera de servicio (esos no se evalúan)."""
         stmt = select(Datafono).where(Datafono.estado != "fuera_servicio")

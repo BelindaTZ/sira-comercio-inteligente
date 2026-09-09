@@ -67,6 +67,34 @@ class ActualizarDatafonoIn(BaseModel):
     version_firmware_nueva: str = Field(min_length=1, max_length=30)
 
 
+class DatafonoIn(BaseModel):
+    """FR-006 — alta de un datáfono en el inventario. El estado de conformidad lo
+    calcula el sistema contra el estándar vigente, no se recibe del cliente."""
+
+    caja_id: int
+    modelo: str | None = Field(default=None, max_length=60)
+    version_firmware: str | None = Field(default=None, max_length=30)
+    fecha_ultima_actualizacion: date | None = None
+
+
+class DatafonoEditIn(BaseModel):
+    """FR-006 — edición de los datos de inventario de un datáfono. Todos los
+    campos son opcionales; el estado de conformidad se recalcula al guardar."""
+
+    modelo: str | None = Field(default=None, max_length=60)
+    version_firmware: str | None = Field(default=None, max_length=30)
+    fecha_ultima_actualizacion: date | None = None
+
+
+class CajaOut(BaseModel):
+    caja_id: int
+    tienda_id: int
+    nombre: str
+    activa: bool
+
+    model_config = {"from_attributes": True}
+
+
 class ConfiguracionSeguridadOut(BaseModel):
     config_id: int
     version_minima_firmware: str

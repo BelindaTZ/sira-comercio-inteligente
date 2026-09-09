@@ -148,6 +148,19 @@ class VentasRepository(BaseRepository[Venta]):
         return [r.estado for r in rows]
 
     # --- feature 007: tiempo de cobro ---
+    async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
+        """Cajas de la red o de una tienda — para el selector de la revisión
+        semanal de tiempo de cobro (`cajas` no tiene modelo ORM, es referencia)."""
+        cond = "" if tienda_id is None else "WHERE tienda_id = :t"
+        rows = await self.session.execute(
+            text(
+                f"SELECT caja_id, tienda_id, nombre, activa FROM cajas {cond} "
+                "ORDER BY tienda_id, caja_id"
+            ),
+            {"t": tienda_id},
+        )
+        return [dict(r._mapping) for r in rows]
+
     async def cajeros_de_caja(self, caja_id: int) -> list[int]:
         """Los cajeros que han abierto esta caja (research: `ventas` no tiene
         `caja_id`, el vínculo caja↔cajero vive en `apertura_caja` de 006)."""

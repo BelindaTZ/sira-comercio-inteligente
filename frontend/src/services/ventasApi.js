@@ -111,6 +111,12 @@ export const ventasApi = {
     return http.get(`/api/ventas/cajas/${cajaId}/datafono-disponible`).then((r) => r.data)
   },
 
+  cajas(tiendaId) {
+    return http
+      .get('/api/ventas/cajas', { params: { tienda_id: tiendaId ?? undefined } })
+      .then((r) => r.data)
+  },
+
   tiempoCobroSemanal(cajaId, { semana, anio } = {}) {
     return http
       .get(`/api/ventas/cajas/${cajaId}/tiempo-cobro-semanal`, {

@@ -557,6 +557,10 @@ class VentasService:
         # ninguno operativo: reporta el estado del primero como referencia
         return {"disponible": False, "estado": estados[0]}
 
+    async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
+        """FR-016 — cajas para el selector de la revisión semanal de tiempo de cobro."""
+        return await self.repo.listar_cajas(tienda_id)
+
     async def tiempo_cobro_semanal(self, caja_id: int, semana: int, anio: int | None) -> dict:
         """FR-016/FR-018 — tiempo promedio de cobro de una caja en una semana,
         excluyendo ventas anuladas y sin `fecha_inicio_cobro`."""

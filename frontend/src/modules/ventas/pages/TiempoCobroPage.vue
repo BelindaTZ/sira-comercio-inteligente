@@ -37,17 +37,22 @@ function isoWeek(d) {
 }
 
 const semanal = reactive({
-  cajaId: Number(localStorage.getItem('sira_caja_id')) || 1,
+  cajaId: Number(localStorage.getItem('sira_caja_id')) || null,
   semana: isoWeek(hoy),
   anio: hoy.getFullYear(),
 })
 const mensual = reactive({ mes: hoy.getMonth() + 1, anio: hoy.getFullYear() })
 
+const cajas = ref([])
 const resSemanal = ref(null)
 const resMensual = ref([])
 const cargandoSemanal = ref(false)
 const cargandoMensual = ref(false)
 const error = ref('')
+
+const cajaSeleccionada = computed(
+  () => cajas.value.find((c) => c.caja_id === semanal.cajaId) || null,
+)
 
 const MESES = [
   'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
@@ -83,7 +88,18 @@ const columnas = [
   { key: 'lectura', label: 'Lectura' },
 ]
 
+async function cargarCajas() {
+  try {
+    cajas.value = await ventasApi.cajas()
+    if (!cajas.value.some((c) => c.caja_id === semanal.cajaId))
+      semanal.cajaId = cajas.value[0]?.caja_id ?? null
+  } catch {
+    /* informativo — el selector queda vacío */
+  }
+}
+
 async function consultarSemanal() {
+  if (semanal.cajaId == null) return
   cargandoSemanal.value = true
   error.value = ''
   try {
@@ -115,7 +131,8 @@ async function consultarMensual() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await cargarCajas()
   consultarSemanal()
   consultarMensual()
 })
@@ -152,7 +169,7 @@ onMounted(() => {
         label="Ciclo de cobro — caja seleccionada"
         :valor="resSemanal ? fmt(resSemanal.duracion_promedio_segundos) : '—'"
         variant="emerald"
-        :microcopy="`Caja ${semanal.cajaId} · semana ISO ${semanal.semana}/${semanal.anio}`"
+        :microcopy="`${cajaSeleccionada ? cajaSeleccionada.nombre : 'Sin caja'} · semana ISO ${semanal.semana}/${semanal.anio}`"
         pie-label="Ventas consideradas"
         :pie-valor="`${resSemanal ? resSemanal.cantidad_ventas_consideradas : 0} en la semana`"
       />
@@ -201,12 +218,16 @@ onMounted(() => {
         <form class="space-y-3" @submit.prevent="consultarSemanal">
           <label class="block text-[12px] font-semibold text-slate-600">
             Caja
-            <input
+            <select
               v-model.number="semanal.cajaId"
-              type="number"
-              min="1"
-              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-            />
+              :disabled="!cajas.length"
+              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800 disabled:bg-slate-50"
+            >
+              <option v-if="!cajas.length" :value="null">Sin cajas registradas</option>
+              <option v-for="c in cajas" :key="c.caja_id" :value="c.caja_id">
+                {{ c.nombre }}<template v-if="!c.activa"> (inactiva)</template>
+              </option>
+            </select>
           </label>
           <div class="grid grid-cols-2 gap-3">
             <label class="block text-[12px] font-semibold text-slate-600">
@@ -241,7 +262,8 @@ onMounted(() => {
             {{ fmt(resSemanal.duracion_promedio_segundos) }}
           </div>
           <p class="mt-0.5 text-[11px] text-slate-600">
-            promedio de la Caja {{ resSemanal.caja_id }} · semana {{ resSemanal.semana }}
+            promedio de {{ cajaSeleccionada ? cajaSeleccionada.nombre : `caja ${resSemanal.caja_id}` }}
+            · semana {{ resSemanal.semana }}
           </p>
           <p class="mt-1 text-[11px] font-semibold text-slate-500">
             {{ resSemanal.cantidad_ventas_consideradas }} venta(s) consideradas

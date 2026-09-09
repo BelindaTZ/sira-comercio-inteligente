@@ -34,6 +34,32 @@ export const cajaApi = {
       .then((r) => r.data)
   },
 
+  cajas(tiendaId) {
+    return http
+      .get('/api/caja/cajas', { params: { tienda_id: tiendaId ?? undefined } })
+      .then((r) => r.data)
+  },
+
+  crearDatafono({ cajaId, modelo, versionFirmware, fechaUltimaActualizacion }) {
+    return http
+      .post('/api/caja/datafonos', {
+        caja_id: cajaId,
+        modelo: modelo || null,
+        version_firmware: versionFirmware || null,
+        fecha_ultima_actualizacion: fechaUltimaActualizacion || null,
+      })
+      .then((r) => r.data)
+  },
+
+  editarDatafono(datafonoId, { modelo, versionFirmware, fechaUltimaActualizacion }) {
+    const body = {}
+    if (modelo !== undefined) body.modelo = modelo || null
+    if (versionFirmware !== undefined) body.version_firmware = versionFirmware || null
+    if (fechaUltimaActualizacion !== undefined)
+      body.fecha_ultima_actualizacion = fechaUltimaActualizacion || null
+    return http.patch(`/api/caja/datafonos/${datafonoId}`, body).then((r) => r.data)
+  },
+
   actualizarDatafono(datafonoId, versionFirmwareNueva) {
     return http
       .patch(`/api/caja/datafonos/${datafonoId}/actualizar`, {

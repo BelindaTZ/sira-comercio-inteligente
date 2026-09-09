@@ -156,6 +156,15 @@ class DatafonoDisponibleOut(BaseModel):
     estado: str | None
 
 
+class CajaOut(BaseModel):
+    caja_id: int
+    tienda_id: int
+    nombre: str
+    activa: bool
+
+    model_config = {"from_attributes": True}
+
+
 class TiempoCobroSemanalOut(BaseModel):
     caja_id: int
     semana: int

@@ -23,6 +23,7 @@ from src.modules.ventas.schemas import (
     AgregarLineaIn,
     AltaMedioPagoIn,
     AnularVentaIn,
+    CajaOut,
     ConfirmarVentaIn,
     DatafonoDisponibleOut,
     DescuentoManualIn,
@@ -265,6 +266,19 @@ async def datafono_disponible(
 ) -> DatafonoDisponibleOut:
     """FR-004 — el flujo de cobro consulta esto antes de intentar con tarjeta."""
     return DatafonoDisponibleOut(**await svc.datafono_disponible_de_caja(caja_id))
+
+
+@router.get("/cajas", response_model=list[CajaOut])
+async def listar_cajas(
+    svc: ServiceDep,
+    principal: Annotated[Principal, Depends(_ver)],
+    tienda_id: int | None = None,
+) -> list[CajaOut]:
+    """Cajas para el selector de la revisión semanal de tiempo de cobro (FR-016).
+    El Encargado de Tienda sólo ve las de su tienda."""
+    if principal.rol == "Encargado_Tienda":
+        tienda_id = principal.tienda_id
+    return [CajaOut.model_validate(c) for c in await svc.listar_cajas(tienda_id)]
 
 
 _ROLES_REPORTE_COBRO_CAJA = frozenset(

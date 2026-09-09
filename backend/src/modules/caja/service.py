@@ -100,6 +100,60 @@ class CajaService:
     async def listar_datafonos(self, estado: str | None = None):
         return await self.repo.listar_datafonos(estado)
 
+    async def listar_cajas(self, tienda_id: int | None = None) -> list[dict]:
+        return await self.repo.listar_cajas(tienda_id)
+
+    async def registrar_datafono(
+        self,
+        *,
+        caja_id: int,
+        modelo: str | None,
+        version_firmware: str | None,
+        fecha_ultima_actualizacion,
+    ):
+        """FR-006 — da de alta un datáfono en el inventario. El estado de
+        conformidad se calcula contra el estándar vigente (FR-007), no se recibe."""
+        if not await self.repo.caja_existe(caja_id):
+            raise NotFoundError(f"La caja {caja_id} no existe")
+        version_minima = await self._version_minima_vigente()
+        estado = logica.estado_datafono_restablecido(version_firmware, version_minima)
+        return await self.repo.crear_datafono(
+            caja_id=caja_id,
+            modelo=modelo,
+            version_firmware=version_firmware,
+            fecha_ultima_actualizacion=fecha_ultima_actualizacion,
+            estado=estado,
+        )
+
+    async def editar_datafono(
+        self,
+        datafono_id: int,
+        *,
+        modelo: str | None,
+        version_firmware: str | None,
+        fecha_ultima_actualizacion,
+        campos_enviados: set[str],
+    ):
+        """FR-006 — edita los datos de inventario de un datáfono. Recalcula la
+        conformidad salvo que esté `fuera_servicio` (ese estado sólo cambia por
+        restablecer, FR-003 de 007)."""
+        datafono = await self.repo.get_datafono(datafono_id)
+        if datafono is None:
+            raise NotFoundError(f"Datáfono {datafono_id} no existe")
+        if "modelo" in campos_enviados:
+            datafono.modelo = modelo
+        if "version_firmware" in campos_enviados:
+            datafono.version_firmware = version_firmware
+        if "fecha_ultima_actualizacion" in campos_enviados:
+            datafono.fecha_ultima_actualizacion = fecha_ultima_actualizacion
+        if datafono.estado != "fuera_servicio":
+            version_minima = await self._version_minima_vigente()
+            datafono.estado = logica.estado_datafono_restablecido(
+                datafono.version_firmware, version_minima
+            )
+        await self.repo.flush()
+        return datafono
+
     async def _version_minima_vigente(self) -> str | None:
         vigente = await self.repo.configuracion_seguridad_vigente()
         return vigente.version_minima_firmware if vigente is not None else None

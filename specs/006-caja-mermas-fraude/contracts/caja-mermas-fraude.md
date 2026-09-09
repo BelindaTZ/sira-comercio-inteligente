@@ -28,6 +28,22 @@
 - RBAC: `Jefe_TI`.
 - 200: `[{datafono_id, caja_id, modelo, version_firmware, fecha_ultima_actualizacion, estado}]`.
 
+`GET /api/caja/cajas?tienda_id=`
+- Cajas de la red (o de una tienda) — para asignar un datáfono a una caja al darlo de alta.
+- RBAC: cualquiera que pueda leer `datafonos` (`Jefe_TI`).
+- 200: `[{caja_id, tienda_id, nombre, activa}]`.
+
+`POST /api/caja/datafonos`
+- Alta de un datáfono en el inventario (FR-006).
+- Body: `{caja_id, modelo?, version_firmware?, fecha_ultima_actualizacion?}`.
+- RBAC: `Jefe_TI` (`datafonos` INSERT).
+- 201: datáfono creado. `estado` lo calcula el sistema contra el estándar vigente (FR-007), no se recibe. 404 si la caja no existe.
+
+`PATCH /api/caja/datafonos/{datafono_id}`
+- Edita los datos de inventario: `modelo`, `version_firmware`, `fecha_ultima_actualizacion` (FR-006). Todos opcionales.
+- RBAC: `Jefe_TI` (`datafonos` INSERT).
+- 200: datáfono actualizado; el `estado` de conformidad se recalcula salvo que esté `fuera_servicio`. 404 si no existe.
+
 `PATCH /api/caja/datafonos/{datafono_id}/actualizar`
 - Registra la actualización o reemplazo de un datáfono no conforme (FR-008).
 - Body: `{version_firmware_nueva}`.

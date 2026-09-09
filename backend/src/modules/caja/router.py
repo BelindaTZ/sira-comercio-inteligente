@@ -23,12 +23,15 @@ from src.modules.caja.schemas import (
     AperturaIn,
     AperturaOut,
     AplicarProtocoloIn,
+    CajaOut,
     CerrarIncidenteIn,
     CierreIn,
     CierreOut,
     CierreTiendaItem,
     ConfiguracionSeguridadOut,
     ConteoIncidentesSeguridadOut,
+    DatafonoEditIn,
+    DatafonoIn,
     DatafonoOut,
     DatafonoRestablecidoOut,
     DefinirEstandarSeguridadIn,
@@ -57,6 +60,7 @@ _cajero_cierre = require_permission("Finanzas", "cierre_caja", "insert")
 _ve_cierres = require_permission("Finanzas", "cierre_caja", "select")
 _ve_datafonos = require_permission("Finanzas", "datafonos", "select")
 _edita_datafonos = require_permission("Finanzas", "datafonos", "update")
+_gestiona_datafonos = require_permission("Finanzas", "datafonos", "insert")
 _ve_estandar = require_permission("Finanzas", "configuracion_seguridad_pagos", "select")
 _define_estandar = require_permission("Finanzas", "configuracion_seguridad_pagos", "insert")
 _ve_reporte = require_permission("Finanzas", "ajustes_inventario", "select")
@@ -123,11 +127,56 @@ async def listar_cierres(
 
 
 # ==================================================== datáfonos (FR-006 a FR-008)
+@router.get("/cajas", response_model=list[CajaOut])
+async def listar_cajas(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ve_datafonos)],
+    tienda_id: int | None = None,
+) -> list[CajaOut]:
+    """Cajas de la red (o de una tienda) — para asignar un datáfono a una caja."""
+    return [CajaOut.model_validate(c) for c in await svc.listar_cajas(tienda_id)]
+
+
 @router.get("/datafonos", response_model=list[DatafonoOut])
 async def listar_datafonos(
     svc: ServiceDep, _: Annotated[Principal, Depends(_ve_datafonos)], estado: str | None = None
 ) -> list[DatafonoOut]:
     return [DatafonoOut.model_validate(d) for d in await svc.listar_datafonos(estado)]
+
+
+@router.post("/datafonos", status_code=status.HTTP_201_CREATED, response_model=DatafonoOut)
+async def registrar_datafono(
+    data: DatafonoIn, svc: ServiceDep, _: Annotated[Principal, Depends(_gestiona_datafonos)]
+) -> DatafonoOut:
+    """FR-006 — alta de un datáfono en el inventario (Jefe de TI)."""
+    return DatafonoOut.model_validate(
+        await svc.registrar_datafono(
+            caja_id=data.caja_id,
+            modelo=data.modelo,
+            version_firmware=data.version_firmware,
+            fecha_ultima_actualizacion=data.fecha_ultima_actualizacion,
+        )
+    )
+
+
+@router.patch("/datafonos/{datafono_id}", response_model=DatafonoOut)
+async def editar_datafono(
+    datafono_id: int,
+    data: DatafonoEditIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_gestiona_datafonos)],
+) -> DatafonoOut:
+    """FR-006 — edita modelo / firmware / fecha de última actualización (Jefe de
+    TI). El estado de conformidad se recalcula."""
+    return DatafonoOut.model_validate(
+        await svc.editar_datafono(
+            datafono_id,
+            modelo=data.modelo,
+            version_firmware=data.version_firmware,
+            fecha_ultima_actualizacion=data.fecha_ultima_actualizacion,
+            campos_enviados=set(data.model_fields_set),
+        )
+    )
 
 
 @router.patch("/datafonos/{datafono_id}/actualizar", response_model=DatafonoOut)

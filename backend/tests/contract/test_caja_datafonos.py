@@ -61,3 +61,72 @@ async def test_actualizar_datafono_inexistente_da_404(client, escenario_caja, au
 async def test_cajero_no_gestiona_datafonos(client, escenario_caja, auth_cajero):
     resp = await client.get("/api/caja/datafonos", headers=auth_cajero)
     assert resp.status_code == 403, resp.text
+
+
+async def test_registrar_datafono_evalua_conformidad(client, escenario_caja, auth_caja_ti):
+    """FR-006 — alta de un datáfono; el estado de conformidad se calcula contra el
+    estándar vigente (FR-007), no se recibe del cliente."""
+    e = escenario_caja
+    await client.put(
+        "/api/caja/configuracion-seguridad-pagos",
+        json={"version_minima_firmware": "3.2.0"},
+        headers=auth_caja_ti,
+    )
+    viejo = await client.post(
+        "/api/caja/datafonos",
+        json={"caja_id": e["caja_1"], "modelo": "PAX A80", "version_firmware": "2.5.0"},
+        headers=auth_caja_ti,
+    )
+    assert viejo.status_code == 201, viejo.text
+    assert viejo.json()["estado"] == "requiere_actualizacion"
+
+    nuevo = await client.post(
+        "/api/caja/datafonos",
+        json={"caja_id": e["caja_2"], "modelo": "PAX A80", "version_firmware": "3.5.0"},
+        headers=auth_caja_ti,
+    )
+    assert nuevo.json()["estado"] == "activo"
+
+    inexistente = await client.post(
+        "/api/caja/datafonos",
+        json={"caja_id": 999999, "version_firmware": "3.5.0"},
+        headers=auth_caja_ti,
+    )
+    assert inexistente.status_code == 404, inexistente.text
+
+
+async def test_editar_datafono_recalcula_conformidad(client, escenario_caja, auth_caja_ti):
+    """FR-006 — editar modelo/firmware recalcula el estado de conformidad."""
+    e = escenario_caja
+    await client.put(
+        "/api/caja/configuracion-seguridad-pagos",
+        json={"version_minima_firmware": "3.2.0"},
+        headers=auth_caja_ti,
+    )
+    # `datafono_viejo` (2.9.0) quedó no conforme; subirle el firmware lo vuelve conforme
+    resp = await client.patch(
+        f"/api/caja/datafonos/{e['datafono_viejo']}",
+        json={"version_firmware": "3.4.0", "modelo": "Verifone VX-680"},
+        headers=auth_caja_ti,
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["estado"] == "activo"
+    assert resp.json()["modelo"] == "Verifone VX-680"
+
+
+async def test_listar_cajas_de_la_red(client, escenario_caja, auth_caja_ti):
+    e = escenario_caja
+    resp = await client.get("/api/caja/cajas", headers=auth_caja_ti)
+    assert resp.status_code == 200, resp.text
+    ids = {c["caja_id"] for c in resp.json()}
+    assert {e["caja_1"], e["caja_2"]} <= ids
+
+
+async def test_cajero_no_registra_datafono(client, escenario_caja, auth_cajero):
+    e = escenario_caja
+    resp = await client.post(
+        "/api/caja/datafonos",
+        json={"caja_id": e["caja_1"], "version_firmware": "3.5.0"},
+        headers=auth_cajero,
+    )
+    assert resp.status_code == 403, resp.text

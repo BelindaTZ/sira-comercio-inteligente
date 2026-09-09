@@ -11,7 +11,7 @@
  * mockup (batería, señal, latencia, rollout OTA, repositorio de firmware) NO
  * está en la feature y no se implementa.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
 import { useSesion } from '@/stores/sesion'
 import PageHeader from '@/shared/ui/PageHeader.vue'
@@ -23,12 +23,16 @@ import Modal from '@/shared/ui/Modal.vue'
 import DataTable from '@/shared/DataTable.vue'
 
 const sesion = useSesion()
+// FR-006 (registrar/editar el inventario) es del Jefe de TI; fuera de servicio /
+// restablecer (007 US1) los hace también el Encargado (permiso UPDATE).
+const puedeGestionar = computed(() => sesion.esGerente || sesion.rol === 'Jefe_TI')
 const puedeEditar = computed(() => sesion.puedeEditarTabla('Finanzas', 'datafonos'))
 const puedeEditarEstandar = computed(() =>
   sesion.puedeEditarTabla('Finanzas', 'configuracion_seguridad_pagos'),
 )
 
 const datafonos = ref([])
+const cajas = ref([])
 const estandar = ref(null)
 const cargando = ref(false)
 const error = ref('')
@@ -38,9 +42,17 @@ const pill = ref('') // '' | 'activo' | 'requiere_actualizacion' | 'fuera_servic
 const page = ref(1)
 const size = ref(15)
 
-const modal = ref(null) // 'estandar' | fila (registrar actualización)
+const modal = ref(null) // 'estandar' | 'nuevo' | 'actualizar' | 'editar'
+const filaActiva = ref(null)
 const nuevaVersion = ref('')
+const form = reactive({ cajaId: null, modelo: '', versionFirmware: '', fechaUltimaActualizacion: '' })
 const guardando = ref(false)
+
+const cajasById = computed(() => Object.fromEntries(cajas.value.map((c) => [c.caja_id, c])))
+function etiquetaCaja(cajaId) {
+  const c = cajasById.value[cajaId]
+  return c ? c.nombre : `Caja ${cajaId}`
+}
 
 const ESTADO = {
   activo: { tipo: 'ok', txt: 'Conforme' },
@@ -103,6 +115,7 @@ async function cargar() {
   try {
     datafonos.value = await cajaApi.datafonos()
     estandar.value = await cajaApi.configuracionSeguridad().catch(() => null)
+    cajas.value = await cajaApi.cajas().catch(() => [])
   } catch (e) {
     error.value = e.response?.data?.error?.message || e.message
   } finally {
@@ -110,16 +123,75 @@ async function cargar() {
   }
 }
 
+function abrirNuevo() {
+  Object.assign(form, {
+    cajaId: cajas.value[0]?.caja_id ?? null,
+    modelo: '',
+    versionFirmware: estandar.value?.version_minima_firmware || '',
+    fechaUltimaActualizacion: '',
+  })
+  modal.value = 'nuevo'
+}
+
+function abrirEditar(row) {
+  filaActiva.value = row
+  Object.assign(form, {
+    cajaId: row.caja_id,
+    modelo: row.modelo || '',
+    versionFirmware: row.version_firmware || '',
+    fechaUltimaActualizacion: row.fecha_ultima_actualizacion || '',
+  })
+  modal.value = 'editar'
+}
+
+async function crearDatafono() {
+  guardando.value = true
+  error.value = ''
+  try {
+    await cajaApi.crearDatafono({
+      cajaId: form.cajaId,
+      modelo: form.modelo.trim(),
+      versionFirmware: form.versionFirmware.trim(),
+      fechaUltimaActualizacion: form.fechaUltimaActualizacion || null,
+    })
+    modal.value = null
+    await cargar()
+  } catch (e) {
+    error.value = e.response?.data?.error?.message || e.message
+  } finally {
+    guardando.value = false
+  }
+}
+
+async function guardarEdicion() {
+  guardando.value = true
+  error.value = ''
+  try {
+    await cajaApi.editarDatafono(filaActiva.value.datafono_id, {
+      modelo: form.modelo.trim(),
+      versionFirmware: form.versionFirmware.trim(),
+      fechaUltimaActualizacion: form.fechaUltimaActualizacion || null,
+    })
+    modal.value = null
+    await cargar()
+  } catch (e) {
+    error.value = e.response?.data?.error?.message || e.message
+  } finally {
+    guardando.value = false
+  }
+}
+
 function abrirActualizacion(row) {
+  filaActiva.value = row
   nuevaVersion.value = estandar.value?.version_minima_firmware || ''
-  modal.value = row
+  modal.value = 'actualizar'
 }
 
 async function registrarActualizacion() {
   guardando.value = true
   error.value = ''
   try {
-    await cajaApi.actualizarDatafono(modal.value.datafono_id, nuevaVersion.value.trim())
+    await cajaApi.actualizarDatafono(filaActiva.value.datafono_id, nuevaVersion.value.trim())
     modal.value = null
     await cargar()
   } catch (e) {
@@ -183,11 +255,14 @@ onMounted(cargar)
         </SemanticChip>
       </template>
       <template #acciones>
-        <Btn v-if="puedeEditarEstandar" variant="primary" @click="abrirModalEstandar">
-          <Icon name="shield" :size="16" /> Definir estándar de seguridad
+        <Btn v-if="puedeEditarEstandar" variant="ghost" @click="abrirModalEstandar">
+          <Icon name="shield" :size="16" /> Estándar de seguridad
+        </Btn>
+        <Btn v-if="puedeGestionar" variant="primary" :disabled="!cajas.length" @click="abrirNuevo">
+          <Icon name="plus" :size="17" /> Registrar datáfono
         </Btn>
         <span
-          v-else
+          v-if="!puedeGestionar && !puedeEditar"
           class="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600"
         >
           <Icon name="shield" :size="14" /> Solo lectura
@@ -264,9 +339,11 @@ onMounted(cargar)
       @pill="((pill = $event), (page = 1))"
     >
       <template #cell:terminal="{ row }">
-        <div class="font-mono text-[11px] leading-tight">
-          <div class="font-bold text-brand-800">#{{ row.datafono_id }}</div>
-          <div class="text-slate-400">Caja {{ row.caja_id }}</div>
+        <div class="leading-tight">
+          <div class="text-[12px] font-semibold text-slate-800">{{ etiquetaCaja(row.caja_id) }}</div>
+          <div class="font-mono text-[10px] text-slate-400">
+            {{ `#${row.datafono_id}${cajasById[row.caja_id] ? ` · Tienda ${cajasById[row.caja_id].tienda_id}` : ''}` }}
+          </div>
         </div>
       </template>
 
@@ -298,7 +375,7 @@ onMounted(cargar)
       <template #cell:acciones="{ row }">
         <div class="flex items-center justify-end gap-1 whitespace-nowrap">
           <Btn
-            v-if="row.estado === 'requiere_actualizacion' && puedeEditar"
+            v-if="row.estado === 'requiere_actualizacion' && puedeGestionar"
             variant="primary"
             class="!px-2.5 !py-1 !text-[12px]"
             @click="abrirActualizacion(row)"
@@ -314,6 +391,15 @@ onMounted(cargar)
             <Icon name="check" :size="14" /> Restablecer
           </Btn>
           <button
+            v-if="puedeGestionar"
+            type="button"
+            class="rounded-md p-1.5 text-slate-400 hover:bg-brand-50 hover:text-brand-800"
+            title="Editar datos de inventario"
+            @click="abrirEditar(row)"
+          >
+            <Icon name="pencil" :size="15" />
+          </button>
+          <button
             v-if="row.estado !== 'fuera_servicio' && puedeEditar"
             type="button"
             class="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-crimson-ruby"
@@ -322,7 +408,7 @@ onMounted(cargar)
           >
             <Icon name="alert" :size="15" />
           </button>
-          <span v-if="!puedeEditar" class="text-[11px] text-slate-400">—</span>
+          <span v-if="!puedeGestionar && !puedeEditar" class="text-[11px] text-slate-400">—</span>
         </div>
       </template>
     </DataTable>
@@ -358,13 +444,80 @@ onMounted(cargar)
     </Modal>
 
     <Modal
-      v-else-if="modal && typeof modal === 'object'"
-      :titulo="`Registrar actualización — datáfono #${modal.datafono_id}`"
+      v-else-if="modal === 'nuevo' || modal === 'editar'"
+      :titulo="
+        modal === 'nuevo'
+          ? 'Registrar datáfono'
+          : `Editar datáfono #${filaActiva?.datafono_id}`
+      "
       @cerrar="modal = null"
     >
       <p class="mb-3 text-[13px] text-slate-600">
-        Registra la actualización o reemplazo del datáfono no conforme de la Caja
-        {{ modal.caja_id }} (FR-008). Queda con la fecha de resolución de hoy.
+        Datos de inventario del terminal (FR-006). El estado de conformidad lo calcula el sistema
+        contra el estándar de seguridad vigente.
+      </p>
+      <form class="space-y-3" @submit.prevent="modal === 'nuevo' ? crearDatafono() : guardarEdicion()">
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Caja asignada
+          <select
+            v-model.number="form.cajaId"
+            :disabled="modal === 'editar'"
+            required
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800 disabled:bg-slate-50 disabled:text-slate-500"
+          >
+            <option v-for="c in cajas" :key="c.caja_id" :value="c.caja_id">
+              {{ c.nombre }} — Tienda {{ c.tienda_id }}
+            </option>
+          </select>
+        </label>
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Modelo de hardware
+          <input
+            v-model="form.modelo"
+            type="text"
+            maxlength="60"
+            placeholder="Ingenico Move 5000"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+          />
+        </label>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block text-[12px] font-semibold text-slate-600">
+            Versión de firmware
+            <input
+              v-model="form.versionFirmware"
+              type="text"
+              maxlength="30"
+              placeholder="4.8.0"
+              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+            />
+          </label>
+          <label class="block text-[12px] font-semibold text-slate-600">
+            Última actualización
+            <input
+              v-model="form.fechaUltimaActualizacion"
+              type="date"
+              class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
+            />
+          </label>
+        </div>
+        <button
+          type="submit"
+          :disabled="guardando"
+          class="w-full rounded-xl bg-brand-800 px-4 py-2 text-sm font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+        >
+          {{ guardando ? 'Guardando…' : modal === 'nuevo' ? 'Registrar datáfono' : 'Guardar cambios' }}
+        </button>
+      </form>
+    </Modal>
+
+    <Modal
+      v-else-if="modal === 'actualizar'"
+      :titulo="`Registrar actualización — datáfono #${filaActiva?.datafono_id}`"
+      @cerrar="modal = null"
+    >
+      <p class="mb-3 text-[13px] text-slate-600">
+        Registra la actualización o reemplazo del datáfono no conforme de
+        {{ etiquetaCaja(filaActiva?.caja_id) }} (FR-008). Queda con la fecha de resolución de hoy.
       </p>
       <form class="space-y-3" @submit.prevent="registrarActualizacion">
         <label class="block text-[12px] font-semibold text-slate-600">

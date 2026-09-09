@@ -87,6 +87,22 @@ async def test_tiempo_cobro_semanal_y_mensual(
     assert fila["cantidad_ventas_consideradas"] == 2
 
 
+async def test_listar_cajas_para_selector_semanal(
+    client, escenario_pagos, auth_encargado, auth_pagos_comercial
+):
+    """FR-016 — el selector de la revisión semanal necesita las cajas; el
+    Encargado de Tienda sólo ve las de su tienda."""
+    e = escenario_pagos
+    enc = await client.get("/api/ventas/cajas", headers=auth_encargado)
+    assert enc.status_code == 200, enc.text
+    ids = {c["caja_id"] for c in enc.json()}
+    assert {e["caja_1"], e["caja_2"]} <= ids
+    assert all(c["tienda_id"] == e["tienda_id"] for c in enc.json())
+
+    com = await client.get("/api/ventas/cajas", headers=auth_pagos_comercial)
+    assert com.status_code == 200, com.text
+
+
 async def test_cajero_no_ve_reporte_mensual_de_red(client, escenario_pagos, auth_cajero):
     ahora = datetime.now(UTC)
     resp = await client.get(
