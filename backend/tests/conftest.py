@@ -37,6 +37,12 @@ if "WindowsSelectorEventLoopPolicy" in dir(asyncio):  # pragma: no cover - Windo
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
+@pytest.fixture(autouse=True)
+def mock_sendgrid(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Protege la cuota de SendGrid durante los tests: simula envío exitoso sin llamadas reales."""
+    monkeypatch.setattr("src.integrations.sendgrid_client.enviar_correo", lambda *args, **kwargs: True)
+
+
 @pytest_asyncio.fixture
 async def db_session() -> AsyncGenerator[AsyncSession, None]:
     # Engine propio con NullPool: cada test abre y cierra su conexión real y no

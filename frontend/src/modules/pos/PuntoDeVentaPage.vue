@@ -205,6 +205,17 @@ watch(requiereTarjeta, async (necesita) => {
   }
 })
 
+watch(tipoComprobante, (nuevo) => {
+  if (nuevo === 'factura' && cliente.value) {
+    if (!identificacion.value && cliente.value.documento_identidad) {
+      identificacion.value = cliente.value.documento_identidad
+    }
+    if (!razonSocial.value && cliente.value.nombre) {
+      razonSocial.value = cliente.value.nombre
+    }
+  }
+})
+
 onMounted(() => {
   cargarMediosPago()
   cargarCajas().then(cargarTurno)
@@ -275,6 +286,13 @@ async function cargarBeneficios() {
 async function vincularCliente(c) {
   const nivel = nivelesFidel.value.find((n) => n.nivel_id === c.nivel_fidelizacion_id)
   cliente.value = { ...c, nivel_nombre: nivel?.nombre || null }
+  // Prellenar datos para factura por defecto con los datos del cliente
+  if (c.documento_identidad) {
+    identificacion.value = c.documento_identidad
+  }
+  if (c.nombre) {
+    razonSocial.value = c.nombre
+  }
   // asocia el cliente a la venta actual (sirve incluso con líneas ya registradas)
   if (venta.value?.estado === 'en_curso') {
     venta.value = await conError(() =>
@@ -285,6 +303,14 @@ async function vincularCliente(c) {
 }
 
 async function quitarCliente() {
+  if (cliente.value) {
+    if (identificacion.value === (cliente.value.documento_identidad || '')) {
+      identificacion.value = ''
+    }
+    if (razonSocial.value === (cliente.value.nombre || '')) {
+      razonSocial.value = ''
+    }
+  }
   cliente.value = null
   beneficios.value = null
   if (venta.value?.estado === 'en_curso' && venta.value.household_id) {
@@ -378,8 +404,8 @@ async function confirmar() {
     ventasApi.confirmar(venta.value.venta_id, {
       medioPagoId: medioPagoId.value,
       tipoComprobante: tipoComprobante.value,
-      identificacion: identificacion.value,
-      razonSocial: razonSocial.value,
+      identificacion: tipoComprobante.value === 'factura' ? identificacion.value.trim() : null,
+      razonSocial: tipoComprobante.value === 'factura' ? razonSocial.value.trim() : null,
     }),
   )
   venta.value = confirmada
@@ -459,7 +485,13 @@ async function crearCliente() {
 // ---- pausar / anular --------------------------------------------------
 function pausarTicket() {
   if (!venta.value || venta.value.estado !== 'en_curso' || !venta.value.lineas.length) return
-  ticketsPausados.value.push({ venta: venta.value, cliente: cliente.value })
+  ticketsPausados.value.push({
+    venta: venta.value,
+    cliente: cliente.value,
+    tipoComprobante: tipoComprobante.value,
+    identificacion: identificacion.value,
+    razonSocial: razonSocial.value,
+  })
   venta.value = null
   cliente.value = null
   resetPago()
@@ -471,6 +503,18 @@ function retomarTicket(i) {
   venta.value = t.venta
   cliente.value = t.cliente
   resetPago()
+  if (t.tipoComprobante) tipoComprobante.value = t.tipoComprobante
+  if (t.identificacion) {
+    identificacion.value = t.identificacion
+  } else if (t.cliente?.documento_identidad) {
+    identificacion.value = t.cliente.documento_identidad
+  }
+  if (t.razonSocial) {
+    razonSocial.value = t.razonSocial
+  } else if (t.cliente?.nombre) {
+    razonSocial.value = t.cliente.nombre
+  }
+  cargarBeneficios()
 }
 
 async function anularVenta() {
@@ -932,16 +976,21 @@ function atajos(e) {
             </div>
 
             <template v-if="tipoComprobante === 'factura'">
-              <input
-                v-model="identificacion"
-                placeholder="Identificación del comprador"
-                class="mb-2 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-              />
-              <input
-                v-model="razonSocial"
-                placeholder="Razón social"
-                class="mb-3 w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
-              />
+              <div class="mb-3 space-y-1.5">
+                <input
+                  v-model="identificacion"
+                  placeholder="Cédula o RUC del comprador *"
+                  class="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:outline-none"
+                />
+                <input
+                  v-model="razonSocial"
+                  placeholder="Razón social o nombre *"
+                  class="w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:outline-none"
+                />
+                <p v-if="cliente" class="text-[11px] text-slate-500">
+                  Autocompletado con los datos del cliente asociado. Puedes editarlos si es necesario.
+                </p>
+              </div>
             </template>
 
             <button
