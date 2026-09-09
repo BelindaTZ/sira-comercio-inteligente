@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Datáfonos &amp; Gestión de Firmware | Marzú Retail Group</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-highest": "#e0e3e5",
+            "tertiary-container": "#003825",
+            "surface-container-low": "#f2f4f6",
+            "tertiary": "#002014",
+            "on-primary-fixed-variant": "#254d49",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#eaddff",
+            "tertiary-fixed-dim": "#68dba9",
+            "outline-variant": "#c0c8c6",
+            "on-tertiary-container": "#30ab7c",
+            "inverse-primary": "#a5cfc9",
+            "surface-variant": "#e0e3e5",
+            "on-primary-fixed": "#00201d",
+            "error-container": "#ffdad6",
+            "primary-fixed": "#c0ebe4",
+            "primary": "#00201d",
+            "on-background": "#191c1e",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#191c1e",
+            "inverse-surface": "#2d3133",
+            "tertiary-fixed": "#85f8c4",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-error-container": "#93000a",
+            "on-primary-container": "#779f9a",
+            "surface-tint": "#3e6561",
+            "on-primary": "#ffffff",
+            "secondary-fixed-dim": "#d2bbff",
+            "surface-bright": "#f8f9fb",
+            "secondary": "#712ae2",
+            "surface-container": "#eceef0",
+            "surface-dim": "#d8dadc",
+            "secondary-container": "#8a4cfc",
+            "background": "#f8f9fb",
+            "error": "#ba1a1a",
+            "primary-container": "#0a3632",
+            "on-tertiary-fixed": "#002114",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed-variant": "#005137",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary-fixed": "#25005a",
+            "surface": "#f8f9fb",
+            "inverse-on-surface": "#eff1f3",
+            "on-secondary-container": "#fffbff",
+            "outline": "#717977",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#414847"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "sidebar-collapsed": "4.5rem",
+            "sidebar-expanded": "16.5rem",
+            "space-md": "0.75rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-base": "1rem",
+            "space-2xl": "3rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "monospace", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      background-color: #f8f9fb;
+      color: #191c1e;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .tier-1-surface {
+      background: #ffffff;
+      border: 1px solid rgba(10, 54, 50, 0.07);
+      box-shadow: 0 1px 2px rgba(10, 54, 50, 0.03), 0 4px 12px rgba(10, 54, 50, 0.04);
+    }
+    .tier-3-amethyst {
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.12), 0 8px 24px -4px rgba(124, 58, 237, 0.08);
+    }
+    .status-pulse {
+      box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.7);
+      animation: pulse 2s infinite cubic-bezier(0.66, 0, 0, 1);
+    }
+    @keyframes pulse {
+      to {
+        box-shadow: 0 0 0 8px rgba(5, 150, 105, 0);
+      }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col">
+<!-- TOP APP BAR (Shared Component Source of Truth) -->
+<header class="sticky top-0 z-50 w-full rounded-none bg-surface-container-lowest/80 backdrop-blur-xl shadow-sm border-b border-outline-variant/40">
+<div class="flex items-center justify-between px-space-xl w-full max-w-[1680px] mx-auto h-16">
+<!-- Brand & Left Cluster -->
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-space-xs">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary">SIRA</span>
+<span class="text-label-sm font-label-sm px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-semibold ml-1">EFT/POS</span>
+</div>
+<!-- Store Switcher Context -->
+<div class="hidden lg:flex items-center gap-space-xs px-space-md py-1 rounded-xl bg-surface-container-low border border-outline-variant/30 text-body-sm font-body-sm">
+<span class="material-symbols-outlined text-[18px] text-primary-container">storefront</span>
+<div class="flex flex-col text-left leading-tight">
+<span class="text-label-sm font-label-sm font-semibold text-primary">Tienda 04 - Providencia Express</span>
+<span class="text-[10px] text-on-surface-variant">Cluster Metropolitano • LAN 192.168.40.0/24</span>
+</div>
+<button class="ml-1 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+</button>
+</div>
+<!-- Top Navigation Links -->
+<nav class="hidden xl:flex items-center gap-space-lg text-body-md font-body-md pl-space-md">
+<a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Dashboard</a>
+<a class="text-primary border-b-2 border-primary font-semibold py-3 flex items-center gap-1" href="#">
+<span>Punto de Venta</span>
+<span class="w-1.5 h-1.5 rounded-full bg-secondary-container"></span>
+</a>
+<a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Inventario</a>
+<a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Catálogo</a>
+<a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">CRM Clientes</a>
+<a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Finanzas</a>
+</nav>
+</div>
+<!-- Right Operational Controls -->
+<div class="flex items-center gap-space-md">
+<!-- Live Telemetry Status Pill -->
+<div class="hidden sm:flex items-center gap-2 px-space-md py-1.5 rounded-full bg-[#d1fae5] border border-[rgba(5,150,105,0.2)] text-[#047857] text-label-md font-label-md">
+<span class="w-2 h-2 rounded-full bg-[#047857] status-pulse"></span>
+<span>Gateway POS En Línea</span>
+<span class="text-xs opacity-75 font-mono">142ms</span>
+</div>
+<!-- Secondary Action: Apertura de Caja -->
+<button class="hidden md:flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-primary hover:bg-surface-container-low transition-colors text-body-sm font-body-sm font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+<span>Apertura de Caja</span>
+</button>
+<!-- Primary Action: Nuevo / Agregar -->
+<button class="flex items-center gap-space-xs px-space-md py-2 rounded-lg bg-primary-container text-on-primary hover:bg-[#0e4a44] transition-colors text-body-sm font-body-sm font-semibold shadow-sm active:scale-[0.98] inset-0">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+<span>Nuevo / Agregar</span>
+</button>
+<div class="h-6 w-px bg-outline-variant/40 mx-1"></div>
+<!-- Utility Icon Actions -->
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button class="p-2 rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors" title="Notificaciones de Red">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low hover:text-on-surface transition-colors" title="Cambio de Terminal">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<!-- TI Admin Profile Avatar -->
+<div class="flex items-center gap-space-sm pl-space-xs">
+<img class="w-9 h-9 rounded-full object-cover border border-outline-variant/50 shadow-sm" data-alt="Fotografía de perfil de usuario activo con rol de Gerente General y Administrador de TI en Marzú Retail Group. Retrato profesional corporativo de iluminación nítida y fondo de oficina tecnológica moderna con destellos en tonalidades esmeralda y violeta." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjWwb6q7Rfdf9ecbuDMEElnal-ut_fspkG63tjOtRUqIpAlYeTvAkJdilsqij5fJnokT2R7XEysvWimlrJ3wKrB6RAAgjdOfiUTPgV4VPBvYSUSrNIpC8Oj1lSY5PvLR-ATuzuQss1Po_QlerJ9LiD-KPUwgXkd3lx7dM5fg1CnkyXgOgGsGtJ3DeEpH2AhJG-Hp-HeJ-nf-Kinsp1WpPCPbplvcq3U2qojRHk4RmSnyGXVBRzO1DRtg"/>
+<div class="hidden 2xl:flex flex-col text-left leading-none">
+<span class="text-label-md font-label-md font-semibold text-primary">Rodrigo Silva V.</span>
+<span class="text-[11px] text-on-surface-variant">Gerente TI &amp; SecOps</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- SUB-NAVIGATION BANNER / CRUMBS -->
+<div class="bg-surface-container-lowest border-b border-outline-variant/30 px-space-xl py-2">
+<div class="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-2 text-label-md font-label-md">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">point_of_sale</span>
+<span>Punto de Venta</span>
+</a>
+<span class="text-outline-variant">/</span>
+<a class="hover:text-primary transition-colors" href="#">Infraestructura de Pagos</a>
+<span class="text-outline-variant">/</span>
+<span class="text-primary font-semibold">Datáfonos &amp; Gestión de Firmware EFT</span>
+</div>
+<div class="flex items-center gap-4 text-[12px] text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-[#047857]" style="font-variation-settings: 'FILL' 1;">verified</span>
+          Cumplimiento PCI-DSS 4.0 Validado
+        </span>
+<span class="h-3 w-px bg-outline-variant/40"></span>
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-secondary">sync</span>
+          Último Sync Telemetría: Hace 1m 24s
+        </span>
+</div>
+</div>
+</div>
+<!-- MAIN OPERATIONAL STAGE -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-space-xl py-space-lg flex flex-col gap-space-lg">
+<!-- 1. HEADER DE MÓDULO & ACCIONES PRINCIPALES -->
+<section class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md tier-1-surface p-space-lg rounded-xl">
+<div class="max-w-3xl">
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed text-label-sm font-label-sm font-semibold tracking-wider uppercase">
+            Control de Flota EFT • POS
+          </span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">Host: Transbank POS Integrated &amp; Redelcom Gateway</span>
+</div>
+<h1 class="text-headline-xl font-headline-xl text-primary tracking-tight">Datáfonos &amp; Gestión de Firmware</h1>
+<p class="text-body-md font-body-md text-on-surface-variant mt-1 leading-relaxed">
+          Control centralizado de terminales POS / Transbank / Redelcom, monitoreo de telemetría, batería, versión de SO y despliegue programado de parches OTA.
+        </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-space-sm pt-2 lg:pt-0">
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/70 text-primary hover:bg-surface-container-low transition-colors text-body-sm font-body-sm font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">radar</span>
+<span>Escanear Red Local / Ping Masivo</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-secondary text-on-secondary hover:bg-[#5a1ec4] transition-colors text-body-sm font-body-sm font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">system_update_alt</span>
+<span>Forzar Actualización OTA</span>
+</button>
+<button class="flex items-center gap-space-xs px-space-md py-2.5 rounded-lg bg-primary-container text-on-primary hover:bg-[#0e4a44] transition-colors text-body-sm font-body-sm font-semibold shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">add_link</span>
+<span>Vincular Nuevo Datáfono</span>
+</button>
+</div>
+</section>
+<!-- 2. FILA DE KPIS EJECUTIVOS DE HARDWARE -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- KPI 1: Terminales Operativos -->
+<div class="tier-1-surface p-space-md rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Terminales Operativos</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">point_of_sale</span>
+</div>
+</div>
+<div class="my-1">
+<div class="text-tabular-metric font-tabular-metric text-primary">28 / 30 Activos</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">93.3% disponibilidad de sala</p>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between text-label-sm font-label-sm mt-1">
+<span class="inline-flex items-center gap-1 text-[#047857] font-semibold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+            28 En Transacción
+          </span>
+<span class="text-on-surface-variant">2 En base / cargando</span>
+</div>
+</div>
+<!-- KPI 2: Firmware Promedio -->
+<div class="tier-1-surface p-space-md rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Firmware Promedio</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">memory</span>
+</div>
+</div>
+<div class="my-1">
+<div class="text-tabular-metric font-tabular-metric text-primary">v4.8.2-prod</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">92% actualizado con patchset May-24</p>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between text-label-sm font-label-sm mt-1">
+<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#fef3c7] text-[#b45309] border border-[rgba(217,119,6,0.2)] font-semibold">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+            2 terminales en v4.7.9
+          </span>
+<span class="text-on-surface-variant">OTA Pendiente</span>
+</div>
+</div>
+<!-- KPI 3: Estado de Red y Cifrado -->
+<div class="tier-1-surface p-space-md rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Cifrado &amp; Latencia Gateway</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">lock</span>
+</div>
+</div>
+<div class="my-1">
+<div class="text-tabular-metric font-tabular-metric text-primary">PCI-PTS v6</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">100% Cifrado EMV L3 / DUKPT Activo</p>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between text-label-sm font-label-sm mt-1">
+<span class="text-[#047857] font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
+            Ping Host 142ms
+          </span>
+<span class="text-on-surface-variant">0 pérdidas de paquete</span>
+</div>
+</div>
+<!-- KPI 4: Batería & Salud de Hardware -->
+<div class="tier-1-surface p-space-md rounded-xl flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md text-on-surface-variant font-medium">Batería &amp; Salud Hardware</span>
+<div class="w-7 h-7 rounded-lg bg-surface-container-low flex items-center justify-center text-[#047857]">
+<span class="material-symbols-outlined text-[18px]">battery_charging_90</span>
+</div>
+</div>
+<div class="my-1">
+<div class="text-tabular-metric font-tabular-metric text-primary">Promedio 84%</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Salud de celdas Li-ion 97.4%</p>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between text-label-sm font-label-sm mt-1">
+<span class="inline-flex items-center gap-1 text-[#047857] font-semibold">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+            0 Alertas críticas en sala
+          </span>
+<span class="text-on-surface-variant">1 móvil al 38%</span>
+</div>
+</div>
+</section>
+<!-- 3. PANEL DE DESPLIEGUE Y CONTROL DE FIRMWARE (OTA ROLLOUT) -->
+<section class="tier-1-surface tier-3-amethyst rounded-xl p-space-lg border border-[rgba(124,58,237,0.18)]">
+<div class="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-space-md pb-space-md border-b border-outline-variant/20">
+<!-- Left details of firmware -->
+<div class="flex items-start gap-space-md">
+<div class="w-12 h-12 rounded-xl bg-[#f3e8ff] border border-[rgba(124,58,237,0.3)] flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[26px]">rocket_launch</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-sm px-2 py-0.5 rounded bg-[#f3e8ff] text-[#6b21a8] border border-[rgba(124,58,237,0.25)] font-semibold">
+                NUEVO FIRMWARE DISPONIBLE EN REPOSITORIO CORPORATIVO
+              </span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">SHA256: e3b0c442...88a1</span>
+</div>
+<h2 class="text-headline-md font-headline-md text-primary mt-1">
+              SIRA-EFT Release v4.9.0-hotfix <span class="text-secondary font-normal">(Soporte Contactless Express &amp; QR Dinámico Transbank)</span>
+</h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">
+              Incluye parche de vulnerabilidad OpenSSL 3.1.4, optimización de lectura NFC para tarjetas Apple Pay / Google Wallet y reconexión 4G autónoma.
+            </p>
+</div>
+</div>
+<!-- Policy Selector and Action Trigger -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-space-sm w-full xl:w-auto">
+<div class="flex flex-col text-left">
+<label class="text-label-sm font-label-sm text-on-surface-variant mb-1">Política de Despliegue:</label>
+<div class="inline-flex rounded-lg border border-outline-variant/60 bg-surface-container-low p-0.5">
+<button class="px-space-sm py-1.5 rounded-md text-label-md font-label-md text-on-surface-variant hover:text-primary transition-colors">
+                Inmediato (Fuera de punta)
+              </button>
+<button class="px-space-sm py-1.5 rounded-md bg-surface-container-lowest text-primary shadow-sm text-label-md font-label-md font-semibold">
+                Programado (23:30 hrs)
+              </button>
+<button class="px-space-sm py-1.5 rounded-md text-label-md font-label-md text-secondary font-semibold hover:bg-surface-container transition-colors flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                Canary / Piloto Caja 01
+              </button>
+</div>
+</div>
+<button class="mt-auto px-space-md py-2 rounded-lg bg-secondary text-on-secondary hover:bg-[#5a1ec4] transition-colors text-body-sm font-body-sm font-semibold flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">publish</span>
+<span>Programar Rollout Global</span>
+</button>
+</div>
+</div>
+<!-- Rollout Pipeline Progress & Status Breakdown -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-space-md pt-space-md items-center">
+<!-- Progress bar column -->
+<div class="lg:col-span-2 flex flex-col gap-1.5">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-primary font-semibold flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-secondary">hourglass_top</span>
+              Progreso del Despliegue en Red Local: <span class="font-tabular-data text-secondary">28 / 30 Datáfonos Preparados</span>
+</span>
+<span class="font-tabular-data text-primary font-semibold">93.3%</span>
+</div>
+<!-- Bar container -->
+<div class="w-full h-3 rounded-full bg-surface-container-high overflow-hidden flex">
+<div class="bg-primary-container h-full transition-all" style="width: 86.6%;" title="26 en v4.8.2-prod"></div>
+<div class="bg-secondary h-full transition-all" style="width: 6.7%;" title="2 en Pilot v4.9.0"></div>
+<div class="bg-[#f59e0b] h-full transition-all" style="width: 6.7%;" title="2 pendientes de sincronización"></div>
+</div>
+<div class="flex items-center justify-between text-label-sm font-label-sm text-on-surface-variant pt-1">
+<span class="flex items-center gap-1">
+<span class="w-2.5 h-2.5 rounded-sm bg-primary-container"></span>
+              26 Estables (v4.8.2)
+            </span>
+<span class="flex items-center gap-1">
+<span class="w-2.5 h-2.5 rounded-sm bg-secondary"></span>
+              2 Pilotos Verificados (v4.9.0)
+            </span>
+<span class="flex items-center gap-1">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#f59e0b]"></span>
+              2 Pendientes de Descarga (v4.7.9)
+            </span>
+<span class="text-primary font-medium">Ventana de ejecución: 12 min estimada</span>
+</div>
+</div>
+<!-- Audit & Check Status -->
+<div class="bg-surface-container-low/70 border border-outline-variant/30 rounded-lg p-space-sm flex items-center justify-between gap-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-[#047857]">security</span>
+<div class="text-left leading-tight">
+<div class="text-label-sm font-label-sm font-semibold text-primary">Validación de Certificados</div>
+<div class="text-[11px] text-on-surface-variant">Mutual TLS 1.3 &amp; Firma Digital RSA-4096 OK</div>
+</div>
+</div>
+<button class="px-2 py-1 text-label-sm font-label-sm rounded bg-surface-container-lowest border border-outline-variant/50 text-primary hover:bg-surface-container transition-colors">
+            Ver Logs
+          </button>
+</div>
+</div>
+</section>
+<!-- 4. TABLA / MATRIZ DE TERMINALES Y DATÁFONOS -->
+<section class="tier-1-surface rounded-xl overflow-hidden flex flex-col">
+<!-- Table Filter Bar & Search -->
+<div class="p-space-md border-b border-outline-variant/30 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-space-sm bg-surface-container-lowest">
+<!-- Filter Tabs / Pills -->
+<div class="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0">
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary text-label-md font-label-md font-semibold whitespace-nowrap shadow-sm">
+            Todos (30)
+          </button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface text-label-md font-label-md font-medium whitespace-nowrap transition-colors flex items-center gap-1.5">
+<span>Requiere Actualización</span>
+<span class="px-1.5 py-0.2 rounded-full bg-[#fef3c7] text-[#b45309] text-[10px] font-bold">2</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface text-label-md font-label-md font-medium whitespace-nowrap transition-colors flex items-center gap-1.5">
+<span>Con Batería Baja</span>
+<span class="px-1.5 py-0.2 rounded-full bg-[#ffe4e6] text-[#be123c] text-[10px] font-bold">1</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface text-label-md font-label-md font-medium whitespace-nowrap transition-colors flex items-center gap-1.5">
+<span>En Línea / Operando</span>
+<span class="px-1.5 py-0.2 rounded-full bg-[#d1fae5] text-[#047857] text-[10px] font-bold">28</span>
+</button>
+</div>
+<!-- Search and Table Controls -->
+<div class="flex items-center gap-space-sm">
+<div class="relative flex-1 sm:w-72">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-3 py-1.5 text-body-sm font-body-sm rounded-lg border border-outline-variant/80 bg-surface-container-lowest focus:border-primary focus:ring-2 focus:ring-primary-container/20 placeholder:text-outline" placeholder="Buscar por Serie, IP o Caja..." type="text"/>
+</div>
+<button class="p-2 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" title="Exportar CSV de Telemetría">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+<button class="p-2 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" title="Refrescar Estado">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Data Table Container -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#f8fafc] border-b border-outline-variant/30 text-label-sm font-label-sm text-outline uppercase tracking-wider h-10">
+<th class="py-2.5 px-space-md font-semibold">ID Terminal / Serie</th>
+<th class="py-2.5 px-space-md font-semibold">Caja / Ubicación</th>
+<th class="py-2.5 px-space-md font-semibold">Modelo Hardware</th>
+<th class="py-2.5 px-space-md font-semibold">Firmware Actual</th>
+<th class="py-2.5 px-space-md font-semibold">Conexión / Señal</th>
+<th class="py-2.5 px-space-md font-semibold">Batería</th>
+<th class="py-2.5 px-space-md font-semibold text-right">Última Tx / Latencia</th>
+<th class="py-2.5 px-space-md font-semibold text-center w-36">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-body-sm font-normal">
+<!-- ROW 1: Caja 01 (Canary v4.9.0) -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0101</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: ING-829104-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja 01 - Rápida Express</span>
+<div class="text-[11px] text-on-surface-variant">Línea de cajas frontales</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">credit_card</span>
+<span>Ingenico Move 5000</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#f3e8ff] text-[#6b21a8] border border-[rgba(124,58,237,0.25)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+                  v4.9.0-hotfix (Canary)
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-[#047857]">wifi</span>
+<span>Wi-Fi 5GHz (98%)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 192.168.40.101</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-[#047857] h-full" style="width: 100%;"></div>
+</div>
+<span class="font-tabular-data text-xs text-primary font-semibold flex items-center">
+<span class="material-symbols-outlined text-[14px] text-[#047857]">bolt</span>
+                    100% (Base)
+                  </span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 12 seg</div>
+<div class="text-[11px] text-[#047857] font-mono">118 ms • OK</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Test de Comunicación">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Reiniciar Datáfono">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Configuración de Parámetros">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 2: Caja 02 - Principal -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0102</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: VRF-731992-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja 02 - Principal Central</span>
+<div class="text-[11px] text-on-surface-variant">Isla de Cobro 01</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">credit_card</span>
+<span>Verifone V240m</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] border border-[rgba(5,150,105,0.2)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">done</span>
+                  v4.8.2-prod
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary-container">lan</span>
+<span>Ethernet Base (1Gbps)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 192.168.40.102</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-[#047857] h-full" style="width: 95%;"></div>
+</div>
+<span class="font-tabular-data text-xs text-primary font-semibold">95%</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 45 seg</div>
+<div class="text-[11px] text-[#047857] font-mono">134 ms • OK</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Test de Comunicación">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Reiniciar Datáfono">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Configuración de Parámetros">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 3: Caja Móvil Pasillo 03 (Requiere Update + Batería media) -->
+<tr class="bg-[#fffbeb]/40 hover:bg-[#fef3c7]/30 transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0205</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: PAX-990142-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja Móvil Pasillo 03</span>
+<div class="text-[11px] text-on-surface-variant">Fila Asistida / Venta Omnicanal</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">phone_android</span>
+<span>PAX A920 Pro SmartPOS</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] border border-[rgba(217,119,6,0.25)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">update</span>
+                  v4.7.9 (Requiere OTA)
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-secondary">signal_cellular_alt</span>
+<span>4G Entel Backup Sim</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 10.45.12.88</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-[#d97706] h-full" style="width: 38%;"></div>
+</div>
+<span class="font-tabular-data text-xs text-[#b45309] font-bold">38%</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 4 min</div>
+<div class="text-[11px] text-[#047857] font-mono">188 ms • OK</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="px-2 py-1 rounded bg-[#0a3632] text-white text-[11px] font-semibold hover:bg-[#0e4a44] transition-colors shadow-sm" title="Actualizar Firmware Inmediato">
+                    OTA Ya
+                  </button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Test">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 4: Caja 03 - Autoservicio (Self-Checkout) -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0103</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: ING-829910-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja 03 - Self-Checkout Totem A</span>
+<div class="text-[11px] text-on-surface-variant">Zona Autocobro Kiosco</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">credit_card</span>
+<span>Ingenico Lane/3000 OEM</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] border border-[rgba(5,150,105,0.2)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">done</span>
+                  v4.8.2-prod
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary-container">lan</span>
+<span>Ethernet Fijo (1Gbps)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 192.168.40.103</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-outline">power</span>
+                    Alimentación AC Continua
+                  </span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 2 min</div>
+<div class="text-[11px] text-[#047857] font-mono">112 ms • OK</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Test de Comunicación">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Reiniciar">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 5: Caja 04 - Farmacia & Convenios -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0104</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: VRF-732019-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja 04 - Mostrador Farmacia</span>
+<div class="text-[11px] text-on-surface-variant">Convenios Isapre / Fonasa / I-Med</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">credit_card</span>
+<span>Verifone V240m</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] border border-[rgba(5,150,105,0.2)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">done</span>
+                  v4.8.2-prod
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-[#047857]">wifi</span>
+<span>Wi-Fi 5GHz (94%)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 192.168.40.104</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-[#047857] h-full" style="width: 88%;"></div>
+</div>
+<span class="font-tabular-data text-xs text-primary font-semibold">88%</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 1 min</div>
+<div class="text-[11px] text-[#047857] font-mono">126 ms • OK</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Test de Comunicación">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Reiniciar Datáfono">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- ROW 6: Caja Móvil Delivery / Pick-up (En base cargando) -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
+<div>
+<span class="font-tabular-data font-semibold text-primary">EFT-PRV-0209</span>
+<div class="text-[11px] text-on-surface-variant font-mono">SN: PAX-991201-CL</div>
+</div>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="font-medium text-on-surface">Caja Pick-up / Despacho Express</span>
+<div class="text-[11px] text-on-surface-variant">Estación Logística Trasera</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px] text-outline">phone_android</span>
+<span>PAX A920 Pro SmartPOS</span>
+</div>
+</td>
+<td class="py-space-sm px-space-md">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] border border-[rgba(217,119,6,0.25)] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[13px]">update</span>
+                  v4.7.9 (Requiere OTA)
+                </span>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-1.5 text-on-surface">
+<span class="material-symbols-outlined text-[16px] text-primary-container">lan</span>
+<span>En Base Dock (Cargando)</span>
+</div>
+<div class="text-[11px] text-on-surface-variant font-mono">IP: 192.168.40.209</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center gap-2">
+<div class="w-12 bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-[#3b82f6] h-full" style="width: 72%;"></div>
+</div>
+<span class="font-tabular-data text-xs text-[#1d4ed8] font-semibold flex items-center">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+                    72%
+                  </span>
+</div>
+</td>
+<td class="py-space-sm px-space-md text-right">
+<div class="font-tabular-data text-primary font-medium">Hace 18 min</div>
+<div class="text-[11px] text-on-surface-variant font-mono">Standby • Ready</div>
+</td>
+<td class="py-space-sm px-space-md">
+<div class="flex items-center justify-center gap-1">
+<button class="px-2 py-1 rounded bg-[#0a3632] text-white text-[11px] font-semibold hover:bg-[#0e4a44] transition-colors shadow-sm" title="Descargar e Instalar">
+                    OTA
+                  </button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary" title="Diagnóstico">
+<span class="material-symbols-outlined text-[18px]">troubleshoot</span>
+</button>
+<button class="p-1 rounded hover:bg-surface-container text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined text-[18px]">more_vert</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Table Summary Footer -->
+<div class="p-space-md border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-space-sm bg-surface-container-low text-body-sm font-body-sm">
+<div class="text-on-surface-variant text-label-md font-label-md">
+          Mostrando <span class="text-primary font-bold">1 - 6</span> de <span class="text-primary font-bold">30</span> Datáfonos EFT registrados en Sucursal 04
+        </div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors disabled:opacity-40 text-label-md font-label-md" disabled="">
+            Anterior
+          </button>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-lg bg-primary-container text-on-primary text-label-md font-label-md font-semibold">1</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">2</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">3</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">4</button>
+<button class="w-8 h-8 rounded-lg hover:bg-surface-container text-on-surface text-label-md font-label-md transition-colors">5</button>
+</div>
+<button class="px-3 py-1.5 rounded-lg border border-outline-variant/60 bg-surface-container-lowest text-primary hover:bg-surface-container transition-colors text-label-md font-label-md font-semibold">
+            Siguiente
+          </button>
+</div>
+</div>
+</section>
+<!-- 5. FOOTER DE OPERACIONES & SEGURIDAD -->
+<footer class="tier-1-surface rounded-xl p-space-md flex flex-col md:flex-row items-center justify-between gap-space-md text-label-sm font-label-sm text-on-surface-variant mb-space-lg">
+<div class="flex items-center gap-space-md">
+<span class="flex items-center gap-1 text-primary font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#047857]"></span>
+          SIRA POS Infrastructure v4.9-Enterprise
+        </span>
+<span class="text-outline-variant">|</span>
+<span>Red Certificada PCI PTS v6.0 / EMVCo Level 3</span>
+<span class="text-outline-variant">|</span>
+<span>Conectividad Transbank TLS Pinning v2</span>
+</div>
+<div class="flex items-center gap-space-lg">
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span>Manual de Procedimientos de Caja</span>
+</a>
+<a class="hover:text-primary transition-colors flex items-center gap-1" href="#">
+<span class="material-symbols-outlined text-[16px]">support_agent</span>
+<span>Soporte NOC Marzú (Anexo 4401)</span>
+</a>
+</div>
+</footer>
+</main>
+</body></html>

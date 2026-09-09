@@ -43,6 +43,8 @@
 
 **Uso en esta feature**: FR-006, FR-007 (job/consulta compara `version_firmware` contra `configuracion_seguridad_pagos` vigente y actualiza `estado`), FR-008 (al registrar actualización: `estado = 'activo'`, `fecha_ultima_actualizacion = CURRENT_DATE`).
 
+**Pantalla (feature 013)** — `frontend/src/modules/caja/pages/DatafonosPage.vue`, arquetipo Gestión: fila de KPI de flota (terminales en inventario, no conformes al estándar, fuera de servicio, estándar vigente), tarjeta del estándar de seguridad y data-grid del inventario con chip de conformidad. Acciones por fila: registrar actualización (FR-008, sólo `requiere_actualizacion`), marcar fuera de servicio / restablecer (007 US1). El alta de un datáfono nuevo y la edición de `modelo`/`caja_id` **no tienen endpoint** (el contrato sólo expone GET + `PATCH .../actualizar`); el inventario nace del seed. `scripts/preparar_demo.py::_caja_demo` siembra cajas + un datáfono por caja + el estándar vigente (el dataset Dunnhumby no trae infraestructura de sala).
+
 ## Entidades nuevas
 
 ### Configuración de Seguridad de Pagos (`configuracion_seguridad_pagos`)

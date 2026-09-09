@@ -50,6 +50,12 @@ sintética de los clientes (nombre + RUT + email + teléfono + fecha de nacimien
 y `cliente_clv` calculado sobre todo el histórico de ventas (el job real usa una
 ventana de 180 días que, con ventas de 2017, queda vacía).
 
+`preparar_demo::_caja_demo` (paso 4b) siembra la infraestructura de sala que el
+dataset no trae: 4 cajas por tienda activa, un datáfono por caja (con ~25 % en
+firmware desactualizado) y el estándar de seguridad de pagos vigente — sin esto
+las pantallas de POS, cuadre y datáfonos quedan vacías. No fabrica tiempos de
+cobro (la medición de `fecha_inicio_cobro` es prospectiva — Principio VII).
+
 `preparar_demo` deja una cuenta por rol RBAC (`demo.gerente`, `demo.ti`,
 `demo.comercial`, `demo.marketing`, `demo.operaciones`, `demo.finanzas`, `demo.rrhh`,
 `demo.encargado`, `demo.reponedor`, `demo.cajero`), todas con contraseña **`Sira2026!`**.

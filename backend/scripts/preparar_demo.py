@@ -3,11 +3,12 @@
 Hace, en orden y sin depender de la API levantada:
 
 1. cuentas de login por rol (`seed_usuarios_demo`),
-2. precios de competencia sintéticos (feature 003),
-3. todos los jobs derivados que normalmente corren por cron (CLV/churn, afinidad,
+2. enriquecimiento sintético del catálogo y del CRM + precios de competencia,
+3. inventario/lotes/alertas de demo + cajas/datáfonos/estándar de seguridad,
+4. todos los jobs derivados que normalmente corren por cron (CLV/churn, afinidad,
    ABC, entrenamiento de demanda, propuestas de ajuste, alertas de competencia,
    candidatos a liquidación, eventos hito),
-4. la publicación de los 3 dashboards de la feature 009 (estratégico, tácticos,
+5. la publicación de los 3 dashboards de la feature 009 (estratégico, tácticos,
    verificación operativa).
 
 Cada paso es idempotente o se puede repetir sin romper nada. Si un job falla, se
@@ -143,6 +144,80 @@ async def _inventario_demo() -> None:
         log.info("  inventario: %s filas · alertas: %s", n, a)
 
 
+async def _caja_demo() -> None:
+    """Siembra cajas + un datáfono por caja + el estándar de seguridad de pagos
+    vigente. El dataset Dunnhumby no trae infraestructura de sala (nace de operar
+    001/006); sin esto las pantallas de POS, cuadre y datáfonos quedan vacías.
+
+    NO fabrica tiempos de cobro: la medición de `fecha_inicio_cobro` (FR-015 de
+    007) aplica solo a ventas registradas en vivo — Principio VII.
+    """
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    # firmware < estándar → 'requiere_actualizacion' (comparación lexical segura:
+    # todos los segmentos son de un dígito). El estándar vigente es 4.8.0; el modelo
+    # y firmware de cada caja rotan por 4 valores (el 4º, v4.7.9, queda no conforme).
+    ESTANDAR = "4.8.0"
+
+    async with AsyncSessionLocal() as s:
+        if await s.scalar(text("SELECT count(*) FROM cajas")):
+            log.info("  cajas ya pobladas, se omite")
+            return
+        await s.execute(
+            text("""
+            WITH tiendas_op AS (
+                SELECT tienda_id, row_number() OVER (ORDER BY tienda_id) AS rn
+                FROM tiendas WHERE codigo <> 'DEMO'
+            ), nums AS (SELECT generate_series(1, 4) AS n)
+            INSERT INTO cajas (tienda_id, nombre, activa)
+            SELECT t.tienda_id, 'Caja ' || lpad(n.n::text, 2, '0'), true
+            FROM tiendas_op t CROSS JOIN nums n
+        """)
+        )
+        # un datáfono por caja; el modelo/firmware rota de forma determinista
+        await s.execute(
+            text("""
+            WITH c AS (
+                SELECT caja_id,
+                       (row_number() OVER (ORDER BY caja_id) - 1)::int AS idx
+                FROM cajas
+            ), m(modelo, orden) AS (
+                VALUES ('Ingenico Move 5000', 0), ('Verifone V240m', 1),
+                       ('PAX A920 Pro', 2), ('Ingenico Lane/3000', 3)
+            ), f(firmware, orden) AS (
+                VALUES ('4.8.2', 0), ('4.8.2', 1), ('4.8.0', 2), ('4.7.9', 3)
+            )
+            INSERT INTO datafonos (caja_id, modelo, version_firmware,
+                                   fecha_ultima_actualizacion, estado)
+            SELECT c.caja_id, m.modelo, f.firmware,
+                   CURRENT_DATE - ((c.idx * 37) % 400),
+                   CASE WHEN f.firmware < :estandar
+                        THEN 'requiere_actualizacion' ELSE 'activo' END
+            FROM c
+            JOIN m ON m.orden = c.idx % 4
+            JOIN f ON f.orden = c.idx % 4
+        """),
+            {"estandar": ESTANDAR},
+        )
+        await s.execute(
+            text("""
+            INSERT INTO configuracion_seguridad_pagos (version_minima_firmware, actualizado_por)
+            SELECT :estandar, empleado_id FROM empleados ORDER BY empleado_id LIMIT 1
+        """),
+            {"estandar": ESTANDAR},
+        )
+        await s.commit()
+        nc = await s.scalar(text("SELECT count(*) FROM cajas"))
+        nd = await s.scalar(text("SELECT count(*) FROM datafonos"))
+        nnc = await s.scalar(
+            text("SELECT count(*) FROM datafonos WHERE estado = 'requiere_actualizacion'")
+        )
+        log.info(
+            "  cajas: %s · datáfonos: %s (%s no conformes) · estándar %s", nc, nd, nnc, ESTANDAR
+        )
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -170,6 +245,9 @@ async def main() -> None:
     await _inventario_demo()
     # los lotes recién creados también necesitan código de proveedor
     await enriquecer()
+
+    log.info("4b/5 · cajas + datáfonos + estándar de seguridad de pagos")
+    await _caja_demo()
 
     log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()

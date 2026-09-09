@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIRA - Analítica de Tiempo de Cobro &amp; Velocidad en Cajas</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Theme Configuration -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-highest": "#e0e3e5",
+            "tertiary-container": "#003825",
+            "surface-container-low": "#f2f4f6",
+            "tertiary": "#002014",
+            "on-primary-fixed-variant": "#254d49",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#eaddff",
+            "tertiary-fixed-dim": "#68dba9",
+            "outline-variant": "#c0c8c6",
+            "on-tertiary-container": "#30ab7c",
+            "inverse-primary": "#a5cfc9",
+            "surface-variant": "#e0e3e5",
+            "on-primary-fixed": "#00201d",
+            "error-container": "#ffdad6",
+            "primary-fixed": "#c0ebe4",
+            "primary": "#00201d",
+            "on-background": "#191c1e",
+            "on-error": "#ffffff",
+            "surface-container-lowest": "#ffffff",
+            "on-surface": "#191c1e",
+            "inverse-surface": "#2d3133",
+            "tertiary-fixed": "#85f8c4",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-error-container": "#93000a",
+            "on-primary-container": "#779f9a",
+            "surface-tint": "#3e6561",
+            "on-primary": "#ffffff",
+            "secondary-fixed-dim": "#d2bbff",
+            "surface-bright": "#f8f9fb",
+            "secondary": "#712ae2",
+            "surface-container": "#eceef0",
+            "surface-dim": "#d8dadc",
+            "secondary-container": "#8a4cfc",
+            "background": "#f8f9fb",
+            "error": "#ba1a1a",
+            "primary-container": "#0a3632",
+            "on-tertiary-fixed": "#002114",
+            "on-secondary": "#ffffff",
+            "on-tertiary-fixed-variant": "#005137",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "on-secondary-fixed": "#25005a",
+            "surface": "#f8f9fb",
+            "inverse-on-surface": "#eff1f3",
+            "on-secondary-container": "#fffbff",
+            "outline": "#717977",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#414847"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-2xs": "0.125rem",
+            "gutter-desktop": "1.5rem",
+            "gutter-mobile": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "sidebar-collapsed": "4.5rem",
+            "sidebar-expanded": "16.5rem",
+            "space-md": "0.75rem",
+            "space-lg": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-base": "1rem",
+            "space-2xl": "3rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "tabular-data": ["Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "tabular-metric": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+      vertical-align: middle;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: #f2f4f6;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #c0c8c6;
+      border-radius: 4px;
+    }
+    .frosted-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(10, 54, 50, 0.07);
+      box-shadow: 0 1px 2px rgba(10, 54, 50, 0.03), 0 4px 12px rgba(10, 54, 50, 0.04);
+    }
+    .amethyst-card {
+      background: #ffffff;
+      border: 1px solid rgba(113, 42, 226, 0.15);
+      box-shadow: 0 0 0 1px rgba(113, 42, 226, 0.08), 0 8px 24px -4px rgba(113, 42, 226, 0.06);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- ========================================================================= -->
+<!-- TopNavBar (Shared Component Anchor)                                       -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-50 w-full bg-surface-container-lowest/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-b border-outline-variant/40 dark:border-outline/30 shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-space-xl w-full max-w-[1680px] mx-auto h-16">
+<!-- Brand & Left Tools -->
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-space-sm">
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary dark:text-inverse-primary">SIRA</span>
+<span class="px-space-xs py-0.5 rounded-lg bg-primary-container text-on-primary font-label-sm text-label-sm tracking-wider uppercase font-semibold">RETAIL OPS</span>
+</div>
+<!-- Search Bar (on_left) -->
+<div class="relative hidden lg:block w-72">
+<span class="absolute inset-y-0 left-3 flex items-center pointer-events-none text-outline">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</span>
+<input class="w-full pl-9 pr-3 py-1.5 bg-surface-container-low border border-outline-variant/60 rounded-xl text-body-sm font-body-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all" placeholder="Buscar caja, operador, ticket..." type="text"/>
+</div>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden xl:flex items-center gap-space-lg h-full">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-body-md font-body-md" href="#">Dashboard</a>
+<a class="text-primary dark:text-inverse-primary border-b-2 border-primary dark:border-inverse-primary font-semibold py-3 text-body-md font-body-md flex items-center gap-1.5" href="#">
+<span>Punto de Venta</span>
+<span class="w-1.5 h-1.5 rounded-full bg-on-tertiary-container animate-pulse"></span>
+</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-body-md font-body-md" href="#">Inventario</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-body-md font-body-md" href="#">Catálogo</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-body-md font-body-md" href="#">CRM Clientes</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-body-md font-body-md" href="#">Finanzas</a>
+</nav>
+<!-- Trailing Cluster: Actions, Store context, Profile -->
+<div class="flex items-center gap-space-md">
+<!-- Sucursal Switcher Badge -->
+<div class="flex items-center gap-space-xs bg-surface-container-low border border-outline-variant/50 px-space-md py-1 rounded-xl text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary" data-weight="fill" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<div class="flex flex-col text-left">
+<span class="font-label-sm text-label-sm text-on-surface-variant leading-none">Marzú Retail Group</span>
+<span class="font-label-md text-label-md font-semibold text-primary leading-tight">Tienda 04 - Providencia Express</span>
+</div>
+<button class="ml-1 text-on-surface-variant hover:text-primary transition-colors p-0.5 rounded" title="Cambiar Sucursal">
+<span class="material-symbols-outlined text-[16px]">swap_horiz</span>
+</button>
+</div>
+<!-- Notification action icon -->
+<button class="relative p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Notificaciones">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-secondary"></span>
+</button>
+<!-- Secondary Action: Apertura de Caja -->
+<button class="hidden sm:inline-flex items-center gap-1.5 px-space-md py-1.5 rounded-xl border border-outline-variant/60 bg-surface-container-lowest text-on-surface font-label-md text-label-md font-medium hover:bg-surface-container-low active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-[16px]">point_of_sale</span>
+<span>Apertura de Caja</span>
+</button>
+<!-- Primary Action: Nuevo / Agregar -->
+<button class="inline-flex items-center gap-1.5 px-space-md py-1.5 rounded-xl bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:bg-primary active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined text-[16px]">add</span>
+<span>Nuevo / Agregar</span>
+</button>
+<!-- Profile Avatar -->
+<div class="flex items-center gap-space-xs pl-space-xs border-l border-outline-variant/40">
+<div class="relative">
+<img class="w-9 h-9 rounded-full object-cover border border-outline-variant/60 shadow-xs" data-alt="Fotografía de perfil de usuario activo con rol de Gerente General en Marzú Retail Group, con expresión ejecutiva sobria, iluminación de estudio suave, tonalidades elegantes y fondo corporativo limpio en alta fidelidad." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB2fVxmry1ZIOdAquZ7sqHu1UBipq_vL5K8rguQQ4noS7PMe0nhhI_Y_yqcJAtNDrMU64fw4GK4Iqy2jwUwrKJl9Nu31SKl30B64eRhywSOOBuI0hDmR8QyT5Rh1ZtbcijNKHSNMEtvHmoia8HWVT2gYbWtcCbdUKLf9mTJGDppcdMbym19l2DMJYJpXlDy248QGU6w9YbENSQ6scVLFlE6Mu7Yw-MF8juxN0inJvhzN9cN7SaObKvlA"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-tertiary-fixed-dim border-2 border-surface-container-lowest rounded-full"></span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- Main Operational Canvas                                                   -->
+<!-- ========================================================================= -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-space-xl py-space-lg flex flex-col gap-space-lg">
+<!-- 1. Header de Módulo & Filtros de Control -->
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md pb-space-sm border-b border-outline-variant/30">
+<!-- Titular & Contexto -->
+<div class="space-y-1">
+<div class="flex items-center gap-space-xs">
+<span class="px-2 py-0.5 rounded-md bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold tracking-wide uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">speed</span> Checkout Velocity Matrix
+          </span>
+<span class="text-outline text-label-sm font-label-sm">|</span>
+<span class="flex items-center gap-1 text-on-tertiary-container font-label-sm text-label-sm font-medium">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-container inline-block animate-ping"></span>
+            Telemetría en Vivo (8 Cajas Activas)
+          </span>
+</div>
+<h1 class="text-headline-lg font-headline-lg font-bold text-primary tracking-tight">
+          Analítica de Tiempo de Cobro &amp; Velocidad en Cajas
+        </h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant max-w-4xl">
+          Monitoreo en tiempo real del ciclo completo de transacción (escaneo, empaque, procesamiento de pago y emisión de boleta DTE) para optimizar el flujo en sala.
+        </p>
+</div>
+<!-- Barra de Controles Operativos -->
+<div class="flex flex-wrap items-center gap-space-sm">
+<!-- Selector Rango Horario -->
+<div class="inline-flex items-center rounded-xl bg-surface-container-low border border-outline-variant/60 p-1 shadow-xs">
+<button class="px-3 py-1 text-label-md font-label-md font-semibold rounded-lg bg-surface-container-lowest text-primary shadow-xs">Hoy - Tiempo Real</button>
+<button class="px-3 py-1 text-label-md font-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">Últimas 8 horas</button>
+<button class="px-3 py-1 text-label-md font-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">Pico Almuerzo</button>
+<button class="px-3 py-1 text-label-md font-label-md font-medium text-on-surface-variant hover:text-primary transition-colors">Semana Actual</button>
+</div>
+<!-- Selector Cajas -->
+<div class="relative">
+<select class="pl-3 pr-8 py-1.5 bg-surface-container-lowest border border-outline-variant/70 rounded-xl text-body-sm font-body-sm text-primary font-medium focus:ring-2 focus:ring-primary/10 focus:border-primary cursor-pointer appearance-none shadow-xs">
+<option>Todas las cajas (1-8)</option>
+<option>Cajas Rápidas (Self-Checkout &amp; Express)</option>
+<option>Cajas Tradicionales (Carro Completo)</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-2.5 text-on-surface-variant text-[16px]">expand_more</span>
+</div>
+<!-- Botón Exportar SLA -->
+<button class="inline-flex items-center gap-1.5 px-space-md py-1.5 rounded-xl bg-surface-container-lowest border border-outline-variant/70 text-primary font-label-md text-label-md font-semibold hover:bg-surface-container-low active:scale-[0.98] transition-all shadow-xs">
+<span class="material-symbols-outlined text-[17px]">download</span>
+<span>Descargar Reporte SLA</span>
+</button>
+</div>
+</div>
+<!-- 2. KPIs de Rendimiento y Velocidad de Cobro -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-space-base">
+<!-- KPI 1: Tiempo Promedio por Transacción -->
+<div class="frosted-card rounded-xl p-space-base flex flex-col justify-between border-l-4 border-l-on-tertiary-container relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Ciclo Total Promedio</span>
+<span class="p-1 rounded-lg bg-[#d1fae5] text-[#047857]">
+<span class="material-symbols-outlined text-[18px]">timer</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">38.4</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">seg</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Meta SLA: &lt; 45 seg</span>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1 text-[#047857] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px]">trending_down</span>
+<span>-4.2s vs semana ant.</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] text-label-sm font-label-sm font-bold">Excelente</span>
+</div>
+</div>
+<!-- KPI 2: Tiempo de Respuesta Pasarela / Datáfono -->
+<div class="frosted-card rounded-xl p-space-base flex flex-col justify-between border-l-4 border-l-secondary relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Respuesta Pasarela / Datáfono</span>
+<span class="p-1 rounded-lg bg-secondary-fixed text-secondary font-semibold">
+<span class="material-symbols-outlined text-[18px]">contactless</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">2.1</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">seg</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Transbank / Redelcom / Switch</span>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1 text-[#047857] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px]">bolt</span>
+<span>99.94% sin timeouts</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#f3e8ff] text-[#6b21a8] text-label-sm font-label-sm font-semibold">Ultra Rápido</span>
+</div>
+</div>
+<!-- KPI 3: Velocidad de Escaneo de Productos -->
+<div class="frosted-card rounded-xl p-space-base flex flex-col justify-between border-l-4 border-l-primary relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Velocidad Escaneo Código Barras</span>
+<span class="p-1 rounded-lg bg-surface-container-low text-primary">
+<span class="material-symbols-outlined text-[18px]">barcode_scanner</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-2">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">1.4</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">seg / SKU</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Promedio óptico láser omnidireccional</span>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1 text-primary text-label-sm font-label-sm font-medium">
+<span class="material-symbols-outlined text-[15px]">inventory_2</span>
+<span>43.8 items / min</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-semibold">Estable</span>
+</div>
+</div>
+<!-- KPI 4: Tasa de Fricción / Espera en Fila -->
+<div class="frosted-card rounded-xl p-space-base flex flex-col justify-between border-l-4 border-l-on-tertiary-container relative overflow-hidden">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Espera Promedio en Fila (Queue)</span>
+<span class="p-1 rounded-lg bg-[#d1fae5] text-[#047857]">
+<span class="material-symbols-outlined text-[18px]">people</span>
+</span>
+</div>
+<div class="my-2">
+<div class="flex items-baseline gap-1.5">
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">2</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">min</span>
+<span class="font-tabular-metric text-tabular-metric font-bold text-primary">10</span>
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface-variant">seg</span>
+</div>
+<span class="text-label-sm font-label-sm text-outline">Límite de abandono: 5m 00s</span>
+</div>
+<div class="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
+<div class="flex items-center gap-1 text-[#047857] text-label-sm font-label-sm font-semibold">
+<span class="material-symbols-outlined text-[15px]">check_circle</span>
+<span>0 cajas congestionadas</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-[#d1fae5] text-[#047857] text-label-sm font-label-sm font-bold">Fluido</span>
+</div>
+</div>
+</div>
+<!-- 3. Gráficos y Visualizaciones Analíticas (Bento Style Layout) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-base items-start">
+<!-- Desglose del Ciclo de Cobro por Etapas (Funnel Segmented Bar) -->
+<div class="lg:col-span-7 frosted-card rounded-xl p-space-lg space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">analytics</span>
+              Desglose Anatómico del Ciclo de Cobro
+            </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+              Distribución de segundos por fase del ticket promedio (Base: 38.4 seg)
+            </p>
+</div>
+<span class="px-2.5 py-1 rounded-lg bg-surface-container text-primary font-label-sm text-label-sm font-semibold">
+            Muestreo: 405 transacciones hoy
+          </span>
+</div>
+<!-- Segmented Funnel Progress Bar -->
+<div class="w-full space-y-2">
+<div class="h-6 w-full rounded-xl overflow-hidden flex shadow-inner bg-surface-container p-0.5 gap-0.5">
+<div class="h-full bg-primary-container rounded-l-lg relative group cursor-pointer transition-all hover:opacity-90" style="width: 42%;" title="Escaneo: 42% (16.1s)">
+<span class="sr-only">42%</span>
+</div>
+<div class="h-full bg-secondary relative group cursor-pointer transition-all hover:opacity-90" style="width: 18%;" title="Club Marzú: 18% (6.9s)">
+<span class="sr-only">18%</span>
+</div>
+<div class="h-full bg-on-tertiary-container relative group cursor-pointer transition-all hover:opacity-90" style="width: 28%;" title="Pasarela Pago: 28% (10.8s)">
+<span class="sr-only">28%</span>
+</div>
+<div class="h-full bg-surface-container-highest rounded-r-lg relative group cursor-pointer transition-all hover:opacity-90" style="width: 12%;" title="Voucher DTE: 12% (4.6s)">
+<span class="sr-only">12%</span>
+</div>
+</div>
+<div class="flex justify-between text-label-sm font-label-sm text-outline px-1">
+<span>Inicio (0.0s)</span>
+<span>Escaneo (~16s)</span>
+<span>Validación (~23s)</span>
+<span>Aprobación (~34s)</span>
+<span>Entrega Boleta (38.4s)</span>
+</div>
+</div>
+<!-- Detalle de las 4 fases con micro-tarjetas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm pt-space-xs">
+<!-- Fase 1 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
+<span class="font-label-md text-label-md font-semibold text-primary">1. Escaneo de SKUs</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Paso por lector óptico y embolsado continuo</p>
+</div>
+<div class="text-right">
+<div class="font-tabular-metric text-headline-sm font-bold text-primary">16.1s</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">42% del total</span>
+</div>
+</div>
+<!-- Fase 2 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary inline-block"></span>
+<span class="font-label-md text-label-md font-semibold text-primary">2. Fidelización &amp; Cupones</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">RUT Club Marzú, convenios y canjes</p>
+</div>
+<div class="text-right">
+<div class="font-tabular-metric text-headline-sm font-bold text-secondary">6.9s</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">18% del total</span>
+</div>
+</div>
+<!-- Fase 3 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-on-tertiary-container inline-block"></span>
+<span class="font-label-md text-label-md font-semibold text-primary">3. Datáfono &amp; Autorización</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">NFC, Chip, PIN o liquidación efectivo</p>
+</div>
+<div class="text-right">
+<div class="font-tabular-metric text-headline-sm font-bold text-[#047857]">10.8s</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">28% del total</span>
+</div>
+</div>
+<!-- Fase 4 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low border border-outline-variant/40 flex items-start justify-between">
+<div class="space-y-0.5">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-outline inline-block"></span>
+<span class="font-label-md text-label-md font-semibold text-primary">4. Emisión Boleta DTE</span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Timbraje fiscal SII, voucher y corte papel</p>
+</div>
+<div class="text-right">
+<div class="font-tabular-metric text-headline-sm font-bold text-on-surface">4.6s</div>
+<span class="text-label-sm font-label-sm text-on-surface-variant font-medium">12% del total</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Curva de Tendencia Horaria (08:00 - 21:00 hrs) -->
+<div class="lg:col-span-5 frosted-card rounded-xl p-space-lg flex flex-col justify-between h-full space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-headline-sm font-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">show_chart</span>
+              Tendencia Horaria: Velocidad vs Volumen
+            </h2>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+              Comportamiento del tiempo de cobro durante la jornada
+            </p>
+</div>
+<div class="flex items-center gap-2 text-label-sm font-label-sm">
+<span class="flex items-center gap-1 text-primary font-semibold">
+<span class="w-2.5 h-1 bg-primary rounded"></span> Segundos
+            </span>
+<span class="flex items-center gap-1 text-outline">
+<span class="w-2.5 h-1 bg-secondary-fixed-dim rounded"></span> Trx/h
+            </span>
+</div>
+</div>
+<!-- SVG Timeline Chart with Peak Hours Highlighted -->
+<div class="relative w-full pt-2">
+<!-- Pico Almuerzo Tag -->
+<div class="absolute top-2 left-[48%] -translate-x-1/2 px-2 py-0.5 rounded-full bg-[#fef3c7] text-[#b45309] border border-amber-300 font-label-sm text-[10px] font-bold z-10 shadow-xs flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">warning</span>
+            Pico Almuerzo (13:30h - 44.2s)
+          </div>
+<svg class="w-full h-40 overflow-visible" viewbox="0 0 460 160">
+<!-- Grid Lines -->
+<line stroke="#e0e3e5" stroke-dasharray="3,3" x1="0" x2="460" y1="30" y2="30"></line>
+<line stroke="#e0e3e5" stroke-dasharray="3,3" x1="0" x2="460" y1="70" y2="70"></line>
+<line stroke="#e0e3e5" stroke-dasharray="3,3" x1="0" x2="460" y1="110" y2="110"></line>
+<line stroke="#c0c8c6" stroke-width="1" x1="0" x2="460" y1="140" y2="140"></line>
+<!-- Area Fill for Transactions Volume -->
+<path d="M 10 140 Q 60 135, 110 125 T 210 50 T 310 115 T 410 70 L 440 140 Z" fill="rgba(210, 187, 255, 0.25)"></path>
+<!-- SLA Threshold Reference Line (45 seg) -->
+<line stroke="#ba1a1a" stroke-dasharray="4,4" stroke-width="1.2" x1="10" x2="450" y1="42" y2="42"></line>
+<text class="text-[9px] fill-[#ba1a1a] font-medium" x="410" y="38">Límite SLA 45s</text>
+<!-- Line: Checkout Velocity Seconds Curve -->
+<path d="M 20 120 C 60 110, 90 95, 130 88 C 170 80, 200 48, 225 46 C 255 44, 280 85, 320 82 C 360 80, 390 58, 440 68" fill="none" stroke="#0a3632" stroke-linecap="round" stroke-width="3"></path>
+<!-- Key Points -->
+<!-- Punto Pico Almuerzo -->
+<circle cx="225" cy="46" fill="#fef3c7" r="4.5" stroke="#b45309" stroke-width="2.5"></circle>
+<!-- Punto Valle Mañana -->
+<circle cx="90" cy="95" fill="#ffffff" r="3.5" stroke="#0a3632" stroke-width="2"></circle>
+<!-- Punto Tarde -->
+<circle cx="390" cy="58" fill="#ffffff" r="3.5" stroke="#0a3632" stroke-width="2"></circle>
+</svg>
+<!-- Timeline Axis Labels -->
+<div class="flex justify-between text-label-sm font-label-sm text-outline pt-2 px-1">
+<span>08:00</span>
+<span>10:00</span>
+<span>12:00</span>
+<span class="font-bold text-primary">14:00</span>
+<span>16:00</span>
+<span>18:00</span>
+<span>20:00</span>
+<span>21:00</span>
+</div>
+</div>
+<div class="pt-space-xs flex items-center justify-between bg-surface-container-low p-2.5 rounded-xl text-body-sm font-body-sm">
+<span class="text-on-surface font-medium flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-container">info</span>
+            Capacidad disponible en sala:
+          </span>
+<span class="font-semibold text-primary">62.5% de carga POS actual</span>
+</div>
+</div>
+</div>
+<!-- 4. Matriz de Rendimiento Comparativo por Caja & Métodos de Pago -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-base items-start">
+<!-- Tabla de Cajas Activas y Operadores -->
+<div class="lg:col-span-8 frosted-card rounded-xl overflow-hidden shadow-sm">
+<div class="p-space-md bg-surface-container-low border-b border-outline-variant/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-primary">desktop_windows</span>
+              Monitoreo Operacional por Caja en Vivo
+            </h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+              Tiempos de ciclo, volumen de tickets y cumplimiento del SLA de atención (&lt; 45 seg)
+            </p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-container"></span> 4 Cajas Monitoreadas
+            </span>
+</div>
+</div>
+<!-- Responsive Table Container -->
+<div class="overflow-x-auto custom-scroll">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-[#f8fafc] border-b border-outline-variant/30 text-label-sm font-label-sm text-outline uppercase tracking-wider">
+<th class="py-3 px-space-md font-semibold">Caja / Tipo</th>
+<th class="py-3 px-space-md font-semibold">Operador Asignado</th>
+<th class="py-3 px-space-md font-semibold text-right">Tiempo Ciclo</th>
+<th class="py-3 px-space-md font-semibold text-right">Tickets</th>
+<th class="py-3 px-space-md font-semibold text-center">Cumplimiento SLA</th>
+<th class="py-3 px-space-md font-semibold text-right">Estado Actual</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-body-sm font-tabular-data">
+<!-- Caja 01 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="font-semibold text-primary">Caja 01</div>
+<div class="text-label-sm font-label-sm text-outline">Express (Máx 10 items)</div>
+</td>
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold text-label-sm">
+                      CH
+                    </div>
+<div>
+<div class="font-medium text-on-surface">Camila Henríquez</div>
+<div class="text-label-sm font-label-sm text-outline">Turno Mañana (Activa)</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-semibold text-primary">
+<span class="text-headline-sm font-bold text-primary">24.2</span> seg
+                </td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-medium text-on-surface">
+                  148 trx
+                </td>
+<td class="py-3.5 px-space-md text-center whitespace-nowrap">
+<div class="inline-flex items-center gap-1 font-semibold text-[#047857]">
+<span>99.1%</span>
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</div>
+<div class="w-20 bg-surface-container rounded-full h-1.5 mx-auto mt-1 overflow-hidden">
+<div class="bg-on-tertiary-container h-full rounded-full" style="width: 99.1%;"></div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#047857] text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
+                    Estado Óptimo
+                  </span>
+</td>
+</tr>
+<!-- Caja 02 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="font-semibold text-primary">Caja 02</div>
+<div class="text-label-sm font-label-sm text-outline">Tradicional (Carro Lleno)</div>
+</td>
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface font-bold text-label-sm">
+                      MV
+                    </div>
+<div>
+<div class="font-medium text-on-surface">Marcos V.</div>
+<div class="text-label-sm font-label-sm text-outline">Turno Completo</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-semibold text-primary">
+<span class="text-headline-sm font-bold text-on-surface">52.6</span> seg
+                </td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-medium text-on-surface">
+                  82 trx
+                </td>
+<td class="py-3.5 px-space-md text-center whitespace-nowrap">
+<div class="inline-flex items-center gap-1 font-semibold text-on-surface">
+<span>94.0%</span>
+</div>
+<div class="w-20 bg-surface-container rounded-full h-1.5 mx-auto mt-1 overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 94.0%;"></div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm font-medium border border-outline-variant/50">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                    Estado Normal
+                  </span>
+</td>
+</tr>
+<!-- Caja 03 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors bg-amber-50/20">
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="font-semibold text-primary flex items-center gap-1.5">
+<span>Caja 03</span>
+<span class="material-symbols-outlined text-secondary text-[16px]" title="Self-Checkout con IA">smart_toy</span>
+</div>
+<div class="text-label-sm font-label-sm text-outline">Self-Checkout Autoservicio</div>
+</td>
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-secondary-fixed flex items-center justify-center text-secondary font-bold text-label-sm">
+<span class="material-symbols-outlined text-[15px]">touch_app</span>
+</div>
+<div>
+<div class="font-medium text-primary">Terminal Autónomo A</div>
+<div class="text-label-sm font-label-sm text-secondary font-medium">Balanza de seguridad activa</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-semibold text-primary">
+<span class="text-headline-sm font-bold text-primary">31.5</span> seg
+                </td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-medium text-on-surface">
+                  110 trx
+                </td>
+<td class="py-3.5 px-space-md text-center whitespace-nowrap">
+<div class="inline-flex items-center gap-1 font-semibold text-[#047857]">
+<span>97.5%</span>
+</div>
+<div class="w-20 bg-surface-container rounded-full h-1.5 mx-auto mt-1 overflow-hidden">
+<div class="bg-on-tertiary-container h-full rounded-full" style="width: 97.5%;"></div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#fef3c7] text-[#b45309] text-label-sm font-label-sm font-semibold border border-amber-300" title="2 asistencias requeridas">
+<span class="material-symbols-outlined text-[13px]">warning</span>
+                    2 asist. balanza
+                  </span>
+</td>
+</tr>
+<!-- Caja 04 -->
+<tr class="hover:bg-primary-container/[0.02] transition-colors">
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="font-semibold text-primary">Caja 04</div>
+<div class="text-label-sm font-label-sm text-outline">Gourmet &amp; Enología</div>
+</td>
+<td class="py-3.5 px-space-md whitespace-nowrap">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-primary-fixed flex items-center justify-center text-on-primary-fixed font-bold text-label-sm">
+                      VR
+                    </div>
+<div>
+<div class="font-medium text-on-surface">Valentina R.</div>
+<div class="text-label-sm font-label-sm text-outline">Especialista Gourmet</div>
+</div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-semibold text-primary">
+<span class="text-headline-sm font-bold text-primary">44.1</span> seg
+                </td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap font-medium text-on-surface">
+                  65 trx
+                </td>
+<td class="py-3.5 px-space-md text-center whitespace-nowrap">
+<div class="inline-flex items-center gap-1 font-semibold text-[#047857]">
+<span>96.2%</span>
+</div>
+<div class="w-20 bg-surface-container rounded-full h-1.5 mx-auto mt-1 overflow-hidden">
+<div class="bg-on-tertiary-container h-full rounded-full" style="width: 96.2%;"></div>
+</div>
+</td>
+<td class="py-3.5 px-space-md text-right whitespace-nowrap">
+<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#d1fae5] text-[#047857] text-label-sm font-label-sm font-semibold border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-[#047857]"></span>
+                    Estado Óptimo
+                  </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-3 bg-surface-container-low border-t border-outline-variant/30 flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span>Promedio del turno actual: 38.1 seg/trx</span>
+<a class="font-semibold text-primary hover:underline flex items-center gap-1" href="#">
+<span>Ver historial de rotación de cajeros</span>
+<span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- Comparativa de Métodos de Pago (Latencia & Fricción) -->
+<div class="lg:col-span-4 frosted-card rounded-xl p-space-md space-y-space-md">
+<div>
+<h3 class="text-headline-sm font-headline-sm font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-secondary">payments</span>
+            Fricción por Medio de Pago
+          </h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">
+            Latencia promedio entre selección e impresión
+          </p>
+</div>
+<div class="space-y-3">
+<!-- Metodo 1: Contactless / Apple Pay / Google Wallet -->
+<div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 space-y-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#047857]">contactless</span>
+<span class="font-label-md text-label-md font-semibold text-primary">Contactless / Apple Pay / Wallet</span>
+</div>
+<span class="font-tabular-metric text-headline-sm font-bold text-[#047857]">1.8 seg</span>
+</div>
+<!-- Visual Bar -->
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-on-tertiary-container h-full rounded-full" style="width: 15%;"></div>
+</div>
+<div class="flex justify-between text-[11px] text-outline">
+<span>61% de las transacciones</span>
+<span class="text-[#047857] font-semibold">Cero fricción</span>
+</div>
+</div>
+<!-- Metodo 2: Pago con Puntos Club Marzú / Cupones QR -->
+<div class="p-3 rounded-xl amethyst-card space-y-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">qr_code_scanner</span>
+<span class="font-label-md text-label-md font-semibold text-secondary">Puntos Club Marzú / Cupón QR</span>
+</div>
+<span class="font-tabular-metric text-headline-sm font-bold text-secondary">3.1 seg</span>
+</div>
+<!-- Visual Bar -->
+<div class="w-full bg-secondary-fixed rounded-full h-1.5 overflow-hidden">
+<div class="bg-secondary h-full rounded-full" style="width: 27%;"></div>
+</div>
+<div class="flex justify-between text-[11px] text-outline">
+<span>18% adopción de clientes</span>
+<span class="text-secondary font-semibold">Validación API instantánea</span>
+</div>
+</div>
+<!-- Metodo 3: Chip con PIN / Débito -->
+<div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 space-y-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-primary">credit_card</span>
+<span class="font-label-md text-label-md font-semibold text-primary">Chip EMV con PIN / Débito</span>
+</div>
+<span class="font-tabular-metric text-headline-sm font-bold text-primary">4.2 seg</span>
+</div>
+<!-- Visual Bar -->
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-outline h-full rounded-full" style="width: 36%;"></div>
+</div>
+<div class="flex justify-between text-[11px] text-outline">
+<span>15% de transacciones</span>
+<span>Espera de PIN cliente</span>
+</div>
+</div>
+<!-- Metodo 4: Efectivo con cálculo de vuelto -->
+<div class="p-3 rounded-xl bg-surface-container-low border border-outline-variant/40 space-y-1.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#b45309]">payments</span>
+<span class="font-label-md text-label-md font-semibold text-primary">Efectivo + Cálculo de Vuelto</span>
+</div>
+<span class="font-tabular-metric text-headline-sm font-bold text-[#b45309]">11.5 seg</span>
+</div>
+<!-- Visual Bar -->
+<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+<div class="bg-amber-500 h-full rounded-full" style="width: 100%;"></div>
+</div>
+<div class="flex justify-between text-[11px] text-outline">
+<span>6% de transacciones</span>
+<span class="text-[#b45309] font-medium">+6.4x más lento que Contactless</span>
+</div>
+</div>
+</div>
+<!-- AI Recommendation Micro-Card -->
+<div class="p-3 rounded-xl bg-primary-container text-on-primary space-y-1 shadow-xs">
+<div class="flex items-center gap-1.5 text-on-tertiary-fixed font-semibold text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+<span>Recomendación Algorítmica SIRA</span>
+</div>
+<p class="text-body-sm font-body-sm text-surface-variant leading-snug">
+            Incentivar pago NFC en Caja 02 reduciría la cola en un <strong class="text-white">18.3%</strong> durante el pico de las 19:30 hrs.
+          </p>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================================================= -->
+<!-- Footer de Telemetría y Estado de Conectividad                             -->
+<!-- ========================================================================= -->
+<footer class="w-full border-t border-outline-variant/30 bg-surface-container-lowest py-3 px-space-xl text-label-sm font-label-sm text-outline mt-auto">
+<div class="max-w-[1680px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1 text-on-tertiary-container font-semibold">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-container inline-block"></span>
+          Gateway POS: Conectado (latencia 18ms)
+        </span>
+<span>•</span>
+<span>SII Boleta Electrónica: Sincronizado</span>
+<span>•</span>
+<span>Último sync: hace 4 segundos</span>
+</div>
+<div class="text-right">
+<span>SIRA Retail Operations Architecture v4.8 • Marzú Retail Group</span>
+</div>
+</div>
+</footer>
+</body></html>
