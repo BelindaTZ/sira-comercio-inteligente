@@ -29,6 +29,21 @@ export const comprasApi = {
       .then((r) => r.data)
   },
 
+  ordenes({ tiendaId, estado } = {}) {
+    return http
+      .get('/api/compras/ordenes', {
+        params: {
+          tienda_id: tiendaId ?? undefined,
+          estado: estado ?? undefined,
+        },
+      })
+      .then((r) => r.data)
+  },
+
+  ordenDetalle(ordenId) {
+    return http.get(`/api/compras/ordenes/${ordenId}`).then((r) => r.data)
+  },
+
   aprobarOrden(ordenId) {
     return http.post(`/api/compras/ordenes/${ordenId}/aprobar`).then((r) => r.data)
   },

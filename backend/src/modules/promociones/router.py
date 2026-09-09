@@ -153,10 +153,36 @@ async def listar_candidatos(
         tienda_id = principal.tienda_id
     if tienda_id is None:
         return []
-    return [
-        CandidatoLiquidacionOut.model_validate(c)
-        for c in await svc.listar_candidatos(tienda_id=tienda_id, semana=semana, anio=anio)
-    ]
+    candidatos = await svc.listar_candidatos(tienda_id=tienda_id, semana=semana, anio=anio)
+    from decimal import Decimal
+    from src.models.producto import Producto
+    res = []
+    for c in candidatos:
+        prod = await svc.repo.session.get(Producto, c.product_id)
+        p_base = prod.precio_base if prod and prod.precio_base else (prod.costo * Decimal("1.3") if prod and prod.costo else Decimal("1000"))
+        desc_factor = Decimal("1") - (Decimal(str(c.descuento_sugerido_pct)) / Decimal("100"))
+        p_liq = (Decimal(str(p_base)) * desc_factor).quantize(Decimal("1"))
+        res.append(
+            CandidatoLiquidacionOut(
+                candidato_id=c.candidato_id,
+                product_id=c.product_id,
+                product_nombre=prod.nombre if prod else f"Producto #{c.product_id}",
+                product_category=prod.product_category if prod else None,
+                imagen_url=prod.imagen_url if prod else None,
+                codigo_barras=prod.codigo_barras if prod else None,
+                precio_base=Decimal(str(p_base)),
+                descuento_sugerido_pct=c.descuento_sugerido_pct,
+                precio_liquidacion=p_liq,
+                tienda_id=c.tienda_id,
+                semana=c.semana,
+                anio=c.anio,
+                rotacion_reciente_calculada=c.rotacion_reciente_calculada,
+                estado=c.estado,
+                fecha_ejecucion=c.fecha_ejecucion,
+                ejecutado_por=c.ejecutado_por,
+            )
+        )
+    return res
 
 
 @router.post(

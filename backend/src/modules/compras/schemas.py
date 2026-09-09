@@ -66,6 +66,7 @@ class PedidoEspecialIn(BaseModel):
 
 class OrdenLineaOut(BaseModel):
     product_id: int
+    product_nombre: str | None = None
     cantidad: int
     costo_unitario: Decimal
 
@@ -73,12 +74,16 @@ class OrdenLineaOut(BaseModel):
 class OrdenOut(BaseModel):
     orden_id: int
     proveedor_id: int
+    proveedor_nombre: str | None = None
     tienda_id: int
     empleado_id: int
     estado: str
     tipo: str
     fecha: date
     motivo_desviacion: str | None
+    total_neto: Decimal | None = None
+    cantidad_skus: int | None = None
+    total_unidades: int | None = None
     lineas: list[OrdenLineaOut] = []
 
 

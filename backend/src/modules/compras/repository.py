@@ -50,6 +50,21 @@ class ComprasRepository(BaseRepository[OrdenCompra]):
         )
         return list((await self.session.scalars(stmt)).all())
 
+    async def listar_ordenes(
+        self,
+        *,
+        tienda_id: int | None = None,
+        estado: str | None = None,
+        limit: int = 50,
+    ) -> list[OrdenCompra]:
+        stmt = select(OrdenCompra)
+        if tienda_id is not None:
+            stmt = stmt.where(OrdenCompra.tienda_id == tienda_id)
+        if estado is not None:
+            stmt = stmt.where(OrdenCompra.estado == estado)
+        stmt = stmt.order_by(OrdenCompra.orden_id.desc()).limit(limit)
+        return list((await self.session.scalars(stmt)).all())
+
     async def get_producto(self, product_id: int) -> Producto | None:
         return await self.session.get(Producto, product_id)
 

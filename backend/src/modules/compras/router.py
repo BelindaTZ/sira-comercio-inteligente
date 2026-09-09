@@ -7,6 +7,7 @@ RBAC: módulo `Operaciones` (órdenes, proveedores, sugerencias) y módulo `Fina
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -34,7 +35,7 @@ from src.modules.compras.schemas import (
     SugerenciaLinea,
 )
 from src.modules.compras.service import ComprasService
-from src.shared.exceptions import ForbiddenError
+from src.shared.exceptions import ForbiddenError, NotFoundError
 from src.shared.pagination import Page, PageParams, page_params
 
 router = APIRouter(prefix="/compras", tags=["compras"])
@@ -60,23 +61,37 @@ ServiceDep = Annotated[ComprasService, Depends(_svc)]
 
 async def _orden_out(svc: ComprasService, orden) -> OrdenOut:
     lineas = await svc.repo.lineas_de_orden(orden.orden_id)
+    prov = await svc.repo.get_proveedor(orden.proveedor_id)
+    lineas_out = []
+    total_neto = Decimal("0.00")
+    total_unidades = 0
+    for ln in lineas:
+        prod = await svc.repo.get_producto(ln.product_id)
+        prod_nombre = prod.nombre if prod else None
+        total_neto += Decimal(str(ln.cantidad)) * ln.costo_unitario
+        total_unidades += ln.cantidad
+        lineas_out.append(
+            OrdenLineaOut(
+                product_id=ln.product_id,
+                product_nombre=prod_nombre,
+                cantidad=ln.cantidad,
+                costo_unitario=ln.costo_unitario,
+            )
+        )
     return OrdenOut(
         orden_id=orden.orden_id,
         proveedor_id=orden.proveedor_id,
+        proveedor_nombre=prov.nombre if prov else None,
         tienda_id=orden.tienda_id,
         empleado_id=orden.empleado_id,
         estado=orden.estado,
         tipo=orden.tipo,
         fecha=orden.fecha,
         motivo_desviacion=orden.motivo_desviacion,
-        lineas=[
-            OrdenLineaOut(
-                product_id=ln.product_id,
-                cantidad=ln.cantidad,
-                costo_unitario=ln.costo_unitario,
-            )
-            for ln in lineas
-        ],
+        total_neto=total_neto,
+        cantidad_skus=len(lineas),
+        total_unidades=total_unidades,
+        lineas=lineas_out,
     )
 
 
@@ -140,6 +155,29 @@ async def proveedores_de_producto(
 
 
 # ------------------------------------------------------------------- órdenes
+@router.get("/ordenes", response_model=list[OrdenOut])
+async def listar_ordenes(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver_ops)],
+    tienda_id: int | None = Query(None),
+    estado: str | None = Query(None),
+) -> list[OrdenOut]:
+    ordenes = await svc.listar_ordenes(tienda_id=tienda_id, estado=estado)
+    return [await _orden_out(svc, o) for o in ordenes]
+
+
+@router.get("/ordenes/{orden_id}", response_model=OrdenOut)
+async def orden_por_id(
+    orden_id: int,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver_ops)],
+) -> OrdenOut:
+    orden = await svc.repo.get_orden_for_update(orden_id)
+    if not orden:
+        raise NotFoundError(f"Orden de compra {orden_id} no existe")
+    return await _orden_out(svc, orden)
+
+
 @router.post("/ordenes", status_code=status.HTTP_201_CREATED, response_model=OrdenOut)
 async def crear_orden(
     data: OrdenIn, svc: ServiceDep, _: Annotated[Principal, Depends(_ordenes)]

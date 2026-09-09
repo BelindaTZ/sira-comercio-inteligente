@@ -105,3 +105,41 @@ async def test_aprobar_orden_cambia_estado(client, escenario_compras, auth_jefe_
     )
     assert resp.status_code == 200, resp.text
     assert resp.json()["estado"] == "aprobada"
+
+
+async def test_listar_y_detalle_ordenes(
+    client, escenario_compras, auth_jefe_ops, db_session
+):
+    e = escenario_compras
+    await _forzar_sugerencia(db_session, e)
+    resp = await client.post(
+        "/api/compras/ordenes",
+        json={
+            "proveedor_id": e["proveedor_id"],
+            "tienda_id": e["tienda_id"],
+            "empleado_id": e["jefe_ops_id"],
+            "lineas": [{"product_id": e["product_id"], "cantidad": 200, "costo_unitario": "1.00"}],
+            "motivo_desviacion": "Stock para evento",
+        },
+        headers=auth_jefe_ops,
+    )
+    assert resp.status_code == 201, resp.text
+    orden = resp.json()
+
+    # Listar ordenes
+    listado = await client.get(
+        f"/api/compras/ordenes?tienda_id={e['tienda_id']}", headers=auth_jefe_ops
+    )
+    assert listado.status_code == 200, listado.text
+    items = listado.json()
+    assert any(o["orden_id"] == orden["orden_id"] for o in items)
+
+    # Detalle orden
+    detalle = await client.get(
+        f"/api/compras/ordenes/{orden['orden_id']}", headers=auth_jefe_ops
+    )
+    assert detalle.status_code == 200, detalle.text
+    d = detalle.json()
+    assert d["orden_id"] == orden["orden_id"]
+    assert len(d["lineas"]) == 1
+

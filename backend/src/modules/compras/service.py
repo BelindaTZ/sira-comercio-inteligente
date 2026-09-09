@@ -149,6 +149,15 @@ class ComprasService:
         await self.repo.flush()
         return orden
 
+    async def listar_ordenes(
+        self,
+        *,
+        tienda_id: int | None = None,
+        estado: str | None = None,
+        limit: int = 50,
+    ) -> list[OrdenCompra]:
+        return await self.repo.listar_ordenes(tienda_id=tienda_id, estado=estado, limit=limit)
+
     async def aprobar_orden(self, orden_id: int, empleado_id: int) -> OrdenCompra:
         orden = await self.repo.get_orden_for_update(orden_id)
         if orden is None:

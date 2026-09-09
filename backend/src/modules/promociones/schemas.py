@@ -69,11 +69,17 @@ class ReglaLiquidacionPatch(BaseModel):
 class CandidatoLiquidacionOut(BaseModel):
     candidato_id: int
     product_id: int
+    product_nombre: str | None = None
+    product_category: str | None = None
+    imagen_url: str | None = None
+    codigo_barras: str | None = None
+    precio_base: Decimal | None = None
+    descuento_sugerido_pct: Decimal
+    precio_liquidacion: Decimal | None = None
     tienda_id: int
     semana: int
     anio: int
     rotacion_reciente_calculada: Decimal
-    descuento_sugerido_pct: Decimal
     estado: str
     fecha_ejecucion: datetime | None = None
     ejecutado_por: int | None = None
