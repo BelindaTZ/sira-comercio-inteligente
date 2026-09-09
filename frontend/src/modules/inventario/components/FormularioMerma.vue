@@ -67,15 +67,20 @@ const error = ref('')
 const enviando = ref(false)
 
 async function cargarSku(pid) {
-  if (!pid || sku.value?.product_id === pid) return
+  if (!pid) return
+  // La ficha ya está completa (trae stock) → no re-consultar. Cuando el producto
+  // llega desde una alerta de vencimiento sólo trae {product_id, nombre}, así que
+  // hay que ir a buscar `cantidad_disponible` / `costo` igual.
+  if (sku.value?.product_id === pid && sku.value?.cantidad_disponible != null) return
   try {
     const r = await inventarioApi.stock({ tiendaId: props.tiendaId, search: String(pid), size: 1 })
-    sku.value = r.items.find((x) => x.product_id === pid) ?? r.items[0] ?? null
+    const hit = r.items.find((x) => x.product_id === pid) ?? r.items[0]
+    if (hit) sku.value = hit
   } catch {
     /* sin ficha */
   }
 }
-watch(productId, cargarSku)
+watch(productId, cargarSku, { immediate: true })
 
 const disponible = computed(() => sku.value?.cantidad_disponible ?? null)
 const costo = computed(() => Number(sku.value?.costo ?? 0))

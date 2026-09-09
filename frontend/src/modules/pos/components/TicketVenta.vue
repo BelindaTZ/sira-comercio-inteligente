@@ -10,6 +10,7 @@
  */
 import { reactive, ref, watch } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const props = defineProps({
   venta: { type: Object, default: null },
@@ -41,13 +42,23 @@ watch(
   }
 )
 
-function pedirRemocion(linea) {
-  const autoriza = window.prompt(
-    `Remoción de línea (producto ${linea.product_id}).\n` +
-      'ID del EMPLEADO que autoriza (debe ser distinto del cajero):'
-  )
+async function pedirRemocion(linea) {
+  const autoriza = await prompt({
+    title: `Remover línea — producto ${linea.product_id}`,
+    message: 'Requiere la autorización de un empleado distinto del cajero.',
+    label: 'ID del empleado que autoriza',
+    inputType: 'number',
+    required: true,
+    confirmText: 'Continuar',
+  })
   if (!autoriza) return
-  const motivo = window.prompt('Motivo de la remoción:') || ''
+  const motivo = await prompt({
+    title: 'Motivo de la remoción',
+    label: 'Motivo',
+    confirmText: 'Remover línea',
+    tone: 'danger',
+  })
+  if (motivo === null) return
   emit('remover', { lineaId: linea.venta_detalle_id, autorizaEmpleadoId: Number(autoriza), motivo })
 }
 

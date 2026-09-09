@@ -7,11 +7,13 @@
  */
 import { onMounted, reactive, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const hoy = new Date()
 const filtro = reactive({ mes: hoy.getMonth() + 1, anio: hoy.getFullYear() })
 const reporte = ref({ cuadres: [], ajustes_senalados: [] })
 const error = ref('')
+const aviso = ref('')
 const cargando = ref(false)
 
 async function cargar() {
@@ -27,24 +29,30 @@ async function cargar() {
 }
 
 async function escalarCuadre(turno) {
-  const descripcion = window.prompt(
-    `Evidencia para el incidente sobre el cajero #${turno.cajero_id}`,
-    `Patrón de diferencias en el turno ${turno.apertura_id}: ${turno.suma_diferencias}`,
-  )
+  const descripcion = await prompt({
+    title: `Abrir incidente — cajero #${turno.cajero_id}`,
+    label: 'Evidencia del patrón',
+    required: true,
+    initial: `Patrón de diferencias en el turno ${turno.apertura_id}: ${turno.suma_diferencias}`,
+    confirmText: 'Abrir incidente',
+  })
   if (!descripcion) return
   try {
     await cajaApi.abrirIncidente({ empleadoId: turno.cajero_id, descripcion })
-    window.alert('Incidente abierto')
+    aviso.value = `Incidente abierto sobre el cajero #${turno.cajero_id}`
   } catch (e) {
     error.value = e.message
   }
 }
 
 async function escalarAjuste(ajuste) {
-  const descripcion = window.prompt(
-    `Evidencia para el incidente sobre el empleado #${ajuste.empleado_id}`,
-    `Ajuste de inventario ${ajuste.ajuste_id} con faltante de ${ajuste.diferencia}`,
-  )
+  const descripcion = await prompt({
+    title: `Abrir incidente — empleado #${ajuste.empleado_id}`,
+    label: 'Evidencia del patrón',
+    required: true,
+    initial: `Ajuste de inventario ${ajuste.ajuste_id} con faltante de ${ajuste.diferencia}`,
+    confirmText: 'Abrir incidente',
+  })
   if (!descripcion) return
   try {
     await cajaApi.abrirIncidente({
@@ -52,7 +60,7 @@ async function escalarAjuste(ajuste) {
       ajusteId: ajuste.ajuste_id,
       descripcion,
     })
-    window.alert('Incidente abierto')
+    aviso.value = `Incidente abierto sobre el empleado #${ajuste.empleado_id}`
   } catch (e) {
     error.value = e.message
   }
@@ -94,6 +102,12 @@ onMounted(cargar)
 
     <p v-if="error" class="mb-4 rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container">
       {{ error }}
+    </p>
+    <p
+      v-if="aviso"
+      class="mb-4 rounded-lg bg-tertiary-container px-4 py-2 text-sm text-on-tertiary-container"
+    >
+      {{ aviso }}
     </p>
 
     <div class="grid gap-6 lg:grid-cols-2">

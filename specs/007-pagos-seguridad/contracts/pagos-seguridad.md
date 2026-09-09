@@ -4,13 +4,14 @@
 
 ## Disponibilidad diaria de datáfonos (FR-001 a FR-004)
 
-`PATCH /api/finanzas/datafonos/{datafono_id}/fuera-servicio`
-- Marca un datáfono como fuera de servicio (FR-001).
+`PATCH /api/caja/datafonos/{datafono_id}/fuera-servicio`
+- Marca un datáfono como fuera de servicio (FR-001). Ruta real bajo `/api/caja/...` (nomenclatura de 006).
+- Body: `{motivo}` — texto libre obligatorio (1-200 chars), constancia de por qué (feature 013).
 - RBAC: `Encargado_Tienda`.
-- 200: datáfono actualizado a `estado='fuera_servicio'`. 409 si ya está `fuera_servicio`.
+- 200: datáfono a `estado='fuera_servicio'`, `motivo_fuera_servicio` guardado. 409 si ya está `fuera_servicio`. 422 sin `motivo`.
 
-`PATCH /api/finanzas/datafonos/{datafono_id}/restablecer`
-- Restablece un datáfono, reevaluando su conformidad de seguridad antes de marcarlo operativo (FR-002, FR-003).
+`PATCH /api/caja/datafonos/{datafono_id}/restablecer`
+- Restablece un datáfono, reevaluando su conformidad de seguridad antes de marcarlo operativo (FR-002, FR-003). Limpia `motivo_fuera_servicio`.
 - RBAC: `Encargado_Tienda`.
 - 200: `{datafono_id, estado: 'activo' | 'requiere_actualizacion'}` — nunca queda en `fuera_servicio`. 409 si no estaba `fuera_servicio`.
 

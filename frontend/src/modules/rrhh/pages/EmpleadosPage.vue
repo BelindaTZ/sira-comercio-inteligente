@@ -6,6 +6,7 @@
  */
 import { reactive, ref } from 'vue'
 import { rrhhApi } from '@/services/rrhhApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const nuevo = reactive({
   nombre: '',
@@ -50,7 +51,15 @@ async function consultar() {
 }
 
 async function darBaja(emp) {
-  const fecha = window.prompt('Fecha de baja (YYYY-MM-DD)', new Date().toISOString().slice(0, 10))
+  const fecha = await prompt({
+    title: `Dar de baja a ${emp.nombre || `empleado #${emp.empleado_id}`}`,
+    label: 'Fecha de baja',
+    inputType: 'date',
+    required: true,
+    initial: new Date().toISOString().slice(0, 10),
+    confirmText: 'Dar de baja',
+    tone: 'danger',
+  })
   if (!fecha) return
   try {
     consultado.value = await rrhhApi.darBajaEmpleado(emp.empleado_id, fecha)

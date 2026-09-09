@@ -38,6 +38,7 @@ from src.modules.caja.schemas import (
     DefinirPoliticaIn,
     DefinirProtocoloIn,
     DefinirUmbralMermaIn,
+    FueraServicioIn,
     IncidenteFraudeIn,
     IncidenteFraudeOut,
     IncidenteSeguridadIn,
@@ -193,10 +194,16 @@ async def actualizar_datafono(
 
 @router.patch("/datafonos/{datafono_id}/fuera-servicio", response_model=DatafonoOut)
 async def datafono_fuera_servicio(
-    datafono_id: int, svc: ServiceDep, _: Annotated[Principal, Depends(_edita_datafonos)]
+    datafono_id: int,
+    data: FueraServicioIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_edita_datafonos)],
 ) -> DatafonoOut:
-    """FR-001 (007) — el Encargado de Tienda marca un datáfono fuera de servicio."""
-    return DatafonoOut.model_validate(await svc.marcar_datafono_fuera_servicio(datafono_id))
+    """FR-001 (007) — el Encargado de Tienda marca un datáfono fuera de servicio,
+    con constancia del motivo (feature 013)."""
+    return DatafonoOut.model_validate(
+        await svc.marcar_datafono_fuera_servicio(datafono_id, data.motivo)
+    )
 
 
 @router.patch("/datafonos/{datafono_id}/restablecer", response_model=DatafonoRestablecidoOut)

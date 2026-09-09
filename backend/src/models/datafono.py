@@ -23,3 +23,6 @@ class Datafono(Base):
     version_firmware: Mapped[str | None] = mapped_column(String(30))
     fecha_ultima_actualizacion: Mapped[date | None] = mapped_column(Date)
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="activo")
+    # feature 013: constancia (texto libre) de por qué se sacó de servicio; se
+    # limpia al restablecerlo.
+    motivo_fuera_servicio: Mapped[str | None] = mapped_column(String(200))

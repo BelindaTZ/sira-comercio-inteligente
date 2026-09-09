@@ -40,6 +40,8 @@ Backend: snake_case (Python/SQL), arquitectura por capas (router → service →
 ### XII. Usabilidad y Diseño de Interfaz
 Los filtros de búsqueda son reactivos/automáticos — sin botón "Buscar" o "Filtrar", se aplican al cambiar el criterio. Todo listado de registros usa paginación (nunca carga completa en una sola vista). Cada panel de trabajo (work panel) sigue un set estandarizado de acciones (Agregar, Editar, Eliminar, y las que correspondan a la entidad — ej. Anular para ventas, Aprobar para compras) con la misma ubicación/estilo en toda la aplicación.
 
+**Diálogos**: toda confirmación (aceptar/rechazar) y toda entrada de un dato puntual (motivo, fecha, id que autoriza) se resuelve con un modal in-app del design-system — nunca con `window.confirm` / `window.prompt` / `window.alert`, que rompen la paleta y la tipografía. El helper compartido es `frontend/src/shared/ui/dialogs.js` (`confirm()` / `prompt()`), pintado por `<DialogHost>` (montado una vez en `App.vue`). Un selector siempre ofrece las opciones válidas existentes (`<select>` poblado desde el backend) en vez de un campo libre donde se pueda teclear un valor inexistente.
+
 **Sistema de diseño de referencia**: `.specify/memory/design-system.md` ("Nordic Abyssal & Amethyst Intelligence") define la paleta, tipografía, spacing, elevación, formas y componentes oficiales — ninguna spec define su propia paleta o estilo de componente. Las 3 pantallas de referencia en `docs/diseno-ui/` (Dashboard Ejecutivo, Inventario & Alertas FIFO, Punto de Venta) son el estándar visual a replicar fielmente en cada feature — no se rediseña de cero por spec.
 
 **Navegación**: barra horizontal superior fija (no sidebar lateral), con categorías de primer nivel (ej. Dashboard, Punto de Venta, Inventario & FIFO, Catálogo, Clientes/CRM, Comercial, Finanzas & BI, Sistema, Soporte). Una categoría con 4 o más sub-opciones se despliega en un mega-menú agrupado por columnas temáticas (ej. "Sistema" → Seguridad / Configuración / Integraciones), usando el color primario Abyssal Emerald (`#0a3632`) para la barra y panel blanco para el desplegable. Una categoría con menos de 4 sub-opciones se lista directo sin agrupar en columnas.
@@ -67,4 +69,4 @@ Para cada una de las 12 features (001-core-ventas-inventario, 002-clientes-fidel
 
 Esta constitución tiene prioridad sobre cualquier spec individual. Un cambio aquí obliga a revisar las specs ya creadas que dependan del principio modificado. Toda spec/plan/tasks debe verificar cumplimiento de estos principios antes de pasar a la siguiente fase.
 
-**Version**: 1.3.2 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-06
+**Version**: 1.4.0 | **Ratified**: 2026-09-04 | **Last Amended**: 2026-09-09

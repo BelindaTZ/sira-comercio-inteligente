@@ -147,8 +147,10 @@ export const cajaApi = {
   },
 
   // --- feature 007: disponibilidad de datáfonos, incidentes de seguridad, política ---
-  datafonoFueraServicio(datafonoId) {
-    return http.patch(`/api/caja/datafonos/${datafonoId}/fuera-servicio`).then((r) => r.data)
+  datafonoFueraServicio(datafonoId, motivo) {
+    return http
+      .patch(`/api/caja/datafonos/${datafonoId}/fuera-servicio`, { motivo })
+      .then((r) => r.data)
   },
 
   datafonoRestablecer(datafonoId) {

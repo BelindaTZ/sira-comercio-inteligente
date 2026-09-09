@@ -17,6 +17,14 @@ async def test_matriz_precios_trae_estado_de_margen(client, escenario_pos, auth_
     assert fila["margen_pct"] == pytest.approx(60.0, abs=0.1)
 
 
+async def test_matriz_precios_filtra_por_id_de_producto(client, escenario_pos, auth_jefe_comercial):
+    pid = escenario_pos["product_id"]
+    r = await client.get(f"/api/catalogo/precios?search={pid}", headers=auth_jefe_comercial)
+    assert r.status_code == 200, r.text
+    ids = {f["product_id"] for f in r.json()["items"]}
+    assert pid in ids
+
+
 async def test_resumen_catalogo_calcula_en_vivo_si_no_hay_snapshot(
     client, escenario_pos, auth_jefe_comercial
 ):
@@ -30,7 +38,6 @@ async def test_resumen_catalogo_calcula_en_vivo_si_no_hay_snapshot(
 
 async def test_refrescar_kpi_job_persiste_el_snapshot(db_session, escenario_pos):
     from sqlalchemy import text
-
     from src.jobs import refrescar_catalogo_kpi_job
 
     await refrescar_catalogo_kpi_job.ejecutar(db_session)
@@ -51,15 +58,11 @@ async def test_export_precios_en_los_tres_formatos(client, escenario_pos, auth_j
         assert ct in r.headers["content-type"]
         assert r.headers["content-disposition"].endswith(f'.{fmt}"')
         assert len(r.content) > 100
-    bad = await client.get(
-        "/api/catalogo/precios/export?formato=word", headers=auth_jefe_comercial
-    )
+    bad = await client.get("/api/catalogo/precios/export?formato=word", headers=auth_jefe_comercial)
     assert bad.status_code == 422
 
 
-async def test_simular_precio_sube_margen_al_subir_pvp(
-    client, escenario_pos, auth_jefe_comercial
-):
+async def test_simular_precio_sube_margen_al_subir_pvp(client, escenario_pos, auth_jefe_comercial):
     r = await client.post(
         f"/api/catalogo/productos/{escenario_pos['product_id']}/simular-precio",
         json={"delta_pct": "6"},

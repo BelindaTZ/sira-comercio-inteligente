@@ -374,7 +374,8 @@ CREATE TABLE datafonos (
     version_firmware VARCHAR(30),
     fecha_ultima_actualizacion DATE,
     estado VARCHAR(30) NOT NULL DEFAULT 'activo'
-        CHECK (estado IN ('activo','requiere_actualizacion','fuera_servicio'))
+        CHECK (estado IN ('activo','requiere_actualizacion','fuera_servicio')),
+    motivo_fuera_servicio VARCHAR(200)  -- feature 013: constancia al sacar de servicio
 );
 
 CREATE TABLE incidentes_fraude (

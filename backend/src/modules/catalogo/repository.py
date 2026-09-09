@@ -97,10 +97,11 @@ class CatalogoRepository(BaseRepository[Producto]):
         if search:
             filtros.append(
                 "(p.nombre ILIKE :q OR p.product_type ILIKE :q OR p.marca ILIKE :q "
-                "OR p.codigo_barras = :qexact)"
+                "OR p.codigo_barras = :qexact OR CAST(p.product_id AS TEXT) LIKE :qpre)"
             )
             binds["q"] = f"%{search}%"
             binds["qexact"] = search
+            binds["qpre"] = f"{search.strip()}%"
         if categoria:
             filtros.append("p.product_category = :cat")
             binds["cat"] = categoria

@@ -14,8 +14,9 @@
 | version_firmware | VARCHAR(30) | |
 | fecha_ultima_actualizacion | DATE | |
 | estado | VARCHAR(30) | `activo` \| `requiere_actualizacion` \| `fuera_servicio` — enum ya reservado desde 001; ensanchado a VARCHAR(30) por 006 (el valor `requiere_actualizacion` no cabía en el VARCHAR(20) original); `requiere_actualizacion` usado por 006 (no conformidad de seguridad), `fuera_servicio` usado por esta feature (disponibilidad operativa diaria) |
+| motivo_fuera_servicio | VARCHAR(200) | **Migración 0028 (feature 013)** — texto libre obligatorio al marcar `fuera_servicio`; se limpia al restablecer |
 
-**Uso en esta feature**: FR-001 (marcar `fuera_servicio`), FR-002/FR-003 (restablecer: reevaluar conformidad vía la función ya existente de 006 — research.md Decisión 2 — resultado `activo` o `requiere_actualizacion`), FR-004 (consulta de solo lectura desde `modules/ventas/` para la advertencia previa al cobro).
+**Uso en esta feature**: FR-001 (marcar `fuera_servicio` con `motivo` obligatorio), FR-002/FR-003 (restablecer: reevaluar conformidad vía la función ya existente de 006 — research.md Decisión 2 — resultado `activo` o `requiere_actualizacion`, y limpia `motivo_fuera_servicio`), FR-004 (consulta de solo lectura desde `modules/ventas/` para la advertencia previa al cobro).
 
 ## Extensión aditiva de entidad existente
 

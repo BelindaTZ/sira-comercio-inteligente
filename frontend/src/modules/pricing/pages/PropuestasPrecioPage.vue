@@ -6,6 +6,7 @@
  */
 import { onMounted, reactive, ref } from 'vue'
 import { pricingApi } from '@/services/pricingApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const filtros = reactive({ estado: 'pendiente' })
 const items = ref([])
@@ -43,7 +44,13 @@ async function aprobar(p) {
 }
 
 async function rechazar(p) {
-  const motivo = window.prompt('Motivo del rechazo (opcional):') || ''
+  const motivo = await prompt({
+    title: 'Rechazar la propuesta de precio',
+    label: 'Motivo (opcional)',
+    confirmText: 'Rechazar',
+    tone: 'danger',
+  })
+  if (motivo === null) return
   try {
     await pricingApi.rechazarPropuesta(p.propuesta_id, motivo)
     await cargar()

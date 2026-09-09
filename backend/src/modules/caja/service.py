@@ -173,13 +173,15 @@ class CajaService:
         return no_conformes
 
     # ============================================================ US1 (007): disponibilidad diaria
-    async def marcar_datafono_fuera_servicio(self, datafono_id: int):
-        """FR-001 — el Encargado de Tienda marca un datáfono como fuera de servicio."""
+    async def marcar_datafono_fuera_servicio(self, datafono_id: int, motivo: str):
+        """FR-001 — el Encargado de Tienda marca un datáfono como fuera de servicio,
+        dejando constancia del motivo (texto libre, feature 013)."""
         datafono = await self.repo.get_datafono(datafono_id)
         if datafono is None:
             raise NotFoundError(f"Datáfono {datafono_id} no existe")
         if datafono.estado == "fuera_servicio":
             raise ConflictError(f"El datáfono {datafono_id} ya está fuera de servicio")
+        datafono.motivo_fuera_servicio = motivo
         return await self.repo.marcar_estado_datafono(datafono, "fuera_servicio")
 
     async def restablecer_datafono(self, datafono_id: int) -> dict:
@@ -195,6 +197,7 @@ class CajaService:
             )
         version_minima = await self._version_minima_vigente()
         estado = logica.estado_datafono_restablecido(datafono.version_firmware, version_minima)
+        datafono.motivo_fuera_servicio = None
         await self.repo.marcar_estado_datafono(datafono, estado)
         return {"datafono_id": datafono.datafono_id, "estado": estado}
 

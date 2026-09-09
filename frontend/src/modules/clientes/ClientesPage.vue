@@ -9,6 +9,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { clientesApi } from '@/services/clientesApi'
 import { useSesion } from '@/stores/sesion'
+import { confirm } from '@/shared/ui/dialogs'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -112,7 +113,13 @@ function refrescar() {
 }
 
 async function darDeBaja(row) {
-  if (!window.confirm(`Anonimizar y dar de baja a "${row.nombre}"? (irreversible)`)) return
+  const ok = await confirm({
+    title: 'Anonimizar y dar de baja',
+    message: `Se eliminarán los datos personales de "${row.nombre}" y quedará inactivo. Esta acción es irreversible.`,
+    confirmText: 'Anonimizar',
+    tone: 'danger',
+  })
+  if (!ok) return
   try {
     await clientesApi.darDeBaja(row.household_id)
     if (seleccion.value?.household_id === row.household_id) seleccion.value = null

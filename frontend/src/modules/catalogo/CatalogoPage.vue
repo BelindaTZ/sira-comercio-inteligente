@@ -11,6 +11,7 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { catalogoApi } from '@/services/catalogoApi'
 import { useSesion } from '@/stores/sesion'
+import { confirm } from '@/shared/ui/dialogs'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -151,7 +152,13 @@ async function guardarEdicion() {
 }
 
 async function darDeBaja(row) {
-  if (!window.confirm(`¿Dar de baja "${row.nombre || row.product_id}"?`)) return
+  const ok = await confirm({
+    title: 'Dar de baja el producto',
+    message: `"${row.nombre || row.product_id}" dejará de aparecer en el catálogo activo. No afecta ventas ya registradas.`,
+    confirmText: 'Dar de baja',
+    tone: 'danger',
+  })
+  if (!ok) return
   try {
     await catalogoApi.darDeBaja(row.product_id)
     await refrescar()

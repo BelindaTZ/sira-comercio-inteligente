@@ -59,8 +59,15 @@ class DatafonoOut(BaseModel):
     version_firmware: str | None
     fecha_ultima_actualizacion: date | None
     estado: str
+    motivo_fuera_servicio: str | None = None
 
     model_config = {"from_attributes": True}
+
+
+class FueraServicioIn(BaseModel):
+    """FR-001 (007) + feature 013 — el Encargado deja constancia del motivo."""
+
+    motivo: str = Field(min_length=1, max_length=200)
 
 
 class ActualizarDatafonoIn(BaseModel):

@@ -7,6 +7,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const incidentes = ref([])
 const filtroEstado = ref('')
@@ -26,7 +27,13 @@ async function cargar() {
 }
 
 async function aplicarProtocolo(inc) {
-  const acciones = window.prompt(`Acciones tomadas sobre el incidente #${inc.incidente_id}`, '')
+  const acciones = await prompt({
+    title: `Aplicar protocolo — incidente #${inc.incidente_id}`,
+    label: 'Acciones tomadas',
+    placeholder: 'Qué se hizo según el protocolo de escalamiento',
+    required: true,
+    confirmText: 'Registrar',
+  })
   if (!acciones) return
   try {
     await cajaApi.aplicarProtocolo(inc.incidente_id, acciones)

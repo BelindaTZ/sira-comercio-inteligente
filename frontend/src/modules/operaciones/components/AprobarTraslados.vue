@@ -7,6 +7,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { trasladosApi } from '@/services/trasladosApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const pendientes = ref([])
 const error = ref('')
@@ -26,7 +27,14 @@ async function resolver(traslado, decision) {
   aviso.value = ''
   let motivo = null
   if (decision === 'rechazar') {
-    motivo = window.prompt('Motivo del rechazo (opcional)') || null
+    motivo = await prompt({
+      title: 'Rechazar el traslado',
+      label: 'Motivo (opcional)',
+      confirmText: 'Rechazar',
+      tone: 'danger',
+    })
+    if (motivo === null) return
+    motivo = motivo || null
   }
   try {
     const r = await trasladosApi.resolver(traslado.traslado_id, decision, motivo)

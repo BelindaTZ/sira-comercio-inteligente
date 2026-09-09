@@ -14,14 +14,25 @@ async def test_fuera_servicio_y_restablecer_con_reevaluacion(
     e = escenario_pagos
 
     fuera = await client.patch(
-        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio", headers=auth_encargado
+        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio",
+        json={"motivo": "No lee chip, error persistente"},
+        headers=auth_encargado,
     )
     assert fuera.status_code == 200, fuera.text
     assert fuera.json()["estado"] == "fuera_servicio"
+    assert fuera.json()["motivo_fuera_servicio"] == "No lee chip, error persistente"
+
+    # el motivo es obligatorio
+    sin_motivo = await client.patch(
+        f"/api/caja/datafonos/{e['datafono_nuevo']}/fuera-servicio", headers=auth_encargado
+    )
+    assert sin_motivo.status_code == 422, sin_motivo.text
 
     # doble marca → 409
     otra = await client.patch(
-        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio", headers=auth_encargado
+        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio",
+        json={"motivo": "otra vez"},
+        headers=auth_encargado,
     )
     assert otra.status_code == 409, otra.text
 
@@ -38,11 +49,20 @@ async def test_fuera_servicio_y_restablecer_con_reevaluacion(
     assert rest.status_code == 200, rest.text
     assert rest.json()["estado"] == "requiere_actualizacion"  # no 'activo'
 
+    # al restablecer se limpia el motivo
+    listado = await client.get(
+        "/api/caja/datafonos", params={"estado": "requiere_actualizacion"}, headers=auth_encargado
+    )
+    fila = next(d for d in listado.json() if d["datafono_id"] == e["datafono_viejo"])
+    assert fila["motivo_fuera_servicio"] is None
+
 
 async def test_restablecer_datafono_conforme_queda_activo(client, escenario_pagos, auth_encargado):
     e = escenario_pagos
     await client.patch(
-        f"/api/caja/datafonos/{e['datafono_nuevo']}/fuera-servicio", headers=auth_encargado
+        f"/api/caja/datafonos/{e['datafono_nuevo']}/fuera-servicio",
+        json={"motivo": "mantención preventiva"},
+        headers=auth_encargado,
     )
     rest = await client.patch(
         f"/api/caja/datafonos/{e['datafono_nuevo']}/restablecer", headers=auth_encargado
@@ -61,6 +81,8 @@ async def test_restablecer_un_datafono_operativo_da_409(client, escenario_pagos,
 async def test_cajero_no_marca_datafonos(client, escenario_pagos, auth_cajero):
     e = escenario_pagos
     resp = await client.patch(
-        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio", headers=auth_cajero
+        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio",
+        json={"motivo": "x"},
+        headers=auth_cajero,
     )
     assert resp.status_code == 403, resp.text

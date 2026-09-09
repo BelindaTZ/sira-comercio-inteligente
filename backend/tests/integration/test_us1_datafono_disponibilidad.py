@@ -16,7 +16,9 @@ async def test_disponibilidad_diaria_de_punta_a_punta(
     e = escenario_pagos
 
     fuera = await client.patch(
-        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio", headers=auth_encargado
+        f"/api/caja/datafonos/{e['datafono_viejo']}/fuera-servicio",
+        json={"motivo": "sin respuesta en la verificación diaria"},
+        headers=auth_encargado,
     )
     assert fuera.status_code == 200 and fuera.json()["estado"] == "fuera_servicio"
 

@@ -6,6 +6,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 const filtroEstado = ref('vigente')
 const reglas = ref([])
@@ -36,7 +37,13 @@ async function calcular() {
 }
 
 async function desactivar(regla) {
-  const motivo = window.prompt('Motivo de la desactivación (opcional):') || ''
+  const motivo = await prompt({
+    title: 'Desactivar la regla de afinidad',
+    label: 'Motivo (opcional)',
+    confirmText: 'Desactivar',
+    tone: 'danger',
+  })
+  if (motivo === null) return
   try {
     await promocionesApi.desactivarRegla(regla.regla_id, motivo)
     await cargar()

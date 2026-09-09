@@ -14,6 +14,7 @@ import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/comp
 import { CanvasRenderer } from 'echarts/renderers'
 import VChart from 'vue-echarts'
 import { forecastingApi } from '@/services/forecastingApi'
+import { prompt } from '@/shared/ui/dialogs'
 
 use([CanvasRenderer, LineChart, GridComponent, TooltipComponent, MarkLineComponent])
 
@@ -94,10 +95,16 @@ async function aprobar(m) {
 }
 
 async function rechazar(m) {
-  const motivo = window.prompt('Motivo del rechazo (obligatorio):')
-  if (!motivo || !motivo.trim()) return
+  const motivo = await prompt({
+    title: 'Rechazar el modelo',
+    label: 'Motivo del rechazo',
+    required: true,
+    tone: 'danger',
+    confirmText: 'Rechazar',
+  })
+  if (!motivo) return
   try {
-    await forecastingApi.rechazarModelo(m.modelo_id, motivo.trim())
+    await forecastingApi.rechazarModelo(m.modelo_id, motivo)
     await cargar()
   } catch (e) {
     error.value = e.message

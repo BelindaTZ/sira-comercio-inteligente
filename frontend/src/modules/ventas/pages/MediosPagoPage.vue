@@ -6,6 +6,7 @@
  */
 import { onMounted, ref } from 'vue'
 import { ventasApi } from '@/services/ventasApi'
+import { confirm } from '@/shared/ui/dialogs'
 
 const medios = ref([])
 const nuevoNombre = ref('')
@@ -36,7 +37,13 @@ async function alta() {
 }
 
 async function baja(m) {
-  if (!window.confirm(`Dar de baja «${m.nombre}»? No afecta ventas ya registradas.`)) return
+  const ok = await confirm({
+    title: 'Dar de baja el medio de pago',
+    message: `«${m.nombre}» dejará de ofrecerse en caja. No afecta ventas ya registradas.`,
+    confirmText: 'Dar de baja',
+    tone: 'danger',
+  })
+  if (!ok) return
   try {
     await ventasApi.bajaMedioPago(m.medio_pago_id)
     await cargar()

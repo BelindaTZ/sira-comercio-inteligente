@@ -14,6 +14,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
 import { useSesion } from '@/stores/sesion'
+import { prompt } from '@/shared/ui/dialogs'
 import PageHeader from '@/shared/ui/PageHeader.vue'
 import KpiTile from '@/shared/ui/KpiTile.vue'
 import Btn from '@/shared/ui/Btn.vue'
@@ -216,10 +217,18 @@ async function definirEstandar() {
 }
 
 async function fueraServicio(row) {
-  if (!window.confirm(`¿Marcar el datáfono #${row.datafono_id} (Caja ${row.caja_id}) fuera de servicio?`))
-    return
+  const motivo = await prompt({
+    title: `Marcar fuera de servicio — datáfono #${row.datafono_id}`,
+    message: `${etiquetaCaja(row.caja_id)} quedará no disponible para cobro con tarjeta.`,
+    label: 'Motivo',
+    placeholder: 'Ej.: no lee chip, sin conexión, daño físico…',
+    required: true,
+    tone: 'danger',
+    confirmText: 'Marcar fuera de servicio',
+  })
+  if (!motivo) return
   try {
-    await cajaApi.datafonoFueraServicio(row.datafono_id)
+    await cajaApi.datafonoFueraServicio(row.datafono_id, motivo)
     await cargar()
   } catch (e) {
     error.value = e.response?.data?.error?.message || e.message
@@ -370,6 +379,13 @@ onMounted(cargar)
         <SemanticChip :tipo="ESTADO[row.estado]?.tipo || 'neutral'">
           {{ ESTADO[row.estado]?.txt || row.estado }}
         </SemanticChip>
+        <div
+          v-if="row.estado === 'fuera_servicio' && row.motivo_fuera_servicio"
+          class="mt-1 text-[10px] leading-tight text-slate-500"
+          :title="row.motivo_fuera_servicio"
+        >
+          {{ row.motivo_fuera_servicio }}
+        </div>
       </template>
 
       <template #cell:acciones="{ row }">
