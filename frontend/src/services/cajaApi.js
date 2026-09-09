@@ -107,6 +107,10 @@ export const cajaApi = {
     return http.get('/api/caja/protocolo-escalamiento').then((r) => r.data)
   },
 
+  protocoloHistorial() {
+    return http.get('/api/caja/protocolo-escalamiento/historial').then((r) => r.data)
+  },
+
   definirProtocolo(texto) {
     return http.put('/api/caja/protocolo-escalamiento', { texto }).then((r) => r.data)
   },
@@ -190,6 +194,10 @@ export const cajaApi = {
 
   politicaSeguridad() {
     return http.get('/api/caja/politica-seguridad-pagos').then((r) => r.data)
+  },
+
+  politicaSeguridadHistorial() {
+    return http.get('/api/caja/politica-seguridad-pagos/historial').then((r) => r.data)
   },
 
   politicaSeguridadPorId(politicaId) {

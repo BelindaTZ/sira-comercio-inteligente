@@ -56,6 +56,11 @@ firmware desactualizado) y el estándar de seguridad de pagos vigente — sin es
 las pantallas de POS, cuadre y datáfonos quedan vacías. No fabrica tiempos de
 cobro (la medición de `fecha_inicio_cobro` es prospectiva — Principio VII).
 
+`preparar_demo::_seguridad_pagos_demo` (paso 4c) siembra los documentos de
+referencia versionados (protocolo de escalamiento y política de seguridad de
+pagos, 2 versiones cada uno) y 3 incidentes de fraude de ejemplo en distintos
+estados del ciclo (abierto / en revisión / cerrado).
+
 `preparar_demo` deja una cuenta por rol RBAC (`demo.gerente`, `demo.ti`,
 `demo.comercial`, `demo.marketing`, `demo.operaciones`, `demo.finanzas`, `demo.rrhh`,
 `demo.encargado`, `demo.reponedor`, `demo.cajero`), todas con contraseña **`Sira2026!`**.

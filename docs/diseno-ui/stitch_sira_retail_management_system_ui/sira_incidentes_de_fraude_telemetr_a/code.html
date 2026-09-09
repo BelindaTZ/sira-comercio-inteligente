@@ -1,0 +1,886 @@
+<!DOCTYPE html><html class="light" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SIRA - Monitoreo &amp; Detección de Incidentes de Fraude | Marzú Retail Group</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-tint": "#3e6561",
+            "surface-dim": "#d8dadc",
+            "inverse-primary": "#a5cfc9",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#eaddff",
+            "surface-container": "#eceef0",
+            "error-container": "#ffdad6",
+            "on-background": "#191c1e",
+            "on-secondary-fixed": "#25005a",
+            "background": "#f8f9fb",
+            "on-surface": "#191c1e",
+            "secondary-container": "#8a4cfc",
+            "outline-variant": "#c0c8c6",
+            "tertiary": "#002014",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#414847",
+            "on-primary": "#ffffff",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#f2f4f6",
+            "on-primary-container": "#779f9a",
+            "on-secondary-container": "#fffbff",
+            "on-primary-fixed": "#00201d",
+            "tertiary-container": "#003825",
+            "outline": "#717977",
+            "secondary-fixed-dim": "#d2bbff",
+            "secondary": "#712ae2",
+            "tertiary-fixed": "#85f8c4",
+            "on-tertiary-container": "#30ab7c",
+            "on-primary-fixed-variant": "#254d49",
+            "on-tertiary-fixed": "#002114",
+            "on-tertiary-fixed-variant": "#005137",
+            "primary-container": "#0a3632",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "primary": "#00201d",
+            "inverse-surface": "#2d3133",
+            "surface": "#f8f9fb",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-lowest": "#ffffff",
+            "surface-variant": "#e0e3e5",
+            "surface-container-highest": "#e0e3e5",
+            "on-secondary": "#ffffff",
+            "surface-bright": "#f8f9fb",
+            "primary-fixed": "#c0ebe4",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-error": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-base": "1rem",
+            "space-lg": "1.5rem",
+            "space-2xs": "0.125rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-2xl": "3rem",
+            "sidebar-collapsed": "4.5rem",
+            "sidebar-expanded": "16.5rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem"
+          },
+          "fontFamily": {
+            "tabular-data": ["inter"],
+            "body-md": ["inter"],
+            "headline-sm": ["plusJakartaSans"],
+            "headline-lg": ["plusJakartaSans"],
+            "headline-xl": ["plusJakartaSans"],
+            "headline-md": ["plusJakartaSans"],
+            "label-md": ["inter"],
+            "label-sm": ["inter"],
+            "tabular-metric": ["inter"],
+            "display-lg": ["plusJakartaSans"],
+            "body-sm": ["inter"],
+            "body-lg": ["inter"]
+          },
+          "fontSize": {
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .hairline-border {
+      border: 1px solid rgba(10, 54, 50, 0.08);
+    }
+    .tier-1-surface {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 1px 2px rgba(10, 54, 50, 0.03), 0 4px 12px rgba(10, 54, 50, 0.04);
+    }
+    .amethyst-glow {
+      box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.16), 0 8px 24px -4px rgba(124, 58, 237, 0.1);
+    }
+    .pulse-dot {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(0.9); }
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col font-body-md selection:bg-primary-container selection:text-on-primary">
+<!-- ================= TOP NAVIGATION BAR (SHARED COMPONENT ANCHOR) ================= -->
+<header class="sticky top-0 z-50 w-full rounded-none border-b border-outline-variant/40 dark:border-outline/30 bg-surface-container-lowest/80 dark:bg-inverse-surface/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex items-center justify-between px-margin-edge w-full max-w-[1680px] mx-auto h-16 px-6">
+<!-- Brand & Left Search Cluster -->
+<div class="flex items-center gap-space-lg">
+<div class="flex items-center gap-space-sm">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center text-white shadow-sm">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+<span class="text-headline-md font-headline-md font-bold tracking-tight text-primary">SIRA</span>
+</div>
+<div class="relative w-80 hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-outline text-[18px]">search</span>
+<input class="w-full pl-9 pr-4 py-1.5 text-body-sm font-body-sm bg-surface-container-low border border-outline-variant/50 rounded-lg text-on-surface focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container transition-all" placeholder="Consultar BIN, RUT, caja o hash..." type="text">
+<span class="absolute right-2.5 top-2 text-[10px] font-tabular-data text-outline bg-surface-container px-1.5 py-0.5 rounded border border-outline-variant/40">⌘K</span>
+</div>
+</div>
+<!-- Navigation Links (Active state determined autonomously -> Seguridad / Monitoreo) -->
+<nav class="hidden md:flex items-center gap-space-lg">
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-label-md font-label-md" href="#">Dashboard</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-label-md font-label-md" href="#">Punto de Venta</a>
+<a class="text-primary dark:text-inverse-primary border-b-2 border-primary dark:border-inverse-primary font-semibold py-3 text-label-md font-label-md flex items-center gap-1.5" href="#">
+<span class="material-symbols-outlined text-[16px] text-primary" data-weight="fill">shield_person</span>
+          Inventario &amp; Fraude
+        </a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-label-md font-label-md" href="#">Catálogo</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-label-md font-label-md" href="#">CRM Clientes</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-on-surface dark:hover:text-inverse-on-surface py-3 transition-colors text-label-md font-label-md" href="#">Finanzas</a>
+</nav>
+<!-- Trailing Action Cluster & Live Security Context -->
+<div class="flex items-center gap-space-md">
+<!-- Live Node Telemetry Chip -->
+<div class="hidden xl:flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-lg border border-outline-variant/40">
+<span class="w-2 h-2 rounded-full bg-emerald-600 pulse-dot"></span>
+<span class="text-[11px] font-tabular-data text-on-surface-variant font-medium">PCI-DSS Ingest: <strong class="text-on-surface">342 txn/s</strong></span>
+</div>
+<!-- Trailing actions from JSON -->
+<div class="flex items-center gap-1 text-on-surface-variant">
+<button class="p-2 rounded-lg hover:bg-surface-container-low transition-colors" title="Sucursales Activas">
+<span class="material-symbols-outlined text-[20px]">storefront</span>
+</button>
+<div class="relative">
+<button class="p-2 rounded-lg hover:bg-surface-container-low transition-colors" title="Alertas de Seguridad">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-white"></span>
+</div>
+<button class="p-2 rounded-lg hover:bg-surface-container-low transition-colors" title="Cambio de Terminal">
+<span class="material-symbols-outlined text-[20px]">swap_horiz</span>
+</button>
+</div>
+<div class="h-6 w-px bg-outline-variant/40"></div>
+<!-- Profile / Manager Badge -->
+<div class="flex items-center gap-2.5 pl-1">
+<div class="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-headline-sm font-semibold text-[13px] ring-1 ring-outline-variant/30">
+            GG
+          </div>
+<div class="hidden lg:flex flex-col text-left">
+<span class="text-label-sm font-label-sm text-on-surface">G. González</span>
+<span class="text-[10px] text-on-surface-variant leading-none font-medium">Gerente General</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- ================= SUB-HEADER / LOCAL BRANCH BAR ================= -->
+<div class="bg-surface-container-low border-b border-outline-variant/30 px-6 py-2.5">
+<div class="max-w-[1680px] mx-auto flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-2.5 py-1 bg-surface-container-lowest rounded-md hairline-border">
+<span class="material-symbols-outlined text-primary-container text-[16px]">domain</span>
+<span class="text-label-sm font-label-sm text-on-surface font-semibold">Marzú Retail Group</span>
+<span class="text-outline-variant text-[12px]">•</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant font-medium">Tienda 04 - Providencia Express (Santiago, CL)</span>
+<button class="text-secondary font-label-sm text-[11px] hover:underline ml-1">Cambiar Sucursal</button>
+</div>
+<div class="hidden sm:flex items-center gap-1.5 text-label-sm font-label-sm px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+<span>Red Transbank Oriente: Monitoreo Reforzado</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-body-sm font-body-sm">
+<span class="text-on-surface-variant text-[12px] flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-tertiary-fixed-variant">sync</span>
+          Última actualización: <strong>14:28:19 UTC-3</strong>
+</span>
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-white hover:bg-surface-container text-on-surface hairline-border rounded transition-all flex items-center gap-1 shadow-xs">
+<span class="material-symbols-outlined text-[14px]">tune</span> Filtros Heurísticos
+        </button>
+</div>
+</div>
+</div>
+<!-- ================= MAIN CONTENT CANVAS ================= -->
+<main class="flex-1 w-full max-w-[1680px] mx-auto px-6 py-space-lg space-y-space-lg">
+<!-- 1. OPERATIONAL HEADER -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2">
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<h1 class="text-headline-xl font-headline-xl text-primary tracking-tight">Monitoreo de Incidentes de Fraude &amp; Transacciones Sospechosas</h1>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm bg-purple-100 text-purple-900 border border-purple-200 flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">neurology</span> Motor SIRA v4.2
+          </span>
+</div>
+<p class="text-body-md font-body-md text-on-surface-variant max-w-4xl">
+          Detección en tiempo real de patrones anómalos en cajas POS, tarjetas clonadas, rechazos masivos de BIN, duplicación de vouchers y reversas indebidas en toda la red de sala.
+        </p>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="px-3.5 py-2 text-label-md font-label-md rounded bg-surface-container-lowest hairline-border text-primary hover:bg-surface-container transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">science</span>
+<span>Simular Ataque / Test Sandbox</span>
+</button>
+<button class="px-3.5 py-2 text-label-md font-label-md rounded bg-surface-container-lowest hairline-border text-on-surface hover:bg-surface-container transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Exportar Informe Forense</span>
+</button>
+<button class="px-4 py-2 text-label-md font-label-md rounded bg-primary-container text-on-primary hover:bg-[#0e4a44] transition-all flex items-center gap-1.5 shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[16px]" data-weight="fill">shield</span>
+<span>Regla de Bloqueo Rápido</span>
+</button>
+</div>
+</div>
+<!-- 2. EXECUTIVE FRAUD KPIS -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-gutter-desktop">
+<!-- KPI 1: Intentos Bloqueados Hoy -->
+<div class="tier-1-surface hairline-border rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Intentos Bloqueados Hoy</span>
+<div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric text-on-surface">14</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant font-medium">eventos neutralizados</span>
+</div>
+<div class="mt-2.5 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-emerald-100 text-emerald-800 border border-emerald-300">
+<span class="material-symbols-outlined text-[12px]">check_circle</span> 100% Mitigados
+            </span>
+<span class="text-[11px] text-on-surface-variant font-body-sm">Previo a boleta fiscal</span>
+</div>
+</div>
+</div>
+<!-- KPI 2: Monto Prevenido -->
+<div class="tier-1-surface hairline-border rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Monto Prevenido (CLP)</span>
+<div class="w-8 h-8 rounded-lg bg-primary-container/10 text-primary-container flex items-center justify-center border border-primary-container/20">
+<span class="material-symbols-outlined text-[18px]">lock_clock</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-1">
+<span class="text-headline-md text-on-surface-variant font-semibold">$</span>
+<span class="text-tabular-metric font-tabular-metric text-on-surface">1.840.500</span>
+</div>
+<div class="mt-2.5 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-emerald-50 text-emerald-700 border border-emerald-200">
+              +18.4% vs promedio diario
+            </span>
+<span class="text-[11px] text-on-surface-variant font-body-sm">Retención en POS</span>
+</div>
+</div>
+</div>
+<!-- KPI 3: Tasa de Falsos Positivos -->
+<div class="tier-1-surface hairline-border rounded-xl p-space-lg flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-on-surface-variant uppercase tracking-wider">Tasa Falsos Positivos</span>
+<div class="w-8 h-8 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center border border-purple-200">
+<span class="material-symbols-outlined text-[18px]">precision_manufacturing</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric text-on-surface">0.08%</span>
+<span class="text-body-sm font-body-sm text-outline">Meta: &lt; 0.15%</span>
+</div>
+<div class="mt-2.5 flex items-center gap-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-label-sm bg-purple-100 text-purple-900 border border-purple-300">
+              Estado: Óptimo
+            </span>
+<span class="text-[11px] text-on-surface-variant font-body-sm">Sin fricción a clientes VIP</span>
+</div>
+</div>
+</div>
+<!-- KPI 4: Nivel de Alerta de Red -->
+<div class="tier-1-surface hairline-border rounded-xl p-space-lg flex flex-col justify-between border-amber-200/80 bg-amber-50/20">
+<div class="flex items-center justify-between">
+<span class="text-label-sm font-label-sm text-amber-900 uppercase tracking-wider">Nivel Alerta de Red</span>
+<div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center border border-amber-300">
+<span class="material-symbols-outlined text-[18px]">radar</span>
+</div>
+</div>
+<div class="mt-4">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-amber-500 pulse-dot"></span>
+<span class="text-headline-md font-headline-md text-amber-950 font-bold">Amarillo Activo</span>
+</div>
+<div class="mt-2.5 flex items-center gap-1.5 text-[11px] text-amber-900 font-body-sm">
+<span class="material-symbols-outlined text-[14px]">info</span>
+<span>Ráfaga BIN 450799 reportada por Transbank</span>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. FRAUD VECTOR MATRIX & HEATMAP -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-gutter-desktop">
+<!-- Vector Breakdown Chart (7 cols) -->
+<div class="lg:col-span-7 tier-1-surface hairline-border rounded-xl p-space-lg space-y-space-md">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-headline-sm font-headline-sm text-primary">Matriz de Vectores de Fraude Detectados</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Distribución porcentual de patrones anómalos interceptados en la última jornada</p>
+</div>
+<span class="text-label-sm font-label-sm px-2.5 py-1 rounded bg-surface-container font-medium text-on-surface-variant">Ciclo: Últimas 24h</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+<!-- Vector 1 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="font-medium text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-error"></span>
+                Reversa Forzada / MitM
+              </span>
+<span class="font-tabular-data font-semibold text-primary">42%</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
+<div class="bg-error h-2 rounded-full" style="width: 42%"></div>
+</div>
+<span class="text-[11px] text-on-surface-variant block">6 casos • Interrupción forzada de cable ethernet POS</span>
+</div>
+<!-- Vector 2 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="font-medium text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                Card Testing / Ráfaga BIN
+              </span>
+<span class="font-tabular-data font-semibold text-primary">28%</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
+<div class="bg-amber-500 h-2 rounded-full" style="width: 28%"></div>
+</div>
+<span class="text-[11px] text-on-surface-variant block">4 casos • Más de 5 transacciones de $1.000 en &lt;60s</span>
+</div>
+<!-- Vector 3 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="font-medium text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary"></span>
+                Devolución sin Boleta
+              </span>
+<span class="font-tabular-data font-semibold text-primary">18%</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
+<div class="bg-secondary h-2 rounded-full" style="width: 18%"></div>
+</div>
+<span class="text-[11px] text-on-surface-variant block">3 casos • Intento de abono a cuenta corriente externa</span>
+</div>
+<!-- Vector 4 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border space-y-2">
+<div class="flex items-center justify-between text-body-sm font-body-sm">
+<span class="font-medium text-on-surface flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-purple-600"></span>
+                Suplantación de RUT / Cédula
+              </span>
+<span class="font-tabular-data font-semibold text-primary">12%</span>
+</div>
+<div class="w-full bg-surface-container-high rounded-full h-2 overflow-hidden">
+<div class="bg-purple-600 h-2 rounded-full" style="width: 12%"></div>
+</div>
+<span class="text-[11px] text-on-surface-variant block">1 caso • RUT bloqueado por Registro Civil con tarjeta débito</span>
+</div>
+</div>
+<div class="p-3 bg-purple-50/50 rounded-lg border border-purple-200/60 flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[20px]">auto_awesome</span>
+<p class="text-body-sm font-body-sm text-purple-950">
+<strong>Recomendación Algorítmica:</strong> Se sugiere activar doble factor biométrico en cajas de Autoservicio 07 y 08 tras detectarse 3 micro-compras secuenciales con tarjetas de crédito emitidas en el extranjero.
+          </p>
+</div>
+</div>
+<!-- POS Friction Heatmap (5 cols) -->
+<div class="lg:col-span-5 tier-1-surface hairline-border rounded-xl p-space-lg flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-headline-sm font-headline-sm text-primary">Mapa de Calor POS en Sala</h3>
+<span class="inline-flex items-center gap-1 text-[11px] font-label-sm text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-error"></span> Crítico
+              <span class="w-2 h-2 rounded-full bg-amber-500 ml-2"></span> Medio
+              <span class="w-2 h-2 rounded-full bg-emerald-500 ml-2"></span> Normal
+            </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant mb-4">Topología de puntos de venta e índice de fricción/rechazo</p>
+<!-- POS Grid Layout -->
+<div class="grid grid-cols-4 gap-2.5">
+<div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40 text-center">
+<span class="text-[10px] font-label-sm text-on-surface-variant uppercase block">Caja 01</span>
+<span class="text-tabular-data font-bold text-emerald-800">POS-01</span>
+<span class="text-[10px] text-emerald-700 block mt-1">Normal (0%)</span>
+</div>
+<div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40 text-center">
+<span class="text-[10px] font-label-sm text-on-surface-variant uppercase block">Caja 02</span>
+<span class="text-tabular-data font-bold text-emerald-800">POS-02</span>
+<span class="text-[10px] text-emerald-700 block mt-1">Normal (0%)</span>
+</div>
+<div class="p-2.5 rounded-lg border border-amber-300 bg-amber-50 text-center relative">
+<span class="text-[10px] font-label-sm text-amber-900 uppercase block">Caja 03</span>
+<span class="text-tabular-data font-bold text-amber-950">POS-03</span>
+<span class="text-[10px] text-amber-800 block mt-1">2 Fallas PIN</span>
+<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+</div>
+<div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40 text-center">
+<span class="text-[10px] font-label-sm text-on-surface-variant uppercase block">Caja 04</span>
+<span class="text-tabular-data font-bold text-emerald-800">POS-04</span>
+<span class="text-[10px] text-emerald-700 block mt-1">Normal (0%)</span>
+</div>
+<!-- Row 2 -->
+<div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40 text-center">
+<span class="text-[10px] font-label-sm text-on-surface-variant uppercase block">Caja 05</span>
+<span class="text-tabular-data font-bold text-emerald-800">POS-05</span>
+<span class="text-[10px] text-emerald-700 block mt-1">Normal (0%)</span>
+</div>
+<div class="p-2.5 rounded-lg border border-emerald-200 bg-emerald-50/40 text-center">
+<span class="text-[10px] font-label-sm text-on-surface-variant uppercase block">Caja 06</span>
+<span class="text-tabular-data font-bold text-emerald-800">POS-06</span>
+<span class="text-[10px] text-emerald-700 block mt-1">Normal (0%)</span>
+</div>
+<!-- Self Checkout hotspot -->
+<div class="p-2.5 rounded-lg border-2 border-error bg-red-50 text-center relative shadow-xs">
+<span class="text-[10px] font-label-sm text-error uppercase font-bold block">Self 07</span>
+<span class="text-tabular-data font-bold text-error">SCO-07</span>
+<span class="text-[10px] text-error font-semibold block mt-1">5 MitM Blq</span>
+<span class="absolute -top-1 -right-1 w-3 h-3 bg-error text-white rounded-full flex items-center justify-center text-[8px] font-bold">!</span>
+</div>
+<div class="p-2.5 rounded-lg border border-amber-300 bg-amber-50 text-center relative">
+<span class="text-[10px] font-label-sm text-amber-900 uppercase block">Self 08</span>
+<span class="text-tabular-data font-bold text-amber-950">SCO-08</span>
+<span class="text-[10px] text-amber-800 block mt-1">Card Test</span>
+<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-500 rounded-full"></span>
+</div>
+</div>
+</div>
+<div class="pt-3 border-t border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant text-[12px]">Foco actual: <strong>Zona Autoservicio SCO</strong></span>
+<button class="text-primary-container text-label-sm font-semibold hover:underline flex items-center gap-1">
+<span>Aislar Terminal SCO-07</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- 4. LIVE INCIDENT TELEMETRY TABLE -->
+<section class="tier-1-surface hairline-border rounded-xl overflow-hidden shadow-sm">
+<!-- Table Header & Toolbar -->
+<div class="p-space-md border-b border-outline-variant/30 flex flex-wrap items-center justify-between gap-4 bg-surface-container-low/50">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">list_alt</span>
+<h3 class="text-headline-sm font-headline-sm text-primary">Registro de Incidentes &amp; Telemetría en Vivo</h3>
+</div>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-tabular-data bg-surface-container-high text-on-surface font-semibold">
+            5 Eventos Críticos Pendientes
+          </span>
+</div>
+<div class="flex items-center gap-2">
+<div class="flex items-center bg-white rounded border border-outline-variant/50 p-0.5 text-[11px] font-label-sm">
+<button class="px-2.5 py-1 rounded bg-primary-container text-white font-medium">Todos</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface">Críticos</button>
+<button class="px-2.5 py-1 rounded text-on-surface-variant hover:text-on-surface">En Revisión</button>
+</div>
+<button class="p-1.5 bg-white border border-outline-variant/50 rounded hover:bg-surface-container transition-colors" title="Exportar CSV">
+<span class="material-symbols-outlined text-[18px] text-on-surface-variant">download</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="h-9 bg-slate-50 border-b border-outline-variant/40 text-[11px] font-label-sm text-slate-500 uppercase tracking-wider">
+<th class="px-4 py-2 font-semibold">ID Incidente / Hash</th>
+<th class="px-3 py-2 font-semibold">Hora</th>
+<th class="px-3 py-2 font-semibold">Caja / Operador</th>
+<th class="px-4 py-2 font-semibold">Medio de Pago &amp; BIN</th>
+<th class="px-4 py-2 font-semibold">Tipo de Anomalía</th>
+<th class="px-3 py-2 font-semibold">Monto (CLP)</th>
+<th class="px-3 py-2 font-semibold">Riesgo</th>
+<th class="px-3 py-2 font-semibold">Estado Motor SIRA</th>
+<th class="px-4 py-2 font-semibold text-right">Acciones</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 text-body-sm font-body-sm">
+<!-- Row 1: Reversa Forzada / Man-in-the-Middle -->
+<tr class="h-11 hover:bg-slate-50/80 transition-colors bg-red-50/10">
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 font-mono text-[12px] text-primary font-semibold">
+<span class="material-symbols-outlined text-[14px] text-error">gpp_bad</span>
+                  #INC-98214
+                </div>
+<span class="text-[10px] text-outline font-mono">hash: 8f2a...c01e</span>
+</td>
+<td class="px-3 py-2.5 text-[12px] font-tabular-data text-on-surface">14:26:41</td>
+<td class="px-3 py-2.5">
+<div class="font-medium text-on-surface text-[13px]">SCO-07 (Autoservicio)</div>
+<div class="text-[11px] text-outline">Sin cajero • Terminal #104</div>
+</td>
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 text-on-surface font-medium text-[12px]">
+<span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 text-[10px] font-bold">VISA</span>
+<span>Signature ****4821</span>
+</div>
+<span class="text-[11px] text-outline">BIN 450799 (Banco de Chile)</span>
+</td>
+<td class="px-4 py-2.5">
+<span class="text-error font-semibold text-[12px] flex items-center gap-1">
+                  Reversa Forzada (MitM)
+                </span>
+<span class="text-[11px] text-outline">Corte ethernet tras auth ACK</span>
+</td>
+<td class="px-3 py-2.5 font-tabular-data font-semibold text-on-surface text-right pr-6">
+                $429.990
+              </td>
+<td class="px-3 py-2.5">
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm bg-red-100 text-red-800 border border-red-200">
+                  Crítico (98%)
+                </span>
+</td>
+<td class="px-3 py-2.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-emerald-100 text-emerald-900 font-medium">
+<span class="material-symbols-outlined text-[12px]">block</span> Bloqueado Motor
+                </span>
+</td>
+<td class="px-4 py-2.5 text-right space-x-1 whitespace-nowrap">
+<button class="px-2 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-slate-100 text-primary transition-all" title="Ver Traza de Red">
+                  Traza
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm bg-red-600 text-white rounded hover:bg-red-700 transition-all">
+                  Bloquear Tarjeta
+                </button>
+</td>
+</tr>
+<!-- Row 2: Card Testing masivo -->
+<tr class="h-11 hover:bg-slate-50/80 transition-colors">
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 font-mono text-[12px] text-primary font-semibold">
+<span class="material-symbols-outlined text-[14px] text-amber-600">warning</span>
+                  #INC-98212
+                </div>
+<span class="text-[10px] text-outline font-mono">hash: 1b7d...993f</span>
+</td>
+<td class="px-3 py-2.5 text-[12px] font-tabular-data text-on-surface">14:21:05</td>
+<td class="px-3 py-2.5">
+<div class="font-medium text-on-surface text-[13px]">Caja 03 (Express)</div>
+<div class="text-[11px] text-outline">Operador: M. Muñoz (ID 402)</div>
+</td>
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 text-on-surface font-medium text-[12px]">
+<span class="px-1.5 py-0.5 rounded bg-orange-100 text-orange-900 text-[10px] font-bold">MC</span>
+<span>Black ****9012</span>
+</div>
+<span class="text-[11px] text-outline">BIN 542418 (Santander CL)</span>
+</td>
+<td class="px-4 py-2.5">
+<span class="text-amber-800 font-semibold text-[12px]">Card Testing (Ráfaga)</span>
+<span class="text-[11px] text-outline">4 txns rechazas &lt; 40 segs</span>
+</td>
+<td class="px-3 py-2.5 font-tabular-data font-semibold text-on-surface text-right pr-6">
+                $1.250
+              </td>
+<td class="px-3 py-2.5">
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm bg-amber-100 text-amber-800 border border-amber-200">
+                  Alto (76%)
+                </span>
+</td>
+<td class="px-3 py-2.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-purple-100 text-purple-900 font-medium">
+<span class="material-symbols-outlined text-[12px]">manage_search</span> En Revisión
+                </span>
+</td>
+<td class="px-4 py-2.5 text-right space-x-1 whitespace-nowrap">
+<button class="px-2 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-slate-100 text-primary transition-all">
+                  Traza
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm bg-primary-container text-white rounded hover:bg-primary transition-all">
+                  Intervenir
+                </button>
+</td>
+</tr>
+<!-- Row 3: Devolución sin comprobante físico / Licores -->
+<tr class="h-11 hover:bg-slate-50/80 transition-colors">
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 font-mono text-[12px] text-primary font-semibold">
+<span class="material-symbols-outlined text-[14px] text-amber-600">report</span>
+                  #INC-98199
+                </div>
+<span class="text-[10px] text-outline font-mono">hash: 4c31...ee88</span>
+</td>
+<td class="px-3 py-2.5 text-[12px] font-tabular-data text-on-surface">14:04:12</td>
+<td class="px-3 py-2.5">
+<div class="font-medium text-on-surface text-[13px]">Caja 01 (Atención Cliente)</div>
+<div class="text-[11px] text-outline">Operador: C. Fuentes (ID 188)</div>
+</td>
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 text-on-surface font-medium text-[12px]">
+<span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[10px] font-bold">REDCOMPRA</span>
+<span>Débito ****3319</span>
+</div>
+<span class="text-[11px] text-outline">RUT: 16.482.901-K</span>
+</td>
+<td class="px-4 py-2.5">
+<span class="text-on-surface font-semibold text-[12px]">Devolución Anómala</span>
+<span class="text-[11px] text-outline">3x Whisky Johnnie Walker Blue</span>
+</td>
+<td class="px-3 py-2.5 font-tabular-data font-semibold text-on-surface text-right pr-6">
+                $689.970
+              </td>
+<td class="px-3 py-2.5">
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm bg-amber-100 text-amber-800 border border-amber-200">
+                  Alto (82%)
+                </span>
+</td>
+<td class="px-3 py-2.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-blue-100 text-blue-900 font-medium">
+<span class="material-symbols-outlined text-[12px]">supervisor_account</span> Requiere Gerente
+                </span>
+</td>
+<td class="px-4 py-2.5 text-right space-x-1 whitespace-nowrap">
+<button class="px-2 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-slate-100 text-primary transition-all">
+                  Auditar
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm bg-emerald-700 text-white rounded hover:bg-emerald-800 transition-all">
+                  Liberar PIN
+                </button>
+</td>
+</tr>
+<!-- Row 4: Suplantación de RUT / Tarjeta Internacional -->
+<tr class="h-11 hover:bg-slate-50/80 transition-colors">
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 font-mono text-[12px] text-primary font-semibold">
+<span class="material-symbols-outlined text-[14px] text-error">dangerous</span>
+                  #INC-98180
+                </div>
+<span class="text-[10px] text-outline font-mono">hash: 9a01...33b2</span>
+</td>
+<td class="px-3 py-2.5 text-[12px] font-tabular-data text-on-surface">13:48:50</td>
+<td class="px-3 py-2.5">
+<div class="font-medium text-on-surface text-[13px]">SCO-08 (Autoservicio)</div>
+<div class="text-[11px] text-outline">Sin cajero • Terminal #105</div>
+</td>
+<td class="px-4 py-2.5">
+<div class="flex items-center gap-1.5 text-on-surface font-medium text-[12px]">
+<span class="px-1.5 py-0.5 rounded bg-purple-100 text-purple-900 text-[10px] font-bold">AMEX</span>
+<span>Centurion ****1104</span>
+</div>
+<span class="text-[11px] text-outline">BIN 378282 (Issuer: US)</span>
+</td>
+<td class="px-4 py-2.5">
+<span class="text-error font-semibold text-[12px]">Magstripe Fallback sin Chip</span>
+<span class="text-[11px] text-outline">Falla EMV forzada repetida</span>
+</td>
+<td class="px-3 py-2.5 font-tabular-data font-semibold text-on-surface text-right pr-6">
+                $719.290
+              </td>
+<td class="px-3 py-2.5">
+<span class="px-2 py-0.5 rounded-full text-[11px] font-label-sm bg-red-100 text-red-800 border border-red-200">
+                  Crítico (94%)
+                </span>
+</td>
+<td class="px-3 py-2.5">
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-label-sm bg-emerald-100 text-emerald-900 font-medium">
+<span class="material-symbols-outlined text-[12px]">block</span> Bloqueado Motor
+                </span>
+</td>
+<td class="px-4 py-2.5 text-right space-x-1 whitespace-nowrap">
+<button class="px-2 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-slate-100 text-primary transition-all">
+                  Detalle
+                </button>
+<button class="px-2 py-1 text-label-sm font-label-sm bg-red-600 text-white rounded hover:bg-red-700 transition-all">
+                  Escalar Carabineros
+                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination & Count -->
+<div class="px-4 py-3 bg-slate-50 border-t border-outline-variant/30 flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Mostrando 4 de 14 incidentes registrados en el turno</span>
+<div class="flex items-center gap-1">
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-surface-container disabled:opacity-50" disabled="">Anterior</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-primary-container text-white rounded">1</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-surface-container">2</button>
+<button class="px-2.5 py-1 text-label-sm font-label-sm bg-white hairline-border rounded hover:bg-surface-container">Siguiente</button>
+</div>
+</div>
+</section>
+<!-- 5. HEURISTIC ENGINE CONTROL PANEL -->
+<section class="tier-1-surface hairline-border rounded-xl p-space-lg space-y-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-outline-variant/30 pb-3">
+<div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[22px]">tune</span>
+<h3 class="text-headline-sm font-headline-sm text-primary">Reglas Heurísticas Activas &amp; Disparadores en POS</h3>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Calibración de umbrales en tiempo real para cajas físicas y puntos de autoservicio</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-label-sm text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> Motor Activo: 12 Reglas On
+          </span>
+<button class="px-3 py-1.5 text-label-sm font-label-sm bg-primary-container text-white rounded hover:bg-primary transition-all">
+            + Nueva Heurística
+          </button>
+</div>
+</div>
+<!-- Rules Toggles Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Rule 1 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="text-body-sm font-body-sm font-semibold text-primary leading-snug">
+                Bloqueo tras 3 intentos fallidos de PIN
+              </span>
+<!-- Toggle switch ON -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-1.5 leading-relaxed">
+              Invalida la sesión del POS de inmediato y solicita validación por supervisor de tienda con huella digital.
+            </p>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30 font-tabular-data">
+<span>Latencia: <strong>12ms</strong></span>
+<span class="text-emerald-700 font-semibold">Mitigó 8 hoy</span>
+</div>
+</div>
+<!-- Rule 2 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="text-body-sm font-body-sm font-semibold text-primary leading-snug">
+                Alerta licores premium &gt; $150.000 CLP en Express
+              </span>
+<!-- Toggle switch ON -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-1.5 leading-relaxed">
+              Exige escaneo obligatorio de cédula de identidad y foto referencial en tótem de autoservicio.
+            </p>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30 font-tabular-data">
+<span>Sensibilidad: <strong>Alta</strong></span>
+<span class="text-emerald-700 font-semibold">Mitigó 3 hoy</span>
+</div>
+</div>
+<!-- Rule 3 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="text-body-sm font-body-sm font-semibold text-primary leading-snug">
+                Detección tarjetas intl. sin chip EMV
+              </span>
+<!-- Toggle switch ON -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-1.5 leading-relaxed">
+              Deniega de forma categórica el fallback a banda magnética para plásticos emitidos fuera de Chile.
+            </p>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30 font-tabular-data">
+<span>Modo: <strong>Hard Block</strong></span>
+<span class="text-emerald-700 font-semibold">Mitigó 2 hoy</span>
+</div>
+</div>
+<!-- Rule 4 -->
+<div class="p-3.5 bg-surface-container-low rounded-lg hairline-border flex flex-col justify-between space-y-3">
+<div>
+<div class="flex items-start justify-between gap-2">
+<span class="text-body-sm font-body-sm font-semibold text-primary leading-snug">
+                Geolocalización discordante billeteras QR
+              </span>
+<!-- Toggle switch ON -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<p class="text-[11px] text-on-surface-variant mt-1.5 leading-relaxed">
+              Verifica que el GPS del smartphone emisor del pago QR coincida con el radio georreferenciado de la sucursal (&lt;100m).
+            </p>
+</div>
+<div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-2 border-t border-outline-variant/30 font-tabular-data">
+<span>Precisión: <strong>GeoIP/GPS</strong></span>
+<span class="text-emerald-700 font-semibold">Mitigó 1 hoy</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- ================= SECURITY & COMPLIANCE FOOTER ================= -->
+<footer class="mt-auto border-t border-outline-variant/30 bg-surface-container-low py-4 px-6">
+<div class="max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] font-body-sm text-on-surface-variant">
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-1 text-primary font-semibold">
+<span class="material-symbols-outlined text-[16px] text-emerald-700" data-weight="fill">verified</span>
+<span>PCI-DSS 4.0 Nivel 1 Certificado</span>
+</div>
+<span>•</span>
+<span>Cifrado Hardware HSM Thales e-Tokens</span>
+<span>•</span>
+<span>Tokenización SHA-256 Inmutable</span>
+</div>
+<div class="flex items-center gap-4">
+<span>Sincronización con Red Bancaria: <strong>99.998% Uptime</strong></span>
+<span class="text-outline-variant">|</span>
+<span class="font-tabular-data text-[11px] text-outline">ID Nodo: STGO-PROV-04-CLUSTER-A</span>
+<span class="text-outline-variant">|</span>
+<span class="text-[11px] text-on-surface font-medium">Marzú Retail Group © 2025</span>
+</div>
+</div>
+</footer>
+<!-- Microinteraction scripts -->
+<script>
+    // Lightweight toast notification simulator for fast triage buttons
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        if(this.innerText.includes('Bloquear') || this.innerText.includes('Intervenir')) {
+          console.log('[SIRA Security Engine] Comando emitido:', this.innerText);
+        }
+      });
+    });
+  </script>
+</body></html>

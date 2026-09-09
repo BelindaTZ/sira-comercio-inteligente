@@ -298,6 +298,15 @@ class CajaRepository:
             (await self.session.scalars(stmt.order_by(IncidenteFraude.incidente_id.desc()))).all()
         )
 
+    async def nombres_de_empleados(self, ids: list[int]) -> dict[int, str | None]:
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            text("SELECT empleado_id, nombre FROM empleados WHERE empleado_id = ANY(:ids)"),
+            {"ids": ids},
+        )
+        return {r.empleado_id: r.nombre for r in rows}
+
     # ============================================================ protocolo (US4)
     async def protocolo_vigente(self) -> ProtocoloEscalamiento | None:
         stmt = (
@@ -316,6 +325,14 @@ class CajaRepository:
         await self.session.flush()
         await self.session.refresh(fila)
         return fila
+
+    async def listar_protocolos(self) -> list[ProtocoloEscalamiento]:
+        """Historial completo, más reciente primero (append-only, FR-012)."""
+        stmt = select(ProtocoloEscalamiento).order_by(
+            ProtocoloEscalamiento.fecha_creacion.desc(),
+            ProtocoloEscalamiento.protocolo_id.desc(),
+        )
+        return list((await self.session.scalars(stmt)).all())
 
     # ============================================================ umbral de merma (US5)
     async def listar_umbrales(self) -> list[UmbralMermaCategoria]:
@@ -415,6 +432,14 @@ class CajaRepository:
 
     async def get_politica(self, politica_id: int) -> PoliticaSeguridadPagos | None:
         return await self.session.get(PoliticaSeguridadPagos, politica_id)
+
+    async def listar_politicas(self) -> list[PoliticaSeguridadPagos]:
+        """Historial completo, más reciente primero (append-only, FR-014)."""
+        stmt = select(PoliticaSeguridadPagos).order_by(
+            PoliticaSeguridadPagos.fecha_creacion.desc(),
+            PoliticaSeguridadPagos.politica_id.desc(),
+        )
+        return list((await self.session.scalars(stmt)).all())
 
     async def crear_politica(self, *, texto: str, definido_por: int) -> PoliticaSeguridadPagos:
         fila = PoliticaSeguridadPagos(texto=texto, definido_por=definido_por)

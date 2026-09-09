@@ -218,6 +218,95 @@ async def _caja_demo() -> None:
         )
 
 
+_PROTOCOLO_PASOS = (
+    "Protocolo de escalamiento ante fraude confirmado.\n\n"
+    "1. Documentar la evidencia (cuadres, ajustes, testimonios) sin alterar registros.\n"
+    "2. Notificar al Jefe de Finanzas dentro del turno.\n"
+    "3. Aplicar las acciones de contención del caso (rotación de caja, resguardo de valores).\n"
+    "4. Registrar el resultado sin acusar al empleado si la investigación no lo confirma."
+)
+_PROTOCOLO_V1 = _PROTOCOLO_PASOS
+_PROTOCOLO_V2 = (
+    _PROTOCOLO_PASOS + "\n5. Adjuntar respaldo de CCTV cuando exista y conservarlo 90 días."
+)
+_POLITICA_BASE = (
+    "Política de seguridad de pagos de la red.\n\n"
+    "- Sólo se ofrecen en caja los medios de pago aprobados por el Jefe de TI.\n"
+    "- Los datáfonos deben cumplir la versión mínima de firmware vigente; los no "
+    "conformes se marcan y se coordina su actualización o reemplazo.\n"
+    "- Todo incidente de seguridad de pago se registra y se investiga hasta cerrarse.\n"
+    "- El comprobante al cliente enmascara el número de tarjeta (sólo últimos 4 dígitos)."
+)
+_POLITICA_V1 = _POLITICA_BASE
+_POLITICA_V2 = _POLITICA_BASE + "\n- Cierre de sesión de caja tras 15 minutos de inactividad."
+
+
+async def _seguridad_pagos_demo() -> None:
+    """Siembra el protocolo de escalamiento y la política de seguridad de pagos
+    (documentos de referencia versionados) más unos incidentes de fraude de
+    ejemplo en distintos estados del ciclo — el dataset no los trae."""
+    from sqlalchemy import text
+    from src.core.database import AsyncSessionLocal
+
+    async with AsyncSessionLocal() as s:
+        if await s.scalar(text("SELECT count(*) FROM protocolo_escalamiento")):
+            log.info("  protocolo/política ya poblados, se omite")
+            return
+        emp = await s.scalar(text("SELECT empleado_id FROM empleados ORDER BY empleado_id LIMIT 1"))
+        jefe = await s.scalar(
+            text("SELECT empleado_id FROM empleados ORDER BY empleado_id DESC LIMIT 1")
+        )
+        for txt in (_PROTOCOLO_V1, _PROTOCOLO_V2):
+            await s.execute(
+                text(
+                    "INSERT INTO protocolo_escalamiento (texto, definido_por, fecha_creacion) "
+                    "VALUES (:t, :e, CURRENT_TIMESTAMP - make_interval(days => :d))"
+                ),
+                {"t": txt, "e": emp, "d": 40 if txt == _PROTOCOLO_V1 else 6},
+            )
+        for txt in (_POLITICA_V1, _POLITICA_V2):
+            await s.execute(
+                text(
+                    "INSERT INTO politica_seguridad_pagos (texto, definido_por, fecha_creacion) "
+                    "VALUES (:t, :e, CURRENT_TIMESTAMP - make_interval(days => :d))"
+                ),
+                {"t": txt, "e": emp, "d": 30 if txt == _POLITICA_V1 else 4},
+            )
+        # incidentes de fraude en distintos estados (origen "directo" — no hay cuadres sembrados)
+        empleados = (
+            (
+                await s.execute(
+                    text("SELECT empleado_id FROM empleados ORDER BY empleado_id OFFSET 3 LIMIT 3")
+                )
+            )
+            .scalars()
+            .all()
+        )
+        if len(empleados) == 3:
+            await s.execute(
+                text("""
+                INSERT INTO incidentes_fraude
+                    (empleado_id, descripcion, estado, acciones_tomadas, resultado,
+                     actualizado_por, fecha_actualizacion, fecha_hora)
+                VALUES
+                    (:e1, 'Diferencias de arqueo repetidas a la baja en 3 turnos consecutivos.',
+                     'abierto', NULL, NULL, NULL, NULL, CURRENT_TIMESTAMP - interval '2 days'),
+                    (:e2, 'Anulaciones fuera de patrón tras el cierre de caja.',
+                     'en_revision', 'Se revisó el CCTV del turno y se entrevistó al cajero.',
+                     NULL, :jefe, CURRENT_TIMESTAMP - interval '1 day',
+                     CURRENT_TIMESTAMP - interval '6 days'),
+                    (:e3, 'Faltante puntual atribuido a error de conteo en billetes de $10.000.',
+                     'cerrado', 'Recuento completo con doble validación.', 'descartado',
+                     :jefe, CURRENT_TIMESTAMP - interval '9 days',
+                     CURRENT_TIMESTAMP - interval '12 days')
+            """),
+                {"e1": empleados[0], "e2": empleados[1], "e3": empleados[2], "jefe": jefe},
+            )
+        await s.commit()
+        ni = await s.scalar(text("SELECT count(*) FROM incidentes_fraude"))
+        log.info("  protocolo: 2 versiones · política: 2 versiones · incidentes de fraude: %s", ni)
+
+
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -248,6 +337,9 @@ async def main() -> None:
 
     log.info("4b/5 · cajas + datáfonos + estándar de seguridad de pagos")
     await _caja_demo()
+
+    log.info("4c/5 · protocolo + política de seguridad + incidentes de fraude de demo")
+    await _seguridad_pagos_demo()
 
     log.info("5/5 · jobs derivados + dashboards 009")
     await _correr_jobs()

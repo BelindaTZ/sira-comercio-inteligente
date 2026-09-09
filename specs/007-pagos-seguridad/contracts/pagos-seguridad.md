@@ -80,6 +80,11 @@
 - RBAC: `Jefe_TI`.
 - 201: nueva fila vigente; la versión anterior sigue consultable por su `politica_id` para incidentes ya abiertos (FR-014).
 
+`GET /api/caja/politica-seguridad-pagos/historial`
+- Todas las versiones de la política, más reciente primero (append-only, FR-014). Feature 013. Ruta real bajo `/api/caja/...`.
+- RBAC: igual que la lectura del vigente.
+- 200: `[{politica_id, texto, definido_por, fecha_creacion}]`.
+
 `GET /api/finanzas/politica-seguridad-pagos/{politica_id}`
 - Consulta una versión específica de la política (FR-014, saber cuál estaba vigente cuando se abrió un incidente).
 - RBAC: `Jefe_TI`, `Jefe_Finanzas`.

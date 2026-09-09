@@ -1,0 +1,879 @@
+<!DOCTYPE html><html class="h-full" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SIRA - Políticas de Seguridad de Pagos &amp; Cumplimiento PCI-DSS</title>
+<!-- Google Fonts: Inter & Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim -->
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "surface-dim": "#d8dadc",
+          "surface-container-lowest": "#ffffff",
+          "secondary": "#712ae2",
+          "on-primary": "#ffffff",
+          "on-primary-container": "#779f9a",
+          "error": "#ba1a1a",
+          "on-secondary-container": "#fffbff",
+          "primary-fixed-dim": "#a5cfc9",
+          "on-surface-variant": "#414847",
+          "on-tertiary-fixed-variant": "#005137",
+          "tertiary-container": "#003825",
+          "primary-container": "#0a3632",
+          "background": "#f8f9fb",
+          "surface-container-highest": "#e0e3e5",
+          "surface": "#f8f9fb",
+          "surface-tint": "#3e6561",
+          "tertiary-fixed-dim": "#68dba9",
+          "tertiary": "#002014",
+          "surface-container-high": "#e6e8ea",
+          "on-secondary-fixed": "#25005a",
+          "secondary-fixed": "#eaddff",
+          "outline": "#717977",
+          "inverse-on-surface": "#eff1f3",
+          "outline-variant": "#c0c8c6",
+          "on-secondary-fixed-variant": "#5a00c6",
+          "on-error": "#ffffff",
+          "surface-container-low": "#f2f4f6",
+          "inverse-primary": "#a5cfc9",
+          "on-secondary": "#ffffff",
+          "on-primary-fixed": "#00201d",
+          "secondary-container": "#8a4cfc",
+          "primary-fixed": "#c0ebe4",
+          "on-tertiary-fixed": "#002114",
+          "on-tertiary-container": "#30ab7c",
+          "surface-bright": "#f8f9fb",
+          "on-primary-fixed-variant": "#254d49",
+          "secondary-fixed-dim": "#d2bbff",
+          "surface-container": "#eceef0",
+          "primary": "#00201d",
+          "on-tertiary": "#ffffff",
+          "surface-variant": "#e0e3e5",
+          "error-container": "#ffdad6",
+          "tertiary-fixed": "#85f8c4",
+          "on-surface": "#191c1e",
+          "inverse-surface": "#2d3133",
+          "on-background": "#191c1e",
+          "on-error-container": "#93000a"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.125rem",
+          "lg": "0.25rem",
+          "xl": "0.5rem",
+          "full": "0.75rem"
+        },
+        "spacing": {
+          "space-xl": "2rem",
+          "space-md": "0.75rem",
+          "space-2xs": "0.125rem",
+          "space-xs": "0.25rem",
+          "gutter-mobile": "1rem",
+          "space-sm": "0.5rem",
+          "sidebar-collapsed": "4.5rem",
+          "space-lg": "1.5rem",
+          "sidebar-expanded": "16.5rem",
+          "gutter-desktop": "1.5rem",
+          "space-base": "1rem",
+          "space-2xl": "3rem"
+        },
+        "fontFamily": {
+          "tabular-data": ["Inter", "sans-serif"],
+          "body-md": ["Inter", "sans-serif"],
+          "tabular-metric": ["Inter", "sans-serif"],
+          "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+          "body-lg": ["Inter", "sans-serif"],
+          "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+          "label-md": ["Inter", "sans-serif"],
+          "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+          "label-sm": ["Inter", "sans-serif"],
+          "headline-xl": ["Plus Jakarta Sans", "sans-serif"]
+        },
+        "fontSize": {
+          "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+          "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+          "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+          "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+          "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+          "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+          "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+          "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+          "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+          "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+          "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+          "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+        }
+      },
+    },
+  }
+</script>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-full flex flex-col">
+<!-- ========================================================================= -->
+<!-- 1. UNIFIED HORIZONTAL TOP NAVIGATION BAR -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-50 w-full border-b border-[#144742] bg-primary-container text-white shadow-md">
+<div class="flex items-center justify-between px-4 sm:px-6 lg:px-8 w-full mx-auto h-16 gap-3">
+<!-- Left: Brand & Store Selector -->
+<div class="flex items-center gap-3 xl:gap-5 shrink-0">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300">
+<span class="material-symbols-outlined text-[20px]">shield_lock</span>
+</div>
+<span class="text-xl font-headline-xl font-extrabold tracking-tight text-white">SIRA</span>
+<span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+          SEGURIDAD &amp; CUMPLIMIENTO
+        </span>
+</div>
+<!-- Store selector pill -->
+<div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/10 border border-white/15 text-white text-body-sm">
+<span class="material-symbols-outlined text-[17px] text-emerald-300">storefront</span>
+<span class="font-medium">Tienda 04 - Providencia Express (Santiago, CL)</span>
+<span class="w-1 h-1 rounded-full bg-emerald-400"></span>
+<span class="text-[11px] text-emerald-200 font-medium">Sucursal Local Activa</span>
+</div>
+</div>
+<!-- Center: Search input & Unified Nav Links -->
+<div class="flex items-center gap-4 flex-1 max-w-2xl justify-center">
+<div class="relative w-full max-w-xs hidden xl:block">
+<span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-on-primary-container text-[18px]">search</span>
+<input class="w-full h-8 pl-8 pr-3 text-body-sm bg-white/10 text-white placeholder:text-on-primary-container rounded-lg border border-white/15 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all" placeholder="Buscar política, regla o token..." type="text">
+</div>
+<nav class="hidden lg:flex items-center gap-1 xl:gap-2 h-full">
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">Dashboard</a>
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">Punto de Venta</a>
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">Inventario</a>
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">Catálogo</a>
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">CRM Clientes</a>
+<a class="text-on-primary-container hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-white/5 transition-colors text-body-sm font-medium" href="#">Finanzas</a>
+<a class="text-white bg-white/15 border border-emerald-400/40 font-semibold px-3 py-1.5 rounded-lg text-body-sm flex items-center gap-1.5" href="#">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span>Seguridad &amp; Incidentes</span>
+</a>
+</nav>
+</div>
+<!-- Right: Status & User Profile -->
+<div class="flex items-center gap-3 shrink-0">
+<!-- HSM Status Pill -->
+<div class="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-400/30 text-emerald-200 text-label-sm">
+<span class="material-symbols-outlined text-[15px] text-emerald-300">lock</span>
+<span>Enlace HSM Thales: 100% Cifrado</span>
+</div>
+<!-- Bell notification button -->
+<button class="w-8 h-8 rounded-lg relative flex items-center justify-center text-on-primary-container hover:text-white hover:bg-white/10 transition-colors" title="Notificaciones" type="button">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400"></span>
+</button>
+<!-- User avatar & badge -->
+<div class="flex items-center gap-2 pl-2 border-l border-white/15">
+<div class="w-8 h-8 rounded-lg bg-emerald-600/30 border border-emerald-400/40 flex items-center justify-center text-white font-semibold text-xs overflow-hidden">
+<img alt="Avatar G. González" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuATFLz2trg7m8MlR3hK4IDsyjPEHcZzoANj5tLl2KM3_4VjdtUh5C7hLbfFsi2bZ-ZHIEpgz7iPKTfIfwzMUxV2kZS2FWJn4k1PanbJNYXTeHWhP1y7cHAGXgvCpftItlyUL8A7sMZye9wlOBQlFe_i96BC58PGZkaxgUG2RQ4n8pSj2tIkoYCCmRaGSywuRK8qBQ51tfCYZlOcmOCgr4MkbaJQHHcvdwBoqtCXOkdTujBmlBMelVblpg">
+</div>
+<div class="text-right hidden lg:block leading-tight">
+<p class="text-[13px] text-white font-semibold">G. González | Encargado de Tienda</p>
+<span class="text-[10px] text-emerald-300 font-medium">Rol Operativo Local</span>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- ========================================================================= -->
+<!-- FULL-WIDTH MAIN CONTAINER (No sidebar) -->
+<!-- ========================================================================= -->
+<div class="flex-1 w-full max-w-[1720px] mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+<!-- ========================================================================= -->
+<!-- 2. BREADCRUMBS & CONTEXTUAL SCOPE BANNER -->
+<!-- ========================================================================= -->
+<section class="space-y-3">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-1.5 text-label-sm text-on-surface-variant">
+<span class="hover:text-on-surface cursor-pointer">Marzú Retail Group</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-on-surface cursor-pointer">Tienda 04 - Providencia Express</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="hover:text-on-surface cursor-pointer">Seguridad &amp; Políticas</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-primary-container font-semibold">Políticas de Seguridad de Pagos</span>
+</nav>
+<!-- Contextual Scope Banner -->
+<div class="rounded-xl bg-surface-container-lowest border border-outline-variant/50 p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-start sm:items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-container text-emerald-300 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[22px]">policy</span>
+</div>
+<div>
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200 flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+              Alcance: Tienda 04 - Providencia Express (Local)
+            </span>
+<span class="text-label-sm text-on-surface-variant font-medium">
+              Parámetros Enforceables en Terminales POS &amp; Parámetros Heredados Corporativos (CISO / NOC)
+            </span>
+</div>
+<p class="text-body-sm text-on-surface-variant mt-0.5">
+            Supervisión operativa local de cifrado de transacciones, límites de contingencia offline y sincronización segura con bóveda HSM.
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-2 shrink-0">
+<span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 text-body-sm font-semibold">
+<span class="material-symbols-outlined text-[18px] text-emerald-700" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+          30 / 30 Datáfonos con Políticas Vigentes Sincronizadas
+        </span>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. HEADER AREA -->
+<!-- ========================================================================= -->
+<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-2 border-b border-outline-variant/30">
+<div>
+<h1 class="text-headline-lg sm:text-headline-xl font-headline-xl text-primary tracking-tight">
+        Políticas de Seguridad de Pagos &amp; Cumplimiento
+      </h1>
+<p class="text-body-md text-on-surface-variant max-w-4xl mt-1">
+        Configuración y auditoría de reglas de transacción offline, umbrales de PIN contactless, tokenización y protección anti-tamper en los terminales de sala.
+      </p>
+</div>
+<div class="flex flex-wrap items-center gap-2.5">
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 hover:border-primary-container text-on-surface text-body-sm font-semibold transition-all shadow-sm active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary-container">science</span>
+<span>Simular Transacción de Prueba</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container-lowest border border-amber-300 hover:border-amber-400 text-amber-900 bg-amber-50/50 text-body-sm font-semibold transition-all shadow-sm active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px] text-amber-700">security_update_warning</span>
+<span>Solicitar Excepción Temporal a NOC Central</span>
+</button>
+<button class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-white text-body-sm font-semibold hover:bg-[#072421] transition-all shadow-sm active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span>Descargar Certificado de Sucursal PCI-DSS</span>
+</button>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- 4. KPIS EJECUTIVOS DE CUMPLIMIENTO LOCAL (4 CARDS) -->
+<!-- ========================================================================= -->
+<section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Cumplimiento Terminales</span>
+<span class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 1;">devices</span>
+</span>
+</div>
+<h3 class="text-body-sm font-medium text-on-surface-variant">Terminales Locales Conformes</h3>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric font-bold text-on-surface">30 / 30</span>
+<span class="text-body-sm font-semibold text-emerald-700">(100%)</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/25 flex items-center justify-between">
+<span class="inline-flex items-center gap-1 text-[12px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          Última sincronización: Hoy 08:30 CLT
+        </span>
+<span class="text-[11px] text-on-surface-variant">Verifone P400</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Regla Contingencia</span>
+<span class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">cloud_off</span>
+</span>
+</div>
+<h3 class="text-body-sm font-medium text-on-surface-variant">Límite Offline Sucursal</h3>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric font-bold text-on-surface">$35.000</span>
+<span class="text-body-sm font-semibold text-on-surface-variant">CLP / boleta</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/25 flex items-center justify-between">
+<span class="text-[12px] text-on-surface-variant font-medium">Tope acumulado: $300.000 CLP por caja</span>
+<span class="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">Informativo</span>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Verificación CVM</span>
+<span class="w-8 h-8 rounded-lg bg-purple-50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">contactless</span>
+</span>
+</div>
+<h3 class="text-body-sm font-medium text-on-surface-variant">Umbral PIN Contactless (CVM)</h3>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric font-bold text-on-surface">$20.000</span>
+<span class="text-body-sm font-semibold text-on-surface-variant">CLP</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/25 flex items-center justify-between">
+<span class="text-[12px] text-on-surface-variant">Normativa CMF Chile v2.451</span>
+<span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Regla activa</span>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-5 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-sm font-semibold text-on-surface-variant uppercase tracking-wider">Criptografía &amp; Bóveda</span>
+<span class="w-8 h-8 rounded-lg bg-teal-50 text-teal-800 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">key</span>
+</span>
+</div>
+<h3 class="text-body-sm font-medium text-on-surface-variant">Tokens Criptográficos Procesados</h3>
+<div class="mt-2 flex items-baseline gap-2">
+<span class="text-tabular-metric font-tabular-metric font-bold text-on-surface">48.320</span>
+<span class="text-body-sm font-semibold text-on-surface-variant">txn</span>
+</div>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/25 flex items-center justify-between">
+<span class="text-[12px] text-emerald-700 font-medium">0% filtraciones / 0 retención PAN</span>
+<span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">Auditoría limpia</span>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 5. GRID PRINCIPAL DE POLÍTICAS OPERATIVAS (BENTO 2x2) -->
+<!-- ========================================================================= -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="text-headline-md font-headline-md text-on-surface">Parámetros de Seguridad en Sala</h2>
+<p class="text-body-sm text-on-surface-variant">Reglas aplicadas a firmware Verifone P400, PINPads y pasarelas de la tienda.</p>
+</div>
+<span class="inline-flex items-center gap-1.5 text-label-sm font-semibold bg-surface-container-high text-on-surface px-3 py-1 rounded-lg border border-outline-variant/40">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+        Perfil Activo: POS-CL-RETAIL-PROV4
+      </span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+<!-- Card 1: Offline -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm space-y-4">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-amber-100/80 border border-amber-300 flex items-center justify-center text-amber-800">
+<span class="material-symbols-outlined text-[22px]">cloud_off</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Regla de Transacciones Offline &amp; Modo Contingencia</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                  Control Operativo Local
+                </span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Límites preventivos cuando el POS pierde enlace con la pasarela.</p>
+</div>
+</div>
+<!-- Active switch toggle -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<label class="block text-label-sm text-on-surface-variant mb-1">Máx. por Boleta Offline</label>
+<div class="relative">
+<span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-body-sm text-on-surface-variant">$</span>
+<input class="w-full pl-6 pr-2 py-1 bg-white border border-outline-variant/60 rounded text-body-sm font-tabular-data font-semibold text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container" type="text" value="35.000 CLP">
+</div>
+<span class="text-[11px] text-on-surface-variant mt-1 block">Aprobación local con chip</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<label class="block text-label-sm text-on-surface-variant mb-1">Tope Acumulado por Caja</label>
+<div class="relative">
+<span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-body-sm text-on-surface-variant">$</span>
+<input class="w-full pl-6 pr-2 py-1 bg-white border border-outline-variant/60 rounded text-body-sm font-tabular-data font-semibold text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container" type="text" value="300.000 CLP">
+</div>
+<span class="text-[11px] text-on-surface-variant mt-1 block">Bloqueo al tope de caja</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<label class="block text-label-sm text-on-surface-variant mb-1">Ventana Máx. Reconexión</label>
+<div class="relative">
+<input class="w-full px-2.5 py-1 bg-white border border-outline-variant/60 rounded text-body-sm font-tabular-data font-semibold text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container" type="text" value="45 minutos">
+</div>
+<span class="text-[11px] text-on-surface-variant mt-1 block">Purga de colas transaccionales</span>
+</div>
+</div>
+<div class="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50/90 border border-amber-200 text-amber-900 text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-amber-700 shrink-0 mt-0.5">info</span>
+<span>Modo contingencia habilitado automáticamente ante caída de pasarela principal con purga segura al reconectar.</span>
+</div>
+</div>
+<!-- Card 2: Tokenización -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm space-y-4">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-emerald-100/80 border border-emerald-300 flex items-center justify-center text-emerald-800">
+<span class="material-symbols-outlined text-[22px]">pin</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Tokenización &amp; Enmascaramiento de Datos (PAN)</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-200">
+                  Mandatorio PCI-DSS 3.4
+                </span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Visualización e inmutabilidad de datos de tarjetahabiente.</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            Auditado
+          </span>
+</div>
+<div class="space-y-2.5 pt-1">
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div>
+<p class="text-body-sm font-semibold text-on-surface">Enmascaramiento en Comprobante Cliente</p>
+<p class="text-label-sm text-on-surface-variant">Solo últimos 4 dígitos visibles en ticket térmico y digital (ej: **** **** **** 4892).</p>
+</div>
+<span class="material-symbols-outlined text-emerald-600 text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div>
+<p class="text-body-sm font-semibold text-on-surface">Prohibición total de Track 2 / CVV en RAM POS</p>
+<p class="text-label-sm text-on-surface-variant">Filtrado a nivel de memoria volátil (RAM Scraper Shield) en kernel POS.</p>
+</div>
+<span class="material-symbols-outlined text-emerald-600 text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<div>
+<p class="text-body-sm font-semibold text-on-surface">Tokenización SHA-3 inmediata hacia pasarela central</p>
+<p class="text-label-sm text-on-surface-variant">Reemplazo instantáneo de PAN por token SHA-3 criptográfico en pasarela central.</p>
+</div>
+<span class="material-symbols-outlined text-emerald-600 text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Card 3: PIN / Contactless CVM -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm space-y-4">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-purple-100/80 border border-purple-300 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[22px]">contactless</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Requerimiento de PIN / Contactless (CVM) en Cajas</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-secondary border border-purple-200">
+                  Normativa Bancaria CMF
+                </span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Métodos de verificación de titular de tarjeta según montos transados.</p>
+</div>
+</div>
+</div>
+<div class="space-y-2.5 pt-1">
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface">Umbral Contactless sin PIN</label>
+<p class="text-label-sm text-on-surface-variant">Compras superiores exigen ingreso obligatorio de PIN en datáfono.</p>
+</div>
+<div class="w-36">
+<input class="w-full px-2.5 py-1 text-right bg-white border border-outline-variant/60 rounded text-body-sm font-tabular-data font-semibold text-on-surface focus:border-primary-container focus:ring-1 focus:ring-primary-container" type="text" value="$20.000 CLP">
+</div>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<span class="text-label-sm text-on-surface-variant block mb-1 font-medium">Control de Devoluciones</span>
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-semibold text-on-surface">Doble Factor (Clave + Tarjeta)</span>
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant block mt-1">Clave Supervisor de Tienda + Tarjeta Operador</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30">
+<span class="text-label-sm text-on-surface-variant block mb-1 font-medium">Firma en Pantalla</span>
+<div class="flex items-center justify-between">
+<span class="text-body-sm font-semibold text-on-surface">Operaciones &gt; $100.000 CLP</span>
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+</div>
+<span class="text-[11px] text-on-surface-variant block mt-1">Captura biométrica vectorial</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4: Sesión & Anti-Tamper -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 p-5 shadow-sm space-y-4">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-red-100/80 border border-red-300 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[22px]">phonelink_lock</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-headline-sm font-headline-sm text-on-surface">Sesión en Caja, Inactividad &amp; Anti-Tamper de Terminales</h3>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200">
+                  Protección Física Hardware
+                </span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Protección física y lógica de terminales de punto de venta.</p>
+</div>
+</div>
+<span class="px-2 py-0.5 rounded text-[11px] font-label-sm bg-red-50 text-red-700 border border-red-200">
+            PCI PTS POI v6
+          </span>
+</div>
+<div class="space-y-2.5 pt-1">
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
+<div>
+<span class="block text-body-sm font-semibold text-on-surface">Cierre de Turno por Inactividad</span>
+<p class="text-label-sm text-on-surface-variant">15 minutos sin interacción provocan desconexión y cierre seguro de caja.</p>
+</div>
+<select class="bg-white border border-outline-variant/60 rounded px-2.5 py-1 text-body-sm font-semibold text-on-surface focus:border-primary-container">
+<option>10 minutos</option>
+<option selected="">15 minutos</option>
+<option>30 minutos</option>
+</select>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
+<div>
+<div class="flex items-center gap-1.5">
+<span class="block text-body-sm font-semibold text-on-surface">Detección Anti-Tamper (Apertura de Carcasa POS)</span>
+<span class="material-symbols-outlined text-[16px] text-error">warning</span>
+</div>
+<p class="text-label-sm text-on-surface-variant">Bloqueo criptográfico inmediato e irreversible con notificación prioritaria a Seguridad Central.</p>
+</div>
+<span class="px-2.5 py-1 rounded text-[12px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+              Activado Siempre
+            </span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 6. MATRIZ DE CONECTIVIDAD & ESTADO DE PASARELAS / ADQUIRENTES -->
+<!-- ========================================================================= -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+<div class="p-4 sm:p-5 border-b border-outline-variant/30 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Matriz de Conectividad &amp; Estado de Pasarelas / Adquirentes</h2>
+<p class="text-body-sm text-on-surface-variant">Supervisión en tiempo real de túneles TLS 1.3, latencia y certificados de adquirencia autorizados en Chile para Tienda 04.</p>
+</div>
+<div class="flex items-center gap-2">
+<span class="inline-flex items-center gap-1.5 text-[12px] text-emerald-900 font-semibold bg-emerald-50 px-3 py-1 rounded-lg border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
+          4 Pasarelas Operativas
+        </span>
+<button class="p-1.5 rounded-lg border border-outline-variant/40 hover:bg-surface-container text-on-surface-variant transition-colors" title="Refrescar enlaces" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[980px]">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/40 text-label-sm text-on-surface-variant uppercase tracking-wider">
+<th class="py-3 px-4">Adquirente / Pasarela</th>
+<th class="py-3 px-4">Estado del Canal</th>
+<th class="py-3 px-4">Cifrado de Transporte</th>
+<th class="py-3 px-4">Certificación PCI-DSS</th>
+<th class="py-3 px-4 text-right">Latencia en Sucursal</th>
+<th class="py-3 px-4 text-right">Tasa de Aprobación</th>
+<th class="py-3 px-4 text-center">Acción</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm">
+<!-- Transbank -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-semibold text-on-surface flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-700 font-bold text-[11px]">TBK</div>
+<div>
+<span class="font-bold">Transbank S.A.</span>
+<span class="block text-[11px] text-on-surface-variant font-normal">Webpay Plus &amp; POS Redcompra</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Conectado
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-tabular-data text-[12px] px-2 py-0.5 rounded bg-surface-container border border-outline-variant/40 text-on-surface font-medium">
+                TLS 1.3 / ECDHE-RSA-AES256
+              </span>
+</td>
+<td class="py-3.5 px-4 text-[12px] text-on-surface-variant">
+              PCI-DSS v4.0 AoC (Válido hasta Oct 2025)
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-on-surface">
+              112 ms
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-emerald-700">
+              99.82%
+            </td>
+<td class="py-3.5 px-4 text-center">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary-container text-[12px] font-semibold transition-colors border border-outline-variant/40" type="button">Test Ping local</button>
+</td>
+</tr>
+<!-- Redelcom -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-semibold text-on-surface flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 font-bold text-[11px]">RDC</div>
+<div>
+<span class="font-bold">Redelcom</span>
+<span class="block text-[11px] text-on-surface-variant font-normal">Terminales Android SmartPOS</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Conectado
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-tabular-data text-[12px] px-2 py-0.5 rounded bg-surface-container border border-outline-variant/40 text-on-surface font-medium">
+                TLS 1.3 / AES-GCM-256
+              </span>
+</td>
+<td class="py-3.5 px-4 text-[12px] text-on-surface-variant">
+              PCI-DSS v4.0 AoC (Válido hasta Ago 2025)
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-on-surface">
+              145 ms
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-emerald-700">
+              99.64%
+            </td>
+<td class="py-3.5 px-4 text-center">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary-container text-[12px] font-semibold transition-colors border border-outline-variant/40" type="button">Test Ping local</button>
+</td>
+</tr>
+<!-- Mercado Pago -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-semibold text-on-surface flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-700 font-bold text-[11px]">MP</div>
+<div>
+<span class="font-bold">Mercado Pago Point</span>
+<span class="block text-[11px] text-on-surface-variant font-normal">QR Dinámico + POS Bluetooth</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Conectado
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-tabular-data text-[12px] px-2 py-0.5 rounded bg-surface-container border border-outline-variant/40 text-on-surface font-medium">
+                TLS 1.3 / CHACHA20-POLY1305
+              </span>
+</td>
+<td class="py-3.5 px-4 text-[12px] text-on-surface-variant">
+              PCI-DSS v4.0 AoC (Válido hasta Dic 2025)
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-on-surface">
+              98 ms
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-emerald-700">
+              99.91%
+            </td>
+<td class="py-3.5 px-4 text-center">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary-container text-[12px] font-semibold transition-colors border border-outline-variant/40" type="button">Test Ping local</button>
+</td>
+</tr>
+<!-- Klap -->
+<tr class="hover:bg-surface-container-low/40 transition-colors">
+<td class="py-3.5 px-4 font-semibold text-on-surface flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold text-[11px]">KLP</div>
+<div>
+<span class="font-bold">Klap Multi-Adquirencia</span>
+<span class="block text-[11px] text-on-surface-variant font-normal">Orquestación de Pasarela Alternativa</span>
+</div>
+</td>
+<td class="py-3.5 px-4">
+<span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                Conectado
+              </span>
+</td>
+<td class="py-3.5 px-4">
+<span class="font-tabular-data text-[12px] px-2 py-0.5 rounded bg-surface-container border border-outline-variant/40 text-on-surface font-medium">
+                TLS 1.3 / AES-GCM-256
+              </span>
+</td>
+<td class="py-3.5 px-4 text-[12px] text-on-surface-variant">
+              PCI-DSS v4.0 AoC (Válido hasta Nov 2025)
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-on-surface">
+              128 ms
+            </td>
+<td class="py-3.5 px-4 text-right font-tabular-data font-semibold text-emerald-700">
+              99.75%
+            </td>
+<td class="py-3.5 px-4 text-center">
+<button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-primary-container text-[12px] font-semibold transition-colors border border-outline-variant/40" type="button">Test Ping local</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 7. BITÁCORA DE CAMBIOS DE POLÍTICA Y AUDITORÍA CRIPTOGRÁFICA INMUTABLE -->
+<!-- ========================================================================= -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm p-5 space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+<div>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">Bitácora de Cambios de Política y Auditoría Criptográfica Inmutable (Audit Trail)</h2>
+<p class="text-body-sm text-on-surface-variant">Registro sellado en hash SHA-256 de las últimas actualizaciones normativas aplicadas a los terminales de Tienda 04 por parte del equipo de Ciberseguridad Central.</p>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-label-md px-3 py-1.5 rounded-lg border border-outline-variant/60 hover:bg-surface-container text-on-surface flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>Filtrar</span>
+</button>
+<button class="text-label-md px-3 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center gap-1.5 transition-colors border border-outline-variant/40" type="button">
+<span class="material-symbols-outlined text-[16px]">download</span>
+<span>Exportar Audit Log</span>
+</button>
+</div>
+</div>
+<!-- Audit Tabs -->
+<div class="flex items-center gap-2 border-b border-outline-variant/30 text-body-sm font-medium">
+<button class="pb-2.5 px-3 border-b-2 border-primary-container text-primary-container font-semibold flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+<span>Políticas Locales Aplicadas</span>
+<span class="text-[11px] bg-primary-container/10 px-2 py-0.5 rounded-full font-bold text-primary-container">3</span>
+</button>
+<button class="pb-2.5 px-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">public</span>
+<span>Registro Global CISO (Referencial)</span>
+</button>
+</div>
+<div class="space-y-2.5">
+<!-- Audit Item 1 -->
+<div class="p-4 rounded-xl bg-surface-container-low/70 border border-outline-variant/30 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-purple-100 text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">verified</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-body-sm font-bold text-on-surface">Ajuste de Política: Umbral Contactless CVM</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-secondary">POL-2025-CVM-09</span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Modificación de umbral contactless de $15.000 CLP a $20.000 CLP tras circular regulatoria CMF 2.451.</p>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-on-surface-variant">
+<span>Operador: <strong class="text-on-surface">claudio.marzu@marzu.cl</strong> (Oficial de Cumplimiento Central)</span>
+<span>IP Origen: <code class="font-tabular-data text-primary-container font-semibold">190.160.44.12 [VPN-HQ]</code></span>
+<span>Fecha: 24 Octubre 2025 - 14:32:08 CLT</span>
+</div>
+</div>
+</div>
+<div class="lg:text-right shrink-0">
+<span class="text-[10px] text-on-surface-variant block uppercase tracking-wider font-semibold">Firma SHA-256</span>
+<code class="text-[11px] font-tabular-data text-on-surface-variant bg-white px-2.5 py-1 rounded border border-outline-variant/40 inline-block mt-1">
+            9e8f4a1c...b4012da7
+          </code>
+</div>
+</div>
+<!-- Audit Item 2 -->
+<div class="p-4 rounded-xl bg-surface-container-low/70 border border-outline-variant/30 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">key</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-body-sm font-bold text-on-surface">Rotación de Clave Maestra DUKPT (BDK-PROV-04)</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">ROT-DUKPT-88</span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Inyección remota de llaves IPEK mediante Thales HSM para los 30 terminales Verifone P400 de Providencia Express.</p>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-on-surface-variant">
+<span>Operador: <strong class="text-on-surface">sistema.orquestador@sira.local</strong> (Automated HSM Daemon)</span>
+<span>IP Origen: <code class="font-tabular-data text-primary-container font-semibold">10.240.0.14 [HSM-Internal]</code></span>
+<span>Fecha: 20 Octubre 2025 - 03:00:00 CLT</span>
+</div>
+</div>
+</div>
+<div class="lg:text-right shrink-0">
+<span class="text-[10px] text-on-surface-variant block uppercase tracking-wider font-semibold">Firma SHA-256</span>
+<code class="text-[11px] font-tabular-data text-on-surface-variant bg-white px-2.5 py-1 rounded border border-outline-variant/40 inline-block mt-1">
+            4a72d3f9...90e381f2
+          </code>
+</div>
+</div>
+<!-- Audit Item 3 -->
+<div class="p-4 rounded-xl bg-surface-container-low/70 border border-outline-variant/30 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 hover:border-outline-variant transition-colors">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">security</span>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-2">
+<span class="text-body-sm font-bold text-on-surface">Actualización de Firmware POS &amp; Cifrado P2PE</span>
+<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">FW-VER-6.8.2</span>
+</div>
+<p class="text-body-sm text-on-surface-variant">Despliegue de parche de seguridad CVE-2025-1102 con verificación de firma RSA-4096 en terminales físicos.</p>
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-on-surface-variant">
+<span>Operador: <strong class="text-on-surface">gonzalo.it@marzu.cl</strong> (Jefe de Ciberseguridad Retail)</span>
+<span>IP Origen: <code class="font-tabular-data text-primary-container font-semibold">190.160.44.88 [SecOps-Bastion]</code></span>
+<span>Fecha: 15 Octubre 2025 - 23:15:42 CLT</span>
+</div>
+</div>
+</div>
+<div class="lg:text-right shrink-0">
+<span class="text-[10px] text-on-surface-variant block uppercase tracking-wider font-semibold">Firma SHA-256</span>
+<code class="text-[11px] font-tabular-data text-on-surface-variant bg-white px-2.5 py-1 rounded border border-outline-variant/40 inline-block mt-1">
+            c810b42e...88921df0
+          </code>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 8. FOOTER -->
+<!-- ========================================================================= -->
+<footer class="pt-4 pb-8 flex flex-col sm:flex-row items-center justify-between text-body-sm text-on-surface-variant border-t border-outline-variant/30 gap-2">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+<span>SIRA Enterprise Security Engine v4.2.8 • Marzú Retail Group © 2025</span>
+</div>
+<div class="flex items-center gap-4 text-[12px]">
+<span>Conexión Segura TLS 1.3 Strict Mode</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span class="text-primary-container font-semibold">Node: STGO-PROV-04</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>PCI-DSS Validation ID: MARZU-QSA-9942</span>
+</div>
+</footer>
+</div>
+<!-- Micro-interactivity script -->
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const pingButtons = document.querySelectorAll('table button');
+    pingButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const origText = btn.innerText;
+        btn.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Validando...';
+        setTimeout(() => {
+          btn.innerHTML = '<span class="material-symbols-outlined text-[14px] text-emerald-700">check</span> OK (84ms)';
+          setTimeout(() => {
+            btn.innerText = origText;
+          }, 2400);
+        }, 900);
+      });
+    });
+  });
+</script>
+</body></html>

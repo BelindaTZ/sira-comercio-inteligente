@@ -89,6 +89,16 @@ async def test_politica_versionada(
     vigente = await client.get("/api/caja/politica-seguridad-pagos", headers=auth_encargado)
     assert vigente.json()["texto"] == "Política v2 — endurecida"
 
+    # el historial lista todas las versiones, más reciente primero (FR-014)
+    hist = await client.get(
+        "/api/caja/politica-seguridad-pagos/historial", headers=auth_caja_finanzas
+    )
+    assert hist.status_code == 200, hist.text
+    assert [v["texto"] for v in hist.json()][:2] == [
+        "Política v2 — endurecida",
+        "Política v1 — lineamientos base",
+    ]
+
 
 async def test_encargado_no_registra_incidente_ni_define_politica(
     client, escenario_pagos, auth_encargado

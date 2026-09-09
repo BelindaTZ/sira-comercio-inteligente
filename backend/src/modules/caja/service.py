@@ -255,6 +255,10 @@ class CajaService:
             raise NotFoundError(f"Política de seguridad {politica_id} no existe")
         return fila
 
+    async def historial_politica_seguridad(self):
+        """Historial de versiones de la política (append-only, FR-014)."""
+        return await self.repo.listar_politicas()
+
     async def definir_politica_seguridad(self, *, texto: str, definido_por: int):
         """FR-012 — nueva versión vigente (append-only, research.md Decisión 5)."""
         return await self.repo.crear_politica(texto=texto, definido_por=definido_por)
@@ -317,7 +321,11 @@ class CajaService:
 
     # ============================================================ US4: incidentes + protocolo
     async def listar_incidentes(self, *, estado: str | None = None, tienda_id: int | None = None):
-        return await self.repo.listar_incidentes(estado=estado, tienda_id=tienda_id)
+        incidentes = await self.repo.listar_incidentes(estado=estado, tienda_id=tienda_id)
+        nombres = await self.repo.nombres_de_empleados([i.empleado_id for i in incidentes])
+        for inc in incidentes:
+            inc.empleado_nombre = nombres.get(inc.empleado_id)
+        return incidentes
 
     async def protocolo_vigente(self):
         """FR-013 — texto del protocolo de escalamiento vigente."""
@@ -325,6 +333,10 @@ class CajaService:
         if vigente is None:
             raise NotFoundError("Aún no se ha definido un protocolo de escalamiento")
         return vigente
+
+    async def historial_protocolo(self):
+        """Historial de versiones del protocolo (append-only, FR-012)."""
+        return await self.repo.listar_protocolos()
 
     async def definir_protocolo(self, *, texto: str, definido_por: int):
         """FR-012 / research.md Decisión 7 — nueva versión del protocolo (append-only)."""

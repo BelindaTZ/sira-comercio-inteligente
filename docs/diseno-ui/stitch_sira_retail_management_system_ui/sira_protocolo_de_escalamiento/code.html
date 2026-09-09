@@ -1,0 +1,548 @@
+<!DOCTYPE html><html class="h-full" lang="es"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>SIRA - Protocolo de Escalamiento de Seguridad &amp; Respuesta a Incidentes | Marzú Retail Group</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols Icons -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-tint": "#3e6561",
+            "surface-dim": "#d8dadc",
+            "inverse-primary": "#a5cfc9",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#eaddff",
+            "surface-container": "#eceef0",
+            "error-container": "#ffdad6",
+            "on-background": "#191c1e",
+            "on-secondary-fixed": "#25005a",
+            "background": "#f8f9fb",
+            "on-surface": "#191c1e",
+            "secondary-container": "#8a4cfc",
+            "outline-variant": "#c0c8c6",
+            "tertiary": "#002014",
+            "surface-container-high": "#e6e8ea",
+            "on-surface-variant": "#414847",
+            "on-primary": "#ffffff",
+            "on-error-container": "#93000a",
+            "surface-container-low": "#f2f4f6",
+            "on-primary-container": "#779f9a",
+            "on-secondary-container": "#fffbff",
+            "on-primary-fixed": "#00201d",
+            "tertiary-container": "#003825",
+            "outline": "#717977",
+            "secondary-fixed-dim": "#d2bbff",
+            "secondary": "#712ae2",
+            "tertiary-fixed": "#85f8c4",
+            "on-tertiary-container": "#30ab7c",
+            "on-primary-fixed-variant": "#254d49",
+            "on-tertiary-fixed": "#002114",
+            "on-tertiary-fixed-variant": "#005137",
+            "primary-container": "#0a3632",
+            "on-secondary-fixed-variant": "#5a00c6",
+            "primary": "#00201d",
+            "inverse-surface": "#2d3133",
+            "surface": "#f8f9fb",
+            "inverse-on-surface": "#eff1f3",
+            "surface-container-lowest": "#ffffff",
+            "surface-variant": "#e0e3e5",
+            "surface-container-highest": "#e0e3e5",
+            "on-secondary": "#ffffff",
+            "surface-bright": "#f8f9fb",
+            "primary-fixed": "#c0ebe4",
+            "error": "#ba1a1a",
+            "tertiary-fixed-dim": "#68dba9",
+            "primary-fixed-dim": "#a5cfc9",
+            "on-error": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-base": "1rem",
+            "space-lg": "1.5rem",
+            "space-2xs": "0.125rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1.5rem",
+            "space-sm": "0.5rem",
+            "space-2xl": "3rem",
+            "sidebar-collapsed": "4.5rem",
+            "sidebar-expanded": "16.5rem",
+            "gutter-mobile": "1rem",
+            "space-xl": "2rem",
+            "space-md": "0.75rem"
+          },
+          "fontFamily": {
+            "tabular-data": ["inter", "sans-serif"],
+            "body-md": ["inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-xl": ["Plus Jakarta Sans", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "sans-serif"],
+            "label-md": ["inter", "sans-serif"],
+            "label-sm": ["inter", "sans-serif"],
+            "tabular-metric": ["inter", "sans-serif"],
+            "display-lg": ["Plus Jakarta Sans", "sans-serif"],
+            "body-sm": ["inter", "sans-serif"],
+            "body-lg": ["inter", "sans-serif"]
+          },
+          "fontSize": {
+            "tabular-data": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-sm": ["16px", { "lineHeight": "24px", "fontWeight": "600" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "headline-xl": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "600" }],
+            "tabular-metric": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.025em", "fontWeight": "700" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-feature-settings: 'liga';
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-[#f5f7f9] text-on-surface font-body-md antialiased min-h-screen flex flex-col selection:bg-primary-fixed selection:text-primary">
+<!-- ========================================================================= -->
+<!-- TOP NAV BAR (Shared Component Execution)                                   -->
+<!-- ========================================================================= -->
+<header class="sticky top-0 z-50 w-full rounded-none border-b border-outline-variant/40 bg-surface-container-lowest/80 backdrop-blur-xl shadow-sm">
+<div class="flex items-center justify-between px-6 w-full max-w-[1680px] mx-auto h-16"><div class="flex items-center gap-6"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-xl bg-primary-container flex items-center justify-center text-on-primary shadow-sm"><span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">shield_with_house</span></div><div class="flex flex-col"><span class="text-headline-md font-headline-md font-bold tracking-tight text-primary-container">SIRA</span><span class="text-[10px] font-semibold tracking-wider text-outline uppercase -mt-1">Marzú Retail Group</span></div></div><div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-low border border-outline-variant/50 text-body-sm"><span class="material-symbols-outlined text-primary-container text-[18px]">store</span><div class="flex flex-col leading-tight"><span class="text-[11px] font-bold text-on-surface">Tienda 04 - Providencia Express</span><span class="text-[10px] text-emerald-700 font-medium flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Sucursal Local Activa</span></div><button class="ml-1 text-outline hover:text-primary-container"><span class="material-symbols-outlined text-[16px]">expand_more</span></button></div><div class="relative w-72 hidden lg:block"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-outline"><span class="material-symbols-outlined text-[18px]">search</span></div><input class="w-full pl-9 pr-4 py-1.5 text-body-sm bg-surface-container-low border border-outline-variant/60 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-container/20 focus:border-primary-container text-on-surface placeholder:text-outline transition-all" placeholder="Buscar incidente, caja o protocolo local..." type="text"><span class="absolute right-2.5 top-2 text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-outline border border-outline-variant/40">⌘K</span></div><nav class="hidden xl:flex items-center gap-5 text-body-md"><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Dashboard</a><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Punto de Venta</a><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Inventario</a><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Catálogo</a><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">CRM Clientes</a><a class="text-secondary hover:text-on-surface py-3 transition-colors" href="#">Finanzas</a><a class="text-primary border-b-2 border-primary-container font-semibold py-3 flex items-center gap-1.5" href="#"><span class="">Seguridad &amp; Incidentes</span><span class="w-1.5 h-1.5 rounded-full bg-error"></span></a></nav></div><div class="flex items-center gap-3"><button class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-semibold text-primary-container bg-surface-container-low hover:bg-surface-container rounded-lg border border-outline-variant/50 transition-colors active:scale-[0.98]"><span class="material-symbols-outlined text-[18px]">point_of_sale</span><span class="">Apertura de Caja</span></button><button class="flex items-center gap-1.5 px-3.5 py-1.5 text-body-sm font-semibold text-white bg-primary-container hover:bg-[#0e4a44] rounded-lg shadow-sm transition-all active:scale-[0.98]"><span class="material-symbols-outlined text-[18px]">add</span><span class="">Nuevo / Agregar</span></button><div class="h-6 w-px bg-outline-variant/40 mx-1 hidden sm:block"></div><div class="flex items-center gap-1"><button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg relative transition-colors" title="Notificaciones activas"><span class="material-symbols-outlined">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full ring-2 ring-white"></span></button><button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-lg transition-colors" title="Sincronización Local con NOC Central"><span class="material-symbols-outlined">sync</span></button></div><div class="h-6 w-px bg-outline-variant/40 mx-1"></div><div class="flex items-center gap-2 pl-1 cursor-pointer group"><div class="w-8 h-8 rounded-full bg-primary-fixed border border-primary-container/20 flex items-center justify-center font-headline-sm text-[12px] font-bold text-primary">ET</div><div class="hidden 2xl:flex flex-col text-left leading-tight"><span class="text-body-sm font-semibold text-on-surface">Carlos Henríquez</span><span class="text-[11px] text-primary-container font-semibold">Encargado de Tienda</span></div><span class="material-symbols-outlined text-outline text-[18px] group-hover:text-on-surface">expand_more</span></div></div></div>
+</header>
+<!-- ========================================================================= -->
+<!-- MAIN OPERATIONAL WORKSPACE (Cockpit Dual Pane Layout)                       -->
+<!-- ========================================================================= -->
+<div class="flex-1 flex max-w-[1680px] w-full mx-auto">
+<!-- LEFT EXPANDABLE DRAWER / SIDE NAV -->
+
+<!-- MAIN SCROLLABLE CONTENT CANVAS -->
+<main class="flex-1 overflow-y-auto px-6 lg:px-8 py-7 space-y-7">
+<!-- ========================================================================= -->
+<!-- 1. HEADER DE PROTOCOLO & CRITICAL COMMAND BAR                             -->
+<!-- ========================================================================= -->
+<section class="bg-surface-container-lowest rounded-2xl p-6 lg:p-7 border border-outline-variant/40 shadow-sm relative overflow-hidden"><div class="absolute top-0 right-0 w-96 h-96 bg-primary-container/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div><div class="mb-4 p-3 bg-primary-fixed/30 border border-primary-fixed-variant/30 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3"><div class="flex items-center gap-2.5"><div class="w-7 h-7 rounded-lg bg-primary-container text-white flex items-center justify-center"><span class="material-symbols-outlined text-[18px]">badge</span></div><div class="flex flex-wrap items-center gap-2"><span class="text-body-sm font-bold text-primary">Alcance: Tienda 04 - Providencia Express</span><span class="text-outline">|</span><span class="text-body-sm text-on-surface-variant font-medium">Rol: Encargado de Sucursal</span><span class="px-2 py-0.5 text-[10px] font-bold bg-primary-container text-white rounded-full">Control Operativo Local</span></div></div><div class="flex items-center gap-2 text-[12px] text-outline"><span class="inline-flex items-center gap-1 text-emerald-700 font-semibold bg-white px-2.5 py-1 rounded-lg border border-emerald-200"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>30 Cajas Conectadas (100% Operativas)</span></div></div><div class="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-6 relative z-10"><div class="max-w-4xl space-y-2"><div class="flex items-center gap-2.5"><span class="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-primary-container bg-primary-fixed/40 border border-primary-fixed-variant/30 rounded-lg">SOP-SEC-0994 • Versión 4.2 Local</span><span class="flex items-center gap-1 text-[12px] font-medium text-outline"><span class="material-symbols-outlined text-[15px]">history</span>Última sincronización con NOC Central: Hoy, 08:30 CLT</span></div><h1 class="font-headline-xl text-headline-xl font-bold tracking-tight text-on-surface">Protocolo de Escalamiento &amp; Cadena de Mando ante Incidentes</h1><p class="font-body-md text-body-md text-on-surface-variant">Gestión y despacho inmediato en tienda: Control total en tiempo real de terminales POS y respuesta de supervisores locales (Nivel 1 y 2). Canales Nivel 3 Corporativo y Nivel 4 Alta Dirección enlazados en modo gobernanza centralizada.</p></div><div class="flex flex-wrap items-center gap-3 self-start 2xl:self-center"><button class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-primary-container bg-white border border-outline-variant hover:border-primary-container/60 hover:bg-surface-container-low rounded-xl shadow-sm transition-all active:scale-[0.98]"><span class="material-symbols-outlined text-[18px]">science</span><span class="">Simular Simulacro Sucursal</span></button><button class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-white bg-secondary hover:bg-[#621ec9] rounded-xl shadow-sm transition-all active:scale-[0.98]"><span class="material-symbols-outlined text-[18px]">contact_phone</span><span class="">Contactos de Emergencia Local</span></button><button class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-bold text-white bg-error hover:bg-[#961212] rounded-xl shadow-md transition-all active:scale-[0.98] ring-2 ring-error/20"><span class="material-symbols-outlined text-[18px] animate-pulse">crisis_alert</span><span class="">Activar Alerta de Sucursal</span></button></div></div><div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-outline-variant/30"><div class="flex flex-col"><span class="text-[11px] font-semibold text-outline uppercase">MTTR Local (Tienda 04)</span><div class="flex items-baseline gap-2 mt-1"><span class="font-tabular-metric text-tabular-metric font-bold text-primary-container">18.4 min</span><span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">-4.2m vs Q3</span></div></div><div class="flex flex-col"><span class="text-[11px] font-semibold text-outline uppercase">Cumplimiento SLA en Cajas Locales</span><div class="flex items-baseline gap-2 mt-1"><span class="font-tabular-metric text-tabular-metric font-bold text-on-surface">99.4%</span><span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">Objetivo &gt;98%</span></div></div><div class="flex flex-col"><span class="text-[11px] font-semibold text-outline uppercase">Incidentes Activos en Sucursal</span><div class="flex items-baseline gap-2 mt-1"><span class="font-tabular-metric text-tabular-metric font-bold text-on-surface">01</span><span class="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">POS-03 en Verif. L2</span></div></div><div class="flex flex-col"><span class="text-[11px] font-semibold text-outline uppercase">Cajas Protegidas Locales</span><div class="flex items-baseline gap-2 mt-1"><span class="font-tabular-metric text-tabular-metric font-bold text-on-surface">30 cajas</span><span class="text-[11px] font-bold text-primary-container bg-primary-fixed/50 px-1.5 py-0.5 rounded">30 / 342 red total</span></div></div></div></section>
+<!-- ========================================================================= -->
+<!-- 2. FLUJO VISUAL INTERACTIVO DE LA CADENA DE ESCALAMIENTO (L1 A L4)         -->
+<!-- ========================================================================= -->
+<section class="space-y-4">
+<div class="flex items-center justify-between">
+<div>
+<h2 class="font-headline-lg text-headline-lg font-bold text-on-surface">
+              Cadena de Escalamiento Operativo Secuencial
+            </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+              Transición automática de tickets y privilegios operacionales según tiempo de bloqueo y umbral de severidad.
+            </p>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-[12px] font-semibold text-outline">Modo de Vista:</span>
+<span class="px-2.5 py-1 text-label-sm font-semibold bg-primary-container text-white rounded-lg">Flujo Operacional</span>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"><div class="bg-surface-container-lowest rounded-2xl p-5 border-2 border-primary-container/40 shadow-sm relative flex flex-col justify-between group hover:border-primary-container transition-all"><div class="absolute -top-3 left-4 px-2.5 py-0.5 bg-primary-container text-white rounded-full text-[11px] font-bold uppercase tracking-wider">FASE 01 • ACCIÓN EN CAJA</div><div><div class="flex items-center justify-between mt-1 mb-3"><div class="w-10 h-10 rounded-xl bg-surface-container-low text-primary-container border border-outline-variant/40 flex items-center justify-center"><span class="material-symbols-outlined text-[22px]">point_of_sale</span></div><div class="text-right"><span class="text-[10px] font-bold uppercase text-outline">Tiempo Límite SLA</span><p class="text-headline-sm font-bold text-primary-container">&lt; 60 seg</p></div></div><div class="mb-3"><div class="flex items-center gap-1.5 mb-0.5"><span class="font-headline-md text-headline-sm font-bold text-on-surface">Nivel 1</span><span class="px-1.5 py-0.2 bg-emerald-50 text-emerald-800 text-[10px] font-bold rounded border border-emerald-200">Control Local Total</span></div><h4 class="text-body-sm font-semibold text-outline">Operador de Caja / Cajero Tienda 04</h4></div><ul class="space-y-2 text-body-sm text-on-surface-variant mb-4"><li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary-container text-[16px] mt-0.5">radio_button_checked</span><span class="">Detección de anomalía (fraude chip, identidad o billete falso).</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary-container text-[16px] mt-0.5">lock_person</span><span class="">Bloqueo preventivo en POS sin abortar transacción formal.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-primary-container text-[16px] mt-0.5">touch_app</span><span class="">Pulsador de asistencia silenciosa hacia el Encargado de Tienda.</span></li></ul></div><div class="pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px]"><span class="font-semibold text-outline">Escala automático a L2 si:</span><span class="font-bold text-primary-container">Excede 60s sin PIN Sup.</span></div></div><div class="bg-surface-container-lowest rounded-2xl p-5 border-2 border-primary-container shadow-md relative flex flex-col justify-between group transition-all"><div class="absolute -top-3 left-4 px-2.5 py-0.5 bg-primary-container text-white rounded-full text-[11px] font-bold uppercase tracking-wider">FASE 02 • FOCO TIENDA 04</div><div><div class="flex items-center justify-between mt-1 mb-3"><div class="w-10 h-10 rounded-xl bg-primary-fixed/40 text-primary-container border border-primary-container/30 flex items-center justify-center"><span class="material-symbols-outlined text-[22px]">supervisor_account</span></div><div class="text-right"><span class="text-[10px] font-bold uppercase text-outline">Tiempo Límite SLA</span><p class="text-headline-sm font-bold text-amber-600">&lt; 3 min</p></div></div><div class="mb-3"><div class="flex items-center gap-1.5 mb-0.5"><span class="font-headline-md text-headline-sm font-bold text-on-surface">Nivel 2</span><span class="px-1.5 py-0.2 bg-amber-50 text-amber-800 text-[10px] font-bold rounded border border-amber-200">Presencial Encargado</span></div><h4 class="text-body-sm font-semibold text-outline">Encargado de Tienda / Supervisor Turno</h4></div><ul class="space-y-2 text-body-sm text-on-surface-variant mb-4"><li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-600 text-[16px] mt-0.5">badge</span><span class="">Validación presencial de identidad en caja Providencia Express.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-600 text-[16px] mt-0.5">verified_user</span><span class="">Confirmación de causal en app móvil supervisores SIRA.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-amber-600 text-[16px] mt-0.5">call</span><span class="">Apertura de canal directo con sala CCTV y guardias del local.</span></li></ul></div><div class="pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px]"><span class="font-semibold text-outline">Escala a L3 Corporativo si:</span><span class="font-bold text-amber-700">Reincidencia o Agresión</span></div></div><div class="bg-surface-container-low/50 rounded-2xl p-5 border border-outline-variant/60 shadow-sm relative flex flex-col justify-between group transition-all"><div class="absolute -top-3 left-4 px-2 py-0.5 bg-surface-container-high border border-outline-variant/60 rounded-full text-[11px] font-bold text-on-surface uppercase flex items-center gap-1"><span class="material-symbols-outlined text-[13px] text-outline">visibility</span><span class="">FASE 03 • CORPORATIVO (SOLO LECTURA)</span></div><div><div class="flex items-center justify-between mt-1 mb-3"><div class="w-10 h-10 rounded-xl bg-secondary-fixed/50 text-secondary border border-secondary/20 flex items-center justify-center"><span class="material-symbols-outlined text-[22px]">security</span></div><div class="text-right"><span class="text-[10px] font-bold uppercase text-outline">Tiempo Límite SLA</span><p class="text-headline-sm font-bold text-secondary">&lt; 10 min</p></div></div><div class="mb-3"><div class="flex items-center gap-1.5 mb-0.5"><span class="font-headline-md text-headline-sm font-bold text-on-surface">Nivel 3</span><span class="px-1.5 py-0.2 bg-purple-50 text-purple-800 text-[10px] font-bold rounded border border-purple-200">Gobernanza Central</span></div><h4 class="text-body-sm font-semibold text-outline">Oficial de Seguridad Corporativa / NOC Central</h4></div><ul class="space-y-2 text-body-sm text-on-surface-variant mb-4"><li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary text-[16px] mt-0.5">hub</span><span class="">Bloqueo preventivo en red corporativa de las 14 tiendas del grupo.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary text-[16px] mt-0.5">sync_problem</span><span class="">Notificación a adquirentes bancarios (Transbank / Redelcom).</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-secondary text-[16px] mt-0.5">videocam</span><span class="">Extracción remota forense de clips de video por el NOC.</span></li></ul></div><div class="pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px]"><span class="font-semibold text-outline">Gobernanza:</span><span class="font-bold text-secondary">Mando Central NOC</span></div></div><div class="bg-surface-container-low/50 rounded-2xl p-5 border border-error/30 shadow-sm relative flex flex-col justify-between group transition-all"><div class="absolute -top-3 left-4 px-2 py-0.5 bg-error-container text-on-error-container rounded-full text-[11px] font-bold uppercase tracking-wider flex items-center gap-1"><span class="material-symbols-outlined text-[13px]">lock</span><span class="">FASE 04 • ALTA DIRECCIÓN (SOLO LECTURA)</span></div><div><div class="flex items-center justify-between mt-1 mb-3"><div class="w-10 h-10 rounded-xl bg-error-container text-error flex items-center justify-center"><span class="material-symbols-outlined text-[22px]">gavel</span></div><div class="text-right"><span class="text-[10px] font-bold uppercase text-outline">Tiempo Límite SLA</span><p class="text-headline-sm font-bold text-error">&lt; 1 hora</p></div></div><div class="mb-3"><div class="flex items-center gap-1.5 mb-0.5"><span class="font-headline-md text-headline-sm font-bold text-on-surface">Nivel 4</span><span class="px-1.5 py-0.2 bg-red-50 text-red-800 text-[10px] font-bold rounded border border-red-200">Legal &amp; Policial</span></div><h4 class="text-body-sm font-semibold text-outline">Gerencia General / Fiscalía / Carabineros</h4></div><ul class="space-y-2 text-body-sm text-on-surface-variant mb-4"><li class="flex items-start gap-2"><span class="material-symbols-outlined text-error text-[16px] mt-0.5">local_police</span><span class="">Despacho de patrulla y denuncia formal ante Carabineros / PDI.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-error text-[16px] mt-0.5">shield</span><span class="">Activación de póliza de seguro de transporte y valores.</span></li><li class="flex items-start gap-2"><span class="material-symbols-outlined text-error text-[16px] mt-0.5">block</span><span class="">Inscripción judicial y bloqueo RUT a nivel gremial.</span></li></ul></div><div class="pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px]"><span class="font-semibold text-outline">Cierre Formal:</span><span class="font-bold text-on-surface">Acta Legal &amp; Peritaje Central</span></div></div></div>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. MATRIZ DE SEVERIDAD & MATRIZ RACI (BENTO ASYMMETRIC GRID)              -->
+<!-- ========================================================================= -->
+<section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- MATRIZ DE SEVERIDAD (7 cols) -->
+<div class="lg:col-span-7 bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<div>
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">
+                  Matriz de Severidad Operativa
+                </h3>
+<p class="text-body-sm text-on-surface-variant">
+                  Criterios de clasificación objetiva del incidente para el disparo de alertas y SLAs.
+                </p>
+</div>
+<span class="material-symbols-outlined text-outline">tune</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
+<!-- Sev 1 -->
+<div class="p-4 rounded-xl border border-red-200 bg-red-50/40 hover:bg-red-50/80 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-red-100 text-red-800 border border-red-300">
+                    SEV-1 • CRÍTICA
+                  </span>
+<span class="text-headline-sm font-bold text-red-700">SLA &lt; 5m</span>
+</div>
+<h4 class="text-body-sm font-bold text-on-surface mb-1">Amenaza Física o Fraude Masivo</h4>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">
+                  Asalto armado, compromiso del switch central de pagos, o fraude coordinado de bandas en múltiples cajas simultáneas.
+                </p>
+<div class="mt-3 pt-2 border-t border-red-200/60 flex items-center justify-between text-[11px] font-semibold text-red-900">
+<span class="">Comité de Crisis:</span>
+<span class="underline decoration-red-400">Activación Inmediata</span>
+</div>
+</div>
+<!-- Sev 2 -->
+<div class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 hover:bg-amber-50/70 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-300">
+                    SEV-2 • MAYOR
+                  </span>
+<span class="text-headline-sm font-bold text-amber-700">SLA &lt; 15m</span>
+</div>
+<h4 class="text-body-sm font-bold text-on-surface mb-1">Hurto Agravado o Falla de POS</h4>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">
+                  Suplantación de identidad flagrante con tarjetas de crédito clonadas, o colapso de integración Transbank en una tienda completa.
+                </p>
+<div class="mt-3 pt-2 border-t border-amber-200/60 flex items-center justify-between text-[11px] font-semibold text-amber-900">
+<span class="">Mando Asignado:</span>
+<span class="">Supervisor + Jefe Seguridad</span>
+</div>
+</div>
+<!-- Sev 3 -->
+<div class="p-4 rounded-xl border border-blue-200 bg-blue-50/30 hover:bg-blue-50/70 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-300">
+                    SEV-3 • MODERADA
+                  </span>
+<span class="text-headline-sm font-bold text-blue-700">SLA &lt; 30m</span>
+</div>
+<h4 class="text-body-sm font-bold text-on-surface mb-1">Discrepancia en Caja / Devolución</h4>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">
+                  Intento de devolución de mercadería sin ticket con sospecha de receptación, o diferencia de cuadratura mayor a $150.000 CLP.
+                </p>
+<div class="mt-3 pt-2 border-t border-blue-200/60 flex items-center justify-between text-[11px] font-semibold text-blue-900">
+<span class="">Resolución:</span>
+<span class="">Jefe de Cajas Local</span>
+</div>
+</div>
+<!-- Sev 4 -->
+<div class="p-4 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100/70 transition-colors">
+<div class="flex items-center justify-between mb-2">
+<span class="px-2 py-0.5 text-[11px] font-bold rounded bg-slate-200 text-slate-800 border border-slate-300">
+                    SEV-4 • MENOR
+                  </span>
+<span class="text-headline-sm font-bold text-slate-700">SLA &lt; 2h</span>
+</div>
+<h4 class="text-body-sm font-bold text-on-surface mb-1">Alerta Preventiva / Ruido en Red</h4>
+<p class="text-[12px] text-on-surface-variant leading-relaxed">
+                  Lectura intermitente de pinpad en POS secundario, desajuste menor en etiquetas RFID o consulta de validación de cédula de identidad.
+                </p>
+<div class="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-semibold text-slate-700">
+<span class="">Gestión:</span>
+<span class="">Mesa de Ayuda TI</span>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-3 flex items-center justify-between text-body-sm text-outline border-t border-outline-variant/30">
+<span class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px] text-primary-container">info</span>
+<span class="">Los incidentes no resueltos al 80% del tiempo SLA se promueven automáticamente.</span>
+</span>
+<a class="font-semibold text-primary-container hover:underline text-[12px]" href="#">Ver Pautas de Clasificación →</a>
+</div>
+</div>
+<!-- MATRIZ RACI DE ROLES ANTE CRISIS (5 cols) -->
+<div class="lg:col-span-5 bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/40 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div>
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">
+                  Matriz RACI de Responsabilidad
+                </h3>
+<p class="text-body-sm text-on-surface-variant">
+                  Asignación formal de facultades operacionales ante incidentes.
+                </p>
+</div>
+<span class="px-2 py-1 bg-surface-container text-on-surface text-[10px] font-mono font-bold rounded">ISO 27001</span>
+</div>
+<!-- RACI Legend -->
+<div class="flex items-center gap-3 text-[11px] font-semibold mb-4 bg-surface-container-low p-2 rounded-lg">
+<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-primary-container text-white text-[10px] font-bold flex items-center justify-center">R</span> Responsable</span>
+<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-secondary text-white text-[10px] font-bold flex items-center justify-center">A</span> Aprobador</span>
+<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-amber-600 text-white text-[10px] font-bold flex items-center justify-center">C</span> Consultado</span>
+<span class="flex items-center gap-1"><span class="w-4 h-4 rounded bg-slate-400 text-white text-[10px] font-bold flex items-center justify-center">I</span> Informado</span>
+</div>
+<!-- Tabular RACI layout -->
+<div class="overflow-x-auto">
+<table class="w-full text-left text-[12px]">
+<thead>
+<tr class="border-b border-outline-variant/40 text-outline">
+<th class="py-2 font-semibold">Rol Institucional</th>
+<th class="py-2 text-center font-bold">Sev 1</th>
+<th class="py-2 text-center font-bold">Sev 2</th>
+<th class="py-2 text-center font-bold">Sev 3</th>
+<th class="py-2 text-center font-bold">Sev 4</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 font-medium">
+<tr>
+<td class="py-2.5 font-semibold text-on-surface">Operador / Cajero</td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-200 text-slate-700 inline-flex items-center justify-center font-bold text-[10px]">I</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-200 text-slate-700 inline-flex items-center justify-center font-bold text-[10px]">I</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-primary-container text-white inline-flex items-center justify-center font-bold text-[10px]">R</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-primary-container text-white inline-flex items-center justify-center font-bold text-[10px]">R</span></td>
+</tr>
+<tr>
+<td class="py-2.5 font-semibold text-on-surface">Supervisor de Tienda</td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-amber-600 text-white inline-flex items-center justify-center font-bold text-[10px]">C</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-primary-container text-white inline-flex items-center justify-center font-bold text-[10px]">R</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-secondary text-white inline-flex items-center justify-center font-bold text-[10px]">A</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-secondary text-white inline-flex items-center justify-center font-bold text-[10px]">A</span></td>
+</tr>
+<tr>
+<td class="py-2.5 font-semibold text-on-surface">Oficial Seguridad / NOC</td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-primary-container text-white inline-flex items-center justify-center font-bold text-[10px]">R</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-secondary text-white inline-flex items-center justify-center font-bold text-[10px]">A</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-amber-600 text-white inline-flex items-center justify-center font-bold text-[10px]">C</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-200 text-slate-700 inline-flex items-center justify-center font-bold text-[10px]">I</span></td>
+</tr>
+<tr>
+<td class="py-2.5 font-semibold text-on-surface">Gerencia General / Legal</td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-secondary text-white inline-flex items-center justify-center font-bold text-[10px]">A</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-200 text-slate-700 inline-flex items-center justify-center font-bold text-[10px]">I</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-200 text-slate-700 inline-flex items-center justify-center font-bold text-[10px]">I</span></td>
+<td class="text-center"><span class="w-5 h-5 rounded bg-slate-100 text-slate-400 inline-flex items-center justify-center font-bold text-[10px]">-</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="mt-4 p-3 bg-primary-fixed/30 rounded-xl border border-primary-fixed-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary-container">contact_phone</span>
+<span class="text-[12px] font-semibold text-primary">Teléfono Rojo Fiscalía / Carabineros:</span>
+</div>
+<span class="font-mono font-bold text-primary-container text-[12px]">+56 2 2920 8400</span>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 4. CANALES DE NOTIFICACIÓN AUTOMATIZADA & INTEGRACIONES (SLACK, SMS, SIEM) -->
+<!-- ========================================================================= -->
+<section class="bg-surface-container-lowest rounded-2xl p-6 border border-outline-variant/40 shadow-sm">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h3 class="font-headline-md text-headline-md font-bold text-on-surface">
+                Canales de Notificación Automatizada &amp; Integraciones SIRA
+              </h3>
+<span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-full border border-emerald-200">
+                4/4 Activos
+              </span>
+</div>
+<p class="text-body-sm text-on-surface-variant">
+              Conexiones webhook y mensajería sincrónica para propagar incidentes en menos de 5 segundos.
+            </p>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-semibold text-on-surface bg-white border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors self-start sm:self-auto">
+<span class="material-symbols-outlined text-[16px]">settings_input_component</span>
+<span class="">Configurar Webhooks &amp; APIs</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+<!-- Webhook Slack NOC -->
+<div class="p-4 rounded-xl border border-outline-variant/50 bg-white hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-9 h-9 rounded-lg bg-[#4A154B]/10 text-[#4A154B] flex items-center justify-center font-bold">
+<span class="material-symbols-outlined text-[20px]">tag</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<h4 class="font-headline-sm text-body-md font-bold text-on-surface">Slack NOC Emergency</h4>
+<p class="text-[12px] text-outline mt-0.5">Canal: <span class="font-mono text-on-surface">#sira-noc-alerts</span></p>
+<p class="text-body-sm text-on-surface-variant mt-2">
+                Publica cargas útiles JSON con ID de incidente, captura fotográfica POS y geolocalización.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px] text-outline">
+<span class="">Latencia promedio:</span>
+<span class="font-bold text-emerald-700">320 ms</span>
+</div>
+</div>
+<!-- SMS Prioritario -->
+<div class="p-4 rounded-xl border border-outline-variant/50 bg-white hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">sms</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<h4 class="font-headline-sm text-body-md font-bold text-on-surface">SMS Prioritario / Flash SMS</h4>
+<p class="text-[12px] text-outline mt-0.5">Gateway: <span class="font-mono text-on-surface">Twilio Enterprise Gov</span></p>
+<p class="text-body-sm text-on-surface-variant mt-2">
+                Envío simultáneo a los teléfonos móviles de los 14 gerentes zonales ante eventos Sev 1 y Sev 2.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px] text-outline">
+<span class="">Tasa de entrega:</span>
+<span class="font-bold text-emerald-700">99.98%</span>
+</div>
+</div>
+<!-- Sirena Silenciosa Puesto de Seguridad -->
+<div class="p-4 rounded-xl border border-outline-variant/50 bg-white hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-9 h-9 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">volume_off</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-container"></div>
+</label>
+</div>
+<h4 class="font-headline-sm text-body-md font-bold text-on-surface">Sirena Silenciosa CCTV</h4>
+<p class="text-[12px] text-outline mt-0.5">Protocolo: <span class="font-mono text-on-surface">MQTT / Relé IP</span></p>
+<p class="text-body-sm text-on-surface-variant mt-2">
+                Disparo háptico en pulseras de guardias y estroboscópica silenciosa en garita de control interior.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px] text-outline">
+<span class="">Hardware Conectado:</span>
+<span class="font-bold text-primary-container">28 Módulos</span>
+</div>
+</div>
+<!-- Ticket Automático SIEM Corporativo -->
+<div class="p-4 rounded-xl border border-outline-variant/50 bg-white hover:border-primary-container/30 transition-all flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-3">
+<div class="w-9 h-9 rounded-lg bg-purple-50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">dataset</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox">
+<div class="w-9 h-5 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
+</label>
+</div>
+<h4 class="font-headline-sm text-body-md font-bold text-on-surface">Ticket SIEM / Splunk</h4>
+<p class="text-[12px] text-outline mt-0.5">Destino: <span class="font-mono text-on-surface">SOC-Audit-Vault</span></p>
+<p class="text-body-sm text-on-surface-variant mt-2">
+                Registro inmutable con firma criptográfica de cada evento de escalamiento para compliance CMF.
+              </p>
+</div>
+<div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center justify-between text-[11px] text-outline">
+<span class="">Logs Inmutables:</span>
+<span class="font-bold text-secondary">Blockchain SIRA</span>
+</div>
+</div>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- 5. HISTORIAL DE ACTIVACIONES RECIENTES DE PROTOCOLO (DATA GRID SUITE)      -->
+<!-- ========================================================================= -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 shadow-sm overflow-hidden">
+<!-- Table Toolbar -->
+<div class="p-5 border-b border-outline-variant/40 flex flex-col lg:flex-row lg:items-center justify-between gap-4"><div><div class="flex items-center gap-2"><h3 class="font-headline-md text-headline-md font-bold text-on-surface">Historial de Activaciones de Protocolo</h3><span class="px-2 py-0.5 text-[11px] font-bold bg-primary-fixed text-primary rounded">Tienda 04 - Providencia Express</span></div><p class="text-body-sm text-on-surface-variant">Auditoría forense de tiempos de respuesta en cajas locales y registro referencial de red.</p></div><div class="flex flex-wrap items-center gap-3"><div class="inline-flex p-1 bg-surface-container rounded-xl border border-outline-variant/40 text-body-sm"><button class="px-3 py-1 text-[12px] font-bold rounded-lg bg-primary-container text-white shadow-sm flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">store</span><span class="">Solo Mi Sucursal (Activo)</span></button><button class="px-3 py-1 text-[12px] font-semibold text-outline hover:text-on-surface rounded-lg transition-colors flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">hub</span><span class="">Resumen Red (Consolidado)</span></button></div><div class="relative"><input class="pl-8 pr-3 py-1.5 text-body-sm border border-outline-variant/60 rounded-lg text-on-surface bg-white focus:outline-none focus:ring-1 focus:ring-primary-container" placeholder="Filtrar por ticket o caja..." type="text" value="Providencia Express"><span class="material-symbols-outlined absolute left-2.5 top-2 text-[16px] text-outline">filter_list</span></div><button class="flex items-center gap-1 px-3 py-1.5 text-body-sm font-semibold text-primary-container bg-white border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors"><span class="material-symbols-outlined text-[16px]">download</span><span class="">Exportar XLS</span></button></div></div>
+<!-- Data Grid -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="h-9 bg-[#f8fafc] border-b border-outline-variant/40 text-outline text-[11px] font-semibold uppercase tracking-wider">
+<th class="pl-6 pr-3">Ticket ID</th>
+<th class="px-3">Fecha / Hora</th>
+<th class="px-3">Severidad</th>
+<th class="px-3">Sucursal &amp; Terminal</th>
+<th class="px-3">Causal Registrada</th>
+<th class="px-3">Nivel Máx.</th>
+<th class="px-3">Tiempo Res.</th>
+<th class="px-3">Delta vs SLA</th>
+<th class="px-3">Operador / NOC</th>
+<th class="pr-6 pl-3 text-right">Estado Cierre</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20 text-body-sm font-medium"><tr class="h-11 hover:bg-surface-container-low/60 transition-colors bg-amber-50/30"><td class="pl-6 pr-3 font-mono font-bold text-primary-container">#INC-8831</td><td class="px-3 text-outline text-[12px]">Hoy, 10:14 CLT</td><td class="px-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300"><span class="w-1.5 h-1.5 rounded-full bg-amber-600 animate-ping"></span>SEV-2</span></td><td class="px-3"><div class="flex flex-col"><span class="font-bold text-primary-container flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">store</span>Providencia Express</span><span class="text-[11px] text-outline">POS-03 (Pasillo Central)</span></div></td><td class="px-3 text-on-surface">Tarjeta clonada retenida (Adquirente 99)</td><td class="px-3"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-primary-fixed text-primary">Nivel 2 (Sup. Local)</span></td><td class="px-3 font-mono font-semibold text-amber-700">02m 14s</td><td class="px-3"><span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">-46s (Cumplido)</span></td><td class="px-3 text-on-surface-variant text-[12px]">F. Soto (Supervisor Turno)</td><td class="pr-6 pl-3 text-right"><span class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">En Verificación Presencial</span></td></tr><tr class="h-11 hover:bg-surface-container-low/60 transition-colors"><td class="pl-6 pr-3 font-mono font-bold text-primary-container">#INC-8815</td><td class="px-3 text-outline text-[12px]">11 Oct, 16:20 CLT</td><td class="px-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-900 border border-blue-300">SEV-3</span></td><td class="px-3"><div class="flex flex-col"><span class="font-bold text-primary-container flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">store</span>Providencia Express</span><span class="text-[11px] text-outline">POS-01 (Caja Rápida)</span></div></td><td class="px-3 text-on-surface">Discrepancia en arqueo de caja &gt; $150.000</td><td class="px-3"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-surface-container-high text-on-surface">Nivel 2 (Encargado)</span></td><td class="px-3 font-mono font-semibold text-on-surface">05m 12s</td><td class="px-3"><span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">-24m 48s (Óptimo)</span></td><td class="px-3 text-on-surface-variant text-[12px]">C. Henríquez (Encargado)</td><td class="pr-6 pl-3 text-right"><span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full"><span class="material-symbols-outlined text-[14px]">check</span>Arqueo Regularizado</span></td></tr><tr class="h-11 hover:bg-surface-container-low/60 transition-colors bg-surface-container-low/30"><td class="pl-6 pr-3 font-mono font-bold text-outline">#INC-8828</td><td class="px-3 text-outline text-[12px]">Ayer, 18:45 CLT</td><td class="px-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-red-100 text-red-900 border border-red-300">SEV-1</span></td><td class="px-3"><div class="flex flex-col"><span class="font-semibold text-on-surface-variant flex items-center gap-1">Mall Plaza Vespucio <span class="text-[10px] text-outline font-normal">(Red)</span></span><span class="text-[11px] text-outline">Caja Central #01</span></div></td><td class="px-3 text-on-surface-variant">Intento de asalto / Activación de pedal</td><td class="px-3"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-error-container text-on-error-container">Nivel 4 (Fiscalía)</span></td><td class="px-3 font-mono font-semibold text-on-surface-variant">34m 10s</td><td class="px-3"><span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">-25m 50s</span></td><td class="px-3 text-outline text-[12px]">NOC Central + Carabineros</td><td class="pr-6 pl-3 text-right"><span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">Cerrado Central</span></td></tr><tr class="h-11 hover:bg-surface-container-low/60 transition-colors bg-surface-container-low/30"><td class="pl-6 pr-3 font-mono font-bold text-outline">#INC-8802</td><td class="px-3 text-outline text-[12px]">12 Oct, 11:30 CLT</td><td class="px-3"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">SEV-2</span></td><td class="px-3"><div class="flex flex-col"><span class="font-semibold text-on-surface-variant flex items-center gap-1">Viña del Mar Marina <span class="text-[10px] text-outline font-normal">(Red)</span></span><span class="text-[11px] text-outline">POS-02 Perfumería</span></div></td><td class="px-3 text-on-surface-variant">RUT bloqueado con orden de embargo</td><td class="px-3"><span class="px-2 py-0.5 rounded-md text-[11px] font-bold bg-secondary-fixed text-on-secondary-fixed">Nivel 3 (NOC)</span></td><td class="px-3 font-mono font-semibold text-on-surface-variant">06m 20s</td><td class="px-3"><span class="text-emerald-700 font-bold text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">-03m 40s</span></td><td class="px-3 text-outline text-[12px]">Oficial NOC Central</td><td class="pr-6 pl-3 text-right"><span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-700 bg-slate-200 px-2 py-0.5 rounded-full">Bloqueo Red OK</span></td></tr></tbody>
+</table>
+</div>
+<!-- Table Pagination & Counter -->
+<div class="px-6 py-3 bg-surface-container-low/50 border-t border-outline-variant/30 flex items-center justify-between text-body-sm text-outline">
+<span class="">Mostrando 4 de 14 incidentes registrados este mes</span>
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 text-[12px] font-semibold rounded bg-white border border-outline-variant/50 text-on-surface disabled:opacity-40" disabled="">Anterior</button>
+<button class="px-2.5 py-1 text-[12px] font-semibold rounded bg-primary-container text-white">1</button>
+<button class="px-2.5 py-1 text-[12px] font-semibold rounded bg-white border border-outline-variant/50 text-on-surface hover:bg-surface-container">2</button>
+<button class="px-2.5 py-1 text-[12px] font-semibold rounded bg-white border border-outline-variant/50 text-on-surface hover:bg-surface-container">Siguiente</button>
+</div>
+</div>
+</section>
+<!-- Bottom Micro-Footer -->
+<footer class="pt-2 pb-6 text-center text-[12px] text-outline flex items-center justify-center gap-4">
+<span class="">SIRA • Sistema Integrado de Retail Automatizado</span>
+<span class="">•</span>
+<span class="">Marzú Retail Group © 2025</span>
+<span class="">•</span>
+<span class="flex items-center gap-1 text-emerald-700 font-medium">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Conexión Segura TLS 1.3 End-to-End
+        </span>
+</footer>
+</main>
+</div>
+<!-- Interactive script for simulated alarms / micro-interactions -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Small simulated interaction for buttons
+      const alertBtn = document.querySelector('button:has(.animate-pulse)');
+      if (alertBtn) {
+        alertBtn.addEventListener('click', () => {
+          if (confirm('¿CONFIRMAR ACTIVACIÓN DE ALERTA GENERAL DE CRISIS?\n\nEsta acción notificará al NOC Central, sucursales y emitirá precinto electrónico a las 14 tiendas del grupo.')) {
+            alert('Protocolo de Crisis Activado. Canales Slack, SMS y Carabineros en despacho prioritario.');
+          }
+        });
+      }
+    });
+  </script>
+
+
+</body></html>

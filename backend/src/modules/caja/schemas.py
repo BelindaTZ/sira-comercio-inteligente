@@ -149,6 +149,7 @@ class IncidenteFraudeIn(BaseModel):
 class IncidenteFraudeOut(BaseModel):
     incidente_id: int
     empleado_id: int
+    empleado_nombre: str | None = None
     cierre_id: int | None
     ajuste_id: int | None
     descripcion: str

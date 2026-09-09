@@ -1,78 +1,55 @@
 <script setup>
 /**
- * Protocolo de escalamiento ante fraude confirmado (FR-012, FR-013). El texto
- * vigente es consultable por cualquier Encargado de Tienda; el Jefe de Finanzas
- * publica una nueva versión (append-only — la anterior queda en el historial).
+ * Protocolo de escalamiento ante fraude confirmado (feature 006, FR-012/FR-013).
+ * Texto de referencia versionado (append-only) — NO un motor de flujo multi-paso
+ * (spec 006, Assumptions). El Jefe de Finanzas publica una nueva versión; cualquier
+ * Encargado de Tienda lo consulta. Enlaza a los incidentes de fraude abiertos que
+ * esperan que se les aplique el protocolo.
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { cajaApi } from '@/services/cajaApi'
+import { useSesion } from '@/stores/sesion'
+import Icon from '@/shared/ui/Icon.vue'
+import DocumentoVersionado from '../components/DocumentoVersionado.vue'
 
-const vigente = ref(null)
-const borrador = ref('')
-const error = ref('')
-const guardado = ref(false)
+const sesion = useSesion()
+const puedePublicar = computed(() => sesion.rol === 'Jefe_Finanzas')
 
-async function cargar() {
-  error.value = ''
+const abiertos = ref(0)
+onMounted(async () => {
   try {
-    vigente.value = await cajaApi.protocolo()
-    borrador.value = vigente.value?.texto || ''
-  } catch (e) {
-    vigente.value = null
-    if (e.status !== 404) error.value = e.message
+    const inc = await cajaApi.incidentes('abierto')
+    abiertos.value = inc.length
+  } catch {
+    /* informativo */
   }
-}
-
-async function publicar() {
-  error.value = ''
-  guardado.value = false
-  try {
-    vigente.value = await cajaApi.definirProtocolo(borrador.value)
-    guardado.value = true
-  } catch (e) {
-    error.value = e.message
-  }
-}
-
-onMounted(cargar)
+})
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl px-6 py-8">
-    <h1 class="mb-6 text-2xl font-bold text-primary-container">Protocolo de escalamiento</h1>
-
-    <p v-if="error" class="mb-4 rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container">
-      {{ error }}
-    </p>
-
-    <section class="mb-6 rounded-xl border border-outline-variant bg-surface-container-lowest p-4">
-      <h2 class="mb-2 text-sm font-semibold text-on-surface">Versión vigente</h2>
-      <p v-if="vigente" class="whitespace-pre-wrap text-sm text-on-surface-variant">
-        {{ vigente.texto }}
-      </p>
-      <p v-else class="text-sm text-on-surface-variant">Aún no se ha definido un protocolo.</p>
-      <p v-if="vigente" class="mt-2 text-xs text-on-surface-variant">
-        Definido por #{{ vigente.definido_por }} · {{ vigente.fecha_creacion }}
-      </p>
-    </section>
-
-    <form class="rounded-xl border border-outline-variant bg-surface-container-lowest p-4" @submit.prevent="publicar">
-      <h2 class="mb-2 text-sm font-semibold text-on-surface">Publicar nueva versión</h2>
-      <textarea
-        v-model="borrador"
-        rows="8"
-        required
-        class="block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
-      />
-      <div class="mt-3 flex items-center gap-3">
-        <button
-          type="submit"
-          class="rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container"
-        >
-          Publicar
-        </button>
-        <span v-if="guardado" class="text-xs font-semibold text-tertiary">Guardado</span>
-      </div>
-    </form>
-  </main>
+  <DocumentoVersionado
+    titulo="Protocolo de Escalamiento"
+    subtitulo="Pasos a seguir ante un incidente de fraude confirmado. Documento de referencia versionado, consultable por cualquier Encargado de Tienda (FR-013)."
+    badge="Documento de referencia"
+    id-key="protocolo_id"
+    publicar-label="Publicar nueva versión"
+    :puede-publicar="puedePublicar"
+    :cargar-vigente="cajaApi.protocolo"
+    :cargar-historial="cajaApi.protocoloHistorial"
+    :publicar="cajaApi.definirProtocolo"
+  >
+    <template #antes>
+      <RouterLink
+        v-if="abiertos > 0"
+        to="/caja/incidentes"
+        class="mb-6 flex items-center justify-between rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100"
+      >
+        <span class="flex items-center gap-2">
+          <Icon name="alert" :size="16" />
+          {{ abiertos }} incidente(s) de fraude abierto(s) esperan que se aplique el protocolo
+        </span>
+        <span class="flex items-center gap-1 text-[12px]">Ir a incidentes <Icon name="chevron" :size="14" /></span>
+      </RouterLink>
+    </template>
+  </DocumentoVersionado>
 </template>

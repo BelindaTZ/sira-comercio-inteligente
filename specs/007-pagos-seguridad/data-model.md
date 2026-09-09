@@ -81,6 +81,15 @@ Entidad independiente de `incidentes_fraude` (006) — research.md Decisión 4. 
 
 Append-only (research.md Decisión 5). Vigente = fila con `fecha_creacion` más reciente. Índice: `idx_politica_seguridad_pagos_fecha_creacion` (DESC).
 
+**Pantalla (feature 013)** — `frontend/src/modules/caja/pages/PoliticaSeguridadPagosPage.vue`
+(componente compartido `DocumentoVersionado.vue`, igual que el protocolo de 006):
+texto vigente + **historial de versiones** (nuevo endpoint
+`GET /caja/politica-seguridad-pagos/historial`, mismo RBAC que la lectura del
+vigente; FR-014 ya requiere que las versiones anteriores sean consultables) +
+publicar (Jefe_TI). Los parámetros del mockup (umbrales CLP offline, tokenización,
+anti-tamper, matriz de adquirentes, audit trail SHA-256) no forman parte de la
+entidad (`texto` libre) y quedan fuera de alcance.
+
 ## Extensión RBAC (seed, no cambio de esquema)
 
 `role_permisos_tabla` no tenía filas para `incidente_seguridad_pago` ni `politica_seguridad_pagos` (tablas nuevas), ni para `datafonos`/`medios_pago` a nombre de los roles nuevos que esta feature necesita. Se agrega:

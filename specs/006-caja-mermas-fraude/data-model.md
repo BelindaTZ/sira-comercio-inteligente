@@ -70,6 +70,15 @@ Append-only (research.md Decisión 5). Vigente = fila con `vigente_desde` más r
 
 Append-only (research.md Decisión 7). Vigente = fila más reciente por `fecha_creacion`.
 
+**Pantalla (feature 013)** — `frontend/src/modules/caja/pages/ProtocoloEscalamientoPage.vue`
+(componente compartido `DocumentoVersionado.vue`): documento de referencia
+versionado — texto vigente + **historial de versiones** (nuevo endpoint
+`GET /caja/protocolo-escalamiento/historial`, mismo RBAC que la lectura del
+vigente; el diseño append-only ya lo implicaba) + publicar nueva versión
+(Jefe_Finanzas). NO es un motor de flujo multi-paso (Assumptions): la "cadena de
+escalamiento", la matriz RACI y los canales de notificación del mockup quedan
+fuera de alcance.
+
 ### Umbral de Merma por Categoría (`umbral_merma_categoria`)
 
 | Campo | Tipo | Validación |
@@ -117,6 +126,19 @@ en_revision --[Jefe_Finanzas cierra, registra resultado]--> cerrado
 ```
 
 **Migración**: `ALTER TABLE incidentes_fraude ALTER COLUMN cierre_id DROP NOT NULL; ADD COLUMN ajuste_id BIGINT REFERENCES ajustes_inventario(ajuste_id); ADD COLUMN acciones_tomadas TEXT; ADD COLUMN resultado VARCHAR(20) CHECK (resultado IN ('fraude_confirmado','descartado')); ADD COLUMN actualizado_por INTEGER REFERENCES empleados(empleado_id); ADD COLUMN fecha_actualizacion TIMESTAMP;` — puramente aditiva/relajante, no rompe ninguna fila existente de 001.
+
+**Pantalla (feature 013)** — `frontend/src/modules/caja/pages/IncidentesFraudePage.vue`,
+arquetipo Gestión: fila de KPI (abiertos / en revisión / cerrados / cerrados como
+fraude), data-grid del registro con origen (cuadre / ajuste / directo), evidencia,
+acciones, resultado y "últ. cambio por # · fecha" (FR-015). Acciones por fila:
+aplicar protocolo (Encargado, `prompt` de acciones → `en_revision`); cerrar
+incidente (Jefe_Finanzas, modal fraude confirmado / descartado). "Registrar
+incidente" abre uno directamente (FR-011, "registrado directamente"). El listado
+`GET /caja/incidentes-fraude` enriquece cada fila con `empleado_nombre` (join a
+`empleados`, sólo presentación). NO se implementa la telemetría del mockup (hash,
+BIN, monto, riesgo %, motor SIRA, mapa de calor POS, reglas heurísticas): no está
+en la entidad ni en la feature. `scripts/preparar_demo.py::_seguridad_pagos_demo`
+siembra el protocolo, la política y 3 incidentes de ejemplo.
 
 ## Extensión RBAC (seed, no cambio de esquema)
 

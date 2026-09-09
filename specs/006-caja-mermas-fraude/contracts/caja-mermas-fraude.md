@@ -79,12 +79,17 @@
 `GET /api/caja/incidentes-fraude?estado=`
 - Lista incidentes de fraude, filtrable por estado.
 - RBAC: `Jefe_Finanzas`, `Encargado_Tienda` (solo los de su tienda).
-- 200: `[{incidente_id, empleado_id, estado, descripcion, acciones_tomadas, resultado, fecha_hora}]`.
+- 200: `[{incidente_id, empleado_id, empleado_nombre, cierre_id, ajuste_id, estado, descripcion, acciones_tomadas, resultado, actualizado_por, fecha_actualizacion, fecha_hora}]` — `empleado_nombre` es un join a `empleados` para la grilla (feature 013).
 
 `GET /api/caja/protocolo-escalamiento`
 - Texto del protocolo de escalamiento vigente (FR-013).
 - RBAC: cualquier `Encargado_Tienda`, `Jefe_Finanzas`.
 - 200: `{protocolo_id, texto, definido_por, fecha_creacion}`.
+
+`GET /api/caja/protocolo-escalamiento/historial`
+- Todas las versiones del protocolo, más reciente primero (append-only). Feature 013.
+- RBAC: igual que la lectura del vigente.
+- 200: `[{protocolo_id, texto, definido_por, fecha_creacion}]`.
 
 `PUT /api/caja/protocolo-escalamiento`
 - Define una nueva versión del protocolo (FR-012).

@@ -280,6 +280,16 @@ async def protocolo_escalamiento(
     return ProtocoloEscalamientoOut.model_validate(await svc.protocolo_vigente())
 
 
+@router.get("/protocolo-escalamiento/historial", response_model=list[ProtocoloEscalamientoOut])
+async def protocolo_escalamiento_historial(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve_protocolo)]
+) -> list[ProtocoloEscalamientoOut]:
+    """Historial de versiones del protocolo (append-only)."""
+    return [
+        ProtocoloEscalamientoOut.model_validate(p) for p in await svc.historial_protocolo()
+    ]
+
+
 @router.put(
     "/protocolo-escalamiento",
     status_code=status.HTTP_201_CREATED,
@@ -447,6 +457,19 @@ async def definir_politica_seguridad(
     return PoliticaSeguridadPagosOut.model_validate(
         await svc.definir_politica_seguridad(texto=data.texto, definido_por=principal.empleado_id)
     )
+
+
+@router.get(
+    "/politica-seguridad-pagos/historial", response_model=list[PoliticaSeguridadPagosOut]
+)
+async def politica_seguridad_historial(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ve_politica)]
+) -> list[PoliticaSeguridadPagosOut]:
+    """FR-014 — historial de versiones (append-only) para saber cuál regía."""
+    return [
+        PoliticaSeguridadPagosOut.model_validate(p)
+        for p in await svc.historial_politica_seguridad()
+    ]
 
 
 @router.get("/politica-seguridad-pagos/{politica_id}", response_model=PoliticaSeguridadPagosOut)
