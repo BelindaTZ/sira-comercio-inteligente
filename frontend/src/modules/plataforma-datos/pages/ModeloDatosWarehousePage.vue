@@ -1,26 +1,38 @@
 <script setup>
 /**
- * US1 / FR-001 — el Jefe de TI define el modelo de datos único del warehouse
- * (fact_venta + dimensiones) y activa/desactiva cada entidad. El DAG de carga
- * sólo procesa entidades activas (research.md Decisión 1). Toda la regla vive en
- * el backend.
+ * US1 / FR-001 (feature 010) — el Jefe de TI define el modelo de datos del
+ * warehouse (fact_venta + dimensiones) y activa/desactiva cada entidad. La carga
+ * diaria sólo procesa entidades activas. Arquetipo "Gestión" del kit.
  */
 import { computed, onMounted, reactive, ref } from 'vue'
 import { plataformaDatosApi } from '@/services/plataformaDatosApi'
 import { useSesion } from '@/stores/sesion'
+import PageHeader from '@/shared/ui/PageHeader.vue'
+import KpiTile from '@/shared/ui/KpiTile.vue'
+import SemanticChip from '@/shared/ui/SemanticChip.vue'
+import Btn from '@/shared/ui/Btn.vue'
+import Icon from '@/shared/ui/Icon.vue'
+import Modal from '@/shared/ui/Modal.vue'
 
 const sesion = useSesion()
-const puedeEditar = computed(() => sesion.puedeEditarTabla('TI', 'modelo_datos_warehouse'))
+const puedeEditar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('TI', 'modelo_datos_warehouse'),
+)
 
 const entidades = ref([])
 const error = ref('')
+const aviso = ref('')
 const cargando = ref(false)
-const form = reactive({
-  nombreEntidad: '',
-  tipo: 'dimension',
-  tablaOrigenPostgres: '',
-  descripcion: '',
-})
+const modal = ref(false)
+const guardando = ref(false)
+const form = reactive({ nombreEntidad: '', tipo: 'dimension', tablaOrigenPostgres: '', descripcion: '' })
+
+const kpi = computed(() => ({
+  total: entidades.value.length,
+  activas: entidades.value.filter((e) => e.activa).length,
+  facts: entidades.value.filter((e) => e.tipo === 'fact').length,
+  dims: entidades.value.filter((e) => e.tipo === 'dimension').length,
+}))
 
 async function cargar() {
   cargando.value = true
@@ -35,15 +47,18 @@ async function cargar() {
 }
 
 async function registrar() {
+  guardando.value = true
   error.value = ''
   try {
     await plataformaDatosApi.registrarEntidad({ ...form })
-    form.nombreEntidad = ''
-    form.tablaOrigenPostgres = ''
-    form.descripcion = ''
+    Object.assign(form, { nombreEntidad: '', tipo: 'dimension', tablaOrigenPostgres: '', descripcion: '' })
+    modal.value = false
+    aviso.value = 'Entidad registrada en el modelo.'
     await cargar()
   } catch (e) {
     error.value = e.message
+  } finally {
+    guardando.value = false
   }
 }
 
@@ -61,110 +76,124 @@ onMounted(cargar)
 </script>
 
 <template>
-  <main class="mx-auto max-w-4xl space-y-8 px-6 py-8">
-    <header>
-      <h1 class="text-2xl font-bold text-primary-container">Modelo de datos del warehouse</h1>
-      <p class="mt-1 text-sm text-on-surface-variant">
-        Entidades que la carga diaria puebla en el warehouse. Una entidad inactiva queda definida
-        pero su carga no arranca hasta activarla.
-      </p>
-    </header>
-
-    <p
-      v-if="error"
-      class="rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container"
+  <div class="mx-auto max-w-[1200px] px-6 py-8 lg:px-8">
+    <PageHeader
+      titulo="Modelo de datos del warehouse"
+      subtitulo="Entidades (fact y dimensiones) que la carga diaria puebla en el warehouse (FR-001). Una entidad inactiva queda definida pero su carga no arranca hasta activarla."
     >
+      <template #badge>
+        <SemanticChip tipo="ok">{{ kpi.activas }} de {{ kpi.total }} activas</SemanticChip>
+      </template>
+      <template #acciones>
+        <Btn v-if="puedeEditar" variant="primary" @click="modal = true">
+          <Icon name="plus" :size="15" /> Registrar entidad
+        </Btn>
+      </template>
+    </PageHeader>
+
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
       {{ error }}
     </p>
+    <p
+      v-if="aviso"
+      class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
+    >
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''"><Icon name="x" :size="14" /></button>
+    </p>
 
-    <section>
-      <table v-if="entidades.length" class="w-full text-sm">
-        <thead class="text-left text-xs text-on-surface-variant">
-          <tr>
-            <th class="py-1">Entidad</th>
-            <th class="py-1">Tipo</th>
-            <th class="py-1">Tabla origen</th>
-            <th class="py-1">Estado</th>
-            <th class="py-1" />
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="ent in entidades"
-            :key="ent.entidad_id"
-            class="border-t border-outline-variant"
-          >
-            <td class="py-1.5 font-medium text-on-surface">{{ ent.nombre_entidad }}</td>
-            <td class="py-1.5 text-on-surface-variant">{{ ent.tipo }}</td>
-            <td class="py-1.5 text-on-surface-variant">{{ ent.tabla_origen_postgres }}</td>
-            <td class="py-1.5">
-              <span :class="ent.activa ? 'text-on-surface' : 'text-on-surface-variant'">
-                {{ ent.activa ? 'activa' : 'inactiva' }}
-              </span>
-            </td>
-            <td class="py-1.5 text-right">
-              <button
-                class="rounded-lg border border-outline-variant px-3 py-1 text-xs text-on-surface"
-                @click="alternarActiva(ent)"
-              >
-                {{ ent.activa ? 'Desactivar' : 'Activar' }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else-if="!cargando" class="text-sm text-on-surface-variant">
-        Todavía no hay ninguna entidad en el modelo.
-      </p>
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiTile label="Entidades en el modelo" :valor="kpi.total.toLocaleString('es-EC')" variant="emerald" />
+      <KpiTile label="Activas en la carga" :valor="kpi.activas.toLocaleString('es-EC')" estado-tipo="ok">
+        <template #icono><Icon name="check" :size="16" /></template>
+      </KpiTile>
+      <KpiTile label="Tablas de hechos" :valor="kpi.facts.toLocaleString('es-EC')" estado-tipo="neutral">
+        <template #icono><Icon name="database" :size="16" /></template>
+      </KpiTile>
+      <KpiTile label="Dimensiones" :valor="kpi.dims.toLocaleString('es-EC')" estado-tipo="neutral">
+        <template #icono><Icon name="cube" :size="16" /></template>
+      </KpiTile>
     </section>
 
-    <section v-if="puedeEditar" class="rounded-xl border border-outline-variant p-4">
-      <h2 class="mb-3 text-sm font-semibold text-on-surface">Registrar una entidad</h2>
-      <form class="grid gap-3 sm:grid-cols-2" @submit.prevent="registrar">
-        <label class="text-xs text-on-surface-variant">
+    <div class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[720px] text-left text-[13px]">
+          <thead>
+            <tr class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[10px] font-bold uppercase tracking-wider text-brand-100">
+              <th class="px-5 py-3">Entidad</th>
+              <th class="px-4 py-3">Tipo</th>
+              <th class="px-4 py-3">Tabla origen (PostgreSQL)</th>
+              <th class="px-4 py-3 text-center">Estado</th>
+              <th v-if="puedeEditar" class="px-4 py-3 text-right" />
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-brand-100/90 bg-white/80">
+            <tr v-if="cargando"><td :colspan="puedeEditar ? 5 : 4" class="px-5 py-8 text-center text-slate-400">Cargando…</td></tr>
+            <tr v-else-if="!entidades.length"><td :colspan="puedeEditar ? 5 : 4" class="px-5 py-8 text-center text-slate-400">Todavía no hay ninguna entidad en el modelo.</td></tr>
+            <tr v-for="ent in entidades" :key="ent.entidad_id" class="hover:bg-brand-50/70">
+              <td class="px-5 py-2.5 font-semibold text-slate-800">{{ ent.nombre_entidad }}</td>
+              <td class="px-4 py-2.5">
+                <SemanticChip :tipo="ent.tipo === 'fact' ? 'ia' : 'neutral'">{{ ent.tipo }}</SemanticChip>
+              </td>
+              <td class="px-4 py-2.5 font-mono text-[12px] text-slate-600">{{ ent.tabla_origen_postgres }}</td>
+              <td class="px-4 py-2.5 text-center">
+                <SemanticChip :tipo="ent.activa ? 'ok' : 'fifo'">{{ ent.activa ? 'activa' : 'inactiva' }}</SemanticChip>
+              </td>
+              <td v-if="puedeEditar" class="px-4 py-2.5 text-right">
+                <Btn variant="ghost" class="!px-2.5 !py-1 !text-[12px]" @click="alternarActiva(ent)">
+                  {{ ent.activa ? 'Desactivar' : 'Activar' }}
+                </Btn>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <Modal v-if="modal" titulo="Registrar una entidad del modelo" @cerrar="modal = false">
+      <form class="space-y-3" @submit.prevent="registrar">
+        <label class="block text-[12px] font-semibold text-slate-600">
           Nombre de la entidad
           <input
             v-model="form.nombreEntidad"
             required
             placeholder="dim_producto"
-            class="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
         </label>
-        <label class="text-xs text-on-surface-variant">
+        <label class="block text-[12px] font-semibold text-slate-600">
           Tipo
           <select
             v-model="form.tipo"
-            class="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           >
-            <option value="fact">fact</option>
-            <option value="dimension">dimension</option>
+            <option value="fact">Tabla de hechos (fact)</option>
+            <option value="dimension">Dimensión</option>
           </select>
         </label>
-        <label class="text-xs text-on-surface-variant">
+        <label class="block text-[12px] font-semibold text-slate-600">
           Tabla origen (PostgreSQL)
           <input
             v-model="form.tablaOrigenPostgres"
             required
             placeholder="productos"
-            class="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
         </label>
-        <label class="text-xs text-on-surface-variant sm:col-span-2">
-          Descripción
+        <label class="block text-[12px] font-semibold text-slate-600">
+          Descripción (opcional)
           <input
             v-model="form.descripcion"
-            class="mt-1 block w-full rounded-lg border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface"
+            class="mt-1 block w-full rounded-lg border border-brand-300 bg-white px-3 py-2 text-sm text-slate-800"
           />
         </label>
-        <div class="sm:col-span-2">
-          <button
-            type="submit"
-            class="rounded-lg bg-primary-container px-4 py-2 text-sm font-semibold text-on-primary-container"
-          >
-            Registrar
-          </button>
+        <div class="flex justify-end gap-2.5 pt-1">
+          <Btn variant="ghost" type="button" @click="modal = false">Cancelar</Btn>
+          <Btn variant="primary" type="submit" :disabled="guardando">
+            {{ guardando ? 'Registrando…' : 'Registrar' }}
+          </Btn>
         </div>
       </form>
-    </section>
-  </main>
+    </Modal>
+  </div>
 </template>
