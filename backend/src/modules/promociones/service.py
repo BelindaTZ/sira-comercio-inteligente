@@ -63,7 +63,20 @@ class PromocionesService:
         from src.models.regla_afinidad import ReglaAfinidad
 
         stmt = self.repo.reglas_query(estado=estado).order_by(ReglaAfinidad.confianza.desc())
-        return list((await self.repo.session.scalars(stmt)).all())
+        reglas = list((await self.repo.session.scalars(stmt)).all())
+        ids = {r.product_id_antecedente for r in reglas} | {
+            r.product_id_consecuente for r in reglas
+        }
+        nombres = await self.repo.nombres_productos(ids)
+        salida = []
+        for r in reglas:
+            fila = {
+                c.name: getattr(r, c.name) for c in ReglaAfinidad.__table__.columns
+            }
+            fila["product_nombre_antecedente"] = nombres.get(r.product_id_antecedente)
+            fila["product_nombre_consecuente"] = nombres.get(r.product_id_consecuente)
+            salida.append(fila)
+        return salida
 
     async def desactivar_regla(self, regla_id: int, empleado_id: int, motivo: str | None):
         """FR-002 — desactivación manual persistente (no se reactiva sola)."""
@@ -308,6 +321,12 @@ class PromocionesService:
 
     async def listar_colocaciones(self, *, tienda_id=None, semana=None, anio=None) -> list[dict]:
         return await self.repo.colocaciones(tienda_id=tienda_id, semana=semana, anio=anio)
+
+    async def buscar_productos(self, search: str | None) -> list[dict]:
+        return await self.repo.buscar_productos(search)
+
+    async def listar_tiendas(self) -> list[dict]:
+        return await self.repo.tiendas_activas()
 
     async def efecto_colocacion(self, promocion_id: int) -> dict:
         """FR-016 — ventas de la semana de colocación vs. una semana de referencia

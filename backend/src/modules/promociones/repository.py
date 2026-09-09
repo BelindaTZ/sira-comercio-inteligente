@@ -109,6 +109,41 @@ class PromocionesRepository(BaseRepository[ReglaAfinidad]):
             for rid, ant, con, sop, conf in (await self.session.execute(stmt)).all()
         ]
 
+    async def tiendas_activas(self) -> list[dict]:
+        rows = await self.session.execute(
+            text(
+                "SELECT tienda_id, nombre, ciudad FROM tiendas "
+                "WHERE activa = true ORDER BY nombre"
+            )
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def buscar_productos(self, search: str | None, limite: int = 20) -> list[dict]:
+        """Autocompletado por nombre o id para el formulario de colocación."""
+        cond = "activo = true"
+        binds: dict = {"lim": limite}
+        if search and search.strip():
+            cond += " AND (nombre ILIKE :q OR CAST(product_id AS TEXT) LIKE :qid)"
+            binds["q"] = f"%{search.strip()}%"
+            binds["qid"] = f"{search.strip()}%"
+        rows = await self.session.execute(
+            text(
+                f"SELECT product_id, nombre, product_category FROM productos "
+                f"WHERE {cond} ORDER BY nombre LIMIT :lim"
+            ),
+            binds,
+        )
+        return [dict(r._mapping) for r in rows]
+
+    async def nombres_productos(self, ids: set[int]) -> dict[int, str]:
+        if not ids:
+            return {}
+        rows = await self.session.execute(
+            text("SELECT product_id, nombre FROM productos WHERE product_id = ANY(:ids)"),
+            {"ids": list(ids)},
+        )
+        return {r.product_id: r.nombre for r in rows}
+
     async def productos_activos_ids(self) -> set[int]:
         stmt = select(Producto.product_id).where(Producto.activo.is_(True))
         return set((await self.session.scalars(stmt)).all())
@@ -380,24 +415,33 @@ class PromocionesRepository(BaseRepository[ReglaAfinidad]):
         return row.scalar_one()
 
     async def colocaciones(
-        self, *, tienda_id: int | None, semana: int | None, anio: int | None
+        self,
+        *,
+        tienda_id: int | None,
+        semana: int | None,
+        anio: int | None,
+        limite: int = 200,
     ) -> list[dict]:
         cond = ["1=1"]
-        params: dict = {}
+        params: dict = {"lim": limite}
         if tienda_id is not None:
-            cond.append("tienda_id = :tienda_id")
+            cond.append("pr.tienda_id = :tienda_id")
             params["tienda_id"] = tienda_id
         if semana is not None:
-            cond.append("semana = :semana")
+            cond.append("pr.semana = :semana")
             params["semana"] = semana
         if anio is not None:
-            cond.append("anio = :anio")
+            cond.append("pr.anio = :anio")
             params["anio"] = anio
         where = " AND ".join(cond)
         rows = await self.session.execute(
             text(
-                "SELECT promocion_id, product_id, tienda_id, display_location, mailer_location, "
-                f"semana, anio FROM promociones WHERE {where} ORDER BY promocion_id DESC"
+                "SELECT pr.promocion_id, pr.product_id, pr.tienda_id, pr.display_location, "
+                "pr.mailer_location, pr.semana, pr.anio, p.nombre AS product_nombre, "
+                "p.product_category "
+                "FROM promociones pr "
+                "LEFT JOIN productos p ON p.product_id = pr.product_id "
+                f"WHERE {where} ORDER BY pr.promocion_id DESC LIMIT :lim"
             ),
             params,
         )

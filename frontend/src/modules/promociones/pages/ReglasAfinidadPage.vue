@@ -2,24 +2,49 @@
 /**
  * Reglas de asociación de canasta (FR-001, FR-002) + tasa de redención de cupones
  * de afinidad (FR-008). El sistema calcula las reglas mensualmente; el Jefe de
- * Marketing desactiva las que no considera accionables.
+ * Marketing desactiva las que no considera accionables. Arquetipo "Gestión".
  */
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { promocionesApi } from '@/services/promocionesApi'
-import { prompt } from '@/shared/ui/dialogs'
+import { useSesion } from '@/stores/sesion'
+import { confirm, prompt } from '@/shared/ui/dialogs'
+import PageHeader from '@/shared/ui/PageHeader.vue'
+import KpiTile from '@/shared/ui/KpiTile.vue'
+import SemanticChip from '@/shared/ui/SemanticChip.vue'
+import Btn from '@/shared/ui/Btn.vue'
+import Icon from '@/shared/ui/Icon.vue'
+
+const sesion = useSesion()
+const puedeEditar = computed(
+  () => !sesion.esGerente && sesion.puedeEditarTabla('Marketing_CRM', 'regla_afinidad'),
+)
+const esDesarrollo = import.meta.env.DEV
+
+const ESTADOS = [
+  { value: 'vigente', label: 'Vigentes' },
+  { value: 'desactivada', label: 'Desactivadas' },
+  { value: 'reemplazada', label: 'Reemplazadas' },
+  { value: '', label: 'Todas' },
+]
 
 const filtroEstado = ref('vigente')
 const reglas = ref([])
 const tasa = ref(null)
 const cargando = ref(false)
 const error = ref('')
+const aviso = ref('')
+
+const chipEstado = (e) =>
+  ({ vigente: 'ok', desactivada: 'quiebre', reemplazada: 'neutral' })[e] || 'neutral'
 
 async function cargar() {
   cargando.value = true
   error.value = ''
   try {
-    reglas.value = await promocionesApi.reglasAfinidad(filtroEstado.value || undefined)
-    tasa.value = await promocionesApi.tasaRedencionAfinidad()
+    ;[reglas.value, tasa.value] = await Promise.all([
+      promocionesApi.reglasAfinidad(filtroEstado.value || undefined),
+      promocionesApi.tasaRedencionAfinidad().catch(() => null),
+    ])
   } catch (e) {
     error.value = e.message
   } finally {
@@ -27,9 +52,16 @@ async function cargar() {
   }
 }
 
-async function calcular() {
+async function recalcular() {
+  const ok = await confirm({
+    title: 'Recalcular reglas de afinidad',
+    message: 'Vuelve a correr el análisis de canasta sobre el histórico. Sólo disponible en desarrollo.',
+    confirmText: 'Recalcular',
+  })
+  if (!ok) return
   try {
     await promocionesApi.forzarCalculoAfinidad()
+    aviso.value = 'Reglas recalculadas.'
     await cargar()
   } catch (e) {
     error.value = e.message
@@ -39,6 +71,7 @@ async function calcular() {
 async function desactivar(regla) {
   const motivo = await prompt({
     title: 'Desactivar la regla de afinidad',
+    message: `${nombre(regla, 'ant')} → ${nombre(regla, 'con')}. No se reactiva sola.`,
     label: 'Motivo (opcional)',
     confirmText: 'Desactivar',
     tone: 'danger',
@@ -46,132 +79,123 @@ async function desactivar(regla) {
   if (motivo === null) return
   try {
     await promocionesApi.desactivarRegla(regla.regla_id, motivo)
+    aviso.value = 'Regla desactivada.'
     await cargar()
   } catch (e) {
     error.value = e.message
   }
 }
 
+function nombre(r, lado) {
+  const id = lado === 'ant' ? r.product_id_antecedente : r.product_id_consecuente
+  const nom = lado === 'ant' ? r.product_nombre_antecedente : r.product_nombre_consecuente
+  return nom || `Producto #${id}`
+}
+
 onMounted(cargar)
 </script>
 
 <template>
-  <main class="mx-auto max-w-5xl px-6 py-8">
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold text-primary-container">Reglas de afinidad</h1>
-      <div class="flex gap-2">
-        <RouterLink
-          to="/promociones/liquidacion"
-          class="rounded-lg border border-outline-variant px-3 py-1.5 text-sm text-on-surface hover:bg-surface-container-low"
-        >
-          Liquidación →
-        </RouterLink>
-        <RouterLink
-          to="/promociones/colocacion"
-          class="rounded-lg border border-outline-variant px-3 py-1.5 text-sm text-on-surface hover:bg-surface-container-low"
-        >
-          Colocación →
-        </RouterLink>
-        <button
-          type="button"
-          class="rounded-lg bg-primary-container px-3 py-1.5 text-sm font-semibold text-on-primary-container"
-          @click="calcular"
-        >
-          Recalcular (dev)
-        </button>
-      </div>
-    </div>
-
-    <p
-      v-if="error"
-      class="mb-4 rounded-lg bg-error-container px-4 py-2 text-sm text-on-error-container"
+  <div class="mx-auto max-w-[1200px] px-6 py-8 lg:px-8">
+    <PageHeader
+      titulo="Reglas de afinidad"
+      subtitulo="Asociaciones de canasta calculadas mensualmente (compra de A → compra de B). Desactivá las que no consideres accionables; la decisión persiste (FR-001 / FR-002)."
     >
+      <template #badge>
+        <SemanticChip tipo="neutral">{{ reglas.length }} reglas</SemanticChip>
+      </template>
+      <template #acciones>
+        <Btn v-if="esDesarrollo && puedeEditar" variant="ghost" @click="recalcular">
+          <Icon name="bolt" :size="15" /> Recalcular (dev)
+        </Btn>
+      </template>
+    </PageHeader>
+
+    <p v-if="error" class="mb-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-crimson-ruby" role="alert">
       {{ error }}
     </p>
-
-    <div
-      v-if="tasa"
-      class="mb-4 rounded-xl border border-outline-variant bg-surface-container-high p-4 text-sm"
+    <p
+      v-if="aviso"
+      class="mb-4 flex items-center justify-between gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2 text-sm text-brand-800"
     >
-      Cupones de afinidad — enviados: <strong>{{ tasa.enviados }}</strong> · redimidos:
-      <strong>{{ tasa.redimidos }}</strong> · tasa: <strong>{{ tasa.tasa_pct }}%</strong>
-      <span class="text-on-surface-variant"> (separada de los cupones por hito de 002)</span>
-    </div>
+      <span>{{ aviso }}</span>
+      <button class="text-brand-600 hover:text-brand-900" @click="aviso = ''"><Icon name="x" :size="14" /></button>
+    </p>
 
-    <div class="mb-4">
-      <select
-        v-model="filtroEstado"
-        class="rounded-lg border border-outline-variant bg-surface px-3 py-1.5 text-sm text-on-surface"
-        @change="cargar"
+    <section class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiTile label="Reglas en la vista" :valor="reglas.length.toLocaleString('es-EC')" variant="emerald" />
+      <KpiTile
+        label="Cupones de afinidad enviados"
+        :valor="tasa ? tasa.enviados.toLocaleString('es-EC') : '—'"
+        estado-tipo="neutral"
       >
-        <option value="vigente">Vigentes</option>
-        <option value="desactivada">Desactivadas</option>
-        <option value="reemplazada">Reemplazadas</option>
-        <option value="">Todas</option>
-      </select>
+        <template #icono><Icon name="megaphone" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="Cupones redimidos"
+        :valor="tasa ? tasa.redimidos.toLocaleString('es-EC') : '—'"
+        estado-tipo="ok"
+      >
+        <template #icono><Icon name="check" :size="16" /></template>
+      </KpiTile>
+      <KpiTile
+        label="Tasa de redención"
+        :valor="tasa ? `${tasa.tasa_pct}%` : '—'"
+        microcopy="separada de los cupones por hito"
+        :estado-tipo="tasa && tasa.tasa_pct >= 5 ? 'ok' : 'neutral'"
+      />
+    </section>
+
+    <div class="mb-4 flex items-center gap-2">
+      <label class="flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600">
+        <Icon name="filter" :size="14" class="text-brand-700" />
+        <select v-model="filtroEstado" class="bg-transparent text-slate-800 focus:outline-none" @change="cargar">
+          <option v-for="e in ESTADOS" :key="e.value" :value="e.value">{{ e.label }}</option>
+        </select>
+      </label>
     </div>
 
-    <div
-      class="overflow-hidden rounded-xl border border-outline-variant bg-surface-container-lowest"
-    >
-      <table class="w-full text-sm">
+    <div class="satin-card overflow-hidden rounded-2xl shadow-card-subtle">
+      <table class="w-full text-left text-[13px]">
         <thead>
-          <tr class="border-b border-outline-variant text-left text-on-surface-variant">
-            <th class="px-4 py-2 font-semibold">Antecedente → Consecuente</th>
-            <th class="px-4 py-2 text-right font-semibold">Soporte</th>
-            <th class="px-4 py-2 text-right font-semibold">Confianza</th>
-            <th class="px-4 py-2 text-right font-semibold">Lift</th>
-            <th class="px-4 py-2 font-semibold">Estado</th>
-            <th class="px-4 py-2" />
+          <tr class="border-b border-brand-700 bg-gradient-to-r from-brand-800 to-brand-750 text-[10px] font-bold uppercase tracking-wider text-brand-100">
+            <th class="px-5 py-3">Antecedente → Consecuente</th>
+            <th class="px-4 py-3 text-right">Soporte</th>
+            <th class="px-4 py-3 text-right">Confianza</th>
+            <th class="px-4 py-3 text-right">Lift</th>
+            <th class="px-4 py-3 text-center">Estado</th>
+            <th v-if="puedeEditar" class="px-4 py-3 text-right" />
           </tr>
         </thead>
-        <tbody>
-          <tr v-if="cargando">
-            <td colspan="6" class="px-4 py-6 text-center text-on-surface-variant">Cargando…</td>
-          </tr>
-          <tr v-else-if="!reglas.length">
-            <td colspan="6" class="px-4 py-6 text-center text-on-surface-variant">Sin reglas</td>
-          </tr>
-          <tr
-            v-for="r in reglas"
-            :key="r.regla_id"
-            class="border-b border-outline-variant last:border-0"
-          >
-            <td class="px-4 py-2 tabular-nums">
-              #{{ r.product_id_antecedente }} → #{{ r.product_id_consecuente }}
+        <tbody class="divide-y divide-brand-100/90 bg-white/80">
+          <tr v-if="cargando"><td :colspan="puedeEditar ? 6 : 5" class="px-5 py-8 text-center text-slate-400">Cargando…</td></tr>
+          <tr v-else-if="!reglas.length"><td :colspan="puedeEditar ? 6 : 5" class="px-5 py-8 text-center text-slate-400">Sin reglas para este filtro.</td></tr>
+          <tr v-for="r in reglas" :key="r.regla_id" class="hover:bg-brand-50/70">
+            <td class="px-5 py-3">
+              <div class="font-semibold text-slate-800">
+                {{ nombre(r, 'ant') }} <span class="text-brand-500">→</span> {{ nombre(r, 'con') }}
+              </div>
+              <div class="font-mono text-[11px] text-slate-400">
+                #{{ r.product_id_antecedente }} → #{{ r.product_id_consecuente }}
+              </div>
             </td>
-            <td class="px-4 py-2 text-right tabular-nums">{{ Number(r.soporte).toFixed(3) }}</td>
-            <td class="px-4 py-2 text-right font-semibold tabular-nums">
-              {{ Number(r.confianza).toFixed(3) }}
-            </td>
-            <td class="px-4 py-2 text-right tabular-nums">
+            <td class="px-4 py-3 text-right tabular-nums text-slate-600">{{ Number(r.soporte).toFixed(3) }}</td>
+            <td class="px-4 py-3 text-right font-semibold tabular-nums text-slate-800">{{ Number(r.confianza).toFixed(3) }}</td>
+            <td class="px-4 py-3 text-right tabular-nums text-slate-600">
               {{ r.lift == null ? '—' : Number(r.lift).toFixed(2) }}
             </td>
-            <td class="px-4 py-2">
-              <span
-                class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                :class="{
-                  'bg-tertiary-container text-on-tertiary-container': r.estado === 'vigente',
-                  'bg-error-container text-on-error-container': r.estado === 'desactivada',
-                  'bg-surface-container-high text-on-surface-variant': r.estado === 'reemplazada',
-                }"
-              >
-                {{ r.estado }}
-              </span>
+            <td class="px-4 py-3 text-center">
+              <SemanticChip :tipo="chipEstado(r.estado)">{{ r.estado }}</SemanticChip>
             </td>
-            <td class="px-4 py-2 text-right">
-              <button
-                v-if="r.estado === 'vigente'"
-                type="button"
-                class="text-xs font-semibold text-error hover:underline"
-                @click="desactivar(r)"
-              >
+            <td v-if="puedeEditar" class="px-4 py-3 text-right">
+              <Btn v-if="r.estado === 'vigente'" variant="danger" class="!px-2.5 !py-1 !text-[12px]" @click="desactivar(r)">
                 Desactivar
-              </button>
+              </Btn>
+              <span v-else class="text-[11px] text-slate-400">—</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
-  </main>
+  </div>
 </template>

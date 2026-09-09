@@ -107,6 +107,16 @@ export const promocionesApi = {
       .then((r) => r.data)
   },
 
+  buscarProductosColocacion(search) {
+    return http
+      .get('/api/promociones/colocaciones/productos', { params: { search: search || undefined } })
+      .then((r) => r.data)
+  },
+
+  tiendasColocacion() {
+    return http.get('/api/promociones/colocaciones/tiendas').then((r) => r.data)
+  },
+
   registrarColocacion({ productId, tiendaId, displayLocation, mailerLocation, semana, anio }) {
     return http
       .post('/api/promociones/colocaciones', {

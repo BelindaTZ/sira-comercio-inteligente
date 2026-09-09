@@ -12,6 +12,8 @@ class ReglaAfinidadOut(BaseModel):
     regla_id: int
     product_id_antecedente: int
     product_id_consecuente: int
+    product_nombre_antecedente: str | None = None
+    product_nombre_consecuente: str | None = None
     soporte: Decimal
     confianza: Decimal
     lift: Decimal | None
@@ -105,6 +107,8 @@ class ColocacionIn(BaseModel):
 class ColocacionOut(BaseModel):
     promocion_id: int
     product_id: int
+    product_nombre: str | None = None
+    product_category: str | None = None
     tienda_id: int
     display_location: str | None
     mailer_location: str | None
@@ -115,3 +119,15 @@ class ColocacionOut(BaseModel):
 class EfectoColocacionOut(BaseModel):
     ventas_semana_colocacion: int
     ventas_semana_referencia: int
+
+
+class OpcionProductoPromo(BaseModel):
+    product_id: int
+    nombre: str
+    product_category: str | None = None
+
+
+class OpcionTiendaPromo(BaseModel):
+    tienda_id: int
+    nombre: str
+    ciudad: str | None = None

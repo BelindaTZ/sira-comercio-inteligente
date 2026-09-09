@@ -27,6 +27,8 @@ from src.modules.promociones.schemas import (
     CuponAfinidadOut,
     DesactivarReglaIn,
     EfectoColocacionOut,
+    OpcionProductoPromo,
+    OpcionTiendaPromo,
     RecomendacionOut,
     ReglaAfinidadOut,
     ReglaLiquidacionOut,
@@ -155,11 +157,18 @@ async def listar_candidatos(
         return []
     candidatos = await svc.listar_candidatos(tienda_id=tienda_id, semana=semana, anio=anio)
     from decimal import Decimal
+
     from src.models.producto import Producto
+
     res = []
     for c in candidatos:
         prod = await svc.repo.session.get(Producto, c.product_id)
-        p_base = prod.precio_base if prod and prod.precio_base else (prod.costo * Decimal("1.3") if prod and prod.costo else Decimal("1000"))
+        if prod and prod.precio_base:
+            p_base = prod.precio_base
+        elif prod and prod.costo:
+            p_base = prod.costo * Decimal("1.3")
+        else:
+            p_base = Decimal("1000")
         desc_factor = Decimal("1") - (Decimal(str(c.descuento_sugerido_pct)) / Decimal("100"))
         p_liq = (Decimal(str(p_base)) * desc_factor).quantize(Decimal("1"))
         res.append(
@@ -211,6 +220,24 @@ async def listar_colocaciones(
         ColocacionOut(**c)
         for c in await svc.listar_colocaciones(tienda_id=tienda_id, semana=semana, anio=anio)
     ]
+
+
+@router.get("/colocaciones/tiendas", response_model=list[OpcionTiendaPromo])
+async def listar_tiendas_colocacion(
+    svc: ServiceDep, _: Annotated[Principal, Depends(_ver_colocacion)]
+) -> list[OpcionTiendaPromo]:
+    """Sucursales activas para el selector de tienda de la colocación."""
+    return [OpcionTiendaPromo(**t) for t in await svc.listar_tiendas()]
+
+
+@router.get("/colocaciones/productos", response_model=list[OpcionProductoPromo])
+async def buscar_productos_colocacion(
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver_colocacion)],
+    search: str | None = None,
+) -> list[OpcionProductoPromo]:
+    """Autocompletado de productos por nombre o id para el formulario de colocación."""
+    return [OpcionProductoPromo(**p) for p in await svc.buscar_productos(search)]
 
 
 @router.post("/colocaciones", status_code=status.HTTP_201_CREATED, response_model=ColocacionOut)
