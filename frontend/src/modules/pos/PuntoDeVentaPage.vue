@@ -337,6 +337,7 @@ async function aplicarCuponSugerido(cupon) {
 const cuponesSugeridos = computed(() =>
   (beneficios.value?.cupones || []).filter((c) => c.en_ticket && !c.aplicado),
 )
+const cuponesTotales = computed(() => (beneficios.value?.cupones || []).length)
 
 async function remover({ lineaId, autorizaEmpleadoId, autorizaPin, motivo }) {
   venta.value = await conError(() =>
@@ -695,6 +696,9 @@ function atajos(e) {
                     <template v-if="beneficios">
                       {{ beneficios.puntos_disponibles.toLocaleString('es-EC') }} pts ·
                       {{ money(beneficios.valor_canje_usd) }} canjeables
+                      <template v-if="cuponesTotales">
+                        · {{ cuponesTotales === 1 ? '1 cupón' : `${cuponesTotales} cupones` }}
+                      </template>
                     </template>
                     <template v-else>Cliente del Club Marzú</template>
                   </div>
@@ -760,25 +764,27 @@ function atajos(e) {
           <!-- Cupones del Club sugeridos para productos del ticket -->
           <div
             v-if="cuponesSugeridos.length && venta.estado === 'en_curso'"
-            class="border-b border-brand-100 bg-emerald-50/60 px-3 py-2"
+            class="border-b-2 border-emerald-300 bg-emerald-50 px-3 py-2.5"
           >
-            <p class="mb-1 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
-              Cupones del Club disponibles
+            <p class="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-emerald-900">
+              <Icon name="tag" :size="14" class="text-emerald-600" />
+              {{ cuponesSugeridos.length === 1 ? '1 cupón del Club' : `${cuponesSugeridos.length} cupones del Club` }}
+              para este ticket
             </p>
             <div
               v-for="c in cuponesSugeridos"
               :key="c.coupon_upc"
               class="flex items-center justify-between gap-2 py-0.5"
             >
-              <span class="truncate text-[11px] text-emerald-900">
+              <span class="truncate text-[12px] font-semibold text-emerald-900">
                 {{ c.producto }} · −{{ Number(c.descuento_pct) }}%
               </span>
               <button
                 type="button"
-                class="shrink-0 rounded-lg bg-emerald-600 px-2 py-0.5 text-[11px] font-bold text-white hover:bg-emerald-500"
+                class="shrink-0 rounded-lg bg-emerald-600 px-3 py-1 text-[12px] font-bold text-white hover:bg-emerald-500"
                 @click="aplicarCuponSugerido(c)"
               >
-                Aplicar
+                Aplicar cupón
               </button>
             </div>
           </div>

@@ -667,7 +667,9 @@ async def _club_demo() -> None:
                 RETURNING campaign_id
             """)
         )
-        # cupones sobre 25 productos de alta rotación con stock en la tienda demo
+        # cupones sobre 250 productos de alta rotación con stock en la tienda demo
+        # (así casi cualquier producto que el cajero escanee tiene un cupón que
+        # sugerir para el cliente afiliado)
         await s.execute(
             text("""
                 INSERT INTO cupones (coupon_upc, product_id, campaign_id)
@@ -683,7 +685,7 @@ async def _club_demo() -> None:
                 ) vh ON vh.product_id = p.product_id
                 WHERE p.activo AND p.precio_base > 0 AND i.cantidad_disponible > 20
                 ORDER BY vh.u DESC
-                LIMIT 25
+                LIMIT 250
                 ON CONFLICT DO NOTHING
             """),
             {"c": campaign_id},

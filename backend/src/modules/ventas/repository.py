@@ -90,26 +90,30 @@ class VentasRepository(BaseRepository[Venta]):
     ) -> list[dict]:
         """Cupones vigentes y no redimidos del cliente, con el % de descuento de su
         campaña y si su producto está en el ticket actual."""
+        pids = list({int(p) for p in (product_ids or [])})
         rows = await self.session.execute(
             text("""
-                SELECT DISTINCT ON (cu.coupon_upc, cu.product_id)
-                       cu.coupon_upc, cu.product_id, cu.campaign_id,
-                       p.nombre AS producto, ca.descuento_pct
-                FROM campana_cliente cc
-                JOIN cupones cu ON cu.campaign_id = cc.campaign_id
-                JOIN campanas ca ON ca.campaign_id = cc.campaign_id
-                JOIN productos p ON p.product_id = cu.product_id
-                WHERE cc.household_id = :h
-                  AND (ca.end_date IS NULL OR ca.end_date >= CURRENT_DATE)
-                  AND NOT EXISTS (SELECT 1 FROM cupon_redimido r
-                                  WHERE r.household_id = cc.household_id
-                                    AND r.coupon_upc = cu.coupon_upc)
-                ORDER BY cu.coupon_upc, cu.product_id, ca.end_date DESC NULLS LAST
+                SELECT * FROM (
+                    SELECT DISTINCT ON (cu.coupon_upc, cu.product_id)
+                           cu.coupon_upc, cu.product_id, cu.campaign_id,
+                           p.nombre AS producto, ca.descuento_pct,
+                           (cu.product_id = ANY(:pids)) AS en_ticket
+                    FROM campana_cliente cc
+                    JOIN cupones cu ON cu.campaign_id = cc.campaign_id
+                    JOIN campanas ca ON ca.campaign_id = cc.campaign_id
+                    JOIN productos p ON p.product_id = cu.product_id
+                    WHERE cc.household_id = :h
+                      AND (ca.end_date IS NULL OR ca.end_date >= CURRENT_DATE)
+                      AND NOT EXISTS (SELECT 1 FROM cupon_redimido r
+                                      WHERE r.household_id = cc.household_id
+                                        AND r.coupon_upc = cu.coupon_upc)
+                    ORDER BY cu.coupon_upc, cu.product_id, ca.end_date DESC NULLS LAST
+                ) x
+                ORDER BY x.en_ticket DESC, x.producto
                 LIMIT 40
             """),
-            {"h": household_id},
+            {"h": household_id, "pids": pids},
         )
-        pids = set(product_ids or [])
         return [
             {
                 "coupon_upc": r.coupon_upc,
@@ -117,7 +121,7 @@ class VentasRepository(BaseRepository[Venta]):
                 "campaign_id": r.campaign_id,
                 "producto": r.producto,
                 "descuento_pct": Decimal(str(r.descuento_pct)),
-                "en_ticket": r.product_id in pids,
+                "en_ticket": bool(r.en_ticket),
             }
             for r in rows
         ]
