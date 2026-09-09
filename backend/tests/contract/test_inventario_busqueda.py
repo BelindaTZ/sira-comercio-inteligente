@@ -159,6 +159,39 @@ async def test_resumen_stock_kpis(client, escenario_pos, auth_encargado, db_sess
     assert d["quiebre"] >= 1
 
 
+async def test_solicitar_reposicion_deja_alerta_y_es_idempotente(
+    client, escenario_pos, auth_encargado, db_session
+):
+    e = escenario_pos
+    body = {
+        "product_id": e["product_id"],
+        "tienda_id": e["tienda_id"],
+        "empleado_id": e["encargado_id"],
+    }
+    r1 = await client.post(
+        "/api/inventario/solicitudes-reposicion", json=body, headers=auth_encargado
+    )
+    assert r1.status_code == 201, r1.text
+    assert r1.json()["ya_existia"] is False
+    assert r1.json()["alerta_id"]
+
+    r2 = await client.post(
+        "/api/inventario/solicitudes-reposicion", json=body, headers=auth_encargado
+    )
+    assert r2.status_code == 201
+    assert r2.json()["ya_existia"] is True
+    assert r2.json()["alerta_id"] == r1.json()["alerta_id"]
+
+    pendientes = await db_session.scalar(
+        text(
+            "SELECT count(*) FROM alertas_inventario WHERE tipo = 'reposicion' "
+            "AND product_id = :p AND tienda_id = :t AND estado = 'pendiente'"
+        ),
+        {"p": e["product_id"], "t": e["tienda_id"]},
+    )
+    assert pendientes == 1
+
+
 async def test_categorias_del_catalogo(client, escenario_pos, auth_jefe_comercial):
     r = await client.get("/api/catalogo/categorias", headers=auth_jefe_comercial)
     assert r.status_code == 200, r.text

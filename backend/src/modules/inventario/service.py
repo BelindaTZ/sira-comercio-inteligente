@@ -501,6 +501,47 @@ class InventarioService:
     async def resumen_stock(self, tienda_id: int) -> dict:
         return await self.repo.resumen_stock(tienda_id)
 
+    async def solicitar_reposicion(self, data) -> dict:
+        """"Reordenar" desde la pantalla de stock: deja una alerta `reposicion`
+        pendiente (si no la hay) y avisa al rol de compras. El registro de
+        negocio es la alerta; la notificación no lo bloquea (Principio II)."""
+        producto = await self.repo.get_producto(data.product_id)
+        if producto is None:
+            raise NotFoundError(f"Producto {data.product_id} no existe")
+
+        existente = await self.repo.alerta_pendiente(
+            data.product_id, data.tienda_id, "reposicion"
+        )
+        if existente is not None:
+            self._notificar_reposicion(data.product_id, data.tienda_id)
+            return {"alerta_id": existente.alerta_id, "ya_existia": True, "notificado": True}
+
+        alerta = AlertaInventario(
+            tipo="reposicion",
+            product_id=data.product_id,
+            tienda_id=data.tienda_id,
+            estado="pendiente",
+            origen_calculo="rotacion_reciente",
+        )
+        self.repo.agregar(alerta)
+        await self.repo.flush()
+        self._notificar_reposicion(data.product_id, data.tienda_id)
+        return {"alerta_id": alerta.alerta_id, "ya_existia": False, "notificado": True}
+
+    def _notificar_reposicion(self, product_id: int, tienda_id: int) -> None:
+        asunto = f"Solicitud de reposición — producto {product_id}"
+        cuerpo = (
+            f"Se solicitó reponer el producto {product_id} de la tienda {tienda_id} "
+            f"(sin pedido en tránsito). Crear la orden de compra correspondiente."
+        )
+        enviado = False
+        if sendgrid_client.is_configured() and settings.sendgrid_from_email:
+            enviado = sendgrid_client.enviar_correo(
+                to=settings.sendgrid_from_email, subject=asunto, html=cuerpo
+            )
+        if not enviado:
+            logger.warning("SOLICITUD REPOSICIÓN (sin correo): %s", cuerpo)
+
     async def definir_ubicacion(self, data) -> dict:
         if await self.repo.get_producto(data.product_id) is None:
             raise NotFoundError(f"El producto {data.product_id} no existe")

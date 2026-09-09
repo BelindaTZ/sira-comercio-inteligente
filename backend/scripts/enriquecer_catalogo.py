@@ -278,6 +278,57 @@ async def main() -> None:
             )
             log.info("mermas validadas del mes sembradas")
 
+        # 10 · top-up de SKU perecederos en inventario (el sembrado inicial se
+        #      sesgó a abarrotes; sin esto la pantalla muestra todo "no perecedero").
+        perec = await s.scalar(
+            text("""
+            SELECT count(DISTINCT i.product_id) FROM inventario i
+            JOIN productos p ON p.product_id = i.product_id WHERE p.es_perecedero
+        """)
+        )
+        if (perec or 0) < 120:
+            await s.execute(
+                text("""
+                WITH tiendas_top AS (
+                    SELECT tienda_id FROM tiendas WHERE codigo <> 'DEMO' ORDER BY tienda_id LIMIT 6
+                ), nuevos AS (
+                    SELECT product_id FROM productos
+                    WHERE es_perecedero AND precio_base IS NOT NULL
+                      AND product_id NOT IN (SELECT product_id FROM inventario)
+                    ORDER BY product_id LIMIT 160
+                ), base AS (
+                    SELECT n.product_id, t.tienda_id,
+                           (5 + (abs(hashtext(n.product_id::text)) + t.tienda_id) % 260)::int cant
+                    FROM nuevos n CROSS JOIN tiendas_top t
+                ), inv AS (
+                    INSERT INTO inventario (product_id, tienda_id, cantidad_disponible, cantidad_minima)
+                    SELECT product_id, tienda_id, cant, 20 + (product_id % 40) FROM base
+                    ON CONFLICT DO NOTHING
+                    RETURNING product_id, tienda_id, cantidad_disponible
+                )
+                INSERT INTO lotes (product_id, tienda_id, cantidad_recibida, cantidad_disponible,
+                                   fecha_vencimiento, codigo_lote_proveedor)
+                SELECT inv.product_id, inv.tienda_id, inv.cantidad_disponible, inv.cantidad_disponible,
+                       CURRENT_DATE + ((abs(hashtext(inv.product_id::text)) % 75) - 7),
+                       'L-' || to_char(CURRENT_DATE, 'YYMM') || '-P'
+                       || lpad(((abs(hashtext(inv.product_id::text)) % 8) + 1)::text, 2, '0')
+                       || '-N' || inv.product_id
+                FROM inv
+            """)
+            )
+            r = await s.execute(
+                text("""
+                INSERT INTO ubicacion_producto (product_id, tienda_id, pasillo, gondola)
+                SELECT i.product_id, i.tienda_id,
+                       'Cámara Fría ' || chr(65 + (i.product_id % 3)),
+                       'R-' || lpad(((abs(hashtext(i.product_id::text)) % 20) + 1)::text, 2, '0')
+                FROM inventario i JOIN productos p ON p.product_id = i.product_id
+                WHERE p.es_perecedero
+                ON CONFLICT (product_id, tienda_id) DO NOTHING
+            """)
+            )
+            log.info("top-up perecederos: %s ubicaciones nuevas", r.rowcount)
+
         await s.commit()
 
     await _imagenes_unsplash(limite=90)

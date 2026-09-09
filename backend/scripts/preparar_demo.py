@@ -88,8 +88,15 @@ async def _inventario_demo() -> None:
             WITH tiendas_top AS (
                 SELECT tienda_id FROM tiendas WHERE codigo <> 'DEMO' ORDER BY tienda_id LIMIT 6
             ), prods AS (
-                SELECT product_id, es_perecedero FROM productos
-                WHERE precio_base IS NOT NULL ORDER BY product_id LIMIT 400
+                -- muestra balanceada: ~45% perecederos para que la pantalla de
+                -- inventario tenga vencimientos reales, no solo abarrotes.
+                (SELECT product_id, es_perecedero FROM productos
+                 WHERE precio_base IS NOT NULL AND es_perecedero
+                 ORDER BY product_id LIMIT 180)
+                UNION ALL
+                (SELECT product_id, es_perecedero FROM productos
+                 WHERE precio_base IS NOT NULL AND NOT es_perecedero
+                 ORDER BY product_id LIMIT 220)
             ), base AS (
                 SELECT p.product_id, t.tienda_id, p.es_perecedero,
                        (5 + (p.product_id * 7 + t.tienda_id) % 260)::int AS cant

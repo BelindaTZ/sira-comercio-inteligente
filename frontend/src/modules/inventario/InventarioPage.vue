@@ -73,15 +73,13 @@ const pillsAlertas = computed(() => [
 ])
 
 const columnasStock = [
-  { key: 'producto', label: 'Producto' },
-  { key: 'product_category', label: 'Categoría' },
+  { key: 'producto', label: 'Producto', width: '280px' },
   { key: 'ubicacion', label: 'Ubicación' },
-  { key: 'stock', label: 'Stock físico vs. mín', align: 'center' },
-  { key: 'en_transito', label: 'En tránsito', align: 'center' },
-  { key: 'lote', label: 'Lote & vencimiento FIFO' },
-  { key: 'precio', label: 'Costo / PVP (Mg %)', align: 'right' },
+  { key: 'stock', label: 'Stock vs. mín', align: 'center', width: '150px' },
+  { key: 'en_transito', label: 'Reposición / tránsito', align: 'center' },
+  { key: 'lote', label: 'Lote & vencimiento' },
+  { key: 'precio', label: 'Costo / PVP (Mg)', align: 'right' },
   { key: 'estado', label: 'Estado', align: 'center' },
-  { key: 'acciones', label: '', align: 'right' },
 ]
 const columnasAlertas = [
   { key: 'alerta_id', label: 'Alerta', width: '72px' },
@@ -154,6 +152,23 @@ async function atender(alerta) {
 function imagenActualizada(url) {
   if (imgModal.value) imgModal.value.imagen_url = url
   cargar()
+}
+
+const reordenando = ref(null)
+async function reordenar(row) {
+  reordenando.value = row.product_id
+  try {
+    await inventarioApi.solicitarReposicion({
+      productId: row.product_id,
+      tiendaId: tiendaId.value,
+      empleadoId: empleadoId.value,
+    })
+    row._reordenado = true
+  } catch (e) {
+    error.value = e.response?.data?.detail || e.message
+  } finally {
+    reordenando.value = null
+  }
 }
 
 function tras() {
@@ -351,6 +366,7 @@ onMounted(() => {
 
       <DataTable
         v-if="tab === 'stock'"
+        densa
         titulo="Stock por SKU"
         subtitulo="Una fila por producto: ubicación en sala, stock vs. mínimo y lote más próximo a vencer."
         :columns="columnasStock"
@@ -401,23 +417,24 @@ onMounted(() => {
               <div class="truncate font-semibold text-slate-900">
                 {{ row.nombre || 'Producto sin nombre' }}
               </div>
-              <div class="text-[11px] text-slate-500">
-                {{ row.marca || '—' }}
-                <span v-if="row.codigo_barras" class="tabular-nums">
-                  · EAN {{ row.codigo_barras }}</span
+              <div class="flex flex-wrap items-center gap-x-1.5 text-[11px] text-slate-500">
+                <span>{{ row.marca || '—' }}</span>
+                <span v-if="row.codigo_barras" class="tabular-nums"
+                  >· EAN {{ row.codigo_barras }}</span
+                >
+                <span
+                  v-if="row.product_category"
+                  class="rounded border border-brand-200 bg-brand-50 px-1.5 text-[10px] font-semibold text-brand-900"
+                  >{{ row.product_category }}</span
+                >
+                <span
+                  v-if="row.clasificacion_abc"
+                  class="rounded bg-slate-100 px-1.5 text-[10px] font-bold text-slate-600"
+                  >ABC {{ row.clasificacion_abc }}</span
                 >
               </div>
             </div>
           </div>
-        </template>
-
-        <template #cell:product_category="{ value }">
-          <span
-            v-if="value"
-            class="rounded-md border border-brand-200 bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-900"
-            >{{ value }}</span
-          >
-          <span v-else class="text-slate-400">—</span>
         </template>
 
         <template #cell:ubicacion="{ row }">
@@ -448,7 +465,7 @@ onMounted(() => {
         </template>
 
         <template #cell:stock="{ row }">
-          <div class="mx-auto flex w-40 flex-col gap-1">
+          <div class="mx-auto flex w-32 flex-col gap-1">
             <div class="flex items-center justify-between text-[11px]">
               <span
                 class="font-bold"
@@ -487,9 +504,27 @@ onMounted(() => {
           <span
             v-if="row.en_transito"
             class="inline-flex items-center gap-1 rounded-full border border-amethyst-300 bg-amethyst-50 px-2 py-0.5 text-[11px] font-bold text-amethyst-800"
+            title="Unidades en órdenes de compra aprobadas sin recibir"
           >
-            <Icon name="truck" :size="12" /> {{ row.en_transito }} un.
+            <Icon name="truck" :size="12" /> {{ row.en_transito }} un. en camino
           </span>
+          <span
+            v-else-if="row._reordenado"
+            class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700"
+          >
+            <Icon name="check" :size="12" /> Solicitado
+          </span>
+          <button
+            v-else-if="row.estado === 'quiebre'"
+            type="button"
+            :disabled="reordenando === row.product_id"
+            class="inline-flex items-center gap-1 rounded-lg border border-brand-600 bg-brand-800 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-brand-700 disabled:opacity-50"
+            title="Avisar al rol de compras para generar la orden"
+            @click.stop="reordenar(row)"
+          >
+            <Icon name="cart" :size="12" />
+            {{ reordenando === row.product_id ? 'Enviando…' : 'Reordenar' }}
+          </button>
           <span v-else class="text-slate-400">—</span>
         </template>
 
@@ -546,17 +581,6 @@ onMounted(() => {
               }[value]
             }}
           </SemanticChip>
-        </template>
-
-        <template #cell:acciones="{ row }">
-          <button
-            type="button"
-            title="Ver detalle"
-            class="rounded-lg border border-brand-200 p-1.5 text-slate-500 hover:bg-brand-50 hover:text-brand-800"
-            @click.stop="imgModal = row"
-          >
-            <Icon name="dots" :size="15" />
-          </button>
         </template>
       </DataTable>
 

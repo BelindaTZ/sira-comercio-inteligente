@@ -104,6 +104,18 @@ class UbicacionIn(BaseModel):
     empleado_id: int
 
 
+class SolicitudReposicionIn(BaseModel):
+    product_id: int
+    tienda_id: int
+    empleado_id: int
+
+
+class SolicitudReposicionOut(BaseModel):
+    alerta_id: int | None
+    ya_existia: bool
+    notificado: bool
+
+
 class StockItemOut(BaseModel):
     """Una fila de la vista de stock por SKU (pantalla de Inventario)."""
 

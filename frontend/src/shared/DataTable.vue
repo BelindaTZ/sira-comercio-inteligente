@@ -33,7 +33,10 @@ const props = defineProps({
   pillActiva: { type: [String, Number, null], default: null },
   emptyText: { type: String, default: 'Sin resultados' },
   sizeOptions: { type: Array, default: () => [15, 25, 50, 100] },
+  // celdas compactas (px-4 py-3) para tablas con muchas columnas
+  densa: { type: Boolean, default: false },
 })
+const celdaCls = props.densa ? 'px-4 py-3' : 'px-6 py-3.5'
 const emit = defineEmits(['update:page', 'update:size', 'update:search', 'pill', 'row-click'])
 
 const conCabecera = computed(
@@ -133,14 +136,15 @@ const numeros = computed(() => {
               v-for="col in columns"
               :key="col.key"
               scope="col"
-              class="whitespace-nowrap px-6 py-3.5"
-              :class="
+              :class="[
+                'whitespace-nowrap',
+                celdaCls,
                 col.align === 'right'
                   ? 'text-right'
                   : col.align === 'center'
                     ? 'text-center'
-                    : 'text-left'
-              "
+                    : 'text-left',
+              ]"
               :style="col.width ? { width: col.width } : null"
             >
               {{ col.label }}
@@ -168,14 +172,14 @@ const numeros = computed(() => {
             <td
               v-for="col in columns"
               :key="col.key"
-              class="px-6 py-3.5 text-slate-800"
-              :class="
+              :class="[
+                celdaCls,
                 col.align === 'right'
                   ? 'text-right font-bold tabular-nums text-slate-900'
                   : col.align === 'center'
-                    ? 'text-center'
-                    : 'text-left'
-              "
+                    ? 'text-center text-slate-800'
+                    : 'text-left text-slate-800',
+              ]"
             >
               <slot :name="`cell:${col.key}`" :row="row" :value="row[col.key]">
                 {{ cell(row, col) }}

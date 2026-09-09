@@ -54,6 +54,17 @@ export const inventarioApi = {
       .then((r) => r.data)
   },
 
+  /** "Reordenar": deja una alerta de reposición y avisa al rol de compras. */
+  solicitarReposicion({ productId, tiendaId, empleadoId }) {
+    return http
+      .post('/api/inventario/solicitudes-reposicion', {
+        product_id: productId,
+        tienda_id: tiendaId,
+        empleado_id: empleadoId,
+      })
+      .then((r) => r.data)
+  },
+
   definirUbicacion({ productId, tiendaId, pasillo, gondola, nivel, empleadoId }) {
     return http
       .put('/api/inventario/ubicacion', {

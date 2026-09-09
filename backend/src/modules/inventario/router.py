@@ -27,6 +27,8 @@ from src.modules.inventario.schemas import (
     QuiebreOut,
     RecepcionIn,
     RecepcionOut,
+    SolicitudReposicionIn,
+    SolicitudReposicionOut,
     StockItemOut,
     StockMaximoIn,
     StockMaximoOut,
@@ -157,6 +159,21 @@ async def definir_ubicacion(
 ) -> dict:
     """Ubica un SKU en sala (pasillo/góndola). Reponedor y Encargado."""
     return await svc.definir_ubicacion(data)
+
+
+@router.post(
+    "/solicitudes-reposicion",
+    status_code=status.HTTP_201_CREATED,
+    response_model=SolicitudReposicionOut,
+)
+async def solicitar_reposicion(
+    data: SolicitudReposicionIn,
+    svc: ServiceDep,
+    _: Annotated[Principal, Depends(_ver)],
+) -> SolicitudReposicionOut:
+    """"Reordenar" desde la pantalla de stock: deja una alerta de reposición
+    pendiente y avisa al rol de compras (para un SKU sin pedido en tránsito)."""
+    return SolicitudReposicionOut(**await svc.solicitar_reposicion(data))
 
 
 @router.post("/ajustes", status_code=status.HTTP_201_CREATED, response_model=AjusteOut)
